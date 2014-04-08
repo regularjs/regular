@@ -1,0 +1,23 @@
+{
+  "name": "terminator",
+  "version": "0.0.1",
+  "author": {
+    "name": "leeluolee"
+  },
+  "description": "",
+  "license": "MIT",
+  "keywords": ["template", "data-binding"],
+  "main": "lib/index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/leeluolee/terminator.git"
+  },
+  "homepage": "http://vuejs.org",
+  "scripts": {},
+  "devDependencies": {
+    "grunt": "0.4.*",
+    "grunt-contrib-clean": "0.5.*",
+    "grunt-contrib-watch": "0.5.*",
+    "grunt-contrib-jshint": "0.8.*",
+  }
+}
