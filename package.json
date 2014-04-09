@@ -6,18 +6,26 @@
   },
   "description": "",
   "license": "MIT",
-  "keywords": ["template", "data-binding"],
+  "keywords": [
+    "template",
+    "data-binding"
+  ],
   "main": "lib/index.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/leeluolee/terminator.git"
   },
-  "homepage": "http://vuejs.org",
+  "homepage": "http://leeluolee.github.io/terminator",
   "scripts": {},
   "devDependencies": {
-    "grunt": "0.4.*",
-    "grunt-contrib-clean": "0.5.*",
-    "grunt-contrib-watch": "0.5.*",
-    "grunt-contrib-jshint": "0.8.*",
+    "gulp": "3.6.x",
+    "gulp-component": "^0.1.8",
+    "gulp-uglify": "^0.2.1",
+    "gulp-jshint": "^1.5.3",
+    "gulp-mocha": "^0.4.1",
+    "gulp-util": "^2.2.14",
+    "through2": "^0.4.1",
+    "mocha": "^1.18.2",
+    "expect.js": "^0.3.1"
   }
 }

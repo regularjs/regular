@@ -1,0 +1,9 @@
+{
+    "name": "terminator",
+    "version": "0.0.1",
+    "main": "src/browser.js",
+    "scripts": [
+        "src/browser.js",
+        "src/common.js"
+    ]
+}
