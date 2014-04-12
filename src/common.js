@@ -1,3 +1,5 @@
+var Lexer = require('./parser/lexer.js');
+
 module.exports = function(){
-  return 'common'
+  return 'common' + 2;
 }

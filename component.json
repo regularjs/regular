@@ -4,6 +4,10 @@
     "main": "src/browser.js",
     "scripts": [
         "src/browser.js",
-        "src/common.js"
+        "src/common.js",
+        "src/util.js",
+        "src/parser/lexer.js",
+        "src/parser/node.js",
+        "src/parser/parser.js"
     ]
 }
