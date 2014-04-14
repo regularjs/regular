@@ -1,54 +1,17 @@
 var _ = require('../util.js');
 
-
-
-
-var ignoredRef = /\(\?\!|\(\?\:|\?\=/;
-
-
 function wrapHander(handler){
   return function(all){
-    return {
-      type: handler,
-      value: all
-    }
+    return {type: handler, value: all }
   }
 }
 function wrapKeyValue(key, num){
   return function(){
-    return {
-      type: key,
-      value: arguments[num]
-    }
+    return {type: key, value: arguments[num] }
   }
 }
 
 
-
-function findSubCapture(regStr) {
-  var left = 0,
-    right = 0,
-    len = regStr.length,
-    ignored = regStr.split(ignoredRef).length - 1; //忽略非捕获匹配
-  for (; len--;) {
-    var letter = regStr.charAt(len);
-    if (len === 0 || regStr.charAt(len - 1) !== "\\" || regStr.charAt(len+1) !== '?') { //不包括转义括号
-      if (letter === "(") left++;
-      if (letter === ")") right++;
-    }
-  }
-  if (left !== right) throw "RegExp: "+ regStr + "'s bracket is not marched";
-  else return left - ignored;
-};
-
-
-
-
-/**
- * [Lexer description]
- * @param {[type]} input [description]
- * @param {[type]} opts  [description]
- */
 function Lexer(input, opts){
   this.input = (input||'').trim();
   this.opts = opts || {};
@@ -112,7 +75,7 @@ lo.next = function(){
 }
 
 lo.error = function(msg){
-    throw "Parse Error: " + msg +  ':\n' + trackErrorPos(this.input, this.index);
+    throw "Parse Error: " + msg +  ':\n' + _.trackErrorPos(this.input, this.index);
 }
 
 lo._process = function(args, split){
@@ -131,9 +94,6 @@ lo._process = function(args, split){
     }
   }
   return token;
-}
-
-lo.addRule = function(rules, forbid){
 }
 /**
  * 进入某种状态
@@ -214,7 +174,7 @@ function setup(map){
       reg = reg.replace(/\{(\w+)\}/g, function(all, one){
         return typeof macro[one] == 'string'? escapeRegExp(macro[one]): String(macro[one]).slice(1,-1);
       })
-      retain = findSubCapture(reg) + 1; 
+      retain = _.findSubCapture(reg) + 1; 
       split.links.push([split.curIndex, retain, handler]); 
       split.curIndex += retain;
       trunks.push(reg);
@@ -263,6 +223,12 @@ var rules = {
     this.leave();
     return {type: 'TAG_CLOSE', value: one }
   }, 'TAG'],
+
+    // mode2's JST ENTER RULE
+  TAG_ENTER_JST: [/(?={BEGIN})/, function(all,one){
+    this.enter('JST');
+  }, 'TAG'],
+
 
   TAG_PUNCHOR: [/[>\/=]/, function(all){
     if(all === '>') this.leave();
@@ -331,6 +297,7 @@ var map1 = genMap([
   rules.TAG_OPEN,
   rules.TAG_CLOSE,
   rules.TAG_PUNCHOR,
+  rules.TAG_ENTER_JST,
   rules.TAG_SPACE,
 
   // JST

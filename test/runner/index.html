@@ -9,8 +9,17 @@
   <script src="terminator.js"></script>
   <script src="vendor/expect.js"></script>
   <script src="vendor/mocha.js"></script>
-  <script>mocha.setup('bdd')</script>
-  <script src="../spec/test.js"></script>
+  <script src="vendor/util.js"></script>
+  <script> 
+  function require_lib(src){
+    return require('terminator/src/'+ src)
+  }
+  mocha.setup('bdd'); 
+  </script>
+  <script src="../spec/browser-dom.js"></script>
+  <script src="../spec/test-util.js"></script>
+  <script src="../spec/test-lexer.js"></script>
+  <script src="../spec/test-parser.js"></script>
   <script>
     mocha.checkLeaks();
     mocha.globals(['terminator']);
@@ -18,3 +27,6 @@
   </script>
 </body>
 </html>
+
+
+

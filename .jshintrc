@@ -1,0 +1,16 @@
+{
+  "boss": true,
+  "curly": true,
+  "asi": true,
+  "eqeqeq": true,
+  "eqnull": true,
+  "expr": true,
+  "immed": true,
+  "noarg": true,
+  "mocha": true,
+  "quotmark": "double",
+  "smarttabs": true,
+  "trailing": true,
+  "unused": true,
+  "node": true
+}

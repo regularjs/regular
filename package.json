@@ -19,13 +19,14 @@
   "scripts": {},
   "devDependencies": {
     "gulp": "3.6.x",
-    "gulp-component": "^0.1.8",
-    "gulp-uglify": "^0.2.1",
-    "gulp-jshint": "^1.5.3",
-    "gulp-mocha": "^0.4.1",
-    "gulp-util": "^2.2.14",
-    "through2": "^0.4.1",
-    "mocha": "^1.18.2",
-    "expect.js": "^0.3.1"
+    "gulp-component": "~0.1.8",
+    "gulp-uglify": "~0.2.1",
+    "gulp-jshint": "~1.5.3",
+    "gulp-mocha": "~0.4.1",
+    "gulp-istanbul": "~0.1.1"
+    "gulp-util": "~2.2.14",
+    "through2": "~0.4.1",
+    "mocha": "~1.18.2",
+    "expect.js": "~0.3.1",
   }
 }

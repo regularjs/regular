@@ -1,6 +1,7 @@
 var fs = require('fs');
 var gulp = require('gulp');
 var component = require('gulp-component');
+var istanbul = require('gulp-istanbul');
 var jshint = require('gulp-jshint');
 var mocha = require('gulp-mocha');
 var uglify = require('gulp-uglify');
@@ -22,11 +23,7 @@ gulp.task('default', ['build'], function() {
 
 
 gulp.task('build', function(){
-
-  gulp.src(['src/**/*.js'])
-      .pipe(jshint())
-      .pipe(jshint.reporter('default'))
-
+  // form minify    
   gulp.src('./component.json')
     .pipe(component.scripts({
       standalone: 'terminator',
@@ -38,6 +35,13 @@ gulp.task('build', function(){
     .pipe(uglify())
     .pipe(wrap(signatrue))
     .pipe(gulp.dest('dist'))
+  // for test
+  gulp.src('./component.json')
+    .pipe(component.scripts({
+      name: 'terminator'
+    }))
+    .pipe(wrap(signatrue))
+    .pipe(gulp.dest('test/runner'))
 
 })
 
@@ -49,28 +53,39 @@ gulp.task('dev', function(){
 })
 
 gulp.task('dev-test', function(){
-  gulp.watch(['src/**/*.js', 'test/spec/**/*.js'], ['mocha'])
+  gulp.watch(['src/**/*.js', 'test/spec/**/*.js'], ['build','mocha'])
 })
 
 
 
-
-
-gulp.task('mocha', function() {
-  gulp.src('./component.json')
-    .pipe(component.scripts({
-      name: 'terminator'
-    }))
-    .pipe(wrap(signatrue))
-    .pipe(gulp.dest('test/runner'))
-
-  before_mocha.dirty();
-  return gulp.src(['test/spec/*.js'])
+gulp.task('jshint', function(){
+      // jshint
+  gulp.src(['src/**/*.js'])
       .pipe(jshint())
       .pipe(jshint.reporter('default'))
-      .pipe(mocha({ 
-        require: 'test/before_mocha.js',
-        reporter: 'list' }) )
+
+})
+
+gulp.task('coverage', function(cb){
+  before_mocha.dirty();
+  gulp.src(['src/**/*.js'])
+    .pipe(istanbul()) // Covering files
+    .on('end', function () {
+      gulp.src(['test/spec/test-*.js'])
+        .pipe(mocha())
+        .pipe(istanbul.writeReports('./test/coverage')) // Creating the reports after tests runned
+        .on('end', cb);
+    });
+})
+
+gulp.task('mocha', function() {
+
+  before_mocha.dirty();
+
+  return gulp.src(['test/spec/test-*.js'])
+      .pipe(jshint())
+      .pipe(jshint.reporter('default'))
+      .pipe(mocha({reporter: 'spec' }) )
       .on('error', function(){
         gutil.log.apply(this, arguments);
         console.log('\u0007');
