@@ -2,5 +2,6 @@
 *sublime*
 npm-debug.log
 test/tmp/*
+test/coverage/*
 
 
