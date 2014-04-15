@@ -60,13 +60,13 @@ gulp.task('dev-test', function(){
 
 gulp.task('jshint', function(){
       // jshint
-  gulp.src(['src/**/*.js'])
+  gulp.src(['src/**/*.js','test/spec/test-*.js'])
       .pipe(jshint())
       .pipe(jshint.reporter('default'))
 
 })
 
-gulp.task('coverage', function(cb){
+gulp.task('cover', function(cb){
   before_mocha.dirty();
   gulp.src(['src/**/*.js'])
     .pipe(istanbul()) // Covering files
@@ -83,8 +83,6 @@ gulp.task('mocha', function() {
   before_mocha.dirty();
 
   return gulp.src(['test/spec/test-*.js'])
-      .pipe(jshint())
-      .pipe(jshint.reporter('default'))
       .pipe(mocha({reporter: 'spec' }) )
       .on('error', function(){
         gutil.log.apply(this, arguments);

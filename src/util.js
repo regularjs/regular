@@ -1,5 +1,6 @@
 var _  = module.exports;
 var slice = [].slice;
+var o2str = ({}).toString;
 
 _.uid = (function(){
   var _uid=0;
@@ -128,4 +129,20 @@ _.findSubCapture = function (regStr) {
 _.assert = function(test, msg){
   if(!test) throw msg;
   return true;
+}
+
+_.walk = function(ast){
+  if(o2str.call(ast) === "[object Array]"){
+    var res = [];
+    for(var i = 0, len = ast.length; i < len; i++){
+      res.push(this.walk(ast[i]));
+    }
+    return this;
+  }
+  return this.walkers[ast.type || "default"].call(this, ast);
+}
+
+
+_.isEmpty = function(obj){
+  return !obj || obj.length === 0;
 }

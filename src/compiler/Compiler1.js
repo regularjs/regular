@@ -13,10 +13,19 @@ co.compile = function(){
 
 }
 
-co.walk = function(){
+co.walk =_.walk; 
 
+co.walkers = {
+  'default': function(){
+
+  },
+  'element': function(ast){
+
+  },
+  "list": function(){
+    
+  }
 }
-
 
 
 
