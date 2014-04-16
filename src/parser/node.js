@@ -7,6 +7,13 @@ module.exports = {
       children: children
     }
   },
+  attribute: function(name, value){
+    return {
+      type: 'attribute',
+      name: name,
+      value: value
+    }
+  },
   if: function(test, consequent, alternate){
     return {
       type: 'if',
@@ -21,6 +28,13 @@ module.exports = {
       sequence: sequence,
       variable: variable,
       body: body
+    }
+  },
+  expression: function(buffer, deps){
+    return {
+      type: "expression",
+      buffer: buffer,
+      deps: deps
     }
   },
   text: function(text){

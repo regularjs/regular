@@ -17,6 +17,9 @@
   },
   "homepage": "http://leeluolee.github.io/terminator",
   "scripts": {},
+  "bin": {
+    "terminator": "./bin/terminator"
+  },
   "devDependencies": {
     "gulp": "3.6.x",
     "gulp-component": "~0.1.8",

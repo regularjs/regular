@@ -9,6 +9,10 @@ _.uid = (function(){
   }
 })();
 
+_.varName = function(){
+  return 'var_' + (1000000+_.uid()).toString(36);
+}
+
 
 _.slice = function(obj, start, end){
   return slice.call(obj, start, end);
@@ -131,16 +135,25 @@ _.assert = function(test, msg){
   return true;
 }
 
-_.walk = function(ast){
-  if(o2str.call(ast) === "[object Array]"){
-    var res = [];
-    for(var i = 0, len = ast.length; i < len; i++){
-      res.push(this.walk(ast[i]));
-    }
-    return this;
-  }
-  return this.walkers[ast.type || "default"].call(this, ast);
+
+var walk = function(ast, arg){
 }
+
+_.walk = function(){
+  var walkers = {};
+  proto.walk = function walk(ast, arg){
+    if(o2str.call(ast) === "[object Array]"){
+      var res = [];
+      for(var i = 0, len = ast.length; i < len; i++){
+        res.push(this.walk(ast[i]));
+      }
+      return this;
+    }
+    return walkers[ast.type || "default"].call(this, ast, arg);
+  }
+  return walkers;
+}
+
 
 
 _.isEmpty = function(obj){
