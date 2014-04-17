@@ -31,6 +31,7 @@ wk.default = function(primary){
   var type = primary.type || typeof  primary;
   switch(type){
     case "number": 
+    case "number": 
       return primary;
   }
 }

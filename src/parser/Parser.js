@@ -119,7 +119,7 @@ op.statement = function(){
     case 'OPEN': 
       return this.directive();
     case 'EXPR_OPEN':
-      return this.inteplation();
+      return this.interplation();
     default:
       this.error('Unexpected token: '+ this.la())
   }
@@ -166,7 +166,7 @@ op.attvalue = function(){
       this.next();
       return ll.value;
     case "EXPR_OPEN":
-      return this.inteplation();
+      return this.interplation();
     default:
       this.error('Unexpected token: '+ this.la())
   }
@@ -183,7 +183,7 @@ op.directive = function(name){
   }
 }
 
-op.inteplation = function(){
+op.interplation = function(){
   this.match('EXPR_OPEN');
   var res = this.filter();
   this.match('END');

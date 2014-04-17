@@ -30,20 +30,21 @@ module.exports = {
       body: body
     }
   },
-  expression: function(buffer, deps){
+  expression: function(body, deps){
     return {
       type: "expression",
-      buffer: buffer,
+      body: body,
       deps: deps
     }
   },
   text: function(text){
     return text;
   },
-  inteplation: function(expression){
+  interplation: function(expression, escape){
     return {
-      type: 'inteplation',
-      expr:  expression
+      type: 'interplation',
+      expression:  expression,
+      escape: escape
     }
   },
   filter: function(object, filters){
@@ -80,6 +81,7 @@ module.exports = {
       right: right
     }
   },
+
   unary: function(op, arg){
     return {
       type: 'logic',

@@ -8,8 +8,8 @@
         "src/util.js",
         "src/env.js",
         "src/dom.js",
-        "src/parser/lexer.js",
+        "src/parser/Lexer.js",
         "src/parser/node.js",
-        "src/parser/parser.js"
+        "src/parser/Parser2.js"
     ]
 }

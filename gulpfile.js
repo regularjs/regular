@@ -33,8 +33,11 @@ gulp.task('build', function(){
     .pipe(gulp.dest('dist'))
     .pipe(wrap(mini))
     .pipe(uglify())
-    .pipe(wrap(signatrue))
     .pipe(gulp.dest('dist'))
+    .on('error', function(err){
+      console.log(err)
+    })
+
   // for test
   gulp.src('./component.json')
     .pipe(component.scripts({

@@ -210,14 +210,14 @@ require.register("terminator/src/browser.js", function(exports, require, module)
 var common = require("./common");
 });
 require.register("terminator/src/common.js", function(exports, require, module){
-var Lexer = require("./parser/lexer.js");
-var Parser = require("./parser/parser.js");
-
+var Lexer = require("./parser/Lexer.js");
+var Parser = require("./parser/Parser2.js");
 
 });
 require.register("terminator/src/util.js", function(exports, require, module){
 var _  = module.exports;
 var slice = [].slice;
+var o2str = ({}).toString;
 
 _.uid = (function(){
   var _uid=0;
@@ -225,6 +225,15 @@ _.uid = (function(){
     return _uid++;
   }
 })();
+
+_.varName = 'data';
+
+_.randomVar = function(){
+  return 'var_' + (1000000+_.uid()).toString(36);
+}
+
+
+_.host = "data";
 
 
 _.slice = function(obj, start, end){
@@ -245,52 +254,51 @@ _.extend = function( o1, o2, override ){
   return o1;
 }
 
-// // form acorn.js
-// // ---------------------
-// _.makePredicate = function makePredicate(words, prefix) {
-//     if (typeof words === "string") {
-//         words = words.split(" ");
-//     }
-//     var f = "",
-//     cats = [];
-//     out: for (var i = 0; i < words.length; ++i) {
-//         for (var j = 0; j < cats.length; ++j){
-//           if (cats[j][0].length === words[i].length) {
-//               cats[j].push(words[i]);
-//               continue out;
-//           }
-//         }
-//         cats.push([words[i]]);
-//     }
-//     function compareTo(arr) {
-//         if (arr.length === 1) return f += "return str === "" + arr[0] + "";";
-//         f += "switch(str){";
-//         for (var i = 0; i < arr.length; ++i){
-//            f += "case "" + arr[i] + "":";
-//         }
-//         f += "return true}return false;";
-//     }
+// form acorn.js
+_.makePredicate = function makePredicate(words, prefix) {
+    if (typeof words === "string") {
+        words = words.split(" ");
+    }
+    var f = "",
+    cats = [];
+    out: for (var i = 0; i < words.length; ++i) {
+        for (var j = 0; j < cats.length; ++j){
+          if (cats[j][0].length === words[i].length) {
+              cats[j].push(words[i]);
+              continue out;
+          }
+        }
+        cats.push([words[i]]);
+    }
+    function compareTo(arr) {
+        if (arr.length === 1) return f += "return str === " + arr[0] + ";";
+        f += "switch(str){";
+        for (var i = 0; i < arr.length; ++i){
+           f += "case '" + arr[i] + "':";
+        }
+        f += "return true}return false;";
+    }
 
-//     // When there are more than three length categories, an outer
-//     // switch first dispatches on the lengths, to save on comparisons.
-//     if (cats.length > 3) {
-//         cats.sort(function(a, b) {
-//             return b.length - a.length;
-//         });
-//         f += "var prefix = " + (prefix ? "true": "false") + ";if(prefix) str = str.replace(/^-(?:\\w+)-/,"");switch(str.length){";
-//         for (var i = 0; i < cats.length; ++i) {
-//             var cat = cats[i];
-//             f += "case " + cat[0].length + ":";
-//             compareTo(cat);
-//         }
-//         f += "}";
+    // When there are more than three length categories, an outer
+    // switch first dispatches on the lengths, to save on comparisons.
+    if (cats.length > 3) {
+        cats.sort(function(a, b) {
+            return b.length - a.length;
+        });
+        f += "var prefix = " + (prefix ? "true": "false") + ";if(prefix) str = str.replace(/^-(?:\\w+)-/,'');switch(str.length){";
+        for (var i = 0; i < cats.length; ++i) {
+            var cat = cats[i];
+            f += "case " + cat[0].length + ":";
+            compareTo(cat);
+        }
+        f += "}";
 
-//         // Otherwise, simply generate a flat `switch` statement.
-//     } else {
-//         compareTo(words);
-//     }
-//     return new Function("str", f);
-// }
+        // Otherwise, simply generate a flat `switch` statement.
+    } else {
+        compareTo(words);
+    }
+    return new Function("str", f);
+}
 
 // linebreak
 var lb = /\r\n|[\n\r\u2028\u2029]/g
@@ -317,7 +325,7 @@ _.trackErrorPos = function (input, pos){
   var max = pos + 10;
   if(max > nextLinePos) max = nextLinePos;
 
-  var remain = input.slice(min, max);
+  var remain = input.slice(min, max+1);
   var prefix = line + "> " + (min >= last? "..." : "")
   var postfix = max < nextLinePos ? "...": "";
 
@@ -342,10 +350,54 @@ _.findSubCapture = function (regStr) {
   else return left - ignored;
 };
 
+_.escapeRegExp = function(string){// Credit: XRegExp 0.6.1 (c) 2007-2008 Steven Levithan <http://stevenlevithan.com/regex/xregexp/> MIT License
+  return string.replace(/[-[\]{}()*+?.\\^$|,#\s]/g, function(match){
+    return '\\' + match;
+  });
+};
+
+
 
 _.assert = function(test, msg){
   if(!test) throw msg;
   return true;
+}
+
+
+
+_.walk = function(proto){
+  var walkers = {};
+  proto.walk = function walk(ast, arg){
+    if(o2str.call(ast) === "[object Array]"){
+      var res = [];
+      for(var i = 0, len = ast.length; i < len; i++){
+        res.push(this.walk(ast[i]));
+      }
+      return this;
+    }
+    return walkers[ast.type || "default"].call(this, ast, arg);
+  }
+  return walkers;
+}
+
+
+
+_.isEmpty = function(obj){
+  return !obj || obj.length === 0;
+}
+
+
+// simple get accessor
+_.compileGetter = function(paths){
+  var base = "obj";
+  var code = "if(" +base+ " != null";
+  for(var i = 0, len = paths.length; i < len; i++){
+    base += "['" +paths[i]+ "']";
+    code += "&&" + base + "!=null";
+  }
+  code += ") return " + base + ";\n";
+  code += "else return undefined";
+  return new Function("obj", code);
 }
 });
 require.register("terminator/src/env.js", function(exports, require, module){
@@ -365,17 +417,64 @@ require.register("terminator/src/dom.js", function(exports, require, module){
 var dom = module.exports;
 var env = require("./env.js");
 var _ = require("./util");
+var tNode = document.createElement('div')
 
 
+// createElement 
 dom.create = function(type, ns){
   return document[  !ns? "createElement": 
     _.assert( ns !== "svg" || evn.svg, "this browser has no svg support") && "createElementNS"](type, ns);
 }
 
-dom.attr = function(name, value){
-
+// documentFragment
+dom.fragment = function(){
+  return document.createFragment();
 }
 
+
+// attribute Setter & Getter
+dom.attr = function(node, name, value){
+  if(value === undefined){
+    return node.getAttribute(name, value);
+  }
+  if(value === null){
+    return node.removeAttribute(name)
+  }
+  return node.setAttribute(name, +value);
+}
+
+
+
+var textMap = {}
+if(tnode.textContent == null){
+  textMap[1] == 'innerText';
+  textMap[3] == 'nodeValue';
+}else{
+  textMap[1] = textMap[3] = 'textContent';
+}
+
+// textContent Setter & Getter
+dom.text = function(node, text){
+  if(text === undefined){
+    return node[textMap[node.type]]
+  }else{
+    node[textMap[node.type]] = text;
+  }
+}
+
+var mapSetterGetter = {
+  "html": "innerHTML"
+}
+
+dom.html = function(){
+  if(text === undefined){
+    return node.innerHTML
+  }else{
+    node.innerHTML = text;
+  }
+}
+
+// css Settle & Getter
 dom.css = function(name, value){
 
 }
@@ -394,7 +493,7 @@ dom.hasClass = function(){
 
 
 });
-require.register("terminator/src/parser/lexer.js", function(exports, require, module){
+require.register("terminator/src/parser/Lexer.js", function(exports, require, module){
 var _ = require('../util.js');
 
 function wrapHander(handler){
@@ -492,9 +591,6 @@ lo._process = function(args, split){
   }
   return token;
 }
-
-lo.addRule = function(rules, forbid){
-}
 /**
  * 进入某种状态
  * @param  {[type]} state [description]
@@ -572,7 +668,7 @@ function setup(map){
       if(_.typeOf(reg) == 'regexp') reg = reg.toString().slice(1, -1);
 
       reg = reg.replace(/\{(\w+)\}/g, function(all, one){
-        return typeof macro[one] == 'string'? escapeRegExp(macro[one]): String(macro[one]).slice(1,-1);
+        return typeof macro[one] == 'string'? _.escapeRegExp(macro[one]): String(macro[one]).slice(1,-1);
       })
       retain = _.findSubCapture(reg) + 1; 
       split.links.push([split.curIndex, retain, handler]); 
@@ -651,7 +747,7 @@ var rules = {
     this.leave('JST');
     return {type: 'END'}
   }, 'JST'],
-  JST_EXPR_OPEN: ['{BEGIN}([=-])',function(one){
+  JST_EXPR_OPEN: ['{BEGIN}([=-])',function(all, one){
     var escape = one == '=';
     return {
       type: 'EXPR_OPEN',
@@ -678,9 +774,8 @@ var rules = {
   JST_STRING:  [ /'([^']*)'|"([^"]*)"/, function(all, one, two){ //"'
     return {type: 'STRING', value: one || two}
   }, 'JST'],
-  JST_NUMBER: [/[0-9]*\.[0-9]+|[0-9]+/, function(all){
-    var value;
-    if(typeof (value = parseInt(all)) =='number' && value === value ) return {type: 'NUMBER', value: value}
+  JST_NUMBER: [/-?(?:[0-9]*\.[0-9]+|[0-9]+)/, function(all){
+    return {type: 'NUMBER', value: parseFloat(all, 10)};
   }, 'JST']
 }
 
@@ -731,11 +826,6 @@ var map2 = genMap([
   rules.JST_COMMENT
   ])
 
-function escapeRegExp(string){// Credit: XRegExp 0.6.1 (c) 2007-2008 Steven Levithan <http://stevenlevithan.com/regex/xregexp/> MIT License
-  return string.replace(/[-[\]{}()*+?.\\^$|,#\s]/g, function(match){
-    return '\\' + match;
-  });
-};
 
 
 module.exports = Lexer;
@@ -749,6 +839,13 @@ module.exports = {
       tag: name,
       attrs: attrs,
       children: children
+    }
+  },
+  attribute: function(name, value){
+    return {
+      type: 'attribute',
+      name: name,
+      value: value
     }
   },
   if: function(test, consequent, alternate){
@@ -767,13 +864,21 @@ module.exports = {
       body: body
     }
   },
+  expression: function(body, deps){
+    return {
+      type: "expression",
+      body: body,
+      deps: deps
+    }
+  },
   text: function(text){
     return text;
   },
-  inteplation: function(expression){
+  interplation: function(expression, escape){
     return {
-      type: 'inteplation',
-      expr:  expression
+      type: 'interplation',
+      expression:  expression,
+      escape: escape
     }
   },
   filter: function(object, filters){
@@ -810,6 +915,7 @@ module.exports = {
       right: right
     }
   },
+
   unary: function(op, arg){
     return {
       type: 'logic',
@@ -836,10 +942,13 @@ module.exports = {
 }
 
 });
-require.register("terminator/src/parser/parser.js", function(exports, require, module){
-var _ = require('../util.js');
-var node = require('./node.js');
-var Lexer = require('./lexer.js');
+require.register("terminator/src/parser/Parser2.js", function(exports, require, module){
+var _ = require("../util.js");
+var node = require("./node.js");
+var Lexer = require("./Lexer.js");
+var varName = _.varName;
+var isPath = _.makePredicate("STRING IDENT NUMBER");
+var isKeyWord = _.makePredicate("true false undefined null");
 
 
 function Parser(input, opts){
@@ -958,7 +1067,7 @@ op.statement = function(){
     case 'OPEN': 
       return this.directive();
     case 'EXPR_OPEN':
-      return this.inteplation();
+      return this.interplation();
     default:
       this.error('Unexpected token: '+ this.la())
   }
@@ -1005,7 +1114,7 @@ op.attvalue = function(){
       this.next();
       return ll.value;
     case "EXPR_OPEN":
-      return this.inteplation();
+      return this.interplation();
     default:
       this.error('Unexpected token: '+ this.la())
   }
@@ -1022,30 +1131,13 @@ op.directive = function(name){
   }
 }
 
-op.inteplation = function(){
-  this.match('EXPR_OPEN');
-  var res = this.filter();
+op.interplation = function(){
+  var escape = this.match('EXPR_OPEN').escape;
+  var res = this.expr(true);
   this.match('END');
-  return res;
+  return node.interplation(res, escape)
 }
 
-
-op.filter = function(){
-  var left = this.expr(),ll = this.eat('|');
-  if(ll){
-    var filters = [], filter;
-    do{
-      filter = {};
-      filter.name = this.match('IDENT').value;
-      filter.args = this.arguments('|');
-    }while(ll = this.eat('|'))
-    return node.filter(left, filters)
-  }else{
-    return left;
-  }
-  // fitler(object, filters)
-  
-}
 
 op.if = function(){
   this.next();
@@ -1106,22 +1198,58 @@ op.list = function(){
 
 
 
-// 
-// 
-op.expr = function(){
-  return this.condition();
+op.expr = function(filter){
+  this.deps = [];
+  var buffer;
+  if(filter){
+    buffer = this.filter();
+  }else{
+    buffer = this.condition();
+  }
+  if(!this.deps.length){
+    // means no dependency
+    return new Function("return (" + buffer + ")")();
+  }
+  return node.expression(buffer, this.deps)
 }
+
+op.filter = function(deps){
+  var left = this.condition(deps);
+  var ll = this.eat('|');
+  var buffer, attr;
+  if(ll){
+    buffer = [
+      ";(function(data){", 
+          "var ", attr = _.attrName(), "=", this.condition(deps), ";"]
+    do{
+
+      buffer.push(attr + " = tn.f[" + this.match('IDENT').value+ "](" + attr) ;
+      if(this.eat(':')){
+        buffer.push(", "+ this.arguments(deps, "|").join(",") + ");")
+      }else{
+        buffer.push(');');
+      }
+
+    }while(ll = this.eat('|'))
+    buffer.push("return " + attr + "}");
+    return buffer.join("");
+  }
+  return left;
+}
+
 
 // or
 // or ? assign : assign
-op.condition = function(){
+op.condition = function(deps){
+
   var test = this.or();
   if(this.eat('?')){
-    var consequent = this.assign();
-    this.match(':');
-    var alternate = this.assign();
-    return node.condition(test, consequent, alternate)
+    return [test + "?", 
+      this.assign(deps), 
+      this.match(":").type, 
+      this.condition(deps)].join("");
   }
+
   return test;
 }
 
@@ -1130,7 +1258,7 @@ op.condition = function(){
 op.or = function(){
   var left = this.and();
   if(this.eat('||')){
-    return node.logic('||',left, this.or())
+    return left + '||' + this.or();
   }
   return left;
 }
@@ -1139,7 +1267,7 @@ op.or = function(){
 op.and = function(){
   var left = this.equal();
   if(this.eat('&&')){
-    return node.logic('&&',left, this.and());
+    return left + '&&' + this.and();
   }
   return left;
 }
@@ -1153,7 +1281,7 @@ op.equal = function(){
   var left = this.relation();
   // @perf;
   if( ll = this.eat(['==','!=', '===', '!=='])){
-    return node.logic(ll.type, left, this.equal())
+    return left + ll.type + this.equal();
   }
   return left
 }
@@ -1166,7 +1294,7 @@ op.relation = function(){
   var left = this.additive(), la;
   // @perf
   if(ll = (this.eat(['<', '>', '>=', '<=']) || this.eat('IDENT', 'in') )){
-    return node.logic(ll.value, left, this.relation());
+    return left + ll.value + this.relation();
   }
   return left
 }
@@ -1177,7 +1305,7 @@ op.relation = function(){
 op.additive = function(){
   var left = this.multive() ,ll;
   if(ll= this.eat(['+','-']) ){
-    return node.binary(ll.type, left, this.additive());
+    return left + ll.value + this.additive();
   }
   return left
 }
@@ -1189,7 +1317,7 @@ op.additive = function(){
 op.multive = function(){
   var left = this.unary() ,ll;
   if( ll = this.eat(['*', '/' ,'%']) ){
-    return node.binary(ll.type, left, this.multive());
+    return left + ll.type + this.multive();
   }
   return left
 }
@@ -1201,7 +1329,7 @@ op.multive = function(){
 op.unary = function(){
   var ll;
   if(ll = this.eat(['+','-','~', '!'])){
-    return node.unary(ll.type, this.unary())
+    return '(' + ll.type + this.unary() + ')';
   }else{
     return this.member()
   }
@@ -1213,29 +1341,51 @@ op.unary = function(){
 // member [ expression ]
 // member . ident  
 
-op.member = function( base ){
-  base = base || this.primary();
-  var ll;
+op.member = function( base, pathes ){
+  // @TODO deps must determin in this step
+  var ll, path, value;
+  if(!base){
+    path = this.primary();
+    if(path.type === 'IDENT' && !isKeyWord(path.value)){
+      pathes = [];
+      pathes.push(path.value);
+      base = varName + "['" + path.value + "']";
+    }else{
+      if(path.type) return path.type === 'STRING'? "'"+path.value+"'": path.value;
+      else return path;
+    }
+  }
   if(ll = this.eat(['[', '.', '('])){
     switch(ll.type){
       case '.':
           // member(object, property, computed)
-        base = node.member( base, this.match('IDENT').value, false)
-        return this.member( base );
+        base +=  "['" + (value = this.match('IDENT').value) + "']";
+        pathes && pathes.push(value);
+        return this.member( base , pathes);
       case '[':
           // member(object, property, computed)
-        base = node.member( base, this.expr(), true )
+        path = this.expr();
+        base += "['" + (path.value || path) + "']";
+        if(pathes && path.type && isPath(path.type)){
+          pathes.push(path.value);
+        }else{
+          this.deps.push(pathes);
+          pathes = null;
+        }
         this.match(']')
-        return this.member(base );
+        return this.member(base, pathes);
       case '(':
         // call(callee, args)
-        base = node.call( base, this.arguments() )
+        base += "(" + this.arguments().join(",") + ")";
         this.match(')')
-        return this.member(base );
+        this.deps.push(pathes);
+        return this.member(base);
     }
   }
+  if(pathes) this.deps.push(pathes);
   return base;
 }
+
 /**
  * 
  */
@@ -1262,39 +1412,22 @@ op.arguments = function(end){
 op.primary = function(){
   var ll = this.ll();
   switch(ll.type){
-    case '{':
+    case "{":
       return this.object();
-    case '[':
+    case "[":
       return this.array();
-    case '(':
+    case "(":
       return this.paren();
     // literal or ident
-    case 'IDENT':
-      this.next();
-      switch(ll.value){
-        case 'true':
-          return true;
-        case 'fasle':
-          return false;
-        case 'null':
-          return null;
-        case 'undefined':
-          return undefined;
-        case 'this':
-          return node.this();
-        default: 
-          return ll;
-      }
-      break;
+    case "IDENT":
     case 'STRING':
     case 'NUMBER':
       this.next();
-      return ll.value;
+      return ll;
     default: 
       this.error('Unexpected Token: '+ ll.type);
   }
 }
-
 
 // object
 //  {propAssign [, propAssign] * [,]}
@@ -1308,39 +1441,38 @@ op.primary = function(){
 //  NUMBER
 
 op.object = function(){
-  this.match('{');
+  var code = [this.match('{').type];
+
   var ll;
   var props = [];
-  while(ll = this.eat(['STRING', 'IDENT', 'NUMBER'])){
-    this.match(':');
-    var value = this.condition();
-    this.eat(',')
-    props.push({key: ll.value, value: value});
+  while(true){
+    ll = this.eat(['STRING', 'IDENT', 'NUMBER']);
+    if(ll){
+      code.push(ll.value + this.match(':').type);
+      code.push(this.condition());
+      if(this.eat(",")) code.push(",");
+    }else{
+      code.push(this.match('}').type);
+      break;
+    }
   }
-  var len = props.length;
-  this.match('}');
-  return node.object(props)
+  return code.join("");
 }
 
 // array
 // [ assignment[,assignment]*]
 op.array = function(){
-  this.match('[');
-  var elements = [],item;
-  while(item = this.assign()){
-    this.eat(',')
-    elements.push(item);
+  var code = [this.match('[').type]
+  while(item = this.condition()){
+    code.push(item);
+    if(this.eat(',')) this.push(",");
   }
-  var len = elements.length;
-  this.match(']')
-  return node.array(elements);
+  code.push(this.match(']').type);
+  return code.join("");
 }
 // '(' expression ')'
 op.paren = function(){
-  this.match('(')
-  var res= this.expr();
-  this.match(')')
-  return res;
+  return this.match('(').type + this.expr() + this.match(')').type;
 }
 
 

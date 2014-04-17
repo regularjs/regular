@@ -172,7 +172,7 @@ function setup(map){
       if(_.typeOf(reg) == 'regexp') reg = reg.toString().slice(1, -1);
 
       reg = reg.replace(/\{(\w+)\}/g, function(all, one){
-        return typeof macro[one] == 'string'? escapeRegExp(macro[one]): String(macro[one]).slice(1,-1);
+        return typeof macro[one] == 'string'? _.escapeRegExp(macro[one]): String(macro[one]).slice(1,-1);
       })
       retain = _.findSubCapture(reg) + 1; 
       split.links.push([split.curIndex, retain, handler]); 
@@ -251,7 +251,7 @@ var rules = {
     this.leave('JST');
     return {type: 'END'}
   }, 'JST'],
-  JST_EXPR_OPEN: ['{BEGIN}([=-])',function(one){
+  JST_EXPR_OPEN: ['{BEGIN}([=-])',function(all, one){
     var escape = one == '=';
     return {
       type: 'EXPR_OPEN',
@@ -278,9 +278,8 @@ var rules = {
   JST_STRING:  [ /'([^']*)'|"([^"]*)"/, function(all, one, two){ //"'
     return {type: 'STRING', value: one || two}
   }, 'JST'],
-  JST_NUMBER: [/[0-9]*\.[0-9]+|[0-9]+/, function(all){
-    var value;
-    if(typeof (value = parseInt(all)) =='number' && value === value ) return {type: 'NUMBER', value: value}
+  JST_NUMBER: [/-?(?:[0-9]*\.[0-9]+|[0-9]+)/, function(all){
+    return {type: 'NUMBER', value: parseFloat(all, 10)};
   }, 'JST']
 }
 
@@ -331,11 +330,6 @@ var map2 = genMap([
   rules.JST_COMMENT
   ])
 
-function escapeRegExp(string){// Credit: XRegExp 0.6.1 (c) 2007-2008 Steven Levithan <http://stevenlevithan.com/regex/xregexp/> MIT License
-  return string.replace(/[-[\]{}()*+?.\\^$|,#\s]/g, function(match){
-    return '\\' + match;
-  });
-};
 
 
 module.exports = Lexer;

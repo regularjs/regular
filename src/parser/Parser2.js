@@ -1,6 +1,9 @@
-var _ = require('../util.js');
-var node = require('./node.js');
-var Lexer = require('./Lexer.js');
+var _ = require("../util.js");
+var node = require("./node.js");
+var Lexer = require("./Lexer.js");
+var varName = _.varName;
+var isPath = _.makePredicate("STRING IDENT NUMBER");
+var isKeyWord = _.makePredicate("true false undefined null");
 
 
 function Parser(input, opts){
@@ -119,7 +122,7 @@ op.statement = function(){
     case 'OPEN': 
       return this.directive();
     case 'EXPR_OPEN':
-      return this.inteplation();
+      return this.interplation();
     default:
       this.error('Unexpected token: '+ this.la())
   }
@@ -166,7 +169,7 @@ op.attvalue = function(){
       this.next();
       return ll.value;
     case "EXPR_OPEN":
-      return this.inteplation();
+      return this.interplation();
     default:
       this.error('Unexpected token: '+ this.la())
   }
@@ -183,11 +186,11 @@ op.directive = function(name){
   }
 }
 
-op.inteplation = function(){
-  this.match('EXPR_OPEN');
-  var res = this.expr();
+op.interplation = function(){
+  var escape = this.match('EXPR_OPEN').escape;
+  var res = this.expr(true);
   this.match('END');
-  return res;
+  return node.interplation(res, escape)
 }
 
 
@@ -250,14 +253,19 @@ op.list = function(){
 
 
 
-op.expr = function(){
-  var expr = node.expression("", deps)
-  var buffer = this.filter(deps);
-  if(!expr.deps.length){
-    // means no dependency
-    return new Function("return (" + expr.buffer + ")")();
+op.expr = function(filter){
+  this.deps = [];
+  var buffer;
+  if(filter){
+    buffer = this.filter();
+  }else{
+    buffer = this.condition();
   }
-  return expr;
+  if(!this.deps.length){
+    // means no dependency
+    return new Function("return (" + buffer + ")")();
+  }
+  return node.expression(buffer, this.deps)
 }
 
 op.filter = function(deps){
@@ -270,7 +278,7 @@ op.filter = function(deps){
           "var ", attr = _.attrName(), "=", this.condition(deps), ";"]
     do{
 
-      buffer.push(attr + " = tn.f[" + this.match('IDENT').value+ "](" + attr + "")
+      buffer.push(attr + " = tn.f[" + this.match('IDENT').value+ "](" + attr) ;
       if(this.eat(':')){
         buffer.push(", "+ this.arguments(deps, "|").join(",") + ");")
       }else{
@@ -296,16 +304,16 @@ op.condition = function(deps){
       this.match(":").type, 
       this.condition(deps)].join("");
   }
+
   return test;
 }
 
-// @TODO;
 // and
 // and && or
 op.or = function(){
   var left = this.and();
   if(this.eat('||')){
-    return node.logic('||',left, this.or())
+    return left + '||' + this.or();
   }
   return left;
 }
@@ -314,7 +322,7 @@ op.or = function(){
 op.and = function(){
   var left = this.equal();
   if(this.eat('&&')){
-    return node.logic('&&',left, this.and());
+    return left + '&&' + this.and();
   }
   return left;
 }
@@ -328,7 +336,7 @@ op.equal = function(){
   var left = this.relation();
   // @perf;
   if( ll = this.eat(['==','!=', '===', '!=='])){
-    return node.logic(ll.type, left, this.equal())
+    return left + ll.type + this.equal();
   }
   return left
 }
@@ -341,7 +349,7 @@ op.relation = function(){
   var left = this.additive(), la;
   // @perf
   if(ll = (this.eat(['<', '>', '>=', '<=']) || this.eat('IDENT', 'in') )){
-    return node.logic(ll.value, left, this.relation());
+    return left + ll.value + this.relation();
   }
   return left
 }
@@ -352,7 +360,7 @@ op.relation = function(){
 op.additive = function(){
   var left = this.multive() ,ll;
   if(ll= this.eat(['+','-']) ){
-    return node.binary(ll.type, left, this.additive());
+    return left + ll.value + this.additive();
   }
   return left
 }
@@ -364,7 +372,7 @@ op.additive = function(){
 op.multive = function(){
   var left = this.unary() ,ll;
   if( ll = this.eat(['*', '/' ,'%']) ){
-    return node.binary(ll.type, left, this.multive());
+    return left + ll.type + this.multive();
   }
   return left
 }
@@ -376,7 +384,7 @@ op.multive = function(){
 op.unary = function(){
   var ll;
   if(ll = this.eat(['+','-','~', '!'])){
-    return node.unary(ll.type, this.unary())
+    return '(' + ll.type + this.unary() + ')';
   }else{
     return this.member()
   }
@@ -388,29 +396,51 @@ op.unary = function(){
 // member [ expression ]
 // member . ident  
 
-op.member = function( base ){
-  base = base || this.primary();
-  var ll;
+op.member = function( base, pathes ){
+  // @TODO deps must determin in this step
+  var ll, path, value;
+  if(!base){
+    path = this.primary();
+    if(path.type === 'IDENT' && !isKeyWord(path.value)){
+      pathes = [];
+      pathes.push(path.value);
+      base = varName + "['" + path.value + "']";
+    }else{
+      if(path.type) return path.type === 'STRING'? "'"+path.value+"'": path.value;
+      else return path;
+    }
+  }
   if(ll = this.eat(['[', '.', '('])){
     switch(ll.type){
       case '.':
           // member(object, property, computed)
-        base = node.member( base, this.match('IDENT').value, false)
-        return this.member( base );
+        base +=  "['" + (value = this.match('IDENT').value) + "']";
+        pathes && pathes.push(value);
+        return this.member( base , pathes);
       case '[':
           // member(object, property, computed)
-        base = node.member( base, this.expr(), true )
+        path = this.expr();
+        base += "['" + (path.value || path) + "']";
+        if(pathes && path.type && isPath(path.type)){
+          pathes.push(path.value);
+        }else{
+          this.deps.push(pathes);
+          pathes = null;
+        }
         this.match(']')
-        return this.member(base );
+        return this.member(base, pathes);
       case '(':
         // call(callee, args)
-        base = node.call( base, this.arguments() )
+        base += "(" + this.arguments().join(",") + ")";
         this.match(')')
-        return this.member(base );
+        this.deps.push(pathes);
+        return this.member(base);
     }
   }
+  if(pathes) this.deps.push(pathes);
   return base;
 }
+
 /**
  * 
  */
@@ -437,39 +467,22 @@ op.arguments = function(end){
 op.primary = function(){
   var ll = this.ll();
   switch(ll.type){
-    case '{':
+    case "{":
       return this.object();
-    case '[':
+    case "[":
       return this.array();
-    case '(':
+    case "(":
       return this.paren();
     // literal or ident
-    case 'IDENT':
-      this.next();
-      switch(ll.value){
-        case 'true':
-          return true;
-        case 'fasle':
-          return false;
-        case 'null':
-          return null;
-        case 'undefined':
-          return undefined;
-        case 'this':
-          return node.this();
-        default: 
-          return ll;
-      }
-      break;
+    case "IDENT":
     case 'STRING':
     case 'NUMBER':
       this.next();
-      return ll.value;
+      return ll;
     default: 
       this.error('Unexpected Token: '+ ll.type);
   }
 }
-
 
 // object
 //  {propAssign [, propAssign] * [,]}
@@ -483,39 +496,38 @@ op.primary = function(){
 //  NUMBER
 
 op.object = function(){
-  this.match('{');
+  var code = [this.match('{').type];
+
   var ll;
   var props = [];
-  while(ll = this.eat(['STRING', 'IDENT', 'NUMBER'])){
-    this.match(':');
-    var value = this.condition();
-    this.eat(',')
-    props.push({key: ll.value, value: value});
+  while(true){
+    ll = this.eat(['STRING', 'IDENT', 'NUMBER']);
+    if(ll){
+      code.push(ll.value + this.match(':').type);
+      code.push(this.condition());
+      if(this.eat(",")) code.push(",");
+    }else{
+      code.push(this.match('}').type);
+      break;
+    }
   }
-  var len = props.length;
-  this.match('}');
-  return node.object(props)
+  return code.join("");
 }
 
 // array
 // [ assignment[,assignment]*]
 op.array = function(){
-  this.match('[');
-  var elements = [],item;
-  while(item = this.assign()){
-    this.eat(',')
-    elements.push(item);
+  var code = [this.match('[').type]
+  while(item = this.condition()){
+    code.push(item);
+    if(this.eat(',')) this.push(",");
   }
-  var len = elements.length;
-  this.match(']')
-  return node.array(elements);
+  code.push(this.match(']').type);
+  return code.join("");
 }
 // '(' expression ')'
 op.paren = function(){
-  this.match('(')
-  var res= this.expr();
-  this.match(')')
-  return res;
+  return this.match('(').type + this.expr() + this.match(')').type;
 }
 
 

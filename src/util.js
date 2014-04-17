@@ -9,9 +9,14 @@ _.uid = (function(){
   }
 })();
 
-_.varName = function(){
+_.varName = 'data';
+
+_.randomVar = function(){
   return 'var_' + (1000000+_.uid()).toString(36);
 }
+
+
+_.host = "data";
 
 
 _.slice = function(obj, start, end){
@@ -32,52 +37,51 @@ _.extend = function( o1, o2, override ){
   return o1;
 }
 
-// // form acorn.js
-// // ---------------------
-// _.makePredicate = function makePredicate(words, prefix) {
-//     if (typeof words === "string") {
-//         words = words.split(" ");
-//     }
-//     var f = "",
-//     cats = [];
-//     out: for (var i = 0; i < words.length; ++i) {
-//         for (var j = 0; j < cats.length; ++j){
-//           if (cats[j][0].length === words[i].length) {
-//               cats[j].push(words[i]);
-//               continue out;
-//           }
-//         }
-//         cats.push([words[i]]);
-//     }
-//     function compareTo(arr) {
-//         if (arr.length === 1) return f += "return str === "" + arr[0] + "";";
-//         f += "switch(str){";
-//         for (var i = 0; i < arr.length; ++i){
-//            f += "case "" + arr[i] + "":";
-//         }
-//         f += "return true}return false;";
-//     }
+// form acorn.js
+_.makePredicate = function makePredicate(words, prefix) {
+    if (typeof words === "string") {
+        words = words.split(" ");
+    }
+    var f = "",
+    cats = [];
+    out: for (var i = 0; i < words.length; ++i) {
+        for (var j = 0; j < cats.length; ++j){
+          if (cats[j][0].length === words[i].length) {
+              cats[j].push(words[i]);
+              continue out;
+          }
+        }
+        cats.push([words[i]]);
+    }
+    function compareTo(arr) {
+        if (arr.length === 1) return f += "return str === " + arr[0] + ";";
+        f += "switch(str){";
+        for (var i = 0; i < arr.length; ++i){
+           f += "case '" + arr[i] + "':";
+        }
+        f += "return true}return false;";
+    }
 
-//     // When there are more than three length categories, an outer
-//     // switch first dispatches on the lengths, to save on comparisons.
-//     if (cats.length > 3) {
-//         cats.sort(function(a, b) {
-//             return b.length - a.length;
-//         });
-//         f += "var prefix = " + (prefix ? "true": "false") + ";if(prefix) str = str.replace(/^-(?:\\w+)-/,"");switch(str.length){";
-//         for (var i = 0; i < cats.length; ++i) {
-//             var cat = cats[i];
-//             f += "case " + cat[0].length + ":";
-//             compareTo(cat);
-//         }
-//         f += "}";
+    // When there are more than three length categories, an outer
+    // switch first dispatches on the lengths, to save on comparisons.
+    if (cats.length > 3) {
+        cats.sort(function(a, b) {
+            return b.length - a.length;
+        });
+        f += "var prefix = " + (prefix ? "true": "false") + ";if(prefix) str = str.replace(/^-(?:\\w+)-/,'');switch(str.length){";
+        for (var i = 0; i < cats.length; ++i) {
+            var cat = cats[i];
+            f += "case " + cat[0].length + ":";
+            compareTo(cat);
+        }
+        f += "}";
 
-//         // Otherwise, simply generate a flat `switch` statement.
-//     } else {
-//         compareTo(words);
-//     }
-//     return new Function("str", f);
-// }
+        // Otherwise, simply generate a flat `switch` statement.
+    } else {
+        compareTo(words);
+    }
+    return new Function("str", f);
+}
 
 // linebreak
 var lb = /\r\n|[\n\r\u2028\u2029]/g
@@ -104,7 +108,7 @@ _.trackErrorPos = function (input, pos){
   var max = pos + 10;
   if(max > nextLinePos) max = nextLinePos;
 
-  var remain = input.slice(min, max);
+  var remain = input.slice(min, max+1);
   var prefix = line + "> " + (min >= last? "..." : "")
   var postfix = max < nextLinePos ? "...": "";
 
@@ -129,6 +133,13 @@ _.findSubCapture = function (regStr) {
   else return left - ignored;
 };
 
+_.escapeRegExp = function(string){// Credit: XRegExp 0.6.1 (c) 2007-2008 Steven Levithan <http://stevenlevithan.com/regex/xregexp/> MIT License
+  return string.replace(/[-[\]{}()*+?.\\^$|,#\s]/g, function(match){
+    return '\\' + match;
+  });
+};
+
+
 
 _.assert = function(test, msg){
   if(!test) throw msg;
@@ -136,10 +147,8 @@ _.assert = function(test, msg){
 }
 
 
-var walk = function(ast, arg){
-}
 
-_.walk = function(){
+_.walk = function(proto){
   var walkers = {};
   proto.walk = function walk(ast, arg){
     if(o2str.call(ast) === "[object Array]"){
@@ -158,4 +167,18 @@ _.walk = function(){
 
 _.isEmpty = function(obj){
   return !obj || obj.length === 0;
+}
+
+
+// simple get accessor
+_.compileGetter = function(paths){
+  var base = "obj";
+  var code = "if(" +base+ " != null";
+  for(var i = 0, len = paths.length; i < len; i++){
+    base += "['" +paths[i]+ "']";
+    code += "&&" + base + "!=null";
+  }
+  code += ") return " + base + ";\n";
+  code += "else return undefined";
+  return new Function("obj", code);
 }
