@@ -1,7 +1,7 @@
 // compiler1 for first 
 var _ = require('../util.js'); 
 var dom = require('../dom');
-var Parser = require('../parser/parser.js');
+var Parser = require('../parser/Parser.js');
 
 
 function Compiler(input, opts){
@@ -11,70 +11,54 @@ function Compiler(input, opts){
 var co = Compiler.prototype;
 
 
-function data(){
-
-}
 
 co.compile = function(){
-  this.buffer=["var r = terminator.runtime;d = r.dom;u=r.util;"]; 
+  var prefix = "var r=this.r, d=r.dom, u=r.util, el=d.fragement(); "; 
   var code = this.walk(this.ast);
-  return new Function('data', code);
+  var suffix = "";
+  var result = prefix + code.join("") + suffix;
+  return new Function(_.varName, result);
 }
 
-co.walk =_.walk; 
-
-// how to get object in angular?  text based template can do!!
-tn.decorate('style', function(node, value){
-  if(typeof value == 'object'){
-
-  }else{
-
-  }
-});
+var wk = _.walk(co); 
 
 
+wk.default = function(){
 
+}
 
-co.walkers = {
-  default: function(ast){
+wk.element = function(ast){
+  var attrs = ast.attrs;
+  var elName = _.randomVar('el');
+  var fragName = _.randomVar('fr');
+  var code  = ["\nvar ",elName," = d.create('" + ast.tag +"');"]
 
-  },
-  element: function(ast){
-    var attrs = ast.attrs;
-
-    var code  = ["var el,attrs, dcor;d.create(" + ast.tag +');']
-    if(attrs){
-      for(var i = 0, len; i < attrs; i++){
-        var attr = attrs[i];
-        code.push("if(dcor = d.decorate(" + attr.name + ")){")
-
-        code.push("}else{d.attr("+['el',attr.name, attr.value +")}")
-      }
+  if(attrs){
+    for(var i = 0, len = attrs.length; i < len; i++){
+      var attr = attrs[i];
+      code.push(" d.attr("+ elName +",'" + attr.name +"','"+ attr.value +"');")
     }
-    
-    code.push()
-    this.buffer.push()
-    var element = dom.create(ast.tag);
-    this.walk(attrs, element)
-    var fragment = this.walk(ast.children);
-  },
-  attribute: function(ast, element){
-    if(attributeHooks[ast.name]) attr
-    else dom.attr(element, ast.name, ast.value);
-  },
-  list: function(ast){
-
-  },
-  if: function(ast){
-
-  },
-  text: function(){
-
   }
+  code.push(
+      "var ", fragName, "=d.fragement();",
+      "\nthis.enter(" + fragName + ");"
+      );
+  code.push.apply(code, this.walk(ast.children));
+  code.push("\nthis.leave(" + fragName + ");");
+
+  return code.join("")
+}
+
+wk.interplation = function(ast){
+
+}
+
+wk.expression = function(){
+
 }
 
 
-attributeHooks = {
+var attributeHooks = {
   'style': function(value){
     this.watch(value, function(){
 

@@ -10,9 +10,9 @@ _.uid = (function(){
 })();
 
 _.varName = 'data';
-
-_.randomVar = function(){
-  return 'var_' + (1000000+_.uid()).toString(36);
+// randomVar
+_.randomVar = function(suffix){
+  return (suffix || "var") + "_" + _.uid().toString(36);
 }
 
 
@@ -156,7 +156,7 @@ _.walk = function(proto){
       for(var i = 0, len = ast.length; i < len; i++){
         res.push(this.walk(ast[i]));
       }
-      return this;
+      return res;
     }
     return walkers[ast.type || "default"].call(this, ast, arg);
   }

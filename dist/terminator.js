@@ -209,11 +209,15 @@ require.relative = function(parent) {
   return localRequire;
 };
 require.register("terminator/src/browser.js", function(exports, require, module){
-var common = require("./common");
+var runtime = require("./common");
+
+
+exports.dom = require('./dom.js');
+exports.dom = require('./dom.js');
 });
 require.register("terminator/src/common.js", function(exports, require, module){
 var Lexer = require("./parser/Lexer.js");
-var Parser = require("./parser/Parser2.js");
+var Parser = require("./parser/Parser.js");
 
 });
 require.register("terminator/src/util.js", function(exports, require, module){
@@ -229,9 +233,9 @@ _.uid = (function(){
 })();
 
 _.varName = 'data';
-
-_.randomVar = function(){
-  return 'var_' + (1000000+_.uid()).toString(36);
+// randomVar
+_.randomVar = function(suffix){
+  return (suffix || "var") + "_" + _.uid().toString(36);
 }
 
 
@@ -375,7 +379,7 @@ _.walk = function(proto){
       for(var i = 0, len = ast.length; i < len; i++){
         res.push(this.walk(ast[i]));
       }
-      return this;
+      return res;
     }
     return walkers[ast.type || "default"].call(this, ast, arg);
   }
@@ -448,7 +452,7 @@ dom.attr = function(node, name, value){
 
 
 var textMap = {}
-if(tnode.textContent == null){
+if(tNode.textContent == null){
   textMap[1] == 'innerText';
   textMap[3] == 'nodeValue';
 }else{
@@ -732,6 +736,9 @@ var rules = {
     if(all === '>') this.leave();
     return {type: all, value: all }
   }, 'TAG'],
+  TAG_STRING:  [ /'([^']*)'|"([^"]*)"/, function(all, one, two){ //"'
+    return {type: 'STRING', value: one || two}
+  }, 'TAG'],
 
   TAG_SPACE: [/[ \r\n\f]+/, null, 'TAG'],
 
@@ -795,6 +802,7 @@ var map1 = genMap([
   rules.TAG_CLOSE,
   rules.TAG_PUNCHOR,
   rules.TAG_ENTER_JST,
+  rules.TAG_STRING,
   rules.TAG_SPACE,
 
   // JST
@@ -944,7 +952,7 @@ module.exports = {
 }
 
 });
-require.register("terminator/src/parser/Parser2.js", function(exports, require, module){
+require.register("terminator/src/parser/Parser.js", function(exports, require, module){
 var _ = require("../util.js");
 var node = require("./node.js");
 var Lexer = require("./Lexer.js");
@@ -1481,7 +1489,110 @@ op.paren = function(){
 
 module.exports = Parser;
 
+});
+require.register("terminator/src/compiler/Compiler1.js", function(exports, require, module){
+// compiler1 for first 
+var _ = require('../util.js'); 
+var dom = require('../dom');
+var Parser = require('../parser/Parser.js');
 
+
+function Compiler(input, opts){
+   this.ast = new Parser(input, opts).parse();
+}
+
+var co = Compiler.prototype;
+
+
+
+co.compile = function(){
+  var prefix = "var r=this.r, d=r.dom, u=r.util, el=d.fragement(); "; 
+  var code = this.walk(this.ast);
+  var suffix = "";
+  var result = prefix + code.join("") + suffix;
+  return new Function(_.varName, result);
+}
+
+var wk = _.walk(co); 
+
+
+wk.default = function(){
+
+}
+
+wk.element = function(ast){
+  var attrs = ast.attrs;
+  var elName = _.randomVar('el');
+  var fragName = _.randomVar('fr');
+  var code  = ["\nvar ",elName," = d.create('" + ast.tag +"');"]
+
+  if(attrs){
+    for(var i = 0, len = attrs.length; i < len; i++){
+      var attr = attrs[i];
+      code.push(" d.attr("+ elName +",'" + attr.name +"','"+ attr.value +"');")
+    }
+  }
+  code.push(
+      "var ", fragName, "=d.fragement();",
+      "\nthis.enter(" + fragName + ");"
+      );
+  code.push.apply(code, this.walk(ast.children));
+  code.push("\nthis.leave(" + fragName + ");");
+
+  return code.join("")
+}
+
+wk.interplation = function(ast){
+
+}
+
+wk.expression = function(){
+
+}
+
+
+var attributeHooks = {
+  'style': function(value){
+    this.watch(value, function(){
+
+    })
+  },
+  'on-tap': function(){
+
+  }
+}
+
+
+
+
+
+
+module.exports = Compiler;
+});
+require.register("terminator/src/compiler/Compiler2.js", function(exports, require, module){
+var _ = require('../util.js'); 
+var Parser = require('../parser/Parser.js');
+
+
+function Compiler(input){
+   this.ast = new Parser(input, {mode: 2}).parse();
+}
+
+var co = Compiler.prototype;
+
+co.compile = function(){
+
+}
+
+co.walk =_.walk; 
+
+
+
+
+
+
+
+module.exports = Compiler;
 });
 require.alias("terminator/src/browser.js", "terminator/index.js");
 if (typeof exports == 'object') {

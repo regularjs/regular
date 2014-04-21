@@ -1,3 +1,7 @@
 // helper used to runtime render
 
-exports.noop = function(){};
+// runtime
+exports.r = require("./runtime.js");
+// dom
+exports.d = require("./dom.js");
+

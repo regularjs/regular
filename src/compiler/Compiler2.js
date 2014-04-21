@@ -1,5 +1,5 @@
 var _ = require('../util.js'); 
-var Parser = require('../parser/parser.js');
+var Parser = require('../parser/Parser.js');
 
 
 function Compiler(input){
@@ -13,14 +13,6 @@ co.compile = function(){
 }
 
 co.walk =_.walk; 
-
-co.walkers = {
-  
-}
-
-
-
-
 
 
 module.exports = Compiler;

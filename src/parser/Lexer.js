@@ -234,6 +234,9 @@ var rules = {
     if(all === '>') this.leave();
     return {type: all, value: all }
   }, 'TAG'],
+  TAG_STRING:  [ /'([^']*)'|"([^"]*)"/, function(all, one, two){ //"'
+    return {type: 'STRING', value: one || two}
+  }, 'TAG'],
 
   TAG_SPACE: [/[ \r\n\f]+/, null, 'TAG'],
 
@@ -297,6 +300,7 @@ var map1 = genMap([
   rules.TAG_CLOSE,
   rules.TAG_PUNCHOR,
   rules.TAG_ENTER_JST,
+  rules.TAG_STRING,
   rules.TAG_SPACE,
 
   // JST

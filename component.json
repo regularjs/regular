@@ -5,11 +5,13 @@
     "scripts": [
         "src/browser.js",
         "src/common.js",
-        "src/util.js",
+        "src/util.js"   ,
         "src/env.js",
         "src/dom.js",
         "src/parser/Lexer.js",
         "src/parser/node.js",
-        "src/parser/Parser2.js"
+        "src/parser/Parser.js",
+        "src/compiler/Compiler1.js",
+        "src/compiler/Compiler2.js"
     ]
 }

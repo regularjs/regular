@@ -1,5 +1,5 @@
 
-var Parser = require_lib("parser/Parser2.js");
+var Parser = require_lib("parser/Parser.js");
 var node = require_lib("parser/node.js");
 var _ = require_lib("util.js");
 
@@ -57,6 +57,9 @@ describe('Parse JST', function(){
   describe('mode 1 and mode2 should work as expected', function(){
     it("complex input should parse under mode 1 and 2", function(){
       var input = "{if 1 > test}<div data=data>{-dadad}</div> {else} hello{/if}";
+
+      var json = p(new Array(100).join(input))
+
       expect( p(input) ).eql([
         node.if(
             node.expression("1>"+_.varName+"['test']",["test"]),

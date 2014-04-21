@@ -30,7 +30,7 @@ dom.attr = function(node, name, value){
 
 
 var textMap = {}
-if(tnode.textContent == null){
+if(tNode.textContent == null){
   textMap[1] == 'innerText';
   textMap[3] == 'nodeValue';
 }else{
