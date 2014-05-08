@@ -16,6 +16,8 @@ function Lexer(input, opts){
   this.input = (input||'').trim();
   this.opts = opts || {};
   this.map = this.opts.mode != 2?  map1: map2;
+  this.states = ['INIT']
+  if(opts.state) this.states.push(opts.state);
 }
 
 var lo = Lexer.prototype
@@ -38,7 +40,6 @@ lo.lex = function(str){
   // 初始化
   this.index=0;
 
-  this.states = ['INIT']
   while(str){
 
     state = this.state();
@@ -75,7 +76,7 @@ lo.next = function(){
 }
 
 lo.error = function(msg){
-    throw "Parse Error: " + msg +  ':\n' + _.trackErrorPos(this.input, this.index);
+  throw "Parse Error: " + msg +  ':\n' + _.trackErrorPos(this.input, this.index);
 }
 
 lo._process = function(args, split){
@@ -120,19 +121,21 @@ lo.state = function(){
  * 退出某种状态
  * @return {[type]}
  */
-lo.leave = function(){
-  this.states.pop();
+lo.leave = function(state){
+  var states = this.states;
+  if(!state || states[states.length-1] === state) states.pop()
 }
 
 var macro = {
-  'BEGIN': '{',
-  'END': '}',
+  'BEGIN': '{{',
+  'END': '}}',
   //http://www.w3.org/TR/REC-xml/#NT-Name
   // ":" | [A-Z] | "_" | [a-z] | [#xC0-#xD6] | [#xD8-#xF6] | [#xF8-#x2FF] | [#x370-#x37D] | [#x37F-#x1FFF] | [#x200C-#x200D] | [#x2070-#x218F] | [#x2C00-#x2FEF] | [#x3001-#xD7FF] | [#xF900-#xFDCF] | [#xFDF0-#xFFFD] | [#x10000-#xEFFFF]
   // 暂时不这么严格，提取合适范围
   // 'NAME': /(?:[:_A-Za-z\xC0-\u2FEF\u3001-\uD7FF\uF900-\uFFFF][-\.:_0-9A-Za-z\xB7\xC0-\u2FEF\u3001-\uD7FF\uF900-\uFFFF]*)/
   'NAME': /(?:[:_A-Za-z][-\.:_0-9A-Za-z]*)/,
-  'IDENT': /[\$_A-Za-z][-_0-9A-Za-z\$]*/
+  'IDENT': /[\$_A-Za-z][-_0-9A-Za-z\$]*/,
+  'SPACE': /[\r\n\f ]/
 }
 
 function genMap(rules){
@@ -238,15 +241,21 @@ var rules = {
     return {type: 'STRING', value: one || two}
   }, 'TAG'],
 
-  TAG_SPACE: [/[ \r\n\f]+/, null, 'TAG'],
+  TAG_SPACE: [/{SPACE}+/, null, 'TAG'],
 
   // 3. JST
   // -------------------
   JST_COMMENT: [/{!([^\x00]*?)!}/, null, 'JST'],
 
-  JST_OPEN: ['{BEGIN}\s*({IDENT})', function(all, name){
+  JST_OPEN: ['{BEGIN}#{SPACE}*({IDENT})', function(all, name){
     return {
       type: 'OPEN',
+      value: name
+    }
+  }, 'JST'],
+  JST_PART_OPEN: ['{BEGIN}>{SPACE}*({IDENT})', function(all, name){
+    return {
+      type: 'PART_OPEN',
       value: name
     }
   }, 'JST'],
@@ -254,19 +263,19 @@ var rules = {
     this.leave('JST');
     return {type: 'END'}
   }, 'JST'],
-  JST_EXPR_OPEN: ['{BEGIN}([=-])',function(all, one){
-    var escape = one == '=';
-    return {
-      type: 'EXPR_OPEN',
-      escape: escape
-    }
-  }, 'JST'],
 
   JST_CLOSE: [/{BEGIN}\s*\/\s*({IDENT})\s*{END}/, function(all, one){
     this.leave('JST');
     return {
       type: 'CLOSE',
       value: one
+    }
+  }, 'JST'],
+  JST_EXPR_OPEN: ['{BEGIN}',function(all, one){
+    var escape = one == '=';
+    return {
+      type: 'EXPR_OPEN',
+      escape: escape
     }
   }, 'JST'],
 
@@ -305,11 +314,12 @@ var map1 = genMap([
 
   // JST
   rules.JST_OPEN,
+  rules.JST_PART_OPEN,
+  rules.JST_CLOSE,
   rules.JST_EXPR_OPEN,
   rules.JST_IDENT,
   rules.JST_SPACE,
   rules.JST_LEAVE,
-  rules.JST_CLOSE,
   rules.JST_NUMBER,
   rules.JST_PUNCHOR,
   rules.JST_STRING,
@@ -323,11 +333,12 @@ var map2 = genMap([
   rules.TEXT,
   // JST
   rules.JST_OPEN,
+  rules.JST_PART_OPEN,
+  rules.JST_CLOSE,
   rules.JST_EXPR_OPEN,
   rules.JST_IDENT,
   rules.JST_SPACE,
   rules.JST_LEAVE,
-  rules.JST_CLOSE,
   rules.JST_NUMBER,
   rules.JST_PUNCHOR,
   rules.JST_STRING,

@@ -8,6 +8,7 @@
         "src/util.js"   ,
         "src/env.js",
         "src/dom.js",
+        "src/Scope.js",
         "src/parser/Lexer.js",
         "src/parser/node.js",
         "src/parser/Parser.js",

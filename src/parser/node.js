@@ -30,21 +30,22 @@ module.exports = {
       body: body
     }
   },
-  expression: function(body, deps){
+  expression: function(get, set,  depend){
     return {
       type: "expression",
-      body: body,
-      deps: deps
+      get: get,
+      set: set,
+      depend: depend
+
     }
   },
   text: function(text){
     return text;
   },
-  interplation: function(expression, escape){
+  interplation: function(expression){
     return {
       type: 'interplation',
-      expression:  expression,
-      escape: escape
+      expression:  expression
     }
   },
   filter: function(object, filters){

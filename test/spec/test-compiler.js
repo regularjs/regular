@@ -1,21 +1,35 @@
-var Compiler1 = require_lib('compiler/Compiler1.js');
-var Compiler2 = require_lib('compiler/Compiler2.js');
+var Termin = require_lib('common.js');
 
-var c = function(str){
-  return new Compiler1(str).compile();
+var c = function(str,data){
+  return new Termin(str,data);
 }
+
 
 
 
 describe("Compiler1 Test", function(){
   var input = 
-    "<div ng-repeat='hello' hello={-hello} ng-class={= hello? 'name': 'go'}>\
-        <div ng-if='test'>hello</div>\
-     </div>"
+    "<div ng-repeat='hello' hello={{ this.go() }} proxy={{ {'click .j-click' : go(1)} }} src={{hello}} t-class={{ hello? 'name': 'go' }}>\
+      <div t-click='hello'> {{hello + this.go()}} </div>\
+      <input type='text' t-model={{dada}}/>\
+      <textarea></textarea>\
+    </div>";
 
-   console.log(c(input));
+  var input2 =
+    "{{#list list as hello}}haah"+input+"dhadha{{/list}}";
+
+  var Modal = Termin.derive({template: input, go:function(){return 1}})
+
   it("pure xml lex should return diff tokens under mode 1 and 2", function(){
-   
-  })
+    var tn = new Modal({hello: 100000});
+    var tn2 = new Modal(input2, {list: ["1","2","3"]});
+    console.log(tn2)
 
+    // window.tn = tn;
+    window.tn2 = tn2;
+
+    tn.set('hello', 20000000000000000);
+  })
 })
+
+

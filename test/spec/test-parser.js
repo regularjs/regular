@@ -38,10 +38,10 @@ describe("Parse XML", function(){
 
 
   it('if directive should parse as expect', function(){
-    var if_input = "{if test}hello{else}<div>{-dadad}</div>{/if}";
-    var if_else_input = "{if test}hello{else}<div>{-dadad}</div>{/if}";
-    var if_elseif_input = "{if test}hello{else}<div>{-dadad}</div>{/if}";
-    var error_input = "{if}hello{else}<div>{=dadad}</div>{/if}";
+    var if_input = "{#if test}hello{#else}<div>{dadad}</div>{/if}";
+    var if_else_input = "{#if test}hello{#else}<div>{dadad}</div>{/if}";
+    var if_elseif_input = "{#if test}hello{#else}<div>{dadad}</div>{/if}";
+    var error_input = "{#if}hello{else}<div>{dadad}</div>{/if}";
 
 
     expect(function(){
@@ -56,9 +56,17 @@ describe('Parse JST', function(){
 
   describe('mode 1 and mode2 should work as expected', function(){
     it("complex input should parse under mode 1 and 2", function(){
-      var input = "{if 1 > test}<div data=data>{-dadad}</div> {else} hello{/if}";
+      var input = "{#if 1 > test}<div data=data>{this.dadad() + data}</div> {#else} hello{/if}";
 
       var json = p(new Array(100).join(input))
+      // console.log(JSON.stringify(p(input),null, 4))
+      // console.log(JSON.stringify(
+      //   node.if(
+      //       node.expression("1>"+_.varName+"['test']",["test"]),
+      //       [node.element("div", undefined, [{"type":"IDENT","value":"dadad","pos":26}])," "], 
+      //       [" hello"])
+      //   ,null, 4)
+      // )
 
       expect( p(input) ).eql([
         node.if(
@@ -84,17 +92,26 @@ describe("Parse Expression", function(){
   describe('Expression Syntax should equal as Javascript Expression', function(){
 
     it("no constant interplation should return expression when no genertic", function(){
-      var input_dot_call = "{-hello.haha('hahaha') + 1 + 1}";
-      var input_call_call = "{= hello('name')(1,2,3,4).haha}"
-      var input_relation_ident = "{= hello == true == undefined == null }"
+      var input_dot_call = "{hello.haha('hahaha') + 1 + 1}";
+      var input_call_call = "{hello('name')(1,2,3,4).haha}"
+      var input_relation_ident = "{hello == true == undefined == null }"
+      var input_this_call = "{this.hello(data+'1'+3)[1+2+'1234'] == true == undefined == null }"
+      var input_native_fn = "{Math.random('haha')}"
+
       eqExp(input_dot_call, _.varName + "['hello']['haha']('hahaha')+1+1");
       eqExp(input_call_call, _.varName + "['hello']('name')(1,2,3,4)['haha']");
       eqExp(input_relation_ident, _.varName + "['hello']==true==undefined==null");
+
+      console.log(p(input_dot_call));
+      console.log(p(input_call_call));
+      console.log(p(input_relation_ident));
+      console.log(p(input_this_call));
+      console.log(p(input_native_fn));
     });
 
     it("constant interplation should return value", function(){
-      var input_num = "{- -1 + 1 + 1}";
-      var input_str = "{= 'a' + 'b' + 1}"
+      var input_num = "{ -1 + 1 + 1}";
+      var input_str = "{ 'a' + 'b' + 1}"
       expect(p(input_num)).eql(
         [node.interplation(1, false)]
       );

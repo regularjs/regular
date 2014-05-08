@@ -3,6 +3,12 @@ var env = require("./env.js");
 var _ = require("./util");
 var tNode = document.createElement('div')
 
+dom.tNode = tNode;
+
+dom.msie = parseInt((/msie (\d+)/.exec(navigator.userAgent.toLowerCase()) || [])[1]);
+if (isNaN(dom.msie)) {
+  dom.msie = parseInt((/trident\/.*; rv:(\d+)/.exec(navigator.userAgent.toLowerCase()) || [])[1]);
+}
 
 // createElement 
 dom.create = function(type, ns){
@@ -12,7 +18,17 @@ dom.create = function(type, ns){
 
 // documentFragment
 dom.fragment = function(){
-  return document.createFragment();
+  return document.createDocumentFragment();
+}
+
+dom.append = function(parent, el){
+  if(_.typeOf(el) === 'array'){
+    for(var i = 0, len = el.length; i < len ;i++){
+      dom.append(parent ,el[i]);
+    }
+  }else{
+    if(el) parent.appendChild(el);
+  }
 }
 
 
@@ -24,27 +40,42 @@ dom.attr = function(node, name, value){
   if(value === null){
     return node.removeAttribute(name)
   }
-  return node.setAttribute(name, +value);
+  return node.setAttribute(name, value);
 }
 
 
-
-var textMap = {}
-if(tNode.textContent == null){
-  textMap[1] == 'innerText';
-  textMap[3] == 'nodeValue';
-}else{
-  textMap[1] = textMap[3] = 'textContent';
+dom.on = function(node, type, handler, capture){
+  if (node.addEventListener) node.addEventListener(type, handler, !!capture);
+  else node.attachEvent('on' + type, handler);
 }
 
-// textContent Setter & Getter
-dom.text = function(node, text){
-  if(text === undefined){
-    return node[textMap[node.type]]
-  }else{
-    node[textMap[node.type]] = text;
+dom.off = function(node, type, handler, capture){
+  if (node.removeEventListener) node.removeEventListener(type, handler, !!capture);
+  else node.detachEvent('on' + type, handler);
+}
+
+
+dom.text = (function (){
+      var map = {};
+      if (dom.msie && dom.msie < 9) {
+        map[1] = 'innerText';    
+        map[3] = 'nodeValue';    
+      } else {
+        map[1] =                
+        map[3] = 'textContent';  
+      }
+  
+  return function (element, value) {
+    var textProp = map[element.nodeType];
+    if (value == null) {
+      return textProp ? element[textProp] : '';
+    }
+    element[textProp] = value;
   }
-}
+})();
+
+
+
 
 var mapSetterGetter = {
   "html": "innerHTML"
@@ -74,4 +105,6 @@ dom.delClass = function(){
 dom.hasClass = function(){
 
 }
+
+
 

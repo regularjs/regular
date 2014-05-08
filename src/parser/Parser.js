@@ -3,7 +3,7 @@ var node = require("./node.js");
 var Lexer = require("./Lexer.js");
 var varName = _.varName;
 var isPath = _.makePredicate("STRING IDENT NUMBER");
-var isKeyWord = _.makePredicate("true false undefined null");
+var isKeyWord = _.makePredicate("true false undefined null this Array Date JSON Math NaN RegExp decodeURI decodeURIComponent encodeURI encodeURIComponent parseFloat parseInt");
 
 
 function Parser(input, opts){
@@ -20,7 +20,6 @@ var op = Parser.prototype;
 op.parse = function(){
   this.pos = 0;
   return this.program();
-  
 }
 
 op.ll =  function(k){
@@ -45,7 +44,6 @@ op.match = function(type, value){
       return ll;
   }
 }
-
 
 // @TODO
 op.error = function(msg, pos){
@@ -146,16 +144,14 @@ op.xml = function(){
 //     stag     ::=    '<' Name (S attr)* S? '>'  
 //     attr    ::=     Name Eq attvalue
 op.attrs = function(){
-  var ll = this.ll();
-  if(ll.type !=='NAME') return;
-  var attrs = [],attr;
 
-  do{
-    attr = {name: ll.value}
-    if(this.eat('=')) attr.value = this.attvalue();
-    attrs.push(attr)
-
-  }while(ll = this.eat('NAME'))
+  var attrs = [], attr, ll;
+  while( ll = this.eat('NAME') ){
+    attr = { name: ll.value }
+    if( this.eat('=') ) attr.value = this.attvalue();
+    attrs.push( attr )
+  }
+  return attrs;
 }
 
 // attvalue
@@ -187,10 +183,10 @@ op.directive = function(name){
 }
 
 op.interplation = function(){
-  var escape = this.match('EXPR_OPEN').escape;
+  var nowatch = this.match('EXPR_OPEN').nowatch;
   var res = this.expr(true);
   this.match('END');
-  return node.interplation(res, escape)
+  return res;
 }
 
 
@@ -254,33 +250,38 @@ op.list = function(){
 
 
 op.expr = function(filter){
-  this.deps = [];
+  this.depend = [];
   var buffer;
   if(filter){
     buffer = this.filter();
   }else{
     buffer = this.condition();
   }
-  if(!this.deps.length){
+
+  var body = new Function(_.varName ,"return (" + buffer + ")");
+
+  if(!this.depend.length){
     // means no dependency
-    return new Function("return (" + buffer + ")")();
+    return body();
+  }else{
+    return node.expression(body,null, this.depend)
   }
-  return node.expression(buffer, this.deps)
+  
 }
 
-op.filter = function(deps){
-  var left = this.condition(deps);
+op.filter = function(depend){
+  var left = this.condition(depend);
   var ll = this.eat('|');
   var buffer, attr;
   if(ll){
     buffer = [
       ";(function(data){", 
-          "var ", attr = _.attrName(), "=", this.condition(deps), ";"]
+          "var ", attr = _.attrName(), "=", this.condition(depend), ";"]
     do{
 
-      buffer.push(attr + " = tn.f[" + this.match('IDENT').value+ "](" + attr) ;
+      buffer.push(attr + " = this.f[" + this.match('IDENT').value+ "](" + attr) ;
       if(this.eat(':')){
-        buffer.push(", "+ this.arguments(deps, "|").join(",") + ");")
+        buffer.push(", "+ this.arguments(depend, "|").join(",") + ");")
       }else{
         buffer.push(');');
       }
@@ -295,14 +296,14 @@ op.filter = function(deps){
 
 // or
 // or ? assign : assign
-op.condition = function(deps){
+op.condition = function(){
 
   var test = this.or();
   if(this.eat('?')){
     return [test + "?", 
-      this.assign(deps), 
+      this.condition(), 
       this.match(":").type, 
-      this.condition(deps)].join("");
+      this.condition()].join("");
   }
 
   return test;
@@ -333,7 +334,7 @@ op.and = function(){
 // equal === relation
 // equal !== relation
 op.equal = function(){
-  var left = this.relation();
+  var left = this.relation(), ll;
   // @perf;
   if( ll = this.eat(['==','!=', '===', '!=='])){
     return left + ll.type + this.equal();
@@ -346,7 +347,7 @@ op.equal = function(){
 // relation >= additive
 // relation in additive
 op.relation = function(){
-  var left = this.additive(), la;
+  var left = this.additive(), la,ll;
   // @perf
   if(ll = (this.eat(['<', '>', '>=', '<=']) || this.eat('IDENT', 'in') )){
     return left + ll.value + this.relation();
@@ -397,17 +398,20 @@ op.unary = function(){
 // member . ident  
 
 op.member = function( base, pathes ){
-  // @TODO deps must determin in this step
+  // @TODO depend must determin in this step
   var ll, path, value;
   if(!base){
     path = this.primary();
-    if(path.type === 'IDENT' && !isKeyWord(path.value)){
-      pathes = [];
-      pathes.push(path.value);
-      base = varName + "['" + path.value + "']";
+    if(path.type === 'IDENT'){
+      if(!isKeyWord(path.value)){
+        pathes = [];
+        pathes.push(path.value);
+        base = varName + "['" + path.value + "']";
+      }else{
+        base = path.value
+      }
     }else{
-      if(path.type) return path.type === 'STRING'? "'"+path.value+"'": path.value;
-      else return path;
+        base = path.type === 'STRING'? "'"+path.value+"'": path.value;
     }
   }
   if(ll = this.eat(['[', '.', '('])){
@@ -415,17 +419,20 @@ op.member = function( base, pathes ){
       case '.':
           // member(object, property, computed)
         base +=  "['" + (value = this.match('IDENT').value) + "']";
+
         pathes && pathes.push(value);
+
         return this.member( base , pathes);
       case '[':
           // member(object, property, computed)
         path = this.expr();
-        base += "['" + (path.value || path) + "']";
+        base += "['" + path + "']";
+
         if(pathes && path.type && isPath(path.type)){
           pathes.push(path.value);
         }else{
-          this.deps.push(pathes);
-          pathes = null;
+          this.depend.push(pathes);
+          pathes = false;
         }
         this.match(']')
         return this.member(base, pathes);
@@ -433,11 +440,11 @@ op.member = function( base, pathes ){
         // call(callee, args)
         base += "(" + this.arguments().join(",") + ")";
         this.match(')')
-        this.deps.push(pathes);
+        this.depend.push(pathes);
         return this.member(base);
     }
   }
-  if(pathes) this.deps.push(pathes);
+  if(pathes) this.depend.push(pathes);
   return base;
 }
 

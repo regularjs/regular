@@ -27,11 +27,18 @@ _.typeOf = function (o) {
   return o == null ? String(o) : ({}).toString.call(o).slice(8, -1).toLowerCase();
 }
 
-_.extend = function( o1, o2, override ){
 
-  for(var i in o2){
-    if( typeof o1[i] === "undefined" || override ){
-      o1[i] = o2[i]
+_.extend = function( o1, o2, override ){
+  if(_.typeOf(override) === 'array'){
+   for(var i = 0, len = override.length; i < len; i++ ){
+    var key = override[i];
+    o1[key] = o2[key];
+   } 
+  }else{
+    for(var i in o2){
+      if( typeof o1[i] === "undefined" || override === true ){
+        o1[i] = o2[i]
+      }
     }
   }
   return o1;
@@ -147,7 +154,6 @@ _.assert = function(test, msg){
 }
 
 
-
 _.walk = function(proto){
   var walkers = {};
   proto.walk = function walk(ast, arg){
@@ -182,3 +188,236 @@ _.compileGetter = function(paths){
   code += "else return undefined";
   return new Function("obj", code);
 }
+
+_.createObject = function(o, props){
+    function foo() {}
+    foo.prototype = o;
+    var res = new foo;
+    if(props){
+      _.extend(res, props)
+    }
+    return res;
+}
+
+_.createProto = function(fn, o){
+    function foo() { this.constructor = fn;}
+    foo.prototype = o;
+    return (fn.prototype = new foo());
+}
+
+// (c) 2010-2014 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
+// Backbone may be freely distributed under the MIT license.
+// For all details and documentation:
+// http://backbonejs.org
+
+// klass: a classical JS OOP façade
+// https://github.com/ded/klass
+// License MIT (c) Dustin Diaz 2014
+  
+// inspired by backbone's extend and klass
+_.derive = (function(){
+var fnTest = /xy/.test(function(){xy}) ? /\bsupr\b/ : /.*/,
+  isFn = function(o){return typeof o === 'function'};
+
+  function wrap(k, fn, supro) {
+    return function () {
+      var tmp = this.supr;
+      this.supr = supro[k];
+      var ret = fn.apply(this, arguments);
+      this.supr = tmp;
+      return ret;
+    }
+  }
+  function process( what, o, supro ) {
+    for ( var k in o ) {
+      if (o.hasOwnProperty(k)) {
+
+        what[k] = isFn( o[k] ) && isFn( supro[k] )
+          && fnTest.test( o[k] ) ? wrap(k, o[k], supro) : o[k];
+      }
+    }
+  }
+
+  return function derive(o){
+    var supr = this, proto,
+      supro = supr.prototype;
+
+    function fn() {
+      supr.apply(this, arguments);
+    }
+
+    proto = _.createProto(fn, supro);
+
+    (fn.methods = function (o) {
+      process(proto, o, supro);
+    })(o);
+
+    if(supr.__after__) supr.__after__.call(fn, supr, o);
+    fn.derive = supr.derive;
+    // _.extend(fn, supr, supr.__statics__ || []);
+    return fn;
+  }
+})();
+
+
+
+/**
+clone
+*/
+_.clone = function clone(obj){
+    var type = _.typeOf(obj);
+    if(type == 'array'){
+      var cloned = [];
+      for(var i=0,len = obj.length; i< len;i++){
+        cloned[i] = obj[i]
+      }
+      return cloned;
+    }
+    if(type == 'object'){
+      var cloned = {};
+      for(var i in obj) if(obj.hasOwnProperty(i)){
+        cloned[i] = obj[i];
+      }
+      return cloned;
+    }
+    return obj;
+  }
+
+
+_.equals = function(now, old){
+  if(_.typeOf(now) == 'array'){
+    var splices = ld(now, old||[]);
+    return splices;
+  }
+  return now === old;
+}
+
+
+//Levenshtein_distance
+//=================================================
+//1. http://en.wikipedia.org/wiki/Levenshtein_distance
+//2. github.com:polymer/observe-js
+
+var ld = (function(){
+  function equals(a,b){
+    return a === b;
+  }
+  function ld(array1, array2){
+    var n = array1.length;
+    var m = array2.length;
+    var matrix = [];
+    for(var i = 0; i <= n; i++){
+      matrix.push([i]);
+    }
+    for(var j=1;j<=m;j++){
+      matrix[0][j]=j;
+    }
+    for(var i = 1; i <= n; i++){
+      for(var j = 1; j <= m; j++){
+        if(equals(array1[i-1], array2[j-1])){
+          matrix[i][j] = matrix[i-1][j-1];
+        }else{
+          matrix[i][j] = Math.min(
+            matrix[i-1][j]+1, //delete
+            matrix[i][j-1]+1//add
+            )
+        }
+      }
+    }
+    return matrix;
+  }
+  function whole(arr2, arr1) {
+      var matrix = ld(arr1, arr2)
+      var n = arr1.length;
+      var i = n;
+      var m = arr2.length;
+      var j = m;
+      var edits = [];
+      var current = matrix[i][j];
+      while(i>0 || j>0){
+        // 最后一列
+          if (i == 0) {
+            edits.unshift(3);
+            j--;
+            continue;
+          }
+          // 最后一行
+          if (j == 0) {
+            edits.unshift(2);
+            i--;
+            continue;
+          }
+          var northWest = matrix[i - 1][j - 1];
+          var west = matrix[i - 1][j];
+          var north = matrix[i][j - 1];
+
+          var min = Math.min(north, west, northWest);
+
+          if (min == northWest) {
+            if (northWest == current) {
+              edits.unshift(0); //no change
+            } else {
+              edits.unshift(1); //update
+              current = northWest;
+            }
+            i--;
+            j--;
+          } else if (min == west) {
+            edits.unshift(2); //delete
+            i--;
+            current = west;
+          } else {
+            edits.unshift(3); //add
+            j--;
+            current = north;
+          }
+          
+        }
+        var LEAVE = 0;
+        var ADD = 3;
+        var DELELE = 2;
+        var UPDATE = 1;
+        var n = 0;m=0;
+        var steps = [];
+        var step = {index: null, add:0, removed:[]};
+
+        for(var i=0;i<edits.length;i++){
+          if(edits[i]>0 ){
+            if(step.index == null){
+              step.index = m;
+            }
+          }
+          else {
+            if(step.index != null){
+              steps.push(step)
+              step = {index: null, add:0, removed:[]};
+            }
+          }
+          switch(edits[i]){
+            case LEAVE:
+              n++;
+              m++;
+              break;
+            case ADD:
+              step.add++;
+              m++;
+              break;
+            case DELELE:
+              step.removed.push(arr1[n])
+              n++;
+              break;
+            case UPDATE:
+              step.add++;
+              step.removed.push(arr1[n])
+              n++;
+              m++;
+              break;
+          }
+        }
+        if(step.index != null){
+          steps.push(step)
+        }
+        return steps
+      }
+      return whole;
+  })();

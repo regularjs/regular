@@ -1,6 +1,15 @@
 // every runtime have template instance then can call some helper function to avoid logic;
 var dom = require('./dom');
 var components = require('./components');
+
+
+
+
+
+
+
+
+
 function Template(ast, data){
   this.ast = ast;
   this.data = data;
@@ -10,25 +19,18 @@ function Template(ast, data){
 
 
 
+
 var to = Template.prototype;
 
 var wk = _.walk(co); 
 
-to.render = function(){
-  var frag;
-  this.enter(frag = dom.fragement());
-  this.walk(this.ast, data);
-  this.leave(frag);
-}
-
-
 wk.element = function(ast, data){
   var name = ast.name;
   if(components)
-
 }
 
 wk.if = function(ast){
+
 }
 
 wk.list = function(ast){
@@ -82,3 +84,4 @@ to.dom = require('./dom');
 
 
 module.exports = Template;
+

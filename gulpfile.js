@@ -18,7 +18,6 @@ try{
 
 
 gulp.task('default', ['build'], function() {
-  // place code for your default task here
 });
 
 
