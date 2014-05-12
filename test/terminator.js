@@ -268,6 +268,7 @@ _.extend(Termin, {
   _decorators: {},
   _filters: {},
   _customers: {},
+  _exprCache:{},
 
   __after__: function(supr, o) {
 
@@ -275,7 +276,6 @@ _.extend(Termin, {
     this.__after__ = supr.__after__;
 
     this._decorators = _.createObject( supr._decorators )
-    this.exprCache = {};
 
     if(o.name) Termin.register(o.name, this);
     if(template = o.template){
@@ -292,13 +292,12 @@ _.extend(Termin, {
     return this;
 
   },
-  register: function(){
-
-  },
   parse: function(expr){
     // @TODO cache
+    if(expr.type === 'expression') return expr;
     var expr = expr.trim();
-    return this.exprCache[expr] || (this.exprCache[expr] = new Parser(expr).expr());
+    var res = this._exprCache[expr] || (this._exprCache[expr] = new Parser(expr,{state: 'JST'}).expression());
+    return res;
   }
 });
 
@@ -318,48 +317,29 @@ _.extend(Termin.prototype, {
     if(typeof ast === 'string') return document.createTextNode(ast)
     return walkers[ast.type || "default"].call(this, ast);
   },
-  parse: function(str){
-    if(str && str.type === 'expression'){
-      return str;
-    }
-    return new Parser(str, {state: 'JST'}).expr();
-  },
   inject: function(node, direct){
+    direct = direct || 'bottom';
     // node.appendChild(this.fragment);
   },
   set: function(path, value){
     if(typeof path === 'function' ){
-      path.call(this);
+      path.call(this, this.data);
       this.digest();
-    }else{
+    }else if(path){
       var base = this.data;
-      if(typeof value !== 'undefined'){
-        var spaths = path.split('.');
-        for(var i=0,len=spaths.length-1;i<len;i++){
-          if((base = base[spaths[i]]) == null) return ;
-        }
-        base[spaths[len]] = value
-      }else if(~path.indexOf('.')){
-        var spaths = path.split('.');
-        for(var i=0,len=spaths.length;i<len;i++){
-          if((base = base[spaths[i]]) == null) return ;
-        }
-      }else{
-        base = base[path];
-      }
+      var path = Termin.parse(path);
+      path.set.call(this, value);
       this.digest();
     }
   },
-  get: function(path){
-
-  },
+  _path: _._path,
   digest: function(){
     var watchers = this.$watchers;
     var children = this.$children;
 
     for(var i = 0, len = watchers.length;i<len; i++){
       var watcher = watchers[i];
-      var now = watcher.get(this.data);
+      var now = watcher.get(this);
       var eq = true;
       if(watcher.deep && _.typeOf(now) == 'object'){
         if(!watcher.last){
@@ -397,9 +377,12 @@ _.extend(Termin.prototype, {
       children[i].$digest(); 
     }
   },
+  destroy: function(){
+
+  },
   watch: function(expr, fn){
-    if(typeof expr === "string") expr = new Parser(expr).expr(expr);
-    var watcher = { get: expr.get.bind(this.context), fn: fn, pathes: expr.pathes };
+    var expr = Termin.parse(expr);
+    var watcher = { get: expr.get, fn: fn, pathes: expr.pathes };
     this.$watchers.push(watcher);
   }
 });
@@ -415,15 +398,61 @@ walkers.list = function(ast){
     context: this
   });
   var self = this;
-  var pairs = [];
-  this.watch(ast.sequence, function(value){
-    var props = {};
-    props[ast.variable] = "dajsidajsidasid";
-    props["$index"] = 1;
-    var data = _.createObject(self.data, props);
-    var section = new Section(data);
-    // section.inject(placeholder);
+  var sections = [];
+  this.watch(ast.sequence, function(newValue, splices){
+    if(!splices || !splices.length) return;
+    var cur = placeholder;
+    var m = 0,
+      len=newValue.length,
+      mIndex = splices[0].index;
+    for(var i=0; i < splices.length; i++){
+      var splice = splices[i];
+      var index = splice.index;
+      for(var k=m; k<index; k++){
+        var pair = pairs[k];
+        pair.scope.$index = k;
+      }
+      for(var j=0,jlen = splice.removed.length; j< jlen; j++){
+        var removed = pairs.splice(index,1)[0];
+        removed.$elem._$off()._$remove();
+        removed.scope.$destroy();
+        removed.scope =null;
+        removed = null;
+      }
+      for(var o=index; o < index + splice.add; o++){
+        var childScope = scope.$new();
+        childScope.$index = o;
+        childScope[matched[1]] = newValue[o]
+        var $celem = $elem._$clone(true);
+        var insert = pairs[o-1]? pairs[o-1].$elem[0]: start;
+        parent.insertBefore($celem[0], insert.nextSibling);
+        bootstrap( childScope, $celem[0], { skip: 'nm-repeat' } );
+        pairs.splice(o,0, {
+          $elem: $celem,
+          scope: childScope
+        });
+      }
+      m = index + splice.add - splice.removed.length;
+      m  = m<0? 0:m;
+    }
+    if(m < len){
+      for(var i = m; i < len; i++){
+        var pair = pairs[i];
+        pair.scope.$index = i;
+      }
+    }
+    pairs.forEach(function(pair){
+      pair.scope.$digest();
+    })
   });
+  return {
+    created: function(){
+      return 
+    },
+    removed: function(){
+
+    }
+  }
   return placeholder;
 }
 
@@ -432,10 +461,9 @@ walkers.if = function(){
 }
 
 walkers.expression = function(ast){
-  console.log(ast.get)
-  var node = document.createTextNode();
+  var node = document.createTextNode("");
   this.watch(ast, function(newval){
-    dom.text(node, "" + newval);
+    dom.text(node, "" + (newval||""));
   })
   return node;
 }
@@ -458,8 +486,7 @@ walkers.element = function(ast){
 }
 
 function bindAttrWatcher(element, attr){
-  var scope = this.$scope, 
-    name = attr.name,
+  var name = attr.name,
     value = attr.value, decorator=Termin.decorate(name);
   if(decorator){
     decorator.call(this, element, value);
@@ -477,13 +504,16 @@ function bindAttrWatcher(element, attr){
 var events = "click mouseover mouseout change focus blur keydown keyup keypress".split(" ");
 events.forEach(function(item){
   Termin.decorate('t-'+item, function(elem, value){
-
-    var fn = this.parse(value);
-    dom.on(elem, item, function(ev){
-      fn(this.data);
+    if(!value) return;
+    var self = this;
+    dom.on(elem, item, function(){
+      value.get(self);
+      self.digest();
     });
-  });
-})
+    
+  })
+});
+
 
 function initSelect(scope, elem, value, parseFn){
   // 初始化一次
@@ -502,40 +532,49 @@ function initSelect(scope, elem, value, parseFn){
 
   function handler(ev){
     parseFn.assign(this.value)(scope);
-    if(!scope.$phase) scope.$digest()
+    if(!scope.$phase) scope.$digest();
   }
   v._$addEvent(elem, 'change', handler)
 }
 
-function initText(scope, elem, value, parseFn){
-
-
-  scope.$watch(parseFn, function(newValue, oldValue){
-    if(scope.$state('trigger') == elem) return;
-    elem.value = nm.string(newValue);
+function initText(elem, parsed){
+  var inProgress = false;
+  var self = this;
+  this.watch(parsed, function(newValue, oldValue){
+    if(inProgress) return;
+    elem.value = newValue == null? "": "" + newValue;
   });
 
-  var handler = throttle(function handler(ev){
+  var handler = _.throttle(function handler(ev){
     var value = this.value;
-    scope.$set(value)
-    scope.$apply(function(){
-      parseFn.assign(value.trim())(scope);
-    });
+    parsed.set(self, value);
+    inProgress= true;
+    self.digest();
+    inProgress = false;
   })
 
-  if(dom.msie !== 9 && 'oninput' in testNode ){
+  if(dom.msie !== 9 && 'oninput' in dom.tNode ){
     elem.addEventListener('input', handler );
   }else{
-    v._$addEvent(elem, 'paste', handler)
-    v._$addEvent(elem, 'keyup', handler)
-    v._$addEvent(elem, 'cut', handler)
+    dom.on(elem, 'paste', handler)
+    dom.on(elem, 'keyup', handler)
+    dom.on(elem, 'cut', handler)
   }
 }
 
 Termin.decorate('t-model', function(elem,value){
-  var fn = this.parse(value);
-  console.log(fn.get.toString())
-})
+  var sign = elem.tagName.toLowerCase();
+  if(typeof value === 'string') value = Termin.parse(value);
+
+  switch(sign){
+    case "select":
+      initSelect.call(this, elem, value);
+      break;
+    default:
+      initText.call(this,elem, value);
+  }
+}).decorate('proxy', function(elem, value){
+});
 
 
 
@@ -557,7 +596,9 @@ _.uid = (function(){
   }
 })();
 
-_.varName = 'data';
+_.varName = 'd_'+_.uid();
+_.setName = 'p_'+_.uid();
+
 // randomVar
 _.randomVar = function(suffix){
   return (suffix || "var") + "_" + _.uid().toString(36);
@@ -970,6 +1011,41 @@ var ld = (function(){
       return whole;
   })();
 
+
+_._path = function(base, path){
+  return base ==undefined? base: base[path];
+}
+
+
+_.throttle = function throttle(func, wait){
+    var wait = wait || 100;
+    var context, args, result;
+    var timeout = null;
+    var previous = 0;
+    var later = function() {
+      previous = +new Date;
+      timeout = null;
+      result = func.apply(context, args);
+      context = args = null;
+    };
+    return function() {
+      var now = + new Date;
+      var remaining = wait - (now - previous);
+      context = this;
+      args = arguments;
+      if (remaining <= 0 || remaining > wait) {
+        clearTimeout(timeout);
+        timeout = null;
+        previous = now;
+        result = func.apply(context, args);
+        context = args = null;
+      } else if (!timeout) {
+        timeout = setTimeout(later, remaining);
+      }
+      return result;
+    };
+  };
+
 });
 require.register("terminator/src/env.js", function(exports, require, module){
 
@@ -979,7 +1055,7 @@ exports.svg = (function(){
 
 
 exports.transition = function(){
-
+  
 }
 
 
@@ -1041,7 +1117,6 @@ dom.off = function(node, type, handler, capture){
   else node.detachEvent('on' + type, handler);
 }
 
-
 dom.text = (function (){
       var map = {};
       if (dom.msie && dom.msie < 9) {
@@ -1060,9 +1135,6 @@ dom.text = (function (){
     element[textProp] = value;
   }
 })();
-
-
-
 
 var mapSetterGetter = {
   "html": "innerHTML"
@@ -1263,7 +1335,7 @@ function Lexer(input, opts){
   this.opts = opts || {};
   this.map = this.opts.mode != 2?  map1: map2;
   this.states = ['INIT']
-  if(opts.state) this.states.push(opts.state);
+  if(this.opts.state) this.states.push(this.opts.state);
 }
 
 var lo = Lexer.prototype
@@ -1529,14 +1601,14 @@ var rules = {
 
   JST_SPACE: [/[ \r\n\f]+/, null, 'JST'],
 
-  JST_PUNCHOR: [/[=!]?==|[-=><+*\/%]?\=|\|\||&&|[\<\>\[\]\(\)\-\|\{}\+\*\/%?:\.!,#]/, function(all){
+  JST_PUNCHOR: [/[=!]?==|[-=><+*\/%\!]?\=|\|\||&&|[\<\>\[\]\(\)\-\|\{}\+\*\/%?:\.!]/, function(all){
     return { type: all, value: all }
   },'JST'],
 
   JST_STRING:  [ /'([^']*)'|"([^"]*)"/, function(all, one, two){ //"'
     return {type: 'STRING', value: one || two}
   }, 'JST'],
-  JST_NUMBER: [/-?(?:[0-9]*\.[0-9]+|[0-9]+)/, function(all){
+  JST_NUMBER: [/-?(?:[0-9]*\.[0-9]+|[0-9]+)(e\d+)?/, function(all){
     return {type: 'NUMBER', value: parseFloat(all, 10)};
   }, 'JST']
 }
@@ -1713,8 +1785,10 @@ var _ = require("../util.js");
 var node = require("./node.js");
 var Lexer = require("./Lexer.js");
 var varName = _.varName;
+var ctxName = _.randomVar('c');
 var isPath = _.makePredicate("STRING IDENT NUMBER");
 var isKeyWord = _.makePredicate("true false undefined null this Array Date JSON Math NaN RegExp decodeURI decodeURIComponent encodeURI encodeURIComponent parseFloat parseInt");
+var exports = {_path: _._path}
 
 
 function Parser(input, opts){
@@ -1895,7 +1969,7 @@ op.directive = function(name){
 
 op.interplation = function(){
   var nowatch = this.match('EXPR_OPEN').nowatch;
-  var res = this.expr(true);
+  var res = this.expression(true);
   this.match('END');
   return res;
 }
@@ -1934,6 +2008,7 @@ op.if = function(){
   return node.if(test, consequent, alternate);
 }
 
+
 // @mark   mustache syntax have natrure failutre, canot with expression
 op.list = function(){
   this.next();
@@ -1943,7 +2018,9 @@ op.list = function(){
   var container = consequent;
 
   this.match('IDENT', 'as');
+
   variable = this.match('IDENT').value;
+
   this.match('END');
 
   while( !(ll = this.eat('CLOSE')) ){
@@ -1959,35 +2036,38 @@ op.list = function(){
 }
 
 
+op.expression = function(){
+  var expression = this.expr();
+  if(!expression.depend) return expression.get;
+  else return expression;
+}
 
 op.expr = function(filter){
   this.depend = [];
-  var buffer;
-  if(filter){
-    buffer = this.filter();
-  }else{
-    buffer = this.condition();
-  }
+  var buffer = this.filter();
+  var body = buffer.get || buffer;
+  var prefix = this.depend.length? ("var "+varName+"="+ctxName+".data;" ): "";
 
-  var body = new Function(_.varName ,"return (" + buffer + ")");
+  var get = new Function(ctxName, prefix + "return (" + body + ")");
+
+  if(buffer.set) var set =  new Function(ctxName, _.setName ,prefix +";return (" + buffer.set + ")");
 
   if(!this.depend.length){
     // means no dependency
-    return body();
+    return node.expression(get.call(exports))
   }else{
-    return node.expression(body,null, this.depend)
+    return node.expression(get, set, this.depend)
   }
-  
 }
 
-op.filter = function(depend){
-  var left = this.condition(depend);
+op.filter = function(){
+  var left = this.assign();
   var ll = this.eat('|');
   var buffer, attr;
   if(ll){
     buffer = [
       ";(function(data){", 
-          "var ", attr = _.attrName(), "=", this.condition(depend), ";"]
+          "var ", attr = _.attrName(), "=", this.condition(depend).get, ";"]
     do{
 
       buffer.push(attr + " = this.f[" + this.match('IDENT').value+ "](" + attr) ;
@@ -1999,11 +2079,19 @@ op.filter = function(depend){
 
     }while(ll = this.eat('|'))
     buffer.push("return " + attr + "}");
-    return buffer.join("");
+    return this.getset(buffer.join(""));
   }
   return left;
 }
 
+op.assign = function(){
+  var left = this.condition(), ll;
+  if(ll = this.eat(['=', '+=', '-=', '*=', '/=', '%='])){
+    if(!left.set) this.error('invalid lefthand expression in assignment expression');
+    return this.getset('(' + left.get + ll.type  + this.condition().get + ')', left.set);
+  }
+  return left;
+}
 
 // or
 // or ? assign : assign
@@ -2011,10 +2099,10 @@ op.condition = function(){
 
   var test = this.or();
   if(this.eat('?')){
-    return [test + "?", 
-      this.condition(), 
+    return this.getset([test.get + "?", 
+      this.assign().get, 
       this.match(":").type, 
-      this.condition()].join("");
+      this.assign().get].join(""));
   }
 
   return test;
@@ -2025,7 +2113,7 @@ op.condition = function(){
 op.or = function(){
   var left = this.and();
   if(this.eat('||')){
-    return left + '||' + this.or();
+    return this.getset(left.get + '||' + this.or().get);
   }
   return left;
 }
@@ -2034,7 +2122,7 @@ op.or = function(){
 op.and = function(){
   var left = this.equal();
   if(this.eat('&&')){
-    return left + '&&' + this.and();
+    return this.getset(left.get + '&&' + this.and().get);
   }
   return left;
 }
@@ -2048,7 +2136,7 @@ op.equal = function(){
   var left = this.relation(), ll;
   // @perf;
   if( ll = this.eat(['==','!=', '===', '!=='])){
-    return left + ll.type + this.equal();
+    return this.getset(left.get + ll.type + this.equal().get);
   }
   return left
 }
@@ -2061,7 +2149,7 @@ op.relation = function(){
   var left = this.additive(), la,ll;
   // @perf
   if(ll = (this.eat(['<', '>', '>=', '<=']) || this.eat('IDENT', 'in') )){
-    return left + ll.value + this.relation();
+    return this.getset(left.get + ll.value + this.relation().get);
   }
   return left
 }
@@ -2072,7 +2160,7 @@ op.relation = function(){
 op.additive = function(){
   var left = this.multive() ,ll;
   if(ll= this.eat(['+','-']) ){
-    return left + ll.value + this.additive();
+    return this.getset(left.get + ll.value + this.additive().get);
   }
   return left
 }
@@ -2084,9 +2172,9 @@ op.additive = function(){
 op.multive = function(){
   var left = this.unary() ,ll;
   if( ll = this.eat(['*', '/' ,'%']) ){
-    return left + ll.type + this.multive();
+    return this.getset(left.get + ll.type + this.multive().get);
   }
-  return left
+  return left;
 }
 // lefthand
 // + unary
@@ -2096,67 +2184,86 @@ op.multive = function(){
 op.unary = function(){
   var ll;
   if(ll = this.eat(['+','-','~', '!'])){
-    return '(' + ll.type + this.unary() + ')';
+    return this.getset('(' + ll.type + this.unary().get + ')') ;
   }else{
     return this.member()
   }
 }
-
 
 // call[lefthand] :
 // member args
 // member [ expression ]
 // member . ident  
 
-op.member = function( base, pathes ){
+op.member = function(base, last, pathes){
   // @TODO depend must determin in this step
   var ll, path, value;
-  if(!base){
+  var first = !base;
+
+  if(!base){ //first
     path = this.primary();
-    if(path.type === 'IDENT'){
-      if(!isKeyWord(path.value)){
-        pathes = [];
-        pathes.push(path.value);
-        base = varName + "['" + path.value + "']";
-      }else{
-        base = path.value
+    var type = typeof path;
+    if(type === 'string'){ // no keyword ident
+      pathes = [];
+      if(path === '$self'){ // $self.1
+        pathes.push('*');
+        base = varName;
+      }else{ // keypath **
+        pathes.push(path);
+        last = path;
+        base = varName + "['" + path + "']";
       }
+    }else{ //Primative Type
+      if(path.get === 'this'){
+        base = ctxName;
+        pathes = ['this'];
+      }else{
+        pathes = null;
+        base = path.get;
+      }
+      
+    }
+  }else{ // not first enter
+    if(typeof last === 'string' && isPath( last) ){ // is valid path
+      pathes.push(last);
     }else{
-        base = path.type === 'STRING'? "'"+path.value+"'": path.value;
+      if(pathes && pathes.length) this.depend.push(pathes);
+      pathes = null;
     }
   }
   if(ll = this.eat(['[', '.', '('])){
     switch(ll.type){
       case '.':
           // member(object, property, computed)
-        base +=  "['" + (value = this.match('IDENT').value) + "']";
-
-        pathes && pathes.push(value);
-
-        return this.member( base , pathes);
+        var tmpName = this.match('IDENT').value;
+        if(pathes && pathes.length){
+          base = ctxName + "._path("+base+", '"+tmpName + "')";
+        }else{
+          base += "['" + tmpName + "']";
+        }
+        return this.member( base, value, pathes );
       case '[':
           // member(object, property, computed)
         path = this.expr();
-        base += "['" + path + "']";
-
-        if(pathes && path.type && isPath(path.type)){
-          pathes.push(path.value);
+        if(pathes && pathes.length){
+          base = ctxName + "._path("+base+", '"+path.get + "')";
         }else{
-          this.depend.push(pathes);
-          pathes = false;
+          base += "['" + path.get + "']";
         }
         this.match(']')
-        return this.member(base, pathes);
+        return this.member(base, path, pathes);
       case '(':
         // call(callee, args)
-        base += "(" + this.arguments().join(",") + ")";
+        var args = this.arguments();
+        base = base + ("(" + args.join(",") + ")");
         this.match(')')
-        this.depend.push(pathes);
-        return this.member(base);
+        return this.member(base, null, pathes);
     }
   }
-  if(pathes) this.depend.push(pathes);
-  return base;
+  if(pathes && pathes.length) this.depend.push(pathes);
+  var res =  {get: base};
+  if(last) res.set = base + '=' + _.setName;
+  return res;
 }
 
 /**
@@ -2167,7 +2274,7 @@ op.arguments = function(end){
   var args = [], ll;
   do{
     if(this.la() !== end){
-      args.push(this.condition())
+      args.push(this.assign().get)
     }
   }while( this.eat(','));
   return args
@@ -2192,13 +2299,20 @@ op.primary = function(){
     case "(":
       return this.paren();
     // literal or ident
-    case "IDENT":
     case 'STRING':
+      this.next();
+      return this.getset("'" + ll.value + "'")
     case 'NUMBER':
       this.next();
-      return ll;
+      return this.getset(ll.value);
+    case "IDENT":
+      this.next();
+      if(isKeyWord(ll.value)){
+        return this.getset( ll.value );
+      }
+      return ll.value;
     default: 
-      this.error('Unexpected Token: '+ ll.type);
+      this.error('Unexpected Token: ' + ll.type);
   }
 }
 
@@ -2221,109 +2335,54 @@ op.object = function(){
   while(true){
     ll = this.eat(['STRING', 'IDENT', 'NUMBER']);
     if(ll){
-      code.push(ll.value + this.match(':').type);
-      code.push(this.condition());
+      code.push("'" + ll.value + "'" + this.match(':').type);
+      code.push(this.condition().get);
       if(this.eat(",")) code.push(",");
     }else{
       code.push(this.match('}').type);
       break;
     }
   }
-  return code.join("");
+  return {get: code.join("")}
 }
 
 // array
-// [ assignment[,assignment]*]
+// [ assign[,assign]*]
 op.array = function(){
   var code = [this.match('[').type]
   while(item = this.condition()){
-    code.push(item);
+    code.push(item.get);
     if(this.eat(',')) this.push(",");
   }
   code.push(this.match(']').type);
-  return code.join("");
+  return {get: code.join("")};
 }
+
 // '(' expression ')'
 op.paren = function(){
-  return this.match('(').type + this.expr() + this.match(')').type;
+  this.match('(');
+  var res = this.filter()
+  res.get = '(' + res.get + ')';
+  this.match(')');
+  return res;
+}
+
+op.getset = function(get, set){
+  return {
+    get: get,
+    set: set
+  }
+}
+
+op.flatenDepend = function(depend){
+  for(var i = 0, len = depend.length; i < len; i++){
+
+  }
 }
 
 
 
 module.exports = Parser;
 
-});
-require.register("terminator/src/compiler/Compiler1.js", function(exports, require, module){
-// compiler1 for mode 1;
-var _ = require("../util.js"); 
-var dom = require("../dom");
-var Parser = require("../parser/Parser.js");
-
-
-function Compiler(ast, opts){
-  if(typeof ast == "string") ast = new Parser(ast).parse();
-  this.ast = ast;
-}
-
-function compile(ast){
-  if(typeof ast == "string") ast = new Parser(ast).parse();
-  var fragment = dom.fragment();
-  dom.append(fragment, walk.call(this, ast) );
-  return fragment;
-}
-
-
-
-
-function walk(ast){
-
-}
-
-
-
-
-
-var co = Compiler.prototype;
-
-co.compile = function(){
-}
-
-
-var wk = _.walk(co);
-
-wk.default = function(){
-
-}
-
-
-wk.interplation = function(ast){
-
-}
-
-wk.expression = function(){
-
-}
-
-module.exports = Compiler;
-});
-require.register("terminator/src/compiler/Compiler2.js", function(exports, require, module){
-var _ = require('../util.js'); 
-var Parser = require('../parser/Parser.js');
-
-
-function Compiler(input){
-   this.ast = new Parser(input, {mode: 2}).parse();
-}
-
-var co = Compiler.prototype;
-
-co.compile = function(){
-
-}
-
-co.walk =_.walk; 
-
-
-module.exports = Compiler;
 });
 require.alias("terminator/src/browser.js", "terminator/index.js");

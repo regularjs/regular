@@ -52,6 +52,7 @@ _.extend(Termin, {
   _decorators: {},
   _filters: {},
   _customers: {},
+  _exprCache:{},
 
   __after__: function(supr, o) {
 
@@ -59,7 +60,6 @@ _.extend(Termin, {
     this.__after__ = supr.__after__;
 
     this._decorators = _.createObject( supr._decorators )
-    this.exprCache = {};
 
     if(o.name) Termin.register(o.name, this);
     if(template = o.template){
@@ -76,13 +76,12 @@ _.extend(Termin, {
     return this;
 
   },
-  register: function(){
-
-  },
   parse: function(expr){
     // @TODO cache
+    if(expr.type === 'expression') return expr;
     var expr = expr.trim();
-    return this.exprCache[expr] || (this.exprCache[expr] = new Parser(expr).expr());
+    var res = this._exprCache[expr] || (this._exprCache[expr] = new Parser(expr,{state: 'JST'}).expression());
+    return res;
   }
 });
 
@@ -102,48 +101,29 @@ _.extend(Termin.prototype, {
     if(typeof ast === 'string') return document.createTextNode(ast)
     return walkers[ast.type || "default"].call(this, ast);
   },
-  parse: function(str){
-    if(str && str.type === 'expression'){
-      return str;
-    }
-    return new Parser(str, {state: 'JST'}).expr();
-  },
   inject: function(node, direct){
+    direct = direct || 'bottom';
     // node.appendChild(this.fragment);
   },
   set: function(path, value){
     if(typeof path === 'function' ){
-      path.call(this);
+      path.call(this, this.data);
       this.digest();
-    }else{
+    }else if(path){
       var base = this.data;
-      if(typeof value !== 'undefined'){
-        var spaths = path.split('.');
-        for(var i=0,len=spaths.length-1;i<len;i++){
-          if((base = base[spaths[i]]) == null) return ;
-        }
-        base[spaths[len]] = value
-      }else if(~path.indexOf('.')){
-        var spaths = path.split('.');
-        for(var i=0,len=spaths.length;i<len;i++){
-          if((base = base[spaths[i]]) == null) return ;
-        }
-      }else{
-        base = base[path];
-      }
+      var path = Termin.parse(path);
+      path.set.call(this, value);
       this.digest();
     }
   },
-  get: function(path){
-
-  },
+  _path: _._path,
   digest: function(){
     var watchers = this.$watchers;
     var children = this.$children;
 
     for(var i = 0, len = watchers.length;i<len; i++){
       var watcher = watchers[i];
-      var now = watcher.get(this.data);
+      var now = watcher.get(this);
       var eq = true;
       if(watcher.deep && _.typeOf(now) == 'object'){
         if(!watcher.last){
@@ -181,9 +161,12 @@ _.extend(Termin.prototype, {
       children[i].$digest(); 
     }
   },
+  destroy: function(){
+
+  },
   watch: function(expr, fn){
-    if(typeof expr === "string") expr = new Parser(expr).expr(expr);
-    var watcher = { get: expr.get.bind(this.context), fn: fn, pathes: expr.pathes };
+    var expr = Termin.parse(expr);
+    var watcher = { get: expr.get, fn: fn, pathes: expr.pathes };
     this.$watchers.push(watcher);
   }
 });
@@ -199,15 +182,61 @@ walkers.list = function(ast){
     context: this
   });
   var self = this;
-  var pairs = [];
-  this.watch(ast.sequence, function(value){
-    var props = {};
-    props[ast.variable] = "dajsidajsidasid";
-    props["$index"] = 1;
-    var data = _.createObject(self.data, props);
-    var section = new Section(data);
-    // section.inject(placeholder);
+  var sections = [];
+  this.watch(ast.sequence, function(newValue, splices){
+    if(!splices || !splices.length) return;
+    var cur = placeholder;
+    var m = 0,
+      len=newValue.length,
+      mIndex = splices[0].index;
+    for(var i=0; i < splices.length; i++){
+      var splice = splices[i];
+      var index = splice.index;
+      for(var k=m; k<index; k++){
+        var pair = pairs[k];
+        pair.scope.$index = k;
+      }
+      for(var j=0,jlen = splice.removed.length; j< jlen; j++){
+        var removed = pairs.splice(index,1)[0];
+        removed.$elem._$off()._$remove();
+        removed.scope.$destroy();
+        removed.scope =null;
+        removed = null;
+      }
+      for(var o=index; o < index + splice.add; o++){
+        var childScope = scope.$new();
+        childScope.$index = o;
+        childScope[matched[1]] = newValue[o]
+        var $celem = $elem._$clone(true);
+        var insert = pairs[o-1]? pairs[o-1].$elem[0]: start;
+        parent.insertBefore($celem[0], insert.nextSibling);
+        bootstrap( childScope, $celem[0], { skip: 'nm-repeat' } );
+        pairs.splice(o,0, {
+          $elem: $celem,
+          scope: childScope
+        });
+      }
+      m = index + splice.add - splice.removed.length;
+      m  = m<0? 0:m;
+    }
+    if(m < len){
+      for(var i = m; i < len; i++){
+        var pair = pairs[i];
+        pair.scope.$index = i;
+      }
+    }
+    pairs.forEach(function(pair){
+      pair.scope.$digest();
+    })
   });
+  return {
+    created: function(){
+      return 
+    },
+    removed: function(){
+
+    }
+  }
   return placeholder;
 }
 
@@ -216,10 +245,9 @@ walkers.if = function(){
 }
 
 walkers.expression = function(ast){
-  console.log(ast.get)
-  var node = document.createTextNode();
+  var node = document.createTextNode("");
   this.watch(ast, function(newval){
-    dom.text(node, "" + newval);
+    dom.text(node, "" + (newval||""));
   })
   return node;
 }
@@ -242,8 +270,7 @@ walkers.element = function(ast){
 }
 
 function bindAttrWatcher(element, attr){
-  var scope = this.$scope, 
-    name = attr.name,
+  var name = attr.name,
     value = attr.value, decorator=Termin.decorate(name);
   if(decorator){
     decorator.call(this, element, value);
@@ -261,13 +288,16 @@ function bindAttrWatcher(element, attr){
 var events = "click mouseover mouseout change focus blur keydown keyup keypress".split(" ");
 events.forEach(function(item){
   Termin.decorate('t-'+item, function(elem, value){
-
-    var fn = this.parse(value);
-    dom.on(elem, item, function(ev){
-      fn(this.data);
+    if(!value) return;
+    var self = this;
+    dom.on(elem, item, function(){
+      value.get(self);
+      self.digest();
     });
-  });
-})
+    
+  })
+});
+
 
 function initSelect(scope, elem, value, parseFn){
   // 初始化一次
@@ -286,40 +316,49 @@ function initSelect(scope, elem, value, parseFn){
 
   function handler(ev){
     parseFn.assign(this.value)(scope);
-    if(!scope.$phase) scope.$digest()
+    if(!scope.$phase) scope.$digest();
   }
   v._$addEvent(elem, 'change', handler)
 }
 
-function initText(scope, elem, value, parseFn){
-
-
-  scope.$watch(parseFn, function(newValue, oldValue){
-    if(scope.$state('trigger') == elem) return;
-    elem.value = nm.string(newValue);
+function initText(elem, parsed){
+  var inProgress = false;
+  var self = this;
+  this.watch(parsed, function(newValue, oldValue){
+    if(inProgress) return;
+    elem.value = newValue == null? "": "" + newValue;
   });
 
-  var handler = throttle(function handler(ev){
+  var handler = _.throttle(function handler(ev){
     var value = this.value;
-    scope.$set(value)
-    scope.$apply(function(){
-      parseFn.assign(value.trim())(scope);
-    });
+    parsed.set(self, value);
+    inProgress= true;
+    self.digest();
+    inProgress = false;
   })
 
-  if(dom.msie !== 9 && 'oninput' in testNode ){
+  if(dom.msie !== 9 && 'oninput' in dom.tNode ){
     elem.addEventListener('input', handler );
   }else{
-    v._$addEvent(elem, 'paste', handler)
-    v._$addEvent(elem, 'keyup', handler)
-    v._$addEvent(elem, 'cut', handler)
+    dom.on(elem, 'paste', handler)
+    dom.on(elem, 'keyup', handler)
+    dom.on(elem, 'cut', handler)
   }
 }
 
 Termin.decorate('t-model', function(elem,value){
-  var fn = this.parse(value);
-  console.log(fn.get.toString())
-})
+  var sign = elem.tagName.toLowerCase();
+  if(typeof value === 'string') value = Termin.parse(value);
+
+  switch(sign){
+    case "select":
+      initSelect.call(this, elem, value);
+      break;
+    default:
+      initText.call(this,elem, value);
+  }
+}).decorate('proxy', function(elem, value){
+});
 
 
 

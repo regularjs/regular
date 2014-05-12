@@ -17,7 +17,7 @@ function Lexer(input, opts){
   this.opts = opts || {};
   this.map = this.opts.mode != 2?  map1: map2;
   this.states = ['INIT']
-  if(opts.state) this.states.push(opts.state);
+  if(this.opts.state) this.states.push(this.opts.state);
 }
 
 var lo = Lexer.prototype
@@ -283,14 +283,14 @@ var rules = {
 
   JST_SPACE: [/[ \r\n\f]+/, null, 'JST'],
 
-  JST_PUNCHOR: [/[=!]?==|[-=><+*\/%]?\=|\|\||&&|[\<\>\[\]\(\)\-\|\{}\+\*\/%?:\.!,#]/, function(all){
+  JST_PUNCHOR: [/[=!]?==|[-=><+*\/%\!]?\=|\|\||&&|[\<\>\[\]\(\)\-\|\{}\+\*\/%?:\.!]/, function(all){
     return { type: all, value: all }
   },'JST'],
 
   JST_STRING:  [ /'([^']*)'|"([^"]*)"/, function(all, one, two){ //"'
     return {type: 'STRING', value: one || two}
   }, 'JST'],
-  JST_NUMBER: [/-?(?:[0-9]*\.[0-9]+|[0-9]+)/, function(all){
+  JST_NUMBER: [/-?(?:[0-9]*\.[0-9]+|[0-9]+)(e\d+)?/, function(all){
     return {type: 'NUMBER', value: parseFloat(all, 10)};
   }, 'JST']
 }

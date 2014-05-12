@@ -43,7 +43,7 @@ gulp.task('build', function(){
       name: 'terminator'
     }))
     .pipe(wrap(signatrue))
-    .pipe(gulp.dest('test/runner'))
+    .pipe(gulp.dest('test'))
 
 })
 

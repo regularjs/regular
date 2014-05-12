@@ -54,7 +54,6 @@ dom.off = function(node, type, handler, capture){
   else node.detachEvent('on' + type, handler);
 }
 
-
 dom.text = (function (){
       var map = {};
       if (dom.msie && dom.msie < 9) {
@@ -73,9 +72,6 @@ dom.text = (function (){
     element[textProp] = value;
   }
 })();
-
-
-
 
 var mapSetterGetter = {
   "html": "innerHTML"

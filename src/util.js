@@ -9,7 +9,9 @@ _.uid = (function(){
   }
 })();
 
-_.varName = 'data';
+_.varName = 'd_'+_.uid();
+_.setName = 'p_'+_.uid();
+
 // randomVar
 _.randomVar = function(suffix){
   return (suffix || "var") + "_" + _.uid().toString(36);
@@ -421,3 +423,38 @@ var ld = (function(){
       }
       return whole;
   })();
+
+
+_._path = function(base, path){
+  return base ==undefined? base: base[path];
+}
+
+
+_.throttle = function throttle(func, wait){
+    var wait = wait || 100;
+    var context, args, result;
+    var timeout = null;
+    var previous = 0;
+    var later = function() {
+      previous = +new Date;
+      timeout = null;
+      result = func.apply(context, args);
+      context = args = null;
+    };
+    return function() {
+      var now = + new Date;
+      var remaining = wait - (now - previous);
+      context = this;
+      args = arguments;
+      if (remaining <= 0 || remaining > wait) {
+        clearTimeout(timeout);
+        timeout = null;
+        previous = now;
+        result = func.apply(context, args);
+        context = args = null;
+      } else if (!timeout) {
+        timeout = setTimeout(later, remaining);
+      }
+      return result;
+    };
+  };

@@ -2,8 +2,10 @@ var _ = require("../util.js");
 var node = require("./node.js");
 var Lexer = require("./Lexer.js");
 var varName = _.varName;
+var ctxName = _.randomVar('c');
 var isPath = _.makePredicate("STRING IDENT NUMBER");
 var isKeyWord = _.makePredicate("true false undefined null this Array Date JSON Math NaN RegExp decodeURI decodeURIComponent encodeURI encodeURIComponent parseFloat parseInt");
+var exports = {_path: _._path}
 
 
 function Parser(input, opts){
@@ -184,7 +186,7 @@ op.directive = function(name){
 
 op.interplation = function(){
   var nowatch = this.match('EXPR_OPEN').nowatch;
-  var res = this.expr(true);
+  var res = this.expression(true);
   this.match('END');
   return res;
 }
@@ -223,6 +225,7 @@ op.if = function(){
   return node.if(test, consequent, alternate);
 }
 
+
 // @mark   mustache syntax have natrure failutre, canot with expression
 op.list = function(){
   this.next();
@@ -232,7 +235,9 @@ op.list = function(){
   var container = consequent;
 
   this.match('IDENT', 'as');
+
   variable = this.match('IDENT').value;
+
   this.match('END');
 
   while( !(ll = this.eat('CLOSE')) ){
@@ -248,35 +253,38 @@ op.list = function(){
 }
 
 
+op.expression = function(){
+  var expression = this.expr();
+  if(!expression.depend) return expression.get;
+  else return expression;
+}
 
 op.expr = function(filter){
   this.depend = [];
-  var buffer;
-  if(filter){
-    buffer = this.filter();
-  }else{
-    buffer = this.condition();
-  }
+  var buffer = this.filter();
+  var body = buffer.get || buffer;
+  var prefix = this.depend.length? ("var "+varName+"="+ctxName+".data;" ): "";
 
-  var body = new Function(_.varName ,"return (" + buffer + ")");
+  var get = new Function(ctxName, prefix + "return (" + body + ")");
+
+  if(buffer.set) var set =  new Function(ctxName, _.setName ,prefix +";return (" + buffer.set + ")");
 
   if(!this.depend.length){
     // means no dependency
-    return body();
+    return node.expression(get.call(exports))
   }else{
-    return node.expression(body,null, this.depend)
+    return node.expression(get, set, this.depend)
   }
-  
 }
 
-op.filter = function(depend){
-  var left = this.condition(depend);
+op.filter = function(){
+  var left = this.assign();
   var ll = this.eat('|');
   var buffer, attr;
   if(ll){
     buffer = [
       ";(function(data){", 
-          "var ", attr = _.attrName(), "=", this.condition(depend), ";"]
+          "var ", attr = _.attrName(), "=", this.condition(depend).get, ";"]
     do{
 
       buffer.push(attr + " = this.f[" + this.match('IDENT').value+ "](" + attr) ;
@@ -288,11 +296,19 @@ op.filter = function(depend){
 
     }while(ll = this.eat('|'))
     buffer.push("return " + attr + "}");
-    return buffer.join("");
+    return this.getset(buffer.join(""));
   }
   return left;
 }
 
+op.assign = function(){
+  var left = this.condition(), ll;
+  if(ll = this.eat(['=', '+=', '-=', '*=', '/=', '%='])){
+    if(!left.set) this.error('invalid lefthand expression in assignment expression');
+    return this.getset('(' + left.get + ll.type  + this.condition().get + ')', left.set);
+  }
+  return left;
+}
 
 // or
 // or ? assign : assign
@@ -300,10 +316,10 @@ op.condition = function(){
 
   var test = this.or();
   if(this.eat('?')){
-    return [test + "?", 
-      this.condition(), 
+    return this.getset([test.get + "?", 
+      this.assign().get, 
       this.match(":").type, 
-      this.condition()].join("");
+      this.assign().get].join(""));
   }
 
   return test;
@@ -314,7 +330,7 @@ op.condition = function(){
 op.or = function(){
   var left = this.and();
   if(this.eat('||')){
-    return left + '||' + this.or();
+    return this.getset(left.get + '||' + this.or().get);
   }
   return left;
 }
@@ -323,7 +339,7 @@ op.or = function(){
 op.and = function(){
   var left = this.equal();
   if(this.eat('&&')){
-    return left + '&&' + this.and();
+    return this.getset(left.get + '&&' + this.and().get);
   }
   return left;
 }
@@ -337,7 +353,7 @@ op.equal = function(){
   var left = this.relation(), ll;
   // @perf;
   if( ll = this.eat(['==','!=', '===', '!=='])){
-    return left + ll.type + this.equal();
+    return this.getset(left.get + ll.type + this.equal().get);
   }
   return left
 }
@@ -350,7 +366,7 @@ op.relation = function(){
   var left = this.additive(), la,ll;
   // @perf
   if(ll = (this.eat(['<', '>', '>=', '<=']) || this.eat('IDENT', 'in') )){
-    return left + ll.value + this.relation();
+    return this.getset(left.get + ll.value + this.relation().get);
   }
   return left
 }
@@ -361,7 +377,7 @@ op.relation = function(){
 op.additive = function(){
   var left = this.multive() ,ll;
   if(ll= this.eat(['+','-']) ){
-    return left + ll.value + this.additive();
+    return this.getset(left.get + ll.value + this.additive().get);
   }
   return left
 }
@@ -373,9 +389,9 @@ op.additive = function(){
 op.multive = function(){
   var left = this.unary() ,ll;
   if( ll = this.eat(['*', '/' ,'%']) ){
-    return left + ll.type + this.multive();
+    return this.getset(left.get + ll.type + this.multive().get);
   }
-  return left
+  return left;
 }
 // lefthand
 // + unary
@@ -385,67 +401,86 @@ op.multive = function(){
 op.unary = function(){
   var ll;
   if(ll = this.eat(['+','-','~', '!'])){
-    return '(' + ll.type + this.unary() + ')';
+    return this.getset('(' + ll.type + this.unary().get + ')') ;
   }else{
     return this.member()
   }
 }
-
 
 // call[lefthand] :
 // member args
 // member [ expression ]
 // member . ident  
 
-op.member = function( base, pathes ){
+op.member = function(base, last, pathes){
   // @TODO depend must determin in this step
   var ll, path, value;
-  if(!base){
+  var first = !base;
+
+  if(!base){ //first
     path = this.primary();
-    if(path.type === 'IDENT'){
-      if(!isKeyWord(path.value)){
-        pathes = [];
-        pathes.push(path.value);
-        base = varName + "['" + path.value + "']";
-      }else{
-        base = path.value
+    var type = typeof path;
+    if(type === 'string'){ // no keyword ident
+      pathes = [];
+      if(path === '$self'){ // $self.1
+        pathes.push('*');
+        base = varName;
+      }else{ // keypath **
+        pathes.push(path);
+        last = path;
+        base = varName + "['" + path + "']";
       }
+    }else{ //Primative Type
+      if(path.get === 'this'){
+        base = ctxName;
+        pathes = ['this'];
+      }else{
+        pathes = null;
+        base = path.get;
+      }
+      
+    }
+  }else{ // not first enter
+    if(typeof last === 'string' && isPath( last) ){ // is valid path
+      pathes.push(last);
     }else{
-        base = path.type === 'STRING'? "'"+path.value+"'": path.value;
+      if(pathes && pathes.length) this.depend.push(pathes);
+      pathes = null;
     }
   }
   if(ll = this.eat(['[', '.', '('])){
     switch(ll.type){
       case '.':
           // member(object, property, computed)
-        base +=  "['" + (value = this.match('IDENT').value) + "']";
-
-        pathes && pathes.push(value);
-
-        return this.member( base , pathes);
+        var tmpName = this.match('IDENT').value;
+        if(pathes && pathes.length){
+          base = ctxName + "._path("+base+", '"+tmpName + "')";
+        }else{
+          base += "['" + tmpName + "']";
+        }
+        return this.member( base, value, pathes );
       case '[':
           // member(object, property, computed)
         path = this.expr();
-        base += "['" + path + "']";
-
-        if(pathes && path.type && isPath(path.type)){
-          pathes.push(path.value);
+        if(pathes && pathes.length){
+          base = ctxName + "._path("+base+", '"+path.get + "')";
         }else{
-          this.depend.push(pathes);
-          pathes = false;
+          base += "['" + path.get + "']";
         }
         this.match(']')
-        return this.member(base, pathes);
+        return this.member(base, path, pathes);
       case '(':
         // call(callee, args)
-        base += "(" + this.arguments().join(",") + ")";
+        var args = this.arguments();
+        base = base + ("(" + args.join(",") + ")");
         this.match(')')
-        this.depend.push(pathes);
-        return this.member(base);
+        return this.member(base, null, pathes);
     }
   }
-  if(pathes) this.depend.push(pathes);
-  return base;
+  if(pathes && pathes.length) this.depend.push(pathes);
+  var res =  {get: base};
+  if(last) res.set = base + '=' + _.setName;
+  return res;
 }
 
 /**
@@ -456,7 +491,7 @@ op.arguments = function(end){
   var args = [], ll;
   do{
     if(this.la() !== end){
-      args.push(this.condition())
+      args.push(this.assign().get)
     }
   }while( this.eat(','));
   return args
@@ -481,13 +516,20 @@ op.primary = function(){
     case "(":
       return this.paren();
     // literal or ident
-    case "IDENT":
     case 'STRING':
+      this.next();
+      return this.getset("'" + ll.value + "'")
     case 'NUMBER':
       this.next();
-      return ll;
+      return this.getset(ll.value);
+    case "IDENT":
+      this.next();
+      if(isKeyWord(ll.value)){
+        return this.getset( ll.value );
+      }
+      return ll.value;
     default: 
-      this.error('Unexpected Token: '+ ll.type);
+      this.error('Unexpected Token: ' + ll.type);
   }
 }
 
@@ -510,31 +552,49 @@ op.object = function(){
   while(true){
     ll = this.eat(['STRING', 'IDENT', 'NUMBER']);
     if(ll){
-      code.push(ll.value + this.match(':').type);
-      code.push(this.condition());
+      code.push("'" + ll.value + "'" + this.match(':').type);
+      code.push(this.condition().get);
       if(this.eat(",")) code.push(",");
     }else{
       code.push(this.match('}').type);
       break;
     }
   }
-  return code.join("");
+  return {get: code.join("")}
 }
 
 // array
-// [ assignment[,assignment]*]
+// [ assign[,assign]*]
 op.array = function(){
   var code = [this.match('[').type]
   while(item = this.condition()){
-    code.push(item);
+    code.push(item.get);
     if(this.eat(',')) this.push(",");
   }
   code.push(this.match(']').type);
-  return code.join("");
+  return {get: code.join("")};
 }
+
 // '(' expression ')'
 op.paren = function(){
-  return this.match('(').type + this.expr() + this.match(')').type;
+  this.match('(');
+  var res = this.filter()
+  res.get = '(' + res.get + ')';
+  this.match(')');
+  return res;
+}
+
+op.getset = function(get, set){
+  return {
+    get: get,
+    set: set
+  }
+}
+
+op.flatenDepend = function(depend){
+  for(var i = 0, len = depend.length; i < len; i++){
+
+  }
 }
 
 
