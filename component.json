@@ -1,15 +1,16 @@
 {
     "name": "terminator",
     "version": "0.0.1",
-    "main": "src/browser.js",
+    "main": "src/common.js",
     "scripts": [
-        "src/browser.js",
         "src/common.js",
         "src/util.js"   ,
         "src/env.js",
         "src/dom.js",
+        "src/group.js",
         "src/Scope.js",
         "src/parser/Lexer.js",
+        "src/helper/event.js",
         "src/parser/node.js",
         "src/parser/Parser.js"
     ]

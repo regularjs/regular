@@ -25,7 +25,7 @@ gulp.task('build', function(){
   // form minify    
   gulp.src('./component.json')
     .pipe(component.scripts({
-      standalone: 'terminator',
+      standalone: 'Termin',
       name: 'terminator'
     }))
     .pipe(wrap(signatrue))

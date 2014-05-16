@@ -1,8 +1,11 @@
 var Lexer = require("./parser/Lexer.js");
 var Parser = require("./parser/Parser.js");
+var node = require("./parser/node.js");
 var dom = require("./dom.js");
 var Scope = require('./Scope.js');
+var Group = require('./group.js');
 var _ = require('./util');
+var Event = require('./helper/event.js');
 
 
 
@@ -16,25 +19,22 @@ var Termin = function(template, data){
   }
   if(template){
     if(type === "string"){
+      template = Termin.getTemplate(template);
       template = new Parser(template).parse();
     }
     this.template = template;
   }
+
   this.data= {};
   _.extend(this.data , data || {});
   this.$watchers = [];
   this.$children = [];
 
   this.context = this.context || this;
-  var fragment = this.compile(this.template);
-  if(fragment.length === 1) this.node = fragment[0];
-  else{
-     this.node = dom.fragment();
-     for(var i  = 0, len = fragment.length; i < len; i++){
-      this.node.appendChild(fragment[i]);
-     }
-  }
-  this.digest()
+
+  this.group = this.$compile(this.template);
+  this.node = this.group.generate();
+  this.$digest()
   if(this.init) this.init.apply(this, arguments);
 }
 
@@ -50,6 +50,7 @@ var Termin = function(template, data){
 _.extend(Termin, {
   // private data stuff
   _decorators: {},
+  _components: {},
   _filters: {},
   _customers: {},
   _exprCache:{},
@@ -61,11 +62,20 @@ _.extend(Termin, {
 
     this._decorators = _.createObject( supr._decorators )
 
-    if(o.name) Termin.register(o.name, this);
+    if(o.name) Termin.component(o.name, this);
     if(template = o.template){
+      template = Termin.getTemplate(template);
       if(typeof template == 'string'){
         this.prototype.template = new Parser(template).parse();
       }
+    }
+
+  },
+  getTemplate: function(template){
+    if(/^\w{1,20}$/.test(template)){
+      return document.getElementById(template).innerHTML;
+    }else{
+      return template;
     }
   },
   derive: _.derive,
@@ -73,6 +83,12 @@ _.extend(Termin, {
     var decorators = this._decorators;
     if(cfg == null) return decorators[name];
     decorators[name] = cfg;
+    return this;
+
+  },
+  component: function(name, Component){
+    if(!Component) return this._components[name];
+    this._components[name] = Component;
     return this;
 
   },
@@ -86,40 +102,49 @@ _.extend(Termin, {
 });
 
 
-_.extend(Termin.prototype, {
-  init: function(){
-
-  },
-  compile: function(ast){
+Event.mixTo(Termin)
+_.extend( Termin.prototype, {
+  init: function(){},
+  $compile: function(ast){
     if(_.typeOf(ast) === 'array'){
       var res = [];
       for(var i = 0, len = ast.length; i < len; i++){
-        res.push(this.compile(ast[i]));
+        res.push(this.$compile(ast[i]));
       }
-      return res;
+      return new Group(res);
     }
     if(typeof ast === 'string') return document.createTextNode(ast)
     return walkers[ast.type || "default"].call(this, ast);
   },
-  inject: function(node, direct){
+  $inject: function(node, direct){
     direct = direct || 'bottom';
     // node.appendChild(this.fragment);
+  },
+  generate: function(){
+    return this.node || this.group.generate();
+  },
+  $apply: function(){
+
   },
   set: function(path, value){
     if(typeof path === 'function' ){
       path.call(this, this.data);
-      this.digest();
-    }else if(path){
+    }else{
       var base = this.data;
       var path = Termin.parse(path);
-      path.set.call(this, value);
-      this.digest();
+      path.set(this, value);
     }
+    this.$digest(path);
   },
   _path: _._path,
-  digest: function(){
+  $digest: function(path){
     var watchers = this.$watchers;
     var children = this.$children;
+    if(this.$phase === 'digest')  return;
+
+    this.$phase = 'digest';
+    var dirty = false;
+    this.$trigger('digest');
 
     for(var i = 0, len = watchers.length;i<len; i++){
       var watcher = watchers[i];
@@ -154,22 +179,63 @@ _.extend(Termin.prototype, {
         if(_.typeOf(eq)=='array' && eq.length){
           watcher.fn(now, eq);
           watcher.last = _.clone(now);
+        }else{
+          eq = true;
         }
       }
+      if(eq !== true) dirty = true;
     }
-    for(var i = 0, len = children.length; i < len ; i++){
-      children[i].$digest(); 
-    }
-  },
-  destroy: function(){
+    this.$phase = null;
+    if(dirty) this.$digest();
 
   },
-  watch: function(expr, fn){
+  destroy: function(){
+    this.group.destroy();
+    this.$watchers = null;
+    this.template = null;
+  },
+  $watch: function(expr, fn){
+    var uid = _.uid('w_');
     var expr = Termin.parse(expr);
-    var watcher = { get: expr.get, fn: fn, pathes: expr.pathes };
+    var watcher = { get: expr.get, fn: fn, pathes: expr.pathes , id: uid};
     this.$watchers.push(watcher);
+    return uid;
+  },
+  $unwatch: function(uid){
+    var watchers = this.$watchers;
+    if(!uid || !watchers) return;
+    for(var len = watchers.length; len-- ;){
+      if(watchers[len] && watchers[len].id === uid) return watchers.splice(len, 1);
+    }
+  },
+
+  inject: function(node, position){
+    position = position || 'bottom';
+    var firstChild,lastChild, parentNode, next;
+    switch(position){
+      case 'bottom':
+        node.appendChild(this.node)
+        break;
+      case 'top':
+        if(firstChild = node.firstChild){
+          node.insertBefore(this.node, node.firstChild)
+        }else{
+          node.appendChild(this.node);
+        }
+        break;
+      case 'after':
+        if(next = node.nextSibling){
+          next.parentNode.insertBefore(this.node, next);
+        }else{
+          next.parentNode.appendChild(this.node);
+        }
+        break;
+      case 'before':
+        node.parentNode.insertBefore(this.node, node);
+    }
   }
 });
+
 
 
 var walkers = {};
@@ -182,101 +248,188 @@ walkers.list = function(ast){
     context: this
   });
   var self = this;
-  var sections = [];
-  this.watch(ast.sequence, function(newValue, splices){
+  var group = new Group();
+  this.$watch(ast.sequence, function(newValue, splices){
     if(!splices || !splices.length) return;
     var cur = placeholder;
     var m = 0,
       len=newValue.length,
       mIndex = splices[0].index;
-    for(var i=0; i < splices.length; i++){
+    for(var i=0; i < splices.length; i++){ //init
       var splice = splices[i];
       var index = splice.index;
-      for(var k=m; k<index; k++){
-        var pair = pairs[k];
-        pair.scope.$index = k;
+
+      for(var k=m; k<index; k++){ // no change
+        var sect = group.get(k);
+        sect.set('$index', k);
       }
-      for(var j=0,jlen = splice.removed.length; j< jlen; j++){
-        var removed = pairs.splice(index,1)[0];
-        removed.$elem._$off()._$remove();
-        removed.scope.$destroy();
-        removed.scope =null;
-        removed = null;
+      for(var j=0,jlen = splice.removed.length; j< jlen; j++){ //removed
+        var removed = group.children.splice(index,1)[0];
+        removed.destroy();
       }
-      for(var o=index; o < index + splice.add; o++){
-        var childScope = scope.$new();
-        childScope.$index = o;
-        childScope[matched[1]] = newValue[o]
-        var $celem = $elem._$clone(true);
-        var insert = pairs[o-1]? pairs[o-1].$elem[0]: start;
-        parent.insertBefore($celem[0], insert.nextSibling);
-        bootstrap( childScope, $celem[0], { skip: 'nm-repeat' } );
-        pairs.splice(o,0, {
-          $elem: $celem,
-          scope: childScope
-        });
+
+      for(var o=index; o < index + splice.add; o++){ //add
+        // prototype inherit
+        var item = _.createObject(newValue[o]);
+        var data = {};
+        data.$index = o;
+        data[ast.variable] = item;
+        var section = new Section(data);
+        window.section = section
+        var insert = group.get(o-1)? group.get(o-1).group.get(-1): placeholder;
+        placeholder.parentNode.insertBefore(section.node, insert.nextSibling);
+        group.children.splice(o, 0, section);
       }
       m = index + splice.add - splice.removed.length;
-      m  = m<0? 0:m;
+      m  = m < 0? 0 : m;
     }
     if(m < len){
       for(var i = m; i < len; i++){
-        var pair = pairs[i];
-        pair.scope.$index = i;
+        var pair = group.get(i);
+        pair.set('$index', i);
       }
     }
-    pairs.forEach(function(pair){
-      pair.scope.$digest();
-    })
+   
   });
-  return {
-    created: function(){
-      return 
-    },
-    removed: function(){
+  this.$on('digest', function(){
+    group.children.forEach(function(section){
+      section.$digest();
+    })
+  })
 
+  return {
+    generate: function(){
+      return placeholder;
+    },
+    destroy: function(){
+      group.destroy();
     }
   }
-  return placeholder;
 }
 
-walkers.if = function(){
+
+walkers.partial = function(ast){
+  var content = ast.content, compiled;
+  if(content){
+    compiled = this.$compile(new Parser(content.get(this)).parse());
+  }
+  return {
+    generate: function(){
+      return compiled.generate();
+    },
+    destroy: function(){
+      compiled.destroy();
+    }
+  }
+}
+
+
+walkers.if = function(ast){
+  var test, consequent, alternate, node;
+  var placeholder = document.createComment("termin list");
+  var self = this;
+  this.$watch(ast.test, function(nvalue){
+    if(!!nvalue){ //true
+      consequent = self.$compile( ast.consequent )
+      node = consequent.generate(); //return group
+      if(alternate){ alternate.destroy() };
+      // @TODO
+      placeholder.parentNode && placeholder.parentNode.insertBefore( node, placeholder );
+    }else{ //false
+      if(consequent){ consequent.destroy() }
+      if(ast.alternate) alternate = self.$compile(ast.alternate);
+      node = alternate.generate();
+      placeholder.parentNode && placeholder.parentNode.insertBefore( node, placeholder );
+    }
+    self.$digest();
+  });
+
+  return {
+    generate: function(){
+      return placeholder;
+    },
+    destroy: function destroy(){
+      if(alternate) alternate.destroy();
+      if(consequent) consequent.destroy();
+    }
+  }
 
 }
+
 
 walkers.expression = function(ast){
   var node = document.createTextNode("");
-  this.watch(ast, function(newval){
+  var watchid = this.$watch(ast, function(newval){
     dom.text(node, "" + (newval||""));
   })
-  return node;
+  return {
+    generate: function(){
+      return node;
+    },
+    destroy: function(){
+
+    }
+  }
 }
 
 walkers.element = function(ast){
-  var element = dom.create(ast.tag);
   var attrs = ast.attrs;
+  var Component = Termin.component(ast.tag) 
+  if(Component ){
+    var component = new Component({});
+    for(var i = 0, len = attrs.length; i < len; i++){
+      var attr = attrs[i];
+      var value = attr.value||"";
+      if(value.type === 'expression'){
+        this.$watch(value,function(nvalue){
+          component.set(attr.name, nvalue);
+        });
+      }else{
+        component.set(attr.name, value);
+      }
+    }
+    return component;
+  }
+  var element = dom.create(ast.tag);
   var children = ast.children;
   var child;
+  var group = new Group;
+  // @TODO must mark the attr bind;
+  var directive = [];
   for(var i = 0, len = attrs.length; i < len; i++){
     bindAttrWatcher.call(this, element, attrs[i])
   }
   if(children){
+    var group = group;
     for(var i =0, len = children.length; i < len ;i++){
-      child = this.compile(children[i])
-      if(child !== null) element.appendChild(child);
+      child = this.$compile(children[i]);
+      if(child !== null) group.push(child);
     }
   }
-  return element;
+  return {
+    generate: function(){
+      if(group) element.appendChild(group.generate());
+      return element;
+    },
+    destroy: function(){
+      if(group) group.destroy();
+      dom.remove(element)
+    }
+  }
 }
+
+// dada
+walkers.string = function(){}
+
 
 function bindAttrWatcher(element, attr){
   var name = attr.name,
-    value = attr.value, decorator=Termin.decorate(name);
+    value = attr.value || "", decorator=Termin.decorate(name);
   if(decorator){
     decorator.call(this, element, value);
   }else{
-    if( value && value.type == 'expression' ){
-      this.watch(value, function(nvalue){
+    if(value.type == 'expression' ){
+      this.$watch(value, function(nvalue){
         dom.attr(element, name, nvalue);
       })
     }else{
@@ -292,7 +445,7 @@ events.forEach(function(item){
     var self = this;
     dom.on(elem, item, function(){
       value.get(self);
-      self.digest();
+      self.$digest();
     });
     
   })
@@ -324,7 +477,7 @@ function initSelect(scope, elem, value, parseFn){
 function initText(elem, parsed){
   var inProgress = false;
   var self = this;
-  this.watch(parsed, function(newValue, oldValue){
+  this.$watch(parsed, function(newValue, oldValue){
     if(inProgress) return;
     elem.value = newValue == null? "": "" + newValue;
   });
@@ -333,7 +486,7 @@ function initText(elem, parsed){
     var value = this.value;
     parsed.set(self, value);
     inProgress= true;
-    self.digest();
+    self.$digest();
     inProgress = false;
   })
 
@@ -360,6 +513,10 @@ Termin.decorate('t-model', function(elem,value){
 }).decorate('proxy', function(elem, value){
 });
 
+
+var Modal = Termin.derive({
+
+})
 
 
 

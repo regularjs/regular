@@ -40,7 +40,9 @@ dom.attr = function(node, name, value){
   if(value === null){
     return node.removeAttribute(name)
   }
-  return node.setAttribute(name, value);
+
+  if(name === 'class') node.className = value;
+  else node.setAttribute(name, value);
 }
 
 
@@ -83,6 +85,14 @@ dom.html = function(){
   }else{
     node.innerHTML = text;
   }
+}
+
+dom.replace = function(node, replaced){
+  if(replaced.parentNode) replaced.parentNode.replaceChild(node, replaced);
+}
+
+dom.remove = function(node){
+  if(node.parentNode) node.parentNode.removeChild(node);
 }
 
 // css Settle & Getter

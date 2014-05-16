@@ -253,7 +253,7 @@ var rules = {
       value: name
     }
   }, 'JST'],
-  JST_PART_OPEN: ['{BEGIN}>{SPACE}*({IDENT})', function(all, name){
+  JST_PART_OPEN: ['{BEGIN}~', function(all, name){
     return {
       type: 'PART_OPEN',
       value: name
@@ -278,11 +278,8 @@ var rules = {
       escape: escape
     }
   }, 'JST'],
-
   JST_IDENT: ['{IDENT}', 'IDENT', 'JST'],
-
   JST_SPACE: [/[ \r\n\f]+/, null, 'JST'],
-
   JST_PUNCHOR: [/[=!]?==|[-=><+*\/%\!]?\=|\|\||&&|[\<\>\[\]\(\)\-\|\{}\+\*\/%?:\.!]/, function(all){
     return { type: all, value: all }
   },'JST'],

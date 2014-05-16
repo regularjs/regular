@@ -206,19 +206,15 @@ require.relative = function(parent) {
 
   return localRequire;
 };
-require.register("terminator/src/browser.js", function(exports, require, module){
-var runtime = require("./common");
-
-
-exports.dom = require('./dom.js');
-exports.dom = require('./dom.js');
-});
 require.register("terminator/src/common.js", function(exports, require, module){
 var Lexer = require("./parser/Lexer.js");
 var Parser = require("./parser/Parser.js");
+var node = require("./parser/node.js");
 var dom = require("./dom.js");
 var Scope = require('./Scope.js');
+var Group = require('./group.js');
 var _ = require('./util');
+var Event = require('./helper/event.js');
 
 
 
@@ -232,25 +228,22 @@ var Termin = function(template, data){
   }
   if(template){
     if(type === "string"){
+      template = Termin.getTemplate(template);
       template = new Parser(template).parse();
     }
     this.template = template;
   }
+
   this.data= {};
   _.extend(this.data , data || {});
   this.$watchers = [];
   this.$children = [];
 
   this.context = this.context || this;
-  var fragment = this.compile(this.template);
-  if(fragment.length === 1) this.node = fragment[0];
-  else{
-     this.node = dom.fragment();
-     for(var i  = 0, len = fragment.length; i < len; i++){
-      this.node.appendChild(fragment[i]);
-     }
-  }
-  this.digest()
+
+  this.group = this.$compile(this.template);
+  this.node = this.group.generate();
+  this.$digest()
   if(this.init) this.init.apply(this, arguments);
 }
 
@@ -266,6 +259,7 @@ var Termin = function(template, data){
 _.extend(Termin, {
   // private data stuff
   _decorators: {},
+  _components: {},
   _filters: {},
   _customers: {},
   _exprCache:{},
@@ -277,11 +271,20 @@ _.extend(Termin, {
 
     this._decorators = _.createObject( supr._decorators )
 
-    if(o.name) Termin.register(o.name, this);
+    if(o.name) Termin.component(o.name, this);
     if(template = o.template){
+      template = Termin.getTemplate(template);
       if(typeof template == 'string'){
         this.prototype.template = new Parser(template).parse();
       }
+    }
+
+  },
+  getTemplate: function(template){
+    if(/^\w{1,20}$/.test(template)){
+      return document.getElementById(template).innerHTML;
+    }else{
+      return template;
     }
   },
   derive: _.derive,
@@ -289,6 +292,12 @@ _.extend(Termin, {
     var decorators = this._decorators;
     if(cfg == null) return decorators[name];
     decorators[name] = cfg;
+    return this;
+
+  },
+  component: function(name, Component){
+    if(!Component) return this._components[name];
+    this._components[name] = Component;
     return this;
 
   },
@@ -302,40 +311,49 @@ _.extend(Termin, {
 });
 
 
-_.extend(Termin.prototype, {
-  init: function(){
-
-  },
-  compile: function(ast){
+Event.mixTo(Termin)
+_.extend( Termin.prototype, {
+  init: function(){},
+  $compile: function(ast){
     if(_.typeOf(ast) === 'array'){
       var res = [];
       for(var i = 0, len = ast.length; i < len; i++){
-        res.push(this.compile(ast[i]));
+        res.push(this.$compile(ast[i]));
       }
-      return res;
+      return new Group(res);
     }
     if(typeof ast === 'string') return document.createTextNode(ast)
     return walkers[ast.type || "default"].call(this, ast);
   },
-  inject: function(node, direct){
+  $inject: function(node, direct){
     direct = direct || 'bottom';
     // node.appendChild(this.fragment);
+  },
+  generate: function(){
+    return this.node || this.group.generate();
+  },
+  $apply: function(){
+
   },
   set: function(path, value){
     if(typeof path === 'function' ){
       path.call(this, this.data);
-      this.digest();
-    }else if(path){
+    }else{
       var base = this.data;
       var path = Termin.parse(path);
-      path.set.call(this, value);
-      this.digest();
+      path.set(this, value);
     }
+    this.$digest(path);
   },
   _path: _._path,
-  digest: function(){
+  $digest: function(path){
     var watchers = this.$watchers;
     var children = this.$children;
+    if(this.$phase === 'digest')  return;
+
+    this.$phase = 'digest';
+    var dirty = false;
+    this.$trigger('digest');
 
     for(var i = 0, len = watchers.length;i<len; i++){
       var watcher = watchers[i];
@@ -370,22 +388,63 @@ _.extend(Termin.prototype, {
         if(_.typeOf(eq)=='array' && eq.length){
           watcher.fn(now, eq);
           watcher.last = _.clone(now);
+        }else{
+          eq = true;
         }
       }
+      if(eq !== true) dirty = true;
     }
-    for(var i = 0, len = children.length; i < len ; i++){
-      children[i].$digest(); 
-    }
-  },
-  destroy: function(){
+    this.$phase = null;
+    if(dirty) this.$digest();
 
   },
-  watch: function(expr, fn){
+  destroy: function(){
+    this.group.destroy();
+    this.$watchers = null;
+    this.template = null;
+  },
+  $watch: function(expr, fn){
+    var uid = _.uid('w_');
     var expr = Termin.parse(expr);
-    var watcher = { get: expr.get, fn: fn, pathes: expr.pathes };
+    var watcher = { get: expr.get, fn: fn, pathes: expr.pathes , id: uid};
     this.$watchers.push(watcher);
+    return uid;
+  },
+  $unwatch: function(uid){
+    var watchers = this.$watchers;
+    if(!uid || !watchers) return;
+    for(var len = watchers.length; len-- ;){
+      if(watchers[len] && watchers[len].id === uid) return watchers.splice(len, 1);
+    }
+  },
+
+  inject: function(node, position){
+    position = position || 'bottom';
+    var firstChild,lastChild, parentNode, next;
+    switch(position){
+      case 'bottom':
+        node.appendChild(this.node)
+        break;
+      case 'top':
+        if(firstChild = node.firstChild){
+          node.insertBefore(this.node, node.firstChild)
+        }else{
+          node.appendChild(this.node);
+        }
+        break;
+      case 'after':
+        if(next = node.nextSibling){
+          next.parentNode.insertBefore(this.node, next);
+        }else{
+          next.parentNode.appendChild(this.node);
+        }
+        break;
+      case 'before':
+        node.parentNode.insertBefore(this.node, node);
+    }
   }
 });
+
 
 
 var walkers = {};
@@ -398,101 +457,188 @@ walkers.list = function(ast){
     context: this
   });
   var self = this;
-  var sections = [];
-  this.watch(ast.sequence, function(newValue, splices){
+  var group = new Group();
+  this.$watch(ast.sequence, function(newValue, splices){
     if(!splices || !splices.length) return;
     var cur = placeholder;
     var m = 0,
       len=newValue.length,
       mIndex = splices[0].index;
-    for(var i=0; i < splices.length; i++){
+    for(var i=0; i < splices.length; i++){ //init
       var splice = splices[i];
       var index = splice.index;
-      for(var k=m; k<index; k++){
-        var pair = pairs[k];
-        pair.scope.$index = k;
+
+      for(var k=m; k<index; k++){ // no change
+        var sect = group.get(k);
+        sect.set('$index', k);
       }
-      for(var j=0,jlen = splice.removed.length; j< jlen; j++){
-        var removed = pairs.splice(index,1)[0];
-        removed.$elem._$off()._$remove();
-        removed.scope.$destroy();
-        removed.scope =null;
-        removed = null;
+      for(var j=0,jlen = splice.removed.length; j< jlen; j++){ //removed
+        var removed = group.children.splice(index,1)[0];
+        removed.destroy();
       }
-      for(var o=index; o < index + splice.add; o++){
-        var childScope = scope.$new();
-        childScope.$index = o;
-        childScope[matched[1]] = newValue[o]
-        var $celem = $elem._$clone(true);
-        var insert = pairs[o-1]? pairs[o-1].$elem[0]: start;
-        parent.insertBefore($celem[0], insert.nextSibling);
-        bootstrap( childScope, $celem[0], { skip: 'nm-repeat' } );
-        pairs.splice(o,0, {
-          $elem: $celem,
-          scope: childScope
-        });
+
+      for(var o=index; o < index + splice.add; o++){ //add
+        // prototype inherit
+        var item = _.createObject(newValue[o]);
+        var data = {};
+        data.$index = o;
+        data[ast.variable] = item;
+        var section = new Section(data);
+        window.section = section
+        var insert = group.get(o-1)? group.get(o-1).group.get(-1): placeholder;
+        placeholder.parentNode.insertBefore(section.node, insert.nextSibling);
+        group.children.splice(o, 0, section);
       }
       m = index + splice.add - splice.removed.length;
-      m  = m<0? 0:m;
+      m  = m < 0? 0 : m;
     }
     if(m < len){
       for(var i = m; i < len; i++){
-        var pair = pairs[i];
-        pair.scope.$index = i;
+        var pair = group.get(i);
+        pair.set('$index', i);
       }
     }
-    pairs.forEach(function(pair){
-      pair.scope.$digest();
-    })
+   
   });
-  return {
-    created: function(){
-      return 
-    },
-    removed: function(){
+  this.$on('digest', function(){
+    group.children.forEach(function(section){
+      section.$digest();
+    })
+  })
 
+  return {
+    generate: function(){
+      return placeholder;
+    },
+    destroy: function(){
+      group.destroy();
     }
   }
-  return placeholder;
 }
 
-walkers.if = function(){
+
+walkers.partial = function(ast){
+  var content = ast.content, compiled;
+  if(content){
+    compiled = this.$compile(new Parser(content.get(this)).parse());
+  }
+  return {
+    generate: function(){
+      return compiled.generate();
+    },
+    destroy: function(){
+      compiled.destroy();
+    }
+  }
+}
+
+
+walkers.if = function(ast){
+  var test, consequent, alternate, node;
+  var placeholder = document.createComment("termin list");
+  var self = this;
+  this.$watch(ast.test, function(nvalue){
+    if(!!nvalue){ //true
+      consequent = self.$compile( ast.consequent )
+      node = consequent.generate(); //return group
+      if(alternate){ alternate.destroy() };
+      // @TODO
+      placeholder.parentNode && placeholder.parentNode.insertBefore( node, placeholder );
+    }else{ //false
+      if(consequent){ consequent.destroy() }
+      if(ast.alternate) alternate = self.$compile(ast.alternate);
+      node = alternate.generate();
+      placeholder.parentNode && placeholder.parentNode.insertBefore( node, placeholder );
+    }
+    self.$digest();
+  });
+
+  return {
+    generate: function(){
+      return placeholder;
+    },
+    destroy: function destroy(){
+      if(alternate) alternate.destroy();
+      if(consequent) consequent.destroy();
+    }
+  }
 
 }
+
 
 walkers.expression = function(ast){
   var node = document.createTextNode("");
-  this.watch(ast, function(newval){
+  var watchid = this.$watch(ast, function(newval){
     dom.text(node, "" + (newval||""));
   })
-  return node;
+  return {
+    generate: function(){
+      return node;
+    },
+    destroy: function(){
+
+    }
+  }
 }
 
 walkers.element = function(ast){
-  var element = dom.create(ast.tag);
   var attrs = ast.attrs;
+  var Component = Termin.component(ast.tag) 
+  if(Component ){
+    var component = new Component({});
+    for(var i = 0, len = attrs.length; i < len; i++){
+      var attr = attrs[i];
+      var value = attr.value||"";
+      if(value.type === 'expression'){
+        this.$watch(value,function(nvalue){
+          component.set(attr.name, nvalue);
+        });
+      }else{
+        component.set(attr.name, value);
+      }
+    }
+    return component;
+  }
+  var element = dom.create(ast.tag);
   var children = ast.children;
   var child;
+  var group = new Group;
+  // @TODO must mark the attr bind;
+  var directive = [];
   for(var i = 0, len = attrs.length; i < len; i++){
     bindAttrWatcher.call(this, element, attrs[i])
   }
   if(children){
+    var group = group;
     for(var i =0, len = children.length; i < len ;i++){
-      child = this.compile(children[i])
-      if(child !== null) element.appendChild(child);
+      child = this.$compile(children[i]);
+      if(child !== null) group.push(child);
     }
   }
-  return element;
+  return {
+    generate: function(){
+      if(group) element.appendChild(group.generate());
+      return element;
+    },
+    destroy: function(){
+      if(group) group.destroy();
+      dom.remove(element)
+    }
+  }
 }
+
+// dada
+walkers.string = function(){}
+
 
 function bindAttrWatcher(element, attr){
   var name = attr.name,
-    value = attr.value, decorator=Termin.decorate(name);
+    value = attr.value || "", decorator=Termin.decorate(name);
   if(decorator){
     decorator.call(this, element, value);
   }else{
-    if( value && value.type == 'expression' ){
-      this.watch(value, function(nvalue){
+    if(value.type == 'expression' ){
+      this.$watch(value, function(nvalue){
         dom.attr(element, name, nvalue);
       })
     }else{
@@ -508,7 +654,7 @@ events.forEach(function(item){
     var self = this;
     dom.on(elem, item, function(){
       value.get(self);
-      self.digest();
+      self.$digest();
     });
     
   })
@@ -540,7 +686,7 @@ function initSelect(scope, elem, value, parseFn){
 function initText(elem, parsed){
   var inProgress = false;
   var self = this;
-  this.watch(parsed, function(newValue, oldValue){
+  this.$watch(parsed, function(newValue, oldValue){
     if(inProgress) return;
     elem.value = newValue == null? "": "" + newValue;
   });
@@ -549,7 +695,7 @@ function initText(elem, parsed){
     var value = this.value;
     parsed.set(self, value);
     inProgress= true;
-    self.digest();
+    self.$digest();
     inProgress = false;
   })
 
@@ -576,6 +722,10 @@ Termin.decorate('t-model', function(elem,value){
 }).decorate('proxy', function(elem, value){
 });
 
+
+var Modal = Termin.derive({
+
+})
 
 
 
@@ -1103,7 +1253,9 @@ dom.attr = function(node, name, value){
   if(value === null){
     return node.removeAttribute(name)
   }
-  return node.setAttribute(name, value);
+
+  if(name === 'class') node.className = value;
+  else node.setAttribute(name, value);
 }
 
 
@@ -1148,6 +1300,14 @@ dom.html = function(){
   }
 }
 
+dom.replace = function(node, replaced){
+  if(replaced.parentNode) replaced.parentNode.replaceChild(node, replaced);
+}
+
+dom.remove = function(node){
+  if(node.parentNode) node.parentNode.removeChild(node);
+}
+
 // css Settle & Getter
 dom.css = function(name, value){
 
@@ -1165,6 +1325,71 @@ dom.hasClass = function(){
 
 }
 
+
+
+
+});
+require.register("terminator/src/group.js", function(exports, require, module){
+var _ = require('./util');
+var dom = require('./dom');
+
+function Group(list){
+  this.children = list || [];
+}
+
+_.extend(Group.prototype, {
+  destroy: function(){
+
+    var children = this.children, child;
+
+    for(var i = 0, len = children.length; i < len; i++){
+      child = children[i];
+      if(typeof child.destroy === 'function'){ // destroy interface
+
+        child.destroy();
+
+      }else if(child.nodeType == 3){ // textnode
+
+        dom.remove(child);
+
+      }else{// TODO 
+      }
+    }
+    this.children = null;
+  },
+  generate: function(){
+    var children = this.children, child, node, 
+      fragment = dom.fragment();
+
+    for(var i = 0, len = children.length; i < len; i++){
+
+      var node = null;
+      child = children[i];
+      if(child.generate) node = child.generate();
+      else if(typeof child.nodeType == 'number') node = child;
+      if(node) fragment.appendChild(node);
+
+    }
+    return fragment;
+  },
+  get: function(index){
+    if(index < 0) index = this.children.length + index;
+    return this.children[index];
+  },
+  first: function(){
+    
+  },
+  splice: function(){
+
+  },
+  push: function(item){
+    this.children.push( item );
+  }
+})
+
+
+
+module.exports = Group;
 
 
 
@@ -1571,7 +1796,7 @@ var rules = {
       value: name
     }
   }, 'JST'],
-  JST_PART_OPEN: ['{BEGIN}>{SPACE}*({IDENT})', function(all, name){
+  JST_PART_OPEN: ['{BEGIN}~', function(all, name){
     return {
       type: 'PART_OPEN',
       value: name
@@ -1596,11 +1821,8 @@ var rules = {
       escape: escape
     }
   }, 'JST'],
-
   JST_IDENT: ['{IDENT}', 'IDENT', 'JST'],
-
   JST_SPACE: [/[ \r\n\f]+/, null, 'JST'],
-
   JST_PUNCHOR: [/[=!]?==|[-=><+*\/%\!]?\=|\|\||&&|[\<\>\[\]\(\)\-\|\{}\+\*\/%?:\.!]/, function(all){
     return { type: all, value: all }
   },'JST'],
@@ -1668,6 +1890,66 @@ var map2 = genMap([
 module.exports = Lexer;
 
 });
+require.register("terminator/src/helper/event.js", function(exports, require, module){
+// simplest event emitter 60 lines
+// ===============================
+var slice = [].slice, _ = require('../util.js');
+var API = {
+    $on: function(event, fn) {
+        if(typeof event === 'object'){
+            for (var i in event) {
+                this.$on(i, event[i]);
+            }
+        }else{
+            var handles = this._handles || (this._handles = {}),
+                calls = handles[event] || (handles[event] = []);
+            calls.push(fn);
+        }
+        return this;
+    },
+    $off: function(event, fn) {
+        if(event) this._handles = [];
+        if(!this._handles) return;
+        var handles = this._handles,
+            calls;
+
+        if (calls = handles[event]) {
+            if (!fn) {
+                handles[event] = [];
+                return this;
+            }
+            for (var i = 0, len = calls.length; i < len; i++) {
+                if (fn === calls[i]) {
+                    calls.splice(i, 1);
+                    return this;
+                }
+            }
+        }
+        return this;
+    },
+    $trigger: function(event){
+        var args = slice.call(arguments, 1),
+            handles = this._handles,
+            calls;
+        if (!handles || !(calls = handles[event])) return this;
+        for (var i = 0, len = calls.length; i < len; i++) {
+            calls[i].apply(this, args)
+        }
+        return this;
+    }
+}
+// container class
+function Event(handles) {
+    if (arguments.length) this.$on.apply(this, arguments);
+};
+_.extend(Event.prototype, API)
+
+Event.mixTo = function(obj){
+    obj = typeof obj == "function" ? obj.prototype : obj;
+    _.extend(obj, API)
+}
+module.exports = Event;
+});
 require.register("terminator/src/parser/node.js", function(exports, require, module){
 module.exports = {
   element: function(name, attrs, children){
@@ -1719,64 +2001,70 @@ module.exports = {
       expression:  expression
     }
   },
-  filter: function(object, filters){
+  partial: function(template){
     return {
-      type: 'filter',
-      object: object,
-      filters: filters
-    }
-  },
-  //coi
-  // expression
-  condition: function(test, consequent, alternate){
-    return {
-      type: 'condition',
-      test: test,
-      consequent: consequent,
-      alternate: alternate
-    }
-
-  },
-  logic: function(op, left, right){
-    return {
-      type: 'logic',
-      op: op,
-      left: left,
-      right: right
-    }
-  },
-  binary: function(op, left, right){
-    return {
-      type: 'binary',
-      op: op,
-      left: left,
-      right: right
-    }
-  },
-
-  unary: function(op, arg){
-    return {
-      type: 'logic',
-      op: op,
-      arg: arg
-    }
-  },
-  call: function(callee, args){
-    return {
-      type: 'call',
-      callee: callee,
-      args: args
-    }
-
-  },
-  member: function(obj, prop, isComputed){
-    return {
-      type: 'member',
-      obj: obj,
-      prop: prop,
-      isComputed: isComputed
+      type: 'partial',
+      content: template
     }
   }
+  // filter: function(object, filters){
+  //   return {
+  //     type: 'filter',
+  //     object: object,
+  //     filters: filters
+  //   }
+  // },
+  // //coi
+  // // expression
+  // condition: function(test, consequent, alternate){
+  //   return {
+  //     type: 'condition',
+  //     test: test,
+  //     consequent: consequent,
+  //     alternate: alternate
+  //   }
+
+  // },
+  // logic: function(op, left, right){
+  //   return {
+  //     type: 'logic',
+  //     op: op,
+  //     left: left,
+  //     right: right
+  //   }
+  // },
+  // binary: function(op, left, right){
+  //   return {
+  //     type: 'binary',
+  //     op: op,
+  //     left: left,
+  //     right: right
+  //   }
+  // },
+
+  // unary: function(op, arg){
+  //   return {
+  //     type: 'logic',
+  //     op: op,
+  //     arg: arg
+  //   }
+  // },
+  // call: function(callee, args){
+  //   return {
+  //     type: 'call',
+  //     callee: callee,
+  //     args: args
+  //   }
+
+  // },
+  // member: function(obj, prop, isComputed){
+  //   return {
+  //     type: 'member',
+  //     obj: obj,
+  //     prop: prop,
+  //     isComputed: isComputed
+  //   }
+  // }
 }
 
 });
@@ -1877,6 +2165,8 @@ op.program = function(){
   return statements;
 }
 
+// dada
+// dadad
 op.statements = function(until){
   var ll, body = [];
   while( !(ll = this.eat('CLOSE', until)) ){
@@ -1906,6 +2196,8 @@ op.statement = function(){
       return this.directive();
     case 'EXPR_OPEN':
       return this.interplation();
+    case 'PART_OPEN':
+      return this.partial();
     default:
       this.error('Unexpected token: '+ this.la())
   }
@@ -1926,14 +2218,16 @@ op.xml = function(){
   return node.element(name, attrs, children);
 }
 
-//     stag     ::=    '<' Name (S attr)* S? '>'  
-//     attr    ::=     Name Eq attvalue
+// stag     ::=    '<' Name (S attr)* S? '>'  
+// attr    ::=     Name Eq attvalue
 op.attrs = function(){
 
   var attrs = [], attr, ll;
   while( ll = this.eat('NAME') ){
     attr = { name: ll.value }
     if( this.eat('=') ) attr.value = this.attvalue();
+
+
     attrs.push( attr )
   }
   return attrs;
@@ -1948,7 +2242,20 @@ op.attvalue = function(){
     case "NAME":
     case "STRING":
       this.next();
-      return ll.value;
+      var value = ll.value;
+      if(value.type !== "expression" && ~value.indexOf('{{')){
+        var parsed = new Parser(value, {mode:2}).parse();
+        // @TODO deps;
+        var get = function(self){
+          var res= parsed.map(function(item){
+            if(item && item.get) return item.get(self);
+            else return item || "";
+          }).join("");
+          return res;
+        }
+        value = node.expression(get, null)
+      }
+      return value;
     case "EXPR_OPEN":
       return this.interplation();
     default:
@@ -1974,11 +2281,18 @@ op.interplation = function(){
   return res;
 }
 
+op.partial = function(){
+  this.next();
+  var content = this.expression();
+  this.match('END');
+  return node.partial(content);
+}
 
 op.if = function(){
   this.next();
   var test = this.expr();
   var consequent = [], alternate=[];
+
   var container = consequent;
 
   this.match('END');
@@ -2047,10 +2361,10 @@ op.expr = function(filter){
   var buffer = this.filter();
   var body = buffer.get || buffer;
   var prefix = this.depend.length? ("var "+varName+"="+ctxName+".data;" ): "";
+  var get = new Function(ctxName, prefix + "try {return (" + body + ")}catch(e){return undefined}");
 
-  var get = new Function(ctxName, prefix + "return (" + body + ")");
 
-  if(buffer.set) var set =  new Function(ctxName, _.setName ,prefix +";return (" + buffer.set + ")");
+  if(buffer.set) var set =  new Function(ctxName, _.setName ,prefix +";try {return (" + buffer.set + ")}catch(e){}");
 
   if(!this.depend.length){
     // means no dependency
@@ -2059,6 +2373,7 @@ op.expr = function(filter){
     return node.expression(get, set, this.depend)
   }
 }
+
 
 op.filter = function(){
   var left = this.assign();
@@ -2111,16 +2426,21 @@ op.condition = function(){
 // and
 // and && or
 op.or = function(){
+
   var left = this.and();
+
   if(this.eat('||')){
     return this.getset(left.get + '||' + this.or().get);
   }
+
   return left;
 }
 // equal
 // equal && and
 op.and = function(){
+
   var left = this.equal();
+
   if(this.eat('&&')){
     return this.getset(left.get + '&&' + this.and().get);
   }
@@ -2236,20 +2556,12 @@ op.member = function(base, last, pathes){
       case '.':
           // member(object, property, computed)
         var tmpName = this.match('IDENT').value;
-        if(pathes && pathes.length){
-          base = ctxName + "._path("+base+", '"+tmpName + "')";
-        }else{
           base += "['" + tmpName + "']";
-        }
         return this.member( base, value, pathes );
       case '[':
           // member(object, property, computed)
         path = this.expr();
-        if(pathes && pathes.length){
-          base = ctxName + "._path("+base+", '"+path.get + "')";
-        }else{
-          base += "['" + path.get + "']";
-        }
+        base += "['" + path.get + "']";
         this.match(']')
         return this.member(base, path, pathes);
       case '(':
@@ -2385,4 +2697,4 @@ op.flatenDepend = function(depend){
 module.exports = Parser;
 
 });
-require.alias("terminator/src/browser.js", "terminator/index.js");
+require.alias("terminator/src/common.js", "terminator/index.js");

@@ -94,6 +94,8 @@ op.program = function(){
   return statements;
 }
 
+// dada
+// dadad
 op.statements = function(until){
   var ll, body = [];
   while( !(ll = this.eat('CLOSE', until)) ){
@@ -123,6 +125,8 @@ op.statement = function(){
       return this.directive();
     case 'EXPR_OPEN':
       return this.interplation();
+    case 'PART_OPEN':
+      return this.partial();
     default:
       this.error('Unexpected token: '+ this.la())
   }
@@ -143,14 +147,16 @@ op.xml = function(){
   return node.element(name, attrs, children);
 }
 
-//     stag     ::=    '<' Name (S attr)* S? '>'  
-//     attr    ::=     Name Eq attvalue
+// stag     ::=    '<' Name (S attr)* S? '>'  
+// attr    ::=     Name Eq attvalue
 op.attrs = function(){
 
   var attrs = [], attr, ll;
   while( ll = this.eat('NAME') ){
     attr = { name: ll.value }
     if( this.eat('=') ) attr.value = this.attvalue();
+
+
     attrs.push( attr )
   }
   return attrs;
@@ -165,7 +171,20 @@ op.attvalue = function(){
     case "NAME":
     case "STRING":
       this.next();
-      return ll.value;
+      var value = ll.value;
+      if(value.type !== "expression" && ~value.indexOf('{{')){
+        var parsed = new Parser(value, {mode:2}).parse();
+        // @TODO deps;
+        var get = function(self){
+          var res= parsed.map(function(item){
+            if(item && item.get) return item.get(self);
+            else return item || "";
+          }).join("");
+          return res;
+        }
+        value = node.expression(get, null)
+      }
+      return value;
     case "EXPR_OPEN":
       return this.interplation();
     default:
@@ -191,11 +210,18 @@ op.interplation = function(){
   return res;
 }
 
+op.partial = function(){
+  this.next();
+  var content = this.expression();
+  this.match('END');
+  return node.partial(content);
+}
 
 op.if = function(){
   this.next();
   var test = this.expr();
   var consequent = [], alternate=[];
+
   var container = consequent;
 
   this.match('END');
@@ -264,10 +290,10 @@ op.expr = function(filter){
   var buffer = this.filter();
   var body = buffer.get || buffer;
   var prefix = this.depend.length? ("var "+varName+"="+ctxName+".data;" ): "";
+  var get = new Function(ctxName, prefix + "try {return (" + body + ")}catch(e){return undefined}");
 
-  var get = new Function(ctxName, prefix + "return (" + body + ")");
 
-  if(buffer.set) var set =  new Function(ctxName, _.setName ,prefix +";return (" + buffer.set + ")");
+  if(buffer.set) var set =  new Function(ctxName, _.setName ,prefix +";try {return (" + buffer.set + ")}catch(e){}");
 
   if(!this.depend.length){
     // means no dependency
@@ -276,6 +302,7 @@ op.expr = function(filter){
     return node.expression(get, set, this.depend)
   }
 }
+
 
 op.filter = function(){
   var left = this.assign();
@@ -328,16 +355,21 @@ op.condition = function(){
 // and
 // and && or
 op.or = function(){
+
   var left = this.and();
+
   if(this.eat('||')){
     return this.getset(left.get + '||' + this.or().get);
   }
+
   return left;
 }
 // equal
 // equal && and
 op.and = function(){
+
   var left = this.equal();
+
   if(this.eat('&&')){
     return this.getset(left.get + '&&' + this.and().get);
   }
@@ -453,20 +485,12 @@ op.member = function(base, last, pathes){
       case '.':
           // member(object, property, computed)
         var tmpName = this.match('IDENT').value;
-        if(pathes && pathes.length){
-          base = ctxName + "._path("+base+", '"+tmpName + "')";
-        }else{
           base += "['" + tmpName + "']";
-        }
         return this.member( base, value, pathes );
       case '[':
           // member(object, property, computed)
         path = this.expr();
-        if(pathes && pathes.length){
-          base = ctxName + "._path("+base+", '"+path.get + "')";
-        }else{
-          base += "['" + path.get + "']";
-        }
+        base += "['" + path.get + "']";
         this.match(']')
         return this.member(base, path, pathes);
       case '(':

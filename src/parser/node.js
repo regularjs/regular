@@ -48,62 +48,68 @@ module.exports = {
       expression:  expression
     }
   },
-  filter: function(object, filters){
+  partial: function(template){
     return {
-      type: 'filter',
-      object: object,
-      filters: filters
-    }
-  },
-  //coi
-  // expression
-  condition: function(test, consequent, alternate){
-    return {
-      type: 'condition',
-      test: test,
-      consequent: consequent,
-      alternate: alternate
-    }
-
-  },
-  logic: function(op, left, right){
-    return {
-      type: 'logic',
-      op: op,
-      left: left,
-      right: right
-    }
-  },
-  binary: function(op, left, right){
-    return {
-      type: 'binary',
-      op: op,
-      left: left,
-      right: right
-    }
-  },
-
-  unary: function(op, arg){
-    return {
-      type: 'logic',
-      op: op,
-      arg: arg
-    }
-  },
-  call: function(callee, args){
-    return {
-      type: 'call',
-      callee: callee,
-      args: args
-    }
-
-  },
-  member: function(obj, prop, isComputed){
-    return {
-      type: 'member',
-      obj: obj,
-      prop: prop,
-      isComputed: isComputed
+      type: 'partial',
+      content: template
     }
   }
+  // filter: function(object, filters){
+  //   return {
+  //     type: 'filter',
+  //     object: object,
+  //     filters: filters
+  //   }
+  // },
+  // //coi
+  // // expression
+  // condition: function(test, consequent, alternate){
+  //   return {
+  //     type: 'condition',
+  //     test: test,
+  //     consequent: consequent,
+  //     alternate: alternate
+  //   }
+
+  // },
+  // logic: function(op, left, right){
+  //   return {
+  //     type: 'logic',
+  //     op: op,
+  //     left: left,
+  //     right: right
+  //   }
+  // },
+  // binary: function(op, left, right){
+  //   return {
+  //     type: 'binary',
+  //     op: op,
+  //     left: left,
+  //     right: right
+  //   }
+  // },
+
+  // unary: function(op, arg){
+  //   return {
+  //     type: 'logic',
+  //     op: op,
+  //     arg: arg
+  //   }
+  // },
+  // call: function(callee, args){
+  //   return {
+  //     type: 'call',
+  //     callee: callee,
+  //     args: args
+  //   }
+
+  // },
+  // member: function(obj, prop, isComputed){
+  //   return {
+  //     type: 'member',
+  //     obj: obj,
+  //     prop: prop,
+  //     isComputed: isComputed
+  //   }
+  // }
 }
