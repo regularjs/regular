@@ -47,12 +47,12 @@ var API = {
 }
 // container class
 function Event(handles) {
-    if (arguments.length) this.$on.apply(this, arguments);
+  if (arguments.length) this.$on.apply(this, arguments);
 };
 _.extend(Event.prototype, API)
 
 Event.mixTo = function(obj){
-    obj = typeof obj == "function" ? obj.prototype : obj;
-    _.extend(obj, API)
+  obj = typeof obj == "function" ? obj.prototype : obj;
+  _.extend(obj, API)
 }
 module.exports = Event;

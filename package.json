@@ -1,5 +1,5 @@
 {
-  "name": "terminator",
+  "name": "regular",
   "version": "0.0.1",
   "author": {
     "name": "leeluolee"
@@ -13,12 +13,12 @@
   "main": "lib/index.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/leeluolee/terminator.git"
+    "url": "https://github.com/leeluolee/regular.git"
   },
-  "homepage": "http://leeluolee.github.io/terminator",
+  "homepage": "http://leeluolee.github.io/regular",
   "scripts": {},
   "bin": {
-    "terminator": "./bin/terminator"
+    "regular": "./bin/regular"
   },
   "devDependencies": {
     "gulp": "3.6.x",

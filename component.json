@@ -1,17 +1,21 @@
 {
-    "name": "terminator",
+    "name": "regular",
     "version": "0.0.1",
-    "main": "src/common.js",
+    "main": "src/index.js",
     "scripts": [
-        "src/common.js",
-        "src/util.js"   ,
+        "src/Regular.js",
+        "src/util.js",
         "src/env.js",
+        "src/index.js",
         "src/dom.js",
         "src/group.js",
-        "src/Scope.js",
         "src/parser/Lexer.js",
-        "src/helper/event.js",
         "src/parser/node.js",
-        "src/parser/Parser.js"
+        "src/parser/config.js",
+        "src/parser/Parser.js",
+        "src/helper/shim.js",
+        "src/helper/event.js",
+        "src/helper/combine.js",
+        "src/directive/base.js"
     ]
 }

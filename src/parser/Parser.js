@@ -4,7 +4,7 @@ var Lexer = require("./Lexer.js");
 var varName = _.varName;
 var ctxName = _.randomVar('c');
 var isPath = _.makePredicate("STRING IDENT NUMBER");
-var isKeyWord = _.makePredicate("true false undefined null this Array Date JSON Math NaN RegExp decodeURI decodeURIComponent encodeURI encodeURIComponent parseFloat parseInt");
+var isKeyWord = _.makePredicate("true false undefined null this Array Date JSON Math NaN RegExp decodeURI decodeURIComponent encodeURI encodeURIComponent parseFloat parseInt Object");
 var exports = {_path: _._path}
 
 
@@ -19,7 +19,7 @@ function Parser(input, opts){
 var op = Parser.prototype;
 
 
-op.parse = function(){
+op.parse = function(str){
   this.pos = 0;
   return this.program();
 }
@@ -49,6 +49,7 @@ op.match = function(type, value){
 
 // @TODO
 op.error = function(msg, pos){
+  console.log(this.ll())
   throw "Parse Error: " + msg +  ':\n' + _.trackErrorPos(this.input, pos != null? pos: this.ll().pos);
 }
 
@@ -140,7 +141,7 @@ op.xml = function(){
   attrs = this.attrs();
   selfClosed = this.eat('/')
   this.match('>')
-  if( !selfClosed ){
+  if( !selfClosed && !_.isVoidTag(name) ){
     children = this.program();
     if(!this.eat('TAG_CLOSE', name)) this.error('expect </'+name+'> got'+ 'no matched closeTag')
   }
@@ -217,7 +218,7 @@ op.partial = function(){
   return node.partial(content);
 }
 
-op.if = function(){
+op["if"] = function(){
   this.next();
   var test = this.expr();
   var consequent = [], alternate=[];
@@ -237,8 +238,8 @@ op.if = function(){
           this.match('END');
           break;
         case 'elseif':
-          alternate.push(this.if())
-          return node.if(test, consequent, alternate)
+          alternate.push(this["if"]())
+          return node['if'](test, consequent, alternate)
         default:
           container.push(this.statement())
       }
@@ -247,8 +248,8 @@ op.if = function(){
     }
   }
   // if statement not matched
-  if(close.value !== 'if') this.error('Unmatched if directive')
-  return node.if(test, consequent, alternate);
+  if(close.value !== "if") this.error('Unmatched if directive')
+  return node["if"](test, consequent, alternate);
 }
 
 
@@ -256,7 +257,7 @@ op.if = function(){
 op.list = function(){
   this.next();
   // sequence can be a list or hash
-  var sequence = this.expr(), variable, body, ll;
+  var sequence = this.expression(), variable, body, ll;
   var consequent = [], alternate=[];
   var container = consequent;
 
@@ -275,7 +276,7 @@ op.list = function(){
     }
   }
   if(ll.value !== 'list') this.error('expect ' + '{/list} got ' + '{/' + ll.value + '}', ll.pos );
-  return node.list(sequence, variable ,consequent, alternate);
+  return node.list(sequence, variable, consequent, alternate);
 }
 
 
@@ -287,13 +288,16 @@ op.expression = function(){
 
 op.expr = function(filter){
   this.depend = [];
-  var buffer = this.filter();
+  var buffer = this.filter(), set, get;
   var body = buffer.get || buffer;
-  var prefix = this.depend.length? ("var "+varName+"="+ctxName+".data;" ): "";
-  var get = new Function(ctxName, prefix + "try {return (" + body + ")}catch(e){return undefined}");
+  // @TODO list 
+  var prefix = this.depend.length? ("var "+ctxName+"=context.context||context;var "+varName+"=context.data;" ): "";
+  var get = new Function("context", prefix + "return (" + body + ")");
 
 
-  if(buffer.set) var set =  new Function(ctxName, _.setName ,prefix +";try {return (" + buffer.set + ")}catch(e){}");
+  if(buffer.set) var set =  new Function("context", _.setName ,
+    prefix +";return (" + buffer.set + ")" 
+    );
 
   if(!this.depend.length){
     // means no dependency
@@ -301,6 +305,7 @@ op.expr = function(filter){
   }else{
     return node.expression(get, set, this.depend)
   }
+  return {}
 }
 
 
@@ -445,7 +450,7 @@ op.unary = function(){
 // member . ident  
 
 op.member = function(base, last, pathes){
-  // @TODO depend must determin in this step
+  // @TODO depend must deregular in this step
   var ll, path, value;
   var first = !base;
 
@@ -486,17 +491,21 @@ op.member = function(base, last, pathes){
           // member(object, property, computed)
         var tmpName = this.match('IDENT').value;
           base += "['" + tmpName + "']";
-        return this.member( base, value, pathes );
+        return this.member( base, tmpName, pathes );
       case '[':
           // member(object, property, computed)
-        path = this.expr();
-        base += "['" + path.get + "']";
+        path = this.assign();
+        if(pathes && pathes.length){
+          base = ctxName + "._path("+base+", "+ path.get + ")";
+        }else{
+          base += "['" + path.get + "']";
+        }        
         this.match(']')
         return this.member(base, path, pathes);
       case '(':
         // call(callee, args)
-        var args = this.arguments();
-        base = base + ("(" + args.join(",") + ")");
+        var args = this.arguments().join(',');
+        base = "(typeof ("+ base + ") !=='function'?" + base+"(" + args +"):" + base + (".call(" + ctxName + (args? "," + args : "")  + "))");
         this.match(')')
         return this.member(base, null, pathes);
     }
@@ -572,12 +581,11 @@ op.object = function(){
   var code = [this.match('{').type];
 
   var ll;
-  var props = [];
   while(true){
     ll = this.eat(['STRING', 'IDENT', 'NUMBER']);
     if(ll){
       code.push("'" + ll.value + "'" + this.match(':').type);
-      code.push(this.condition().get);
+      code.push(this.assign().get);
       if(this.eat(",")) code.push(",");
     }else{
       code.push(this.match('}').type);
@@ -590,10 +598,11 @@ op.object = function(){
 // array
 // [ assign[,assign]*]
 op.array = function(){
-  var code = [this.match('[').type]
-  while(item = this.condition()){
+  var code = [this.match('[').type], item;
+  while(item = this.assign()){
     code.push(item.get);
-    if(this.eat(',')) this.push(",");
+    if(this.eat(',')) code.push(",");
+    else break;
   }
   code.push(this.match(']').type);
   return {get: code.join("")};
@@ -615,6 +624,7 @@ op.getset = function(get, set){
   }
 }
 
+//
 op.flatenDepend = function(depend){
   for(var i = 0, len = depend.length; i < len; i++){
 

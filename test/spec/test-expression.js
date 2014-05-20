@@ -14,6 +14,8 @@ var raw = function(input){
 var parse = function(input){
   return new Parser(input, {mode: 2, state: 'JST'}).expression()
 }
+console.log(parse('title +""+  $index').get)
+
 
 
 
@@ -28,7 +30,8 @@ describe("parse Expression", function(){
     raw("true").to.equal(true)
     raw("false").to.equal(false)
     raw("undefined").to.equal(undefined)
-    raw("null").to.equal(null)
+    raw("null").to.equal(null);
+    raw("[1,2,3,4]").to.eql([1,2,3,4]);
 
   })
 
@@ -51,7 +54,7 @@ describe("parse Expression", function(){
 
   it('deep path should check undefined before return value', function(){
 
-    raw('1.a.b').to.equal(undefined)
+    raw('data + "" + a').to.equal('');
 
   })
 

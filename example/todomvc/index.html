@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Regular.js • TodoMVC</title>
+    <link rel="stylesheet" href="todo.css">
+    <script src="director.js" type='text/javascript'></script>
+    <script src="../../dist/regular.js"></script>
+<!--<script src='http://cdn.ractivejs.org/latest/ractive.js'></script>-->
+
+  </head>
+  <body>
+    <div id="todoapp"></div>
+    <footer id="info">
+      <p>Double-click to edit a todo</p>
+      <p>Created by @leeluolee</a></p>
+      <p>Part of <a href="http://todomvc.com">TodoMVC</a></p>
+    </footer>
+    <!-- Templates -->
+    <script id="main" type="text/ractive">
+      <div id="div">
+        <h1>todos{{filter}}</h1>
+        <input id="new-todo" t-keydown={{ this.newTodo(editTodo,$event) }} placeholder="What needs to be done?" t-model={{ editTodo }}>
+      </div>
+      {{#if !!items.length}}
+        <section id="main">
+          <input id="toggle-all" type="checkbox" t-change={{this.toggleAll(items.length === this.filter('completed').length)}} checked={{items.length === this.filter('completed').length }}>
+          <label for="toggle-all">Mark all as complete</label>
+          <ul id="todo-list">
+            {{#list this.filter(filter) as i}}
+                <li class="{{ i.completed ? 'completed' : '' }} {{ i.editing ? 'editing' : '' }}">
+                  <div class="view">
+                    <input class="toggle" type="checkbox" t-model={{ i.completed }}>
+                    <label t-dblclick={{i.editing = true}}>{{ i.description }}</label>
+                    <button t-click={{ this.remove(i) }} class="destroy"></button>
+                  </div>
+                  <input id="edit" class="edit" t-enter={{ i.editing = false }} t-model={{i.description}} autofocus>
+                </li>
+            {{/list}}
+          </ul>
+        </section>
+
+        <footer id="footer">
+          <span id="todo-count">
+            <strong>{{ this.filter('active').length }}</strong> {{ this.filter('active').length === 1 ? 'item' : 'items' }} left
+          </span>
+
+          <ul id="filters">
+            <li><a class="{{ filter === 'all'? 'selected' : '' }}"  href="#/all" t-click={{filter='all'}}>All</a></li>
+            <li><a class="{{ filter === 'active'? 'selected' : '' }}" href='#/active' t-click={{filter = 'active'}}>Active</a></li>
+            <li><a class="{{ filter === 'completed'? 'selected' : '' }}" href="#/completed" t-click={{filter = 'completed'}}>Completed</a></li>
+          </ul>
+          {{#if this.filter('completed').length > 0 }}
+            <button id="clear-completed" t-click={{this.clearCompleted($event)}}>Clear completed ({{ this.filter('completed').length }})</button>
+          {{/if}}
+        </footer>
+      {{/if}}
+    </script>
+
+      <!-- Templates -->
+    <script>
+
+    var str = new Array(2000).join('<div>{{hello + 1 + 100}}</div>haha<div>dada</div>')
+    var time = +new Date()
+    // new Regular.Parser(str).parse();
+    // new Ractive.parse(str);
+
+    console.log(+new Date - time)
+
+    var TodoApp = Regular.derive({
+      name: 'todo', 
+      template: 'main', // id | template string | preparsed ast
+   
+      init: function(){
+        // call parent.init function ()
+        this.supr();
+        var data = this.data;
+        this.$watch('items.length', function(value){
+          console.log(value)
+          if(value > 0) console.log(data.items[0].description, data.items[0].compleled)
+        })
+
+      },
+      // get the list;
+      filter: function(token){
+        if(!token || token === 'all') return this.data.items;
+        else return this.data.items.filter(function(item){
+          return token === 'completed'? item.completed : !item.completed;
+        });
+        
+      },
+      // toggle all todo's completed state
+      toggleAll: function(sign){
+        this.data.items.forEach(function(item){
+          return item.completed = !sign;
+        });
+      },
+      // clear all compleled
+      clearCompleted: function(){
+        this.data.items = this.data.items.filter(function(item){
+          return !item.completed
+        });
+      },
+      // create a new todo
+      newTodo: function(editTodo, $event){
+        if($event.keyCode === 13){
+          var data = this.data;
+          data.items.unshift({description: editTodo});
+          data.editTodo = "";
+        }
+      },
+      // remove a todo
+      remove: function(todo){
+        var index = this.data.items.indexOf(todo);
+        if(~index) this.data.items.splice(index,1);
+      },
+      destroy: function(){
+        this.supr();
+      }
+    })
+    
+    // // locastorage stuff
+    var items = localStorage && localStorage.getItem('items');
+
+    var todo = new TodoApp({
+      filter:"all",
+      items: []
+    });
+
+
+    todo.inject('todoapp')
+
+    // // route use third-party lib
+    // // beacuse regular just a ui library;
+    // var router = new Router({
+    //   '/active': function () {
+    //     todo.set('filter', 'active');
+    //   },
+    //   '/completed': function () {
+    //     todo.set('filter', 'completed');
+    //   }
+    // });
+
+    // router.configure({
+    //   notfound: function () {
+    //     window.location.hash = '';
+    //     todo.set('filter', 'all');
+    //   }
+    // });
+
+    // router.init();
+
+    </script>
+  </body>
+</html>

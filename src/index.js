@@ -1,1 +1,3 @@
-module.exports = require('./exports.js');
+module.exports = require('./Regular.js');
+require('./directive/base.js')
+

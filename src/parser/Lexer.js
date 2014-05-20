@@ -1,5 +1,10 @@
 var _ = require('../util.js');
 
+var test = /a|(b)/.exec('a');
+var testSubCapure = test && test[1] === undefined? 
+  function(str){ return str !== undefined }
+  :function(str){return !!str};
+
 function wrapHander(handler){
   return function(all){
     return {type: handler, value: all }
@@ -18,20 +23,11 @@ function Lexer(input, opts){
   this.map = this.opts.mode != 2?  map1: map2;
   this.states = ['INIT']
   if(this.opts.state) this.states.push(this.opts.state);
+
 }
 
 var lo = Lexer.prototype
 
-lo.skipspace = function(str){
-  var index = 0,ch, input = str;
-  ch = input.charCodeAt(index);
-  while (ch && (ch===32 || ch===13 || ch === 10 || ch === 8232 || ch === 8233) ) {
-    index++; 
-    ch = input.charCodeAt(index);
-  }
-  this.index += index;
-  return str.slice(index);
-}
 
 lo.lex = function(str){
   str = (str||this.input).trim();
@@ -39,27 +35,28 @@ lo.lex = function(str){
     TRUNK, split, test,mlen, token, state;
   // 初始化
   this.index=0;
-
+  var i = 0;
   while(str){
-
+    i++
     state = this.state();
     split = this.map[state] 
     test = split.TRUNK.exec(str);
     if(!test){
-      console.log(tokens)
-       this.error('Unrecoginized Token');
+      this.error('Unrecoginized Token');
     }
     mlen = test[0].length;
-    token = this._process.call(this, test, split)
+    str = str.slice(mlen)
+    token = this._process.call(this, test, split, str)
     if(token) tokens.push(token)
     this.index += mlen;
-    str = str.slice(mlen)
     // if(state == 'TAG' || state == 'JST') str = this.skipspace(str);
   }
+
 
   tokens.push({
     type: 'EOF'
   });
+
 
   return tokens;
 }
@@ -79,19 +76,32 @@ lo.error = function(msg){
   throw "Parse Error: " + msg +  ':\n' + _.trackErrorPos(this.input, this.index);
 }
 
-lo._process = function(args, split){
-  var links=split.links;
+lo._process = function(args, split,str){
+  // console.log(args.join(","), this.state())
+  var links = split.links,marched = false;
 
   for(var len = links.length, i=0;i<len ;i++){
     var link = links[i],
       handler = link[2],
       index = link[0];
-    if( args[index] !=undefined ) {
+    // if(args[6] === '>' && index === 6) console.log('haha')
+    if(testSubCapure(args[index])) {
+      marched = true;
       if(handler){
         var token = handler.apply(this, args.slice(index, index + link[1]))
         if(token)  token.pos = this.index;
       }
       break;
+    }
+  }
+  if(!marched){ // in ie lt8 . sub capture is "" but ont 
+    switch(str.charAt(0)){
+      case "<":
+        this.enter("TAG");
+        break;
+      default:
+        this.enter("JST");
+        break;
     }
   }
   return token;
@@ -149,7 +159,7 @@ function genMap(rules){
 }
 
 function setup(map){
-  var split, rules, trunks, handler, reg, retain;
+  var split, rules, trunks, handler, reg, retain, rule;
 
   for(var i in map){
 
@@ -158,8 +168,8 @@ function setup(map){
     rules = split.rules;
     trunks = [];
 
-    for(var i = 0,len = rules.length; i<len; i++){
-      rule = rules[i]; 
+    for(var j = 0,len = rules.length; j<len; j++){
+      rule = rules[j]; 
       reg = rule[0];
       handler = rule[1];
 
@@ -220,9 +230,9 @@ var rules = {
   TAG_NAME: [/{NAME}/, 'NAME', 'TAG'],
 
   TAG_OPEN: [/<({NAME})\s*/, function(all, one){
-    return {type: 'TAG_OPEN', value: one }
+    return {type: 'TAG_OPEN', value: one.toLowerCase() }
   }, 'TAG'],
-  TAG_CLOSE: [/<\/({NAME})[\r\n\f ]*>/, function(all, one){
+  TAG_CLOSE: [/<\/({NAME})[\r\n\f ]*>[\r\n\f ]*/, function(all, one){
     this.leave();
     return {type: 'TAG_CLOSE', value: one }
   }, 'TAG'],
@@ -233,7 +243,7 @@ var rules = {
   }, 'TAG'],
 
 
-  TAG_PUNCHOR: [/[>\/=]/, function(all){
+  TAG_PUNCHOR: [/[\>\/=]/, function(all){
     if(all === '>') this.leave();
     return {type: all, value: all }
   }, 'TAG'],
@@ -280,12 +290,12 @@ var rules = {
   }, 'JST'],
   JST_IDENT: ['{IDENT}', 'IDENT', 'JST'],
   JST_SPACE: [/[ \r\n\f]+/, null, 'JST'],
-  JST_PUNCHOR: [/[=!]?==|[-=><+*\/%\!]?\=|\|\||&&|[\<\>\[\]\(\)\-\|\{}\+\*\/%?:\.!]/, function(all){
+  JST_PUNCHOR: [/[=!]?==|[-=><+*\/%\!]?\=|\|\||&&|[\<\>\[\]\(\)\-\|\{}\+\*\/%?:\.!,]/, function(all){
     return { type: all, value: all }
   },'JST'],
 
   JST_STRING:  [ /'([^']*)'|"([^"]*)"/, function(all, one, two){ //"'
-    return {type: 'STRING', value: one || two}
+    return {type: 'STRING', value: one == null? two: one}
   }, 'JST'],
   JST_NUMBER: [/-?(?:[0-9]*\.[0-9]+|[0-9]+)(e\d+)?/, function(all){
     return {type: 'NUMBER', value: parseFloat(all, 10)};
@@ -345,3 +355,5 @@ var map2 = genMap([
 
 
 module.exports = Lexer;
+
+

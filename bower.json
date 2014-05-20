@@ -1,0 +1,17 @@
+{
+    "name": "regularjs",
+    "version": "0.0.1",
+    "main": "dist/regular.js",
+    "description": "reactjs + angularjs = regularjs",
+    "authors": "@leeluolee <87399126@163.com>",
+    "license": "MIT",
+    "ignore": [
+        ".*",
+        "node_modules",
+        "bin",
+        "test",
+        "gulpfile.js",
+        "*.json",
+        "*.md"
+    ]
+}

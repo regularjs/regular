@@ -25,8 +25,8 @@ gulp.task('build', function(){
   // form minify    
   gulp.src('./component.json')
     .pipe(component.scripts({
-      standalone: 'Termin',
-      name: 'terminator'
+      standalone: 'Regular',
+      name: 'regular'
     }))
     .pipe(wrap(signatrue))
     .pipe(gulp.dest('dist'))
@@ -40,7 +40,7 @@ gulp.task('build', function(){
   // for test
   gulp.src('./component.json')
     .pipe(component.scripts({
-      name: 'terminator'
+      name: 'regular'
     }))
     .pipe(wrap(signatrue))
     .pipe(gulp.dest('test'))

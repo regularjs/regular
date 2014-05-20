@@ -1,3 +1,4 @@
+require('./helper/shim.js');
 var _  = module.exports;
 var slice = [].slice;
 var o2str = ({}).toString;
@@ -46,7 +47,6 @@ _.extend = function( o1, o2, override ){
   return o1;
 }
 
-// form acorn.js
 _.makePredicate = function makePredicate(words, prefix) {
     if (typeof words === "string") {
         words = words.split(" ");
@@ -125,12 +125,14 @@ _.trackErrorPos = function (input, pos){
 }
 
 
-var ignoredRef = /\(\?\!|\(\?\:|\?\=/;
+var ignoredRef = /\(\?\!|\(\?\:|\?\=/g;
 _.findSubCapture = function (regStr) {
   var left = 0,
     right = 0,
     len = regStr.length,
-    ignored = regStr.split(ignoredRef).length - 1; //忽略非捕获匹配
+    ignored = regStr.match(ignoredRef); //忽略非捕获匹配
+  if(ignored) ignored = ignored.length
+  else ignored = 0;
   for (; len--;) {
     var letter = regStr.charAt(len);
     if (len === 0 || regStr.charAt(len - 1) !== "\\" || regStr.charAt(len+1) !== "?") { //不包括转义括号
@@ -141,6 +143,7 @@ _.findSubCapture = function (regStr) {
   if (left !== right) throw "RegExp: "+ regStr + "'s bracket is not marched";
   else return left - ignored;
 };
+
 
 _.escapeRegExp = function(string){// Credit: XRegExp 0.6.1 (c) 2007-2008 Steven Levithan <http://stevenlevithan.com/regex/xregexp/> MIT License
   return string.replace(/[-[\]{}()*+?.\\^$|,#\s]/g, function(match){
@@ -431,30 +434,57 @@ _._path = function(base, path){
 
 
 _.throttle = function throttle(func, wait){
-    var wait = wait || 100;
-    var context, args, result;
-    var timeout = null;
-    var previous = 0;
-    var later = function() {
-      previous = +new Date;
+  var wait = wait || 100;
+  var context, args, result;
+  var timeout = null;
+  var previous = 0;
+  var later = function() {
+    previous = +new Date;
+    timeout = null;
+    result = func.apply(context, args);
+    context = args = null;
+  };
+  return function() {
+    var now = + new Date;
+    var remaining = wait - (now - previous);
+    context = this;
+    args = arguments;
+    if (remaining <= 0 || remaining > wait) {
+      clearTimeout(timeout);
       timeout = null;
+      previous = now;
       result = func.apply(context, args);
       context = args = null;
-    };
-    return function() {
-      var now = + new Date;
-      var remaining = wait - (now - previous);
-      context = this;
-      args = arguments;
-      if (remaining <= 0 || remaining > wait) {
-        clearTimeout(timeout);
-        timeout = null;
-        previous = now;
-        result = func.apply(context, args);
-        context = args = null;
-      } else if (!timeout) {
-        timeout = setTimeout(later, remaining);
-      }
-      return result;
-    };
+    } else if (!timeout) {
+      timeout = setTimeout(later, remaining);
+    }
+    return result;
   };
+};
+
+// hogan escape
+// ==============
+_.escape = (function(){
+  var rAmp = /&/g,
+      rLt = /</g,
+      rGt = />/g,
+      rApos = /\'/g,
+      rQuot = /\"/g,
+      hChars = /[&<>\"\']/;
+
+  return function(str) {
+    return hChars.test(str) ?
+      str
+        .replace(rAmp, '&amp;')
+        .replace(rLt, '&lt;')
+        .replace(rGt, '&gt;')
+        .replace(rApos, '&#39;')
+        .replace(rQuot, '&quot;') :
+      str;
+  }
+})();
+
+
+//http://www.w3.org/html/wg/drafts/html/master/single-page.html#void-elements
+_.isVoidTag = _.makePredicate("area base br col embed hr img input keygen link menuitem meta param source track wbr");
+
