@@ -208,7 +208,7 @@ require.relative = function(parent) {
 
   return localRequire;
 };
-require.register("regular/src/Regular.js", function(exports, require, module){
+require.register("regularjs/src/Regular.js", function(exports, require, module){
 var Lexer = require("./parser/Lexer.js");
 var Parser = require("./parser/Parser.js");
 var node = require("./parser/node.js");
@@ -693,7 +693,7 @@ function bindAttrWatcher(element, attr){
 module.exports = Regular;
 
 });
-require.register("regular/src/util.js", function(exports, require, module){
+require.register("regularjs/src/util.js", function(exports, require, module){
 require('./helper/shim.js');
 var _  = module.exports;
 var slice = [].slice;
@@ -1186,7 +1186,7 @@ _.isVoidTag = _.makePredicate("area base br col embed hr img input keygen link m
 
 
 });
-require.register("regular/src/env.js", function(exports, require, module){
+require.register("regularjs/src/env.js", function(exports, require, module){
 // some fixture test;
 // ---------------
 exports.svg = (function(){
@@ -1200,13 +1200,13 @@ exports.transition = (function(){
 
 
 });
-require.register("regular/src/index.js", function(exports, require, module){
+require.register("regularjs/src/index.js", function(exports, require, module){
 module.exports = require('./Regular.js');
 require('./directive/base.js')
 
 
 });
-require.register("regular/src/dom.js", function(exports, require, module){
+require.register("regularjs/src/dom.js", function(exports, require, module){
 
 // thanks for angular && mootools for some concise&cross-platform  implemention
 // =====================================
@@ -1248,6 +1248,16 @@ if (isNaN(dom.msie)) {
   dom.msie = parseInt((/trident\/.*; rv:(\d+)/.exec(navigator.userAgent.toLowerCase()) || [])[1]);
 }
 
+//http://stackoverflow.com/questions/11068196/ie8-ie7-onchange-event-is-triggered-only-after-repeated-selection
+function fixEventName(elem, name){
+  return (name == 'change'  &&  dom.msie < 9 && 
+      (elem && elem.tagName && elem.tagName.toLowerCase()==='input' && 
+        (elem.type === 'checkbox' || elem.type === 'radio')
+      )
+    )? 'click': name;
+}
+
+
 // createElement 
 dom.create = function(type, ns){
   return document[  !ns? "createElement": 
@@ -1269,7 +1279,6 @@ dom.attr = function(node, name, value){
   name = name.toLowerCase();
   if (BOOLEAN_ATTR[name]) {
     if (typeof value !== 'undefined') {
-      console.log(name, value)
       if (!!value) {
         node[name] = true;
         node.setAttribute(name, name);
@@ -1298,8 +1307,16 @@ dom.attr = function(node, name, value){
 // @TODO: event fixed,  context proxy , etc...
 var handlers = {};
 
-dom.on = addEvent;
-dom.off = removeEvent;
+dom.on = function(node, type, handler){
+  type = fixEventName(node, type);
+  if("attachEvent" in node) handler.real = handler.bind(node);
+  addEvent.call(dom, node, type, handler.real || handler);
+}
+dom.off = function(node, type, handler){
+  type = fixEventName(node, type);
+  if("detachEvent" in node) handler = handler.real;
+  removeEvent.call(dom, node, type, handler);
+}
 
 
 dom.text = (function (){
@@ -1376,7 +1393,7 @@ dom.hasClass = function(node, className){
 
 
 });
-require.register("regular/src/group.js", function(exports, require, module){
+require.register("regularjs/src/group.js", function(exports, require, module){
 var _ = require('./util');
 var dom = require('./dom');
 
@@ -1415,7 +1432,7 @@ module.exports = Group;
 
 
 });
-require.register("regular/src/parser/Lexer.js", function(exports, require, module){
+require.register("regularjs/src/parser/Lexer.js", function(exports, require, module){
 var _ = require('../util.js');
 
 var test = /a|(b)/.exec('a');
@@ -1777,7 +1794,7 @@ module.exports = Lexer;
 
 
 });
-require.register("regular/src/parser/node.js", function(exports, require, module){
+require.register("regularjs/src/parser/node.js", function(exports, require, module){
 module.exports = {
   element: function(name, attrs, children){
     return {
@@ -1837,12 +1854,12 @@ module.exports = {
 }
 
 });
-require.register("regular/src/parser/config.js", function(exports, require, module){
+require.register("regularjs/src/parser/config.js", function(exports, require, module){
 var _ = require('../util');
 var config =  module.exports ={
 }
 });
-require.register("regular/src/parser/Parser.js", function(exports, require, module){
+require.register("regularjs/src/parser/Parser.js", function(exports, require, module){
 var _ = require("../util.js");
 var node = require("./node.js");
 var Lexer = require("./Lexer.js");
@@ -2481,7 +2498,7 @@ op.flatenDepend = function(depend){
 module.exports = Parser;
 
 });
-require.register("regular/src/helper/shim.js", function(exports, require, module){
+require.register("regularjs/src/helper/shim.js", function(exports, require, module){
 // shim for lt ie9
 var slice = [].slice;
 
@@ -2568,7 +2585,7 @@ extend(Date, {
 
 
 });
-require.register("regular/src/helper/event.js", function(exports, require, module){
+require.register("regularjs/src/helper/event.js", function(exports, require, module){
 // simplest event emitter 60 lines
 // ===============================
 var slice = [].slice, _ = require('../util.js');
@@ -2628,7 +2645,7 @@ Event.mixTo = function(obj){
 }
 module.exports = Event;
 });
-require.register("regular/src/helper/combine.js", function(exports, require, module){
+require.register("regularjs/src/helper/combine.js", function(exports, require, module){
 // some nested  operation in ast 
 // --------------------------------
 
@@ -2659,17 +2676,18 @@ var combine = module.exports = {
   }
 }
 });
-require.register("regular/src/directive/base.js", function(exports, require, module){
+require.register("regularjs/src/directive/base.js", function(exports, require, module){
 // Regular
 var _ = require('../util.js');
 var dom = require('../dom.js');
 var Regular = require('../Regular.js');
 var events = "click dblclick mouseover mouseout change focus blur keydown keyup keypress".split(" ");
 
+
 events.forEach(function(item){
   Regular.directive('t-'+item, function(elem, value){
     if(!value) return;
-    var self = this;
+    var self = this; 
     dom.on(elem, item, function(event){
       self.data.$event = event;
       value.get(self);
@@ -2682,15 +2700,14 @@ events.forEach(function(item){
 
 
 Regular.directive('t-enter', function(elem, value){
-    if(!value) return;
-    var self = this;
-    dom.on(elem, 'keydown', function(ev){
-      if(ev.which == 13){
-        ev.preventDefault()
-        value.get(self);
-        self.$digest();
-      }
-    });
+  if(!value) return;
+  var self = this;
+  dom.on(elem, 'keypress', function(ev){
+    if(ev.which == 13 || ev.keyCode == 13){
+      value.get(self);
+      self.$digest();
+    }
+  });
 })
 
 
@@ -2743,17 +2760,15 @@ function initText(elem, parsed){
   var inProgress = false;
   var self = this;
   this.$watch(parsed, function(newValue, oldValue){
-
-    if(inProgress) return;
-    elem.value = newValue == null? "": "" + newValue;
+    if(inProgress){ return; }
+    if(elem.value !== newValue) elem.value = newValue == null? "": "" + newValue;
   });
 
   // @TODO to fixed event
   var handler = function handler(ev){
-    console.log(ev)
     var value = (ev.srcElement || ev.target).value
     parsed.set(self, value);
-    inProgress= true;
+    inProgress = true;
     self.$digest();
     inProgress = false;
   }
@@ -2762,7 +2777,7 @@ function initText(elem, parsed){
     elem.addEventListener('input', handler );
   }else{
     dom.on(elem, 'paste', handler)
-    dom.on(elem, 'keyup', handler)
+    dom.on(elem, 'keypress', handler)
     dom.on(elem, 'cut', handler)
   }
 }
@@ -2787,11 +2802,11 @@ function initCheckBox(elem, parsed){
 }
 
 });
-require.alias("regular/src/index.js", "regular/index.js");
+require.alias("regularjs/src/index.js", "regularjs/index.js");
 if (typeof exports == 'object') {
-  module.exports = require('regular');
+  module.exports = require('regularjs');
 } else if (typeof define == 'function' && define.amd) {
-  define(function(){ return require('regular'); });
+  define(function(){ return require('regularjs'); });
 } else {
-  window['Regular'] = require('regular');
+  window['Regular'] = require('regularjs');
 }})();

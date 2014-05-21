@@ -39,6 +39,16 @@ if (isNaN(dom.msie)) {
   dom.msie = parseInt((/trident\/.*; rv:(\d+)/.exec(navigator.userAgent.toLowerCase()) || [])[1]);
 }
 
+//http://stackoverflow.com/questions/11068196/ie8-ie7-onchange-event-is-triggered-only-after-repeated-selection
+function fixEventName(elem, name){
+  return (name == 'change'  &&  dom.msie < 9 && 
+      (elem && elem.tagName && elem.tagName.toLowerCase()==='input' && 
+        (elem.type === 'checkbox' || elem.type === 'radio')
+      )
+    )? 'click': name;
+}
+
+
 // createElement 
 dom.create = function(type, ns){
   return document[  !ns? "createElement": 
@@ -60,7 +70,6 @@ dom.attr = function(node, name, value){
   name = name.toLowerCase();
   if (BOOLEAN_ATTR[name]) {
     if (typeof value !== 'undefined') {
-      console.log(name, value)
       if (!!value) {
         node[name] = true;
         node.setAttribute(name, name);
@@ -89,8 +98,16 @@ dom.attr = function(node, name, value){
 // @TODO: event fixed,  context proxy , etc...
 var handlers = {};
 
-dom.on = addEvent;
-dom.off = removeEvent;
+dom.on = function(node, type, handler){
+  type = fixEventName(node, type);
+  if("attachEvent" in node) handler.real = handler.bind(node);
+  addEvent.call(dom, node, type, handler.real || handler);
+}
+dom.off = function(node, type, handler){
+  type = fixEventName(node, type);
+  if("detachEvent" in node) handler = handler.real;
+  removeEvent.call(dom, node, type, handler);
+}
 
 
 dom.text = (function (){

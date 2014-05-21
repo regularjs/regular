@@ -4,10 +4,11 @@ var dom = require('../dom.js');
 var Regular = require('../Regular.js');
 var events = "click dblclick mouseover mouseout change focus blur keydown keyup keypress".split(" ");
 
+
 events.forEach(function(item){
   Regular.directive('t-'+item, function(elem, value){
     if(!value) return;
-    var self = this;
+    var self = this; 
     dom.on(elem, item, function(event){
       self.data.$event = event;
       value.get(self);
@@ -20,15 +21,14 @@ events.forEach(function(item){
 
 
 Regular.directive('t-enter', function(elem, value){
-    if(!value) return;
-    var self = this;
-    dom.on(elem, 'keydown', function(ev){
-      if(ev.which == 13){
-        ev.preventDefault()
-        value.get(self);
-        self.$digest();
-      }
-    });
+  if(!value) return;
+  var self = this;
+  dom.on(elem, 'keypress', function(ev){
+    if(ev.which == 13 || ev.keyCode == 13){
+      value.get(self);
+      self.$digest();
+    }
+  });
 })
 
 
@@ -81,17 +81,15 @@ function initText(elem, parsed){
   var inProgress = false;
   var self = this;
   this.$watch(parsed, function(newValue, oldValue){
-
-    if(inProgress) return;
-    elem.value = newValue == null? "": "" + newValue;
+    if(inProgress){ return; }
+    if(elem.value !== newValue) elem.value = newValue == null? "": "" + newValue;
   });
 
   // @TODO to fixed event
   var handler = function handler(ev){
-    console.log(ev)
     var value = (ev.srcElement || ev.target).value
     parsed.set(self, value);
-    inProgress= true;
+    inProgress = true;
     self.$digest();
     inProgress = false;
   }
@@ -100,7 +98,7 @@ function initText(elem, parsed){
     elem.addEventListener('input', handler );
   }else{
     dom.on(elem, 'paste', handler)
-    dom.on(elem, 'keyup', handler)
+    dom.on(elem, 'keypress', handler)
     dom.on(elem, 'cut', handler)
   }
 }
