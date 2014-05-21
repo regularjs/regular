@@ -1,27 +1,30 @@
 # Regular = react(ractive) + angular.
 
-Regular help you to build react component in state-driven way, can used in every enviroment;
+# Regular is in very unstable version and still in busy-developing
 
-the current and future web is always component but not data-binding stuff.(angular also is), but component(widget)
+The current(future the same) web is component but not data-binding, the angular's success just beacuse that the most component(widget) can be describe with some internal state(react's way), angular's scope do it, in some way it just a coincidence;but angular is diffcult to integrated with other framework beacuse the nested scope relation and the clever(difficult) lifecycle;
+
+In first version regular is aim to change react's way(jsx with function in js) way to describe component structure and state-logic, instead of the template combine with the react's virtual-dom; 
 
 
-in first version regular is aim to replace react's way (jslogic + (jsx or nested function call)) with template to implement react component, then find som difficult probelm to resolve(the rendered's dom structure is assume to have no state, so react use event-proxy to 'avoid');
+<del>facebook say "there is no dirty-check in model", but you see it has "dirty-check in virtual dom" , so they only have the half perfomance compare to another brother(angular, ractive also regular)</del> whereas react achive the pure one-way data-flow with virtual-dom with full-render at every update;
 
-facebook say "there is no dirty check" but they only have the half perfomance compare to another brother(angular, ractive also regular);
+Regular combine the advantage of react(nested component) and ractive(string based template) and angular(dirty check data-bind) to help you to build reactive component(ui), and can be integated with whatever framework(like backbone) you like;
 
 
 # TODO
 
-1. consistency binding-style (expression and const)
-2. component
+1. consistency binding-style (expression and constant)
 
-
-dadada
-
-# TODO
-
-dada
+# DOCUMENT(Coming soon...)
 
 
 
-1. use racive's way to fullfill the dom and state's relation
+
+
+# [LICENSE](https://github.com/regularjs/regular/blob/master/LICENSE)
+
+MIT.
+
+
+
