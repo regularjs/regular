@@ -11,7 +11,6 @@
         "src/group.js",
         "src/parser/Lexer.js",
         "src/parser/node.js",
-        "src/parser/config.js",
         "src/parser/Parser.js",
         "src/helper/shim.js",
         "src/helper/event.js",

@@ -253,8 +253,9 @@ var fnTest = /xy/.test(function(){xy}) ? /\bsupr\b/ : /.*/,
 
     proto = _.createProto(fn, supro);
 
-    (fn.methods = function (o) {
-      process(proto, o, supro);
+    (fn.use = function (o) {
+      process(proto, o, supro); 
+      return fn;
     })(o);
 
     if(supr.__after__) supr.__after__.call(fn, supr, o);
@@ -429,7 +430,7 @@ var ld = (function(){
 
 
 _._path = function(base, path){
-  return base ==undefined? base: base[path];
+  return base == undefined? base: base[path];
 }
 
 
@@ -484,6 +485,32 @@ _.escape = (function(){
   }
 })();
 
+_.cache = function(max){
+  max = max || 1000;
+  var keys = [],
+      cache = {};
+  return {
+    set: function(key, value) {
+      if (keys.length > this.max) {
+        cache[keys.shift()] = null;
+      }
+      // 只有非undefined才可以
+      if(cache[key] == undefined){
+        keys.push(key);
+      }
+      cache[key] = value;
+      return value;
+    },
+    get: function(key) {
+      if (key === undefined) return cache;
+      return cache[key];
+    },
+    max: max,
+    len:function(){
+      return keys.length;
+    }
+  };
+}
 
 //http://www.w3.org/html/wg/drafts/html/master/single-page.html#void-elements
 _.isVoidTag = _.makePredicate("area base br col embed hr img input keygen link menuitem meta param source track wbr");

@@ -1,7 +1,7 @@
 /**
 @author	leeluolee
 @version	0.0.1
-@homepage	http://leeluolee.github.io/regular
+@homepage	http://regularjs.github.io
 */
 ;(function(){
 'use strict';
@@ -217,31 +217,25 @@ var Group = require('./group.js');
 var _ = require('./util');
 var Event = require('./helper/event.js');
 var combine = require('./helper/combine.js');
+var idtest = /^\w{1,20}$/;
 
 
 
 
 
-var Regular = function(template, data){
-  var type = _.typeOf(template);
-  if(type === 'object'){
-    data = template;
-    template = null;
-  }
-  if(template){
-    if(type === "string"){
-      template = Regular.getTemplate(template);
-      template = new Parser(template).parse();
-    }
-    this.template = template;
-  }
+var Regular = function( data, options){
+  options = options || {};
+  if( this.template === 'undefined' )  throw "template is required";
   this.data= data || {};
   this.$watchers = [];
+  this.$children = [];
+  this.$refs = {};
   this.context = this.context || this;
   this.group = this.$compile(this.template);
   this.element = combine.node(this);
-  this.$digest()
-  if(this.init) this.init.apply(this, arguments);
+  this.$parent = options.$parent;
+  if(!options.$parent) this.$digest();
+  if( this.init ) this.init.apply(this, arguments);
 }
 
 
@@ -270,25 +264,28 @@ _.extend(Regular, {
 
     if(o.name) Regular.component(o.name, this);
     if(template = o.template){
-      template = Regular.getTemplate(template);
+      var node, name;
+      if(idtest.test(template) && (node= dom.id(template))){
+        template = node.innerHTML;
+        if(name = dom.attr(node, 'name')) Regular.component(name, this);
+      }
       if(typeof template == 'string'){
         this.prototype.template = new Parser(template).parse();
       }
     }
 
   },
-  getTemplate: function(template){
-    if(/^\w{1,20}$/.test(template)){
-      return document.getElementById(template).innerHTML;
-    }else{
-      return template;
-    }
-  },
   derive: _.derive,
   directive: function(name, cfg){
     var directors = this._directors;
     if(cfg == null) return directors[name];
     directors[name] = cfg;
+    return this;
+  },
+  filter: function(name, fn){
+    var filters = this._filters;
+    if(fn == null) return filters[name];
+    filters[name] = fn;
     return this;
   },
   component: function(name, Component){
@@ -312,46 +309,65 @@ _.extend(Regular, {
 Event.mixTo(Regular)
 _.extend( Regular.prototype, {
   init: function(){},
-  $compile: function(ast){
-    if(_.typeOf(ast) === 'array'){
-      var res = [];
-      for(var i = 0, len = ast.length; i < len; i++){
-        res.push(this.$compile(ast[i]));
-      }
-      return new Group(res);
+  /**
+   * compile a block ast ; return a group;
+   * @param  {Array} parsed ast
+   * @param  {[type]} record
+   * @return {[type]}
+   */
+  $compile: function(ast, record){
+    if(typeof ast === 'string'){
+      ast = new Parser(ast).parse()
     }
-    if(typeof ast === 'string') return document.createTextNode(ast)
-    return walkers[ast.type || "default"].call(this, ast);
+    var records;
+    if(record) this._record();
+    var group = this._walk(ast);
+    if(record){
+      records = this._release();
+      var self = this;
+      if(records.length){
+        // auto destroy all wather;
+        group.ondestroy = function(){
+          self.$unwatch(records);
+        } 
+      }
+    }
+    return group;
   },
-  set: function(path, value){
+  $update: function(path, value){
     if(typeof path === 'function' ){
       path.call(this, this.data);
-    }else{
+    }else if(path){
       var base = this.data;
       var path = Regular.parse(path);
       path.set(this, value);
     }
-    this.$digest(path);
+    var self = this, root = self;
+    // find the root
+    while(self = self.$parent){ root = self }
+    root.$digest();
   },
-  _path: _._path,
-  $digest: function(path){
-    var watchers = this.$watchers;
-    if(this.$phase === 'digest' || !this.$watchers)  return;
+  _digest: function(path ,deep){
+    // if(this.context) return this.context.$digest();
 
-    this.$phase = 'digest';
+    var watchers = this.$watchers;
+    var children = this.$children;
+
+    if(!watchers || !watchers.length) return;
     var dirty = false;
-    this.$trigger('digest');
 
     for(var i = 0, len = watchers.length;i<len; i++){
       var watcher = watchers[i];
       if(!watcher) continue;
       var now = watcher.get(this);
+      var last = watcher.last;
       // if(now && now.length )debugger
       var eq = true;
-      if(watcher.deep && _.typeOf(now) == 'object'){
+      if(_.typeOf(now) == 'object' && deep){
         if(!watcher.last){
            eq = false;
          }else{
+
           for(var j in now){
             if(watcher.last[j] !== now[j]){
               eq = false;
@@ -371,11 +387,15 @@ _.extend( Regular.prototype, {
         eq = _.equals(now, watcher.last);
       }
       if(eq===false){
-        watcher.fn(now, watcher.last);
-        watcher.last = _.clone(now);
+        watcher.fn.call(this, now, watcher.last);
+        if(typeof now !== 'object'){
+          watcher.last = _.clone(now);
+        }else{
+          watcher.last = now;
+        }
       }else{
         if(_.typeOf(eq)=='array' && eq.length){
-          watcher.fn(now, eq);
+          watcher.fn.call(this, now, eq);
           watcher.last = _.clone(now);
         }else{
           eq = true;
@@ -383,28 +403,77 @@ _.extend( Regular.prototype, {
       }
       if(eq !== true) dirty = true;
     }
-    this.$phase = null;
-    if(dirty) this.$digest();
 
+    if(children && (len = children.length)){
+      for(var i = 0; i < len ; i++){
+        if(children[i]._digest()) dirty = true;
+      }
+    }
+
+    if(dirty) this.$emit('update');
+    return dirty;
   },
-  destroy: function(){
-    this.$trigger('destroy');
-    this.group.destroy();
-    this.$watchers = null;
+  $new: function(name, data){
+    var type = typeof name;
+    var Component;
+    if(type === 'string'){
+      Component = Regular.component(name);
+    }else if(type === 'function'){
+      Component = name;
+    }
+    if(Component){
+      var instance = new Component(data, { $parent: this});
+      this.$children.push(instance);
+    }
+    return instance;
+  },
+  $digest: function(path){
+    if(this.$phase === 'digest') return;
+    this.$phase = 'digest';
+    var dirty = false, n =0;
+    while(dirty = this._digest(path)){
+      n++
+      if(n > 20){ // max loop
+        throw 'there may a circular dependencies in this Component' 
+      }
+    }
+    this.$phase = null;
   },
   $watch: function(expr, fn){
     var uid = _.uid('w_');
     var expr = Regular.parse(expr);
     var watcher = { get: expr.get, fn: fn, pathes: expr.pathes , id: uid};
     this.$watchers.push(watcher);
+    this._records && this._records.push(watcher.id);
     return uid;
   },
   $unwatch: function(uid){
-    var watchers = this.$watchers;
-    if(!uid || !watchers) return;
-    for(var len = watchers.length; len-- ;){
-      if(watchers[len] && watchers[len].id === uid) return watchers.splice(len, 1);
+    if(Array.isArray(uid)){
+      for(var i =0, len = uid.length; i < len; i++){
+        this.$unwatch(uid[i]);
+      }
+    }else{
+      var watchers = this.$watchers, watcher, len;
+      if(!uid || !watchers || !(len = watchers.length)) return;
+      for(;len--;){
+        watcher = watchers[len];
+        if(watcher && watcher.id === uid ){
+          watchers.splice(len, 1);
+        }
+      }
     }
+  },
+  find: function(id){
+    return this.$refs[id]; 
+  },
+  destroy: function(){
+    this.$emit('destroy');
+    this.group.destroy();
+    this.$watchers = null;
+    this.$children = null;
+    this.$parent = null;
+    this.$refs = null;
+    this.$off();
   },
   inject: function(node, position){
     position = position || 'bottom';
@@ -431,8 +500,34 @@ _.extend( Regular.prototype, {
         break;
       case 'before':
         node.parentNode.insertBefore(fragment, node);
+      }
+    },
+    _path: _._path,
+    _record: function(){
+      this._records = [];
+    },
+    _release: function(){
+      var _records = this._records;
+      this._records = null;
+      return _records;
+    },
+    _walk: function(ast){
+      if(_.typeOf(ast) === 'array'){
+        var res = [];
+        for(var i = 0, len = ast.length; i < len; i++){
+          res.push(this._walk(ast[i]));
+        }
+        return new Group(res);
+      }
+      if(typeof ast === 'string') return document.createTextNode(ast)
+      return walkers[ast.type || "default"].call(this, ast);
+    },
+    // find filter
+    _f: function(name){
+      var filter = Regular.filter(name);
+      if(typeof filter !== 'function') throw 'filter ' + name + 'is undefined';
+      return filter;
     }
-  }
 });
 
 
@@ -444,7 +539,7 @@ walkers.list = function(ast){
   var placeholder = document.createComment("Regular list");
   var Section =  Regular.derive({
     template: ast.body,
-    context: this
+    context: this.context
   });
   var self = this;
   var group = new Group();
@@ -477,12 +572,8 @@ walkers.list = function(ast){
         var data = _.createObject(self.data);
         data.$index = o;
         data[ast.variable] = item;
-        var section = new Section(data);
-
-        section.$on('digest', function(){
-          self.$digest();
-        });
-
+        var section = self.$new(Section, data);
+        section.$update()
         var insert = group.children.length && o !== 0? combine.last(group) : placeholder;
         placeholder.parentNode.insertBefore(combine.node(section), insert.nextSibling);
         group.children.splice(o , 0, section);
@@ -504,12 +595,6 @@ walkers.list = function(ast){
   }else{
     update(ast.sequence , _.equals( ast.sequence, []));
   }
-  function notifyChild(){
-    group.children.forEach(function(section){
-      section.$digest();
-    })
-  }
-  this.$on('digest', notifyChild)
 
   return {
     node: function(){
@@ -519,23 +604,25 @@ walkers.list = function(ast){
     destroy: function(){
       group.destroy();
       if(watchid) self.$unwatch(watchid);
-      self.$off('digest', notifyChild);
       self = null;
     }
   }
 }
 
-
-
-walkers.partial = function(ast){
+walkers.template = function(ast){
   var content = ast.content, compiled;
-  var placeholder = document.createComment('haha');
+  var placeholder = document.createComment('template');
   var compiled;
+  // var fragment = dom.fragment();
+  // fragment.appendChild(placeholder);
   if(content){
     var self = this;
+
     this.$watch(content, function(value){
       if(compiled) compiled.destroy();
-      compiled = self.$compile(new Parser(value).parse()); 
+      this._record()
+      compiled = self.$compile(value, true); 
+      var records = this._release();
       node = combine.node(compiled);
       placeholder.parentNode && placeholder.parentNode.insertBefore( node, placeholder );
     });
@@ -553,14 +640,13 @@ walkers.partial = function(ast){
   }
 };
 
-
 walkers['if'] = function(ast){
   var test, consequent, alternate, node;
   var placeholder = document.createComment("Regular if");
   var self = this;
-  this.$watch(ast.test, function(nvalue){
+  this.$watch(ast.test, function(nvalue, old){
     if(!!nvalue){ //true
-      consequent = self.$compile( ast.consequent )
+      consequent = self.$compile( ast.consequent , true)
       node = combine.node(consequent); //return group
       if(alternate){ alternate.destroy() };
       alternate = null;
@@ -569,11 +655,10 @@ walkers['if'] = function(ast){
     }else{ //false
       if(consequent){ consequent.destroy(); }
       consequent = null;
-      if(ast.alternate) alternate = self.$compile(ast.alternate);
+      if(ast.alternate) alternate = self.$compile(ast.alternate, true);
       node = combine.node(alternate);
       placeholder.parentNode && placeholder.parentNode.insertBefore( node, placeholder );
     }
-    self.$digest();
   });
 
   return {
@@ -596,34 +681,38 @@ walkers.expression = function(ast){
   var self = this;
   var node = document.createTextNode("");
   var watchid = this.$watch(ast, function(newval){
-    dom.text(node, "" + (newval||""));
+    dom.text(node, "" + (newval == null? "": String(newval)));
   })
-  return {
-    node: function(){
-      return node;
-    },
-    destroy: function(){
-      self.$unwatch(watchid)
-    }
-  }
+  return node;
 }
 
 
 
 walkers.element = function(ast){
-  var attrs = ast.attrs;
-  var Component = Regular.component(ast.tag) 
+  var attrs = ast.attrs, component;
   var watchids = [];
-  if(Component ){
-    var component = new Component({});
+
+  if(component = this.$new(ast.tag) ){
     for(var i = 0, len = attrs.length; i < len; i++){
       var attr = attrs[i];
       var value = attr.value||"";
-      if(value.type === 'expression'){
-        watchids.push(this.$watch(value, component.set.bind(component,attr.name)));
-      }else{
-        component.set(attr.name, value);
+      if(attr.name === 'ref' && value){
+         this.$refs[attr.value] = component;
       }
+      if(value.type === 'expression'){
+        var name = attr.name;
+        watchids.push(this.$watch(value, function(nvalue){
+          if(name === '&'){
+            component.data = nvalue;
+            component.$update();
+          }else{
+            component.$update(name, nvalue);
+          }
+        }) );
+      }else{
+        component.data[attr.name] = value;
+      }
+      
     }
     return component;
   }
@@ -656,23 +745,23 @@ walkers.element = function(ast){
       for(var i = 0,len = watchids.length; i< len ;i++){
         self.$unwatch(watchids[i]);
       }
-      dom.remove(element)
+      dom.remove(element);
     }
   }
 }
 
 // dada
 
-
 function bindAttrWatcher(element, attr){
   var name = attr.name,
-    value = attr.value || "", decorator=Regular.directive(name);
+    value = attr.value || "", directive=Regular.directive(name);
+  if(name === 'ref' && value) this.$refs[value] = element;
   var watchids = [];
-  if(decorator){
-    decorator.call(this, element, value);
+  if(directive){
+    directive.call(this, element, value);
   }else{
     if(value.type == 'expression' ){
-      watchids.push(this.$watch(value, function(nvalue){
+      watchids.push(this.$watch(value, function(nvalue, old){
         dom.attr(element, name, nvalue);
       }))
     }else{
@@ -949,8 +1038,9 @@ var fnTest = /xy/.test(function(){xy}) ? /\bsupr\b/ : /.*/,
 
     proto = _.createProto(fn, supro);
 
-    (fn.methods = function (o) {
-      process(proto, o, supro);
+    (fn.use = function (o) {
+      process(proto, o, supro); 
+      return fn;
     })(o);
 
     if(supr.__after__) supr.__after__.call(fn, supr, o);
@@ -1125,7 +1215,7 @@ var ld = (function(){
 
 
 _._path = function(base, path){
-  return base ==undefined? base: base[path];
+  return base == undefined? base: base[path];
 }
 
 
@@ -1180,6 +1270,32 @@ _.escape = (function(){
   }
 })();
 
+_.cache = function(max){
+  max = max || 1000;
+  var keys = [],
+      cache = {};
+  return {
+    set: function(key, value) {
+      if (keys.length > this.max) {
+        cache[keys.shift()] = null;
+      }
+      // 只有非undefined才可以
+      if(cache[key] == undefined){
+        keys.push(key);
+      }
+      cache[key] = value;
+      return value;
+    },
+    get: function(key) {
+      if (key === undefined) return cache;
+      return cache[key];
+    },
+    max: max,
+    len:function(){
+      return keys.length;
+    }
+  };
+}
 
 //http://www.w3.org/html/wg/drafts/html/master/single-page.html#void-elements
 _.isVoidTag = _.makePredicate("area base br col embed hr img input keygen link menuitem meta param source track wbr");
@@ -1248,7 +1364,7 @@ if (isNaN(dom.msie)) {
   dom.msie = parseInt((/trident\/.*; rv:(\d+)/.exec(navigator.userAgent.toLowerCase()) || [])[1]);
 }
 
-//http://stackoverflow.com/questions/11068196/ie8-ie7-onchange-event-is-triggered-only-after-repeated-selection
+//http://stackoverflow.com/questions/11068196/ie8-ie7-onchange-event-is-emited-only-after-repeated-selection
 function fixEventName(elem, name){
   return (name == 'change'  &&  dom.msie < 9 && 
       (elem && elem.tagName && elem.tagName.toLowerCase()==='input' && 
@@ -1257,6 +1373,9 @@ function fixEventName(elem, name){
     )? 'click': name;
 }
 
+dom.id = function(id){
+  return document.getElementById(id);
+}
 
 // createElement 
 dom.create = function(type, ns){
@@ -1356,6 +1475,7 @@ dom.remove = function(node){
 
 // css Settle & Getter from angular
 // =================================
+// it isnt computed style 
 dom.css = function(node, name, value){
   if (typeof value === "undefined") {
     node.style[name] = value;
@@ -1396,6 +1516,7 @@ dom.hasClass = function(node, className){
 require.register("regularjs/src/group.js", function(exports, require, module){
 var _ = require('./util');
 var dom = require('./dom');
+var combine = require('./helper/combine')
 
 function Group(list){
   this.children = list || [];
@@ -1404,17 +1525,8 @@ function Group(list){
 
 _.extend(Group.prototype, {
   destroy: function(){
-    var children = this.children, child;
-    if(!this.children) return;
-    for(var i = 0, len = children.length; i < len; i++){
-      child = children[i];
-      if(typeof child.destroy === 'function'){ // destroy interface
-        child.destroy();
-      }else if(child.nodeType == 3){ // textnode
-        dom.remove(child);
-      }else{// TODO 
-      }
-    }
+    combine.destroy(this.children);
+    this.ondestroy && this.ondestroy();
     this.children = null;
   },
   get: function(i){
@@ -1422,7 +1534,8 @@ _.extend(Group.prototype, {
   },
   push: function(item){
     this.children.push( item );
-  }
+  },
+
 })
 
 
@@ -1487,11 +1600,7 @@ lo.lex = function(str){
     // if(state == 'TAG' || state == 'JST') str = this.skipspace(str);
   }
 
-
-  tokens.push({
-    type: 'EOF'
-  });
-
+  tokens.push({type: 'EOF'});
 
   return tokens;
 }
@@ -1639,7 +1748,6 @@ var rules = {
 
   // 1. INIT
   // ---------------
-  COMMENT: [/<!--([^\x00]*?)-->/],
 
   // mode1's JST ENTER RULE
   ENTER_JST: [/[^\x00\<]*?(?={BEGIN})/, function(all,one){
@@ -1663,6 +1771,7 @@ var rules = {
   // 2. TAG
   // --------------------
   TAG_NAME: [/{NAME}/, 'NAME', 'TAG'],
+  TAG_UNQ_VALUE: [/[^&"'=><`\r\n\f ]+/, 'UNQ', 'TAG'],
 
   TAG_OPEN: [/<({NAME})\s*/, function(all, one){
     return {type: 'TAG_OPEN', value: one.toLowerCase() }
@@ -1678,7 +1787,7 @@ var rules = {
   }, 'TAG'],
 
 
-  TAG_PUNCHOR: [/[\>\/=]/, function(all){
+  TAG_PUNCHOR: [/[\>\/=&]/, function(all){
     if(all === '>') this.leave();
     return {type: all, value: all }
   }, 'TAG'],
@@ -1687,10 +1796,10 @@ var rules = {
   }, 'TAG'],
 
   TAG_SPACE: [/{SPACE}+/, null, 'TAG'],
+  TAG_COMMENT: [/\<\!--([^\x00]*?)--\>/, null ,'TAG'],
 
   // 3. JST
   // -------------------
-  JST_COMMENT: [/{!([^\x00]*?)!}/, null, 'JST'],
 
   JST_OPEN: ['{BEGIN}#{SPACE}*({IDENT})', function(all, name){
     return {
@@ -1716,6 +1825,9 @@ var rules = {
       value: one
     }
   }, 'JST'],
+  JST_COMMENT: [/{BEGIN}\!([^\x00]*?)\!{END}/, function(){
+    this.leave();
+  }, 'JST'],
   JST_EXPR_OPEN: ['{BEGIN}',function(all, one){
     var escape = one == '=';
     return {
@@ -1740,7 +1852,6 @@ var rules = {
 //
 var map1 = genMap([
   // INIT
-  rules.COMMENT,
   rules.ENTER_JST,
   rules.ENTER_TAG,
   rules.TEXT,
@@ -1751,13 +1862,16 @@ var map1 = genMap([
   rules.TAG_CLOSE,
   rules.TAG_PUNCHOR,
   rules.TAG_ENTER_JST,
+  rules.TAG_UNQ_VALUE,
   rules.TAG_STRING,
   rules.TAG_SPACE,
+  rules.TAG_COMMENT,
 
   // JST
   rules.JST_OPEN,
   rules.JST_PART_OPEN,
   rules.JST_CLOSE,
+  rules.JST_COMMENT,
   rules.JST_EXPR_OPEN,
   rules.JST_IDENT,
   rules.JST_SPACE,
@@ -1774,6 +1888,7 @@ var map2 = genMap([
   rules.ENTER_JST2,
   rules.TEXT,
   // JST
+  rules.JST_COMMENT,
   rules.JST_OPEN,
   rules.JST_PART_OPEN,
   rules.JST_CLOSE,
@@ -1845,19 +1960,14 @@ module.exports = {
       expression:  expression
     }
   },
-  partial: function(template){
+  template: function(template){
     return {
-      type: 'partial',
+      type: 'template',
       content: template
     }
   }
 }
 
-});
-require.register("regularjs/src/parser/config.js", function(exports, require, module){
-var _ = require('../util');
-var config =  module.exports ={
-}
 });
 require.register("regularjs/src/parser/Parser.js", function(exports, require, module){
 var _ = require("../util.js");
@@ -1878,6 +1988,9 @@ function Parser(input, opts){
   this.length = this.tokens.length;
 }
 
+
+// @TODO : to detect prop cache length;
+var cache = Parser.cache = _.cache(1000);
 var op = Parser.prototype;
 
 
@@ -1989,7 +2102,7 @@ op.statement = function(){
     case 'EXPR_OPEN':
       return this.interplation();
     case 'PART_OPEN':
-      return this.partial();
+      return this.template();
     default:
       this.error('Unexpected token: '+ this.la())
   }
@@ -2015,12 +2128,11 @@ op.xml = function(){
 op.attrs = function(){
 
   var attrs = [], attr, ll;
-  while( ll = this.eat('NAME') ){
+  while( ll = this.eat(["NAME", "&"]) ){
     attr = { name: ll.value }
-    if( this.eat('=') ) attr.value = this.attvalue();
+    if( this.eat("=") ) attr.value = this.attvalue();
 
-
-    attrs.push( attr )
+    attrs.push( attr );
   }
   return attrs;
 }
@@ -2032,6 +2144,7 @@ op.attvalue = function(){
   var ll = this.ll();
   switch(ll.type){
     case "NAME":
+    case "UNQ":
     case "STRING":
       this.next();
       var value = ll.value;
@@ -2073,11 +2186,11 @@ op.interplation = function(){
   return res;
 }
 
-op.partial = function(){
+op.template = function(){
   this.next();
   var content = this.expression();
   this.match('END');
-  return node.partial(content);
+  return node.template(content);
 }
 
 op["if"] = function(){
@@ -2152,7 +2265,7 @@ op.expr = function(filter){
   this.depend = [];
   var buffer = this.filter(), set, get;
   var body = buffer.get || buffer;
-  // @TODO list 
+  
   var prefix = this.depend.length? ("var "+ctxName+"=context.context||context;var "+varName+"=context.data;" ): "";
   var get = new Function("context", prefix + "return (" + body + ")");
 
@@ -2177,19 +2290,19 @@ op.filter = function(){
   var buffer, attr;
   if(ll){
     buffer = [
-      ";(function(data){", 
-          "var ", attr = _.attrName(), "=", this.condition(depend).get, ";"]
+      "(function(data){", 
+          "var ", attr = _.randomVar('f'), "=", left.get, ";"]
     do{
 
-      buffer.push(attr + " = this.f[" + this.match('IDENT').value+ "](" + attr) ;
+      buffer.push(attr + " = "+ctxName+"._f('" + this.match('IDENT').value+ "')(" + attr) ;
       if(this.eat(':')){
-        buffer.push(", "+ this.arguments(depend, "|").join(",") + ");")
+        buffer.push(", "+ this.arguments("|").join(",") + ");")
       }else{
         buffer.push(');');
       }
 
-    }while(ll = this.eat('|'))
-    buffer.push("return " + attr + "}");
+    }while(ll = this.eat('|'));
+    buffer.push("return " + attr + "})()");
     return this.getset(buffer.join(""));
   }
   return left;
@@ -2499,26 +2612,24 @@ module.exports = Parser;
 
 });
 require.register("regularjs/src/helper/shim.js", function(exports, require, module){
-// shim for lt ie9
+// shim for non es5 js env 
 var slice = [].slice;
+var tstr = ({}).toString;
 
 function extend(o1, o2 ){
-  for(var i in o2){
-    if( typeof o1[i] === "undefined"){
-      o1[i] = o2[i]
-    }
+  for(var i in o2) if( o1[i] === undefined){
+    o1[i] = o2[i]
   }
 }
 
-// String;
+// String proto ;
 extend(String.prototype, {
   trim: function(){
     return this.replace(/^\s+|\s+$/g, '');
   }
 });
 
-
-// Array;
+// Array proto;
 extend(Array.prototype, {
   indexOf: function(obj, from){
     from = from || 0;
@@ -2549,9 +2660,7 @@ extend(Array.prototype, {
   }
 });
 
-
-
-// Function;
+// Function proto;
 extend(Function.prototype, {
   bind: function(context, arg){
     var fn = this;
@@ -2563,10 +2672,9 @@ extend(Function.prototype, {
   }
 })
 
-
 // Object
 extend(Object, {
-  keys: function(){
+  keys: function(obj){
     var keys = [];
     for(var i in obj) if(obj.hasOwnProperty(i)){
       keys.push(i);
@@ -2575,14 +2683,18 @@ extend(Object, {
   } 
 })
 
-
 // Date
 extend(Date, {
   now: function(){
     return +new Date;
   }
 })
-
+// Array
+extend(Array, {
+  isArray: function(arr){
+    return tstr.call(arr) === "[object Array]";
+  }
+})
 
 });
 require.register("regularjs/src/helper/event.js", function(exports, require, module){
@@ -2603,7 +2715,6 @@ var API = {
         return this;
     },
     $off: function(event, fn) {
-        if(event) this._handles = [];
         if(!this._handles) return;
         var handles = this._handles,
             calls;
@@ -2622,15 +2733,24 @@ var API = {
         }
         return this;
     },
-    $trigger: function(event){
+    // bubble event
+    $emit: function(event){
         var args = slice.call(arguments, 1),
             handles = this._handles,
+            $parent = this.$parent,
             calls;
+
+        if($parent) $parent.$emit.apply($parent, arguments)
         if (!handles || !(calls = handles[event])) return this;
         for (var i = 0, len = calls.length; i < len; i++) {
             calls[i].apply(this, args)
         }
+        // if(calls.length) this.$update();
         return this;
+    },
+    // capture  event
+    $broadcast: function(event){
+
     }
 }
 // container class
@@ -2673,6 +2793,21 @@ var combine = module.exports = {
     if(typeof item.nodeType === 'number') return item;
     if(children && children.length) return combine.last(children[children.length - 1])
     if(item.group) return combine.last(item.group);
+  },
+  destroy: function(item){
+    if(!item) return;
+    if(Array.isArray(item)){
+      for(var i = 0, len = item.length; i < len; i++ ){
+        combine.destroy(item[i]);
+      }
+    }
+    var children = item.children;
+    if(typeof item.destroy === 'function') return item.destroy();
+    if(typeof item.nodeType === 'number') return dom.remove(item);
+    if(children && children.length){
+      combine.destroy(item);
+      item.children = null;
+    }
   }
 }
 });
@@ -2685,33 +2820,32 @@ var events = "click dblclick mouseover mouseout change focus blur keydown keyup 
 
 
 events.forEach(function(item){
-  Regular.directive('t-'+item, function(elem, value){
+  Regular.directive('r-'+item, function(elem, value){
     if(!value) return;
     var self = this; 
     dom.on(elem, item, function(event){
       self.data.$event = event;
       value.get(self);
-      self.$digest();
       self.data.$event = null;
+      self.$update();
     });
-    
   })
 });
 
 
-Regular.directive('t-enter', function(elem, value){
+Regular.directive('r-enter', function(elem, value){
   if(!value) return;
   var self = this;
   dom.on(elem, 'keypress', function(ev){
     if(ev.which == 13 || ev.keyCode == 13){
       value.get(self);
-      self.$digest();
+      self.$update();
     }
   });
 })
 
 
-Regular.directive('t-model', function(elem,value){
+Regular.directive('r-model', function(elem,value){
   var sign = elem.tagName.toLowerCase();
   if(typeof value === 'string') value = Regular.parse(value);
 
@@ -2735,25 +2869,25 @@ Regular.directive('t-model', function(elem,value){
 
 
 function initSelect(scope, elem, value, parseFn){
-  // 初始化一次
-  if(parseFn(scope)==null){
-    parseFn.assign(elem.value)(scope);
-  }
+  // // 初始化一次
+  // if(parseFn(scope)==null){
+  //   parseFn.assign(elem.value)(scope);
+  // }
 
-  scope.$watch(parseFn, function(newValue, oldValue){
-    var children = e._$all('option',elem)
-    children.forEach(function(node, index){
-      if(node.value == newValue){
-        elem.selectedIndex = index;
-      }
-    })
-  });
+  // scope.$watch(parseFn, function(newValue, oldValue){
+  //   var children = e._$all('option',elem)
+  //   children.forEach(function(node, index){
+  //     if(node.value == newValue){
+  //       elem.selectedIndex = index;
+  //     }
+  //   })
+  // });
 
-  function handler(ev){
-    parseFn.assign(this.value)(scope);
-    if(!scope.$phase) scope.$digest();
-  }
-  v._$addEvent(elem, 'change', handler)
+  // function handler(ev){
+  //   parseFn.assign(this.value)(scope);
+  //   if(!scope.$phase) scope.$update();
+  // }
+  // v._$addEvent(elem, 'change', handler)
 }
 
 function initText(elem, parsed){
@@ -2769,7 +2903,7 @@ function initText(elem, parsed){
     var value = (ev.srcElement || ev.target).value
     parsed.set(self, value);
     inProgress = true;
-    self.$digest();
+    self.$update();
     inProgress = false;
   }
 
@@ -2794,7 +2928,7 @@ function initCheckBox(elem, parsed){
     var value = this.checked;
     parsed.set(self, value);
     inProgress= true;
-    self.$digest();
+    self.$update();
     inProgress = false;
   }
   if(parsed.set) dom.on(elem, 'change', handler)

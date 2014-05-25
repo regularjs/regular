@@ -14,14 +14,13 @@ var raw = function(input){
 var parse = function(input){
   return new Parser(input, {mode: 2, state: 'JST'}).expression()
 }
-console.log(parse('title +""+  $index').get)
-
 
 
 
 describe("parse Expression", function(){
   it('Primary should parsed as expect', function(){
 
+    console.log(raw("1"))
     raw("1").to.equal(1);
     raw("1.1").to.equal(1.1);
     raw("1.1e1").to.equal(11);
@@ -53,8 +52,9 @@ describe("parse Expression", function(){
   })
 
   it('deep path should check undefined before return value', function(){
-
-    raw('data + "" + a').to.equal('');
+    var data = {a: 1, b: 2}
+    var context = {data: data }
+    expect(parse('a + b').get(context)).to.equal(3);
 
   })
 

@@ -15,25 +15,31 @@
       <p>Part of <a href="http://todomvc.com">TodoMVC</a></p>
     </footer>
     <!-- Templates -->
-    <script id="main" type="text/ractive">
+    <script id='todo' type="template/regular" name="todo">
+      <li class="{{ completed ? 'completed' : '' }} {{ editing ? 'editing' : '' }}">
+        <div class="view">
+          <input class="toggle" type="checkbox" r-model={{ completed }}>
+          <label r-dblclick={{editing = true}}>{{ description }}</label>
+          <button r-click={{ this.$emit('remove', this.data) }} class="destroy"></button>
+        </div>
+        <input id="edit" class="edit" r-enter={{ editing = false }} r-model={{description}} autofocus>
+      </li>
+    </script>
+
+    <script id="application" type="template/regular">
       <div id="div">
         <h1>regular-todo</h1>
-        <input id="new-todo" t-enter={{ this.newTodo(editTodo) }} placeholder="What needs to be done?" t-model={{ editTodo }}>
+        <input id="new-todo" r-enter={{ this.newTodo(editTodo) }} placeholder="What needs to be done?" r-model={{ editTodo }}>
       </div>
       {{#if !!items.length}}
         <section id="main">
-          <input id="toggle-all" type="checkbox" name='toggle' t-change={{this.toggleAll(items.length === this.filter('completed').length)}} checked={{items.length === this.filter('completed').length }}>
+          <input id="toggle-all" type="checkbox" name='toggle' r-change={{this.toggleAll(items.length === this.filter('completed').length)}} checked={{items.length === this.filter('completed').length }}>
           <label for="toggle-all">Mark all as complete</label>
           <ul id="todo-list">
             {{#list this.filter(filter) as i}}
-                <li class="{{ i.completed ? 'completed' : '' }} {{ i.editing ? 'editing' : '' }}">
-                  <div class="view">
-                    <input class="toggle" type="checkbox" t-model={{ i.completed }}>
-                    <label t-dblclick={{i.editing = true}}>{{ i.description }}</label>
-                    <button t-click={{ this.remove(i) }} class="destroy"></button>
-                  </div>
-                  <input id="edit" class="edit" t-enter={{ i.editing = false }} t-model={{i.description}} autofocus>
-                </li>
+              <!-- & means the this.data self, just like sass placeholder -->
+              <todo &= {{i}} /> 
+              <!--<li r-click={{ this.remove(i) }} class="{{ i.completed ? 'completed' : '' }}">{{i.description}}</li>-->
             {{/list}}
           </ul>
         </section>
@@ -42,33 +48,35 @@
             <strong>{{ this.filter('active').length }}</strong> {{ this.filter('active').length === 1 ? 'item' : 'items' }} left
           </span>
           <ul id="filters">
-            <li><a class="{{ filter === 'all'? 'selected' : '' }}"  href="javascript:;" t-click={{filter='all'}}>All</a></li>
-            <li><a class="{{ filter === 'active'? 'selected' : '' }}" href='javascript:;' t-click={{filter = 'active'}}>Active</a></li>
-            <li><a class="{{ filter === 'completed'? 'selected' : '' }}" href="javascript:;" t-click={{filter = 'completed'}}>Completed</a></li>
+            <li><a class="{{ filter === 'all'? 'selected' : '' }}"  href="javascript:;" r-click={{filter='all'}}>All</a></li>
+            <li><a class="{{ filter === 'active'? 'selected' : '' }}" href='javascript:;' r-click={{filter = 'active'}}>Active</a></li>
+            <li><a class="{{ filter === 'completed'? 'selected' : '' }}" href="javascript:;" r-click={{filter = 'completed'}}>Completed</a></li>
           </ul>
           {{#if this.filter('completed').length > 0 }}
-            <button id="clear-completed" t-click={{this.clearCompleted($event)}}>Clear completed ({{ this.filter('completed').length }})</button>
+            <button id="clear-completed" r-click={{this.clearCompleted()}}>Clear completed ({{ this.filter('completed').length }})</button>
           {{/if}}
         </footer>
       {{/if}}
     </script>
 
     <script>
+    // name can specify in template node,  the dead simplest component example;
+    var Todo = Regular.derive({template: "todo"});
 
     var TodoApp = Regular.derive({
-      name: 'todo', 
-      template: 'main', // id | template string | preparsed ast
-   
+      template: 'application', // id | template string | preparsed ast
       init: function(){
         // call parent.init function ()
         this.supr();
         var data = this.data;
         // localStorage
         if(window.localStorage){
-          this.$on('digest', function(){
+          this.$on('update', function(){
             localStorage.setItem('items',JSON.stringify(this.data.items))
           })
         }
+        // todo component bubble this event to parent component;
+        this.$on('remove', this.remove.bind(this));
       },
       // get the list;
       filter: function(token){
@@ -98,11 +106,9 @@
       },
       // remove a todo
       remove: function(todo){
-        var index = this.data.items.indexOf(todo);
-        if(~index) this.data.items.splice(index,1);
-      },
-      destroy: function(){
-        this.supr();
+        var data = this.data;
+        var index = data.items.indexOf(todo);
+        if(~index) data.items.splice(index,1); 
       }
     })
     
@@ -112,15 +118,14 @@
       items = JSON.parse(items);
     }
     
-
     var todo = new TodoApp({
       filter:"all",
       items: items || []
     });
 
-
     todo.inject('todoapp')
 
     </script>
+    
   </body>
 </html>

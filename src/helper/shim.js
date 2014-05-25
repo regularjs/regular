@@ -1,23 +1,21 @@
-// shim for lt ie9
+// shim for non es5 js env 
 var slice = [].slice;
+var tstr = ({}).toString;
 
 function extend(o1, o2 ){
-  for(var i in o2){
-    if( typeof o1[i] === "undefined"){
-      o1[i] = o2[i]
-    }
+  for(var i in o2) if( o1[i] === undefined){
+    o1[i] = o2[i]
   }
 }
 
-// String;
+// String proto ;
 extend(String.prototype, {
   trim: function(){
     return this.replace(/^\s+|\s+$/g, '');
   }
 });
 
-
-// Array;
+// Array proto;
 extend(Array.prototype, {
   indexOf: function(obj, from){
     from = from || 0;
@@ -48,9 +46,7 @@ extend(Array.prototype, {
   }
 });
 
-
-
-// Function;
+// Function proto;
 extend(Function.prototype, {
   bind: function(context, arg){
     var fn = this;
@@ -62,10 +58,9 @@ extend(Function.prototype, {
   }
 })
 
-
 // Object
 extend(Object, {
-  keys: function(){
+  keys: function(obj){
     var keys = [];
     for(var i in obj) if(obj.hasOwnProperty(i)){
       keys.push(i);
@@ -74,11 +69,15 @@ extend(Object, {
   } 
 })
 
-
 // Date
 extend(Date, {
   now: function(){
     return +new Date;
   }
 })
-
+// Array
+extend(Array, {
+  isArray: function(arr){
+    return tstr.call(arr) === "[object Array]";
+  }
+})

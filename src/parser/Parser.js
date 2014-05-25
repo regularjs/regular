@@ -16,6 +16,9 @@ function Parser(input, opts){
   this.length = this.tokens.length;
 }
 
+
+// @TODO : to detect prop cache length;
+var cache = Parser.cache = _.cache(1000);
 var op = Parser.prototype;
 
 
@@ -127,7 +130,7 @@ op.statement = function(){
     case 'EXPR_OPEN':
       return this.interplation();
     case 'PART_OPEN':
-      return this.partial();
+      return this.template();
     default:
       this.error('Unexpected token: '+ this.la())
   }
@@ -153,12 +156,11 @@ op.xml = function(){
 op.attrs = function(){
 
   var attrs = [], attr, ll;
-  while( ll = this.eat('NAME') ){
+  while( ll = this.eat(["NAME", "&"]) ){
     attr = { name: ll.value }
-    if( this.eat('=') ) attr.value = this.attvalue();
+    if( this.eat("=") ) attr.value = this.attvalue();
 
-
-    attrs.push( attr )
+    attrs.push( attr );
   }
   return attrs;
 }
@@ -170,6 +172,7 @@ op.attvalue = function(){
   var ll = this.ll();
   switch(ll.type){
     case "NAME":
+    case "UNQ":
     case "STRING":
       this.next();
       var value = ll.value;
@@ -211,11 +214,11 @@ op.interplation = function(){
   return res;
 }
 
-op.partial = function(){
+op.template = function(){
   this.next();
   var content = this.expression();
   this.match('END');
-  return node.partial(content);
+  return node.template(content);
 }
 
 op["if"] = function(){
@@ -290,7 +293,7 @@ op.expr = function(filter){
   this.depend = [];
   var buffer = this.filter(), set, get;
   var body = buffer.get || buffer;
-  // @TODO list 
+  
   var prefix = this.depend.length? ("var "+ctxName+"=context.context||context;var "+varName+"=context.data;" ): "";
   var get = new Function("context", prefix + "return (" + body + ")");
 
@@ -315,19 +318,19 @@ op.filter = function(){
   var buffer, attr;
   if(ll){
     buffer = [
-      ";(function(data){", 
-          "var ", attr = _.attrName(), "=", this.condition(depend).get, ";"]
+      "(function(data){", 
+          "var ", attr = _.randomVar('f'), "=", left.get, ";"]
     do{
 
-      buffer.push(attr + " = this.f[" + this.match('IDENT').value+ "](" + attr) ;
+      buffer.push(attr + " = "+ctxName+"._f('" + this.match('IDENT').value+ "')(" + attr) ;
       if(this.eat(':')){
-        buffer.push(", "+ this.arguments(depend, "|").join(",") + ");")
+        buffer.push(", "+ this.arguments("|").join(",") + ");")
       }else{
         buffer.push(');');
       }
 
-    }while(ll = this.eat('|'))
-    buffer.push("return " + attr + "}");
+    }while(ll = this.eat('|'));
+    buffer.push("return " + attr + "})()");
     return this.getset(buffer.join(""));
   }
   return left;

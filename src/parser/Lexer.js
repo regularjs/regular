@@ -52,11 +52,7 @@ lo.lex = function(str){
     // if(state == 'TAG' || state == 'JST') str = this.skipspace(str);
   }
 
-
-  tokens.push({
-    type: 'EOF'
-  });
-
+  tokens.push({type: 'EOF'});
 
   return tokens;
 }
@@ -204,7 +200,6 @@ var rules = {
 
   // 1. INIT
   // ---------------
-  COMMENT: [/<!--([^\x00]*?)-->/],
 
   // mode1's JST ENTER RULE
   ENTER_JST: [/[^\x00\<]*?(?={BEGIN})/, function(all,one){
@@ -228,6 +223,7 @@ var rules = {
   // 2. TAG
   // --------------------
   TAG_NAME: [/{NAME}/, 'NAME', 'TAG'],
+  TAG_UNQ_VALUE: [/[^&"'=><`\r\n\f ]+/, 'UNQ', 'TAG'],
 
   TAG_OPEN: [/<({NAME})\s*/, function(all, one){
     return {type: 'TAG_OPEN', value: one.toLowerCase() }
@@ -243,7 +239,7 @@ var rules = {
   }, 'TAG'],
 
 
-  TAG_PUNCHOR: [/[\>\/=]/, function(all){
+  TAG_PUNCHOR: [/[\>\/=&]/, function(all){
     if(all === '>') this.leave();
     return {type: all, value: all }
   }, 'TAG'],
@@ -252,10 +248,10 @@ var rules = {
   }, 'TAG'],
 
   TAG_SPACE: [/{SPACE}+/, null, 'TAG'],
+  TAG_COMMENT: [/\<\!--([^\x00]*?)--\>/, null ,'TAG'],
 
   // 3. JST
   // -------------------
-  JST_COMMENT: [/{!([^\x00]*?)!}/, null, 'JST'],
 
   JST_OPEN: ['{BEGIN}#{SPACE}*({IDENT})', function(all, name){
     return {
@@ -281,6 +277,9 @@ var rules = {
       value: one
     }
   }, 'JST'],
+  JST_COMMENT: [/{BEGIN}\!([^\x00]*?)\!{END}/, function(){
+    this.leave();
+  }, 'JST'],
   JST_EXPR_OPEN: ['{BEGIN}',function(all, one){
     var escape = one == '=';
     return {
@@ -305,7 +304,6 @@ var rules = {
 //
 var map1 = genMap([
   // INIT
-  rules.COMMENT,
   rules.ENTER_JST,
   rules.ENTER_TAG,
   rules.TEXT,
@@ -316,13 +314,16 @@ var map1 = genMap([
   rules.TAG_CLOSE,
   rules.TAG_PUNCHOR,
   rules.TAG_ENTER_JST,
+  rules.TAG_UNQ_VALUE,
   rules.TAG_STRING,
   rules.TAG_SPACE,
+  rules.TAG_COMMENT,
 
   // JST
   rules.JST_OPEN,
   rules.JST_PART_OPEN,
   rules.JST_CLOSE,
+  rules.JST_COMMENT,
   rules.JST_EXPR_OPEN,
   rules.JST_IDENT,
   rules.JST_SPACE,
@@ -339,6 +340,7 @@ var map2 = genMap([
   rules.ENTER_JST2,
   rules.TEXT,
   // JST
+  rules.JST_COMMENT,
   rules.JST_OPEN,
   rules.JST_PART_OPEN,
   rules.JST_CLOSE,

@@ -25,5 +25,20 @@ var combine = module.exports = {
     if(typeof item.nodeType === 'number') return item;
     if(children && children.length) return combine.last(children[children.length - 1])
     if(item.group) return combine.last(item.group);
+  },
+  destroy: function(item){
+    if(!item) return;
+    if(Array.isArray(item)){
+      for(var i = 0, len = item.length; i < len; i++ ){
+        combine.destroy(item[i]);
+      }
+    }
+    var children = item.children;
+    if(typeof item.destroy === 'function') return item.destroy();
+    if(typeof item.nodeType === 'number') return dom.remove(item);
+    if(children && children.length){
+      combine.destroy(item);
+      item.children = null;
+    }
   }
 }

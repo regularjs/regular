@@ -1,4 +1,4 @@
-var Termin = require_lib('common.js');
+var Regular = require_lib('Regular.js');
 
 var c = function(str,data){
   return new Termin(str,data);

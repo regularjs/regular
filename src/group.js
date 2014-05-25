@@ -1,5 +1,6 @@
 var _ = require('./util');
 var dom = require('./dom');
+var combine = require('./helper/combine')
 
 function Group(list){
   this.children = list || [];
@@ -8,17 +9,8 @@ function Group(list){
 
 _.extend(Group.prototype, {
   destroy: function(){
-    var children = this.children, child;
-    if(!this.children) return;
-    for(var i = 0, len = children.length; i < len; i++){
-      child = children[i];
-      if(typeof child.destroy === 'function'){ // destroy interface
-        child.destroy();
-      }else if(child.nodeType == 3){ // textnode
-        dom.remove(child);
-      }else{// TODO 
-      }
-    }
+    combine.destroy(this.children);
+    this.ondestroy && this.ondestroy();
     this.children = null;
   },
   get: function(i){
@@ -26,7 +18,8 @@ _.extend(Group.prototype, {
   },
   push: function(item){
     this.children.push( item );
-  }
+  },
+
 })
 
 

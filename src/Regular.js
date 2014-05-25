@@ -6,31 +6,25 @@ var Group = require('./group.js');
 var _ = require('./util');
 var Event = require('./helper/event.js');
 var combine = require('./helper/combine.js');
+var idtest = /^\w{1,20}$/;
 
 
 
 
 
-var Regular = function(template, data){
-  var type = _.typeOf(template);
-  if(type === 'object'){
-    data = template;
-    template = null;
-  }
-  if(template){
-    if(type === "string"){
-      template = Regular.getTemplate(template);
-      template = new Parser(template).parse();
-    }
-    this.template = template;
-  }
+var Regular = function( data, options){
+  options = options || {};
+  if( this.template === 'undefined' )  throw "template is required";
   this.data= data || {};
   this.$watchers = [];
+  this.$children = [];
+  this.$refs = {};
   this.context = this.context || this;
   this.group = this.$compile(this.template);
   this.element = combine.node(this);
-  this.$digest()
-  if(this.init) this.init.apply(this, arguments);
+  this.$parent = options.$parent;
+  if(!options.$parent) this.$digest();
+  if( this.init ) this.init.apply(this, arguments);
 }
 
 
@@ -59,25 +53,28 @@ _.extend(Regular, {
 
     if(o.name) Regular.component(o.name, this);
     if(template = o.template){
-      template = Regular.getTemplate(template);
+      var node, name;
+      if(idtest.test(template) && (node= dom.id(template))){
+        template = node.innerHTML;
+        if(name = dom.attr(node, 'name')) Regular.component(name, this);
+      }
       if(typeof template == 'string'){
         this.prototype.template = new Parser(template).parse();
       }
     }
 
   },
-  getTemplate: function(template){
-    if(/^\w{1,20}$/.test(template)){
-      return document.getElementById(template).innerHTML;
-    }else{
-      return template;
-    }
-  },
   derive: _.derive,
   directive: function(name, cfg){
     var directors = this._directors;
     if(cfg == null) return directors[name];
     directors[name] = cfg;
+    return this;
+  },
+  filter: function(name, fn){
+    var filters = this._filters;
+    if(fn == null) return filters[name];
+    filters[name] = fn;
     return this;
   },
   component: function(name, Component){
@@ -101,46 +98,65 @@ _.extend(Regular, {
 Event.mixTo(Regular)
 _.extend( Regular.prototype, {
   init: function(){},
-  $compile: function(ast){
-    if(_.typeOf(ast) === 'array'){
-      var res = [];
-      for(var i = 0, len = ast.length; i < len; i++){
-        res.push(this.$compile(ast[i]));
-      }
-      return new Group(res);
+  /**
+   * compile a block ast ; return a group;
+   * @param  {Array} parsed ast
+   * @param  {[type]} record
+   * @return {[type]}
+   */
+  $compile: function(ast, record){
+    if(typeof ast === 'string'){
+      ast = new Parser(ast).parse()
     }
-    if(typeof ast === 'string') return document.createTextNode(ast)
-    return walkers[ast.type || "default"].call(this, ast);
+    var records;
+    if(record) this._record();
+    var group = this._walk(ast);
+    if(record){
+      records = this._release();
+      var self = this;
+      if(records.length){
+        // auto destroy all wather;
+        group.ondestroy = function(){
+          self.$unwatch(records);
+        } 
+      }
+    }
+    return group;
   },
-  set: function(path, value){
+  $update: function(path, value){
     if(typeof path === 'function' ){
       path.call(this, this.data);
-    }else{
+    }else if(path){
       var base = this.data;
       var path = Regular.parse(path);
       path.set(this, value);
     }
-    this.$digest(path);
+    var self = this, root = self;
+    // find the root
+    while(self = self.$parent){ root = self }
+    root.$digest();
   },
-  _path: _._path,
-  $digest: function(path){
-    var watchers = this.$watchers;
-    if(this.$phase === 'digest' || !this.$watchers)  return;
+  _digest: function(path ,deep){
+    // if(this.context) return this.context.$digest();
 
-    this.$phase = 'digest';
+    var watchers = this.$watchers;
+    var children = this.$children;
+
+    if(!watchers || !watchers.length) return;
     var dirty = false;
-    this.$trigger('digest');
 
     for(var i = 0, len = watchers.length;i<len; i++){
       var watcher = watchers[i];
       if(!watcher) continue;
       var now = watcher.get(this);
+      var last = watcher.last;
       // if(now && now.length )debugger
       var eq = true;
-      if(watcher.deep && _.typeOf(now) == 'object'){
+      if(_.typeOf(now) == 'object' && deep){
         if(!watcher.last){
            eq = false;
          }else{
+
           for(var j in now){
             if(watcher.last[j] !== now[j]){
               eq = false;
@@ -160,11 +176,15 @@ _.extend( Regular.prototype, {
         eq = _.equals(now, watcher.last);
       }
       if(eq===false){
-        watcher.fn(now, watcher.last);
-        watcher.last = _.clone(now);
+        watcher.fn.call(this, now, watcher.last);
+        if(typeof now !== 'object'){
+          watcher.last = _.clone(now);
+        }else{
+          watcher.last = now;
+        }
       }else{
         if(_.typeOf(eq)=='array' && eq.length){
-          watcher.fn(now, eq);
+          watcher.fn.call(this, now, eq);
           watcher.last = _.clone(now);
         }else{
           eq = true;
@@ -172,28 +192,77 @@ _.extend( Regular.prototype, {
       }
       if(eq !== true) dirty = true;
     }
-    this.$phase = null;
-    if(dirty) this.$digest();
 
+    if(children && (len = children.length)){
+      for(var i = 0; i < len ; i++){
+        if(children[i]._digest()) dirty = true;
+      }
+    }
+
+    if(dirty) this.$emit('update');
+    return dirty;
   },
-  destroy: function(){
-    this.$trigger('destroy');
-    this.group.destroy();
-    this.$watchers = null;
+  $new: function(name, data){
+    var type = typeof name;
+    var Component;
+    if(type === 'string'){
+      Component = Regular.component(name);
+    }else if(type === 'function'){
+      Component = name;
+    }
+    if(Component){
+      var instance = new Component(data, { $parent: this});
+      this.$children.push(instance);
+    }
+    return instance;
+  },
+  $digest: function(path){
+    if(this.$phase === 'digest') return;
+    this.$phase = 'digest';
+    var dirty = false, n =0;
+    while(dirty = this._digest(path)){
+      n++
+      if(n > 20){ // max loop
+        throw 'there may a circular dependencies in this Component' 
+      }
+    }
+    this.$phase = null;
   },
   $watch: function(expr, fn){
     var uid = _.uid('w_');
     var expr = Regular.parse(expr);
     var watcher = { get: expr.get, fn: fn, pathes: expr.pathes , id: uid};
     this.$watchers.push(watcher);
+    this._records && this._records.push(watcher.id);
     return uid;
   },
   $unwatch: function(uid){
-    var watchers = this.$watchers;
-    if(!uid || !watchers) return;
-    for(var len = watchers.length; len-- ;){
-      if(watchers[len] && watchers[len].id === uid) return watchers.splice(len, 1);
+    if(Array.isArray(uid)){
+      for(var i =0, len = uid.length; i < len; i++){
+        this.$unwatch(uid[i]);
+      }
+    }else{
+      var watchers = this.$watchers, watcher, len;
+      if(!uid || !watchers || !(len = watchers.length)) return;
+      for(;len--;){
+        watcher = watchers[len];
+        if(watcher && watcher.id === uid ){
+          watchers.splice(len, 1);
+        }
+      }
     }
+  },
+  find: function(id){
+    return this.$refs[id]; 
+  },
+  destroy: function(){
+    this.$emit('destroy');
+    this.group.destroy();
+    this.$watchers = null;
+    this.$children = null;
+    this.$parent = null;
+    this.$refs = null;
+    this.$off();
   },
   inject: function(node, position){
     position = position || 'bottom';
@@ -220,8 +289,34 @@ _.extend( Regular.prototype, {
         break;
       case 'before':
         node.parentNode.insertBefore(fragment, node);
+      }
+    },
+    _path: _._path,
+    _record: function(){
+      this._records = [];
+    },
+    _release: function(){
+      var _records = this._records;
+      this._records = null;
+      return _records;
+    },
+    _walk: function(ast){
+      if(_.typeOf(ast) === 'array'){
+        var res = [];
+        for(var i = 0, len = ast.length; i < len; i++){
+          res.push(this._walk(ast[i]));
+        }
+        return new Group(res);
+      }
+      if(typeof ast === 'string') return document.createTextNode(ast)
+      return walkers[ast.type || "default"].call(this, ast);
+    },
+    // find filter
+    _f: function(name){
+      var filter = Regular.filter(name);
+      if(typeof filter !== 'function') throw 'filter ' + name + 'is undefined';
+      return filter;
     }
-  }
 });
 
 
@@ -233,7 +328,7 @@ walkers.list = function(ast){
   var placeholder = document.createComment("Regular list");
   var Section =  Regular.derive({
     template: ast.body,
-    context: this
+    context: this.context
   });
   var self = this;
   var group = new Group();
@@ -266,12 +361,8 @@ walkers.list = function(ast){
         var data = _.createObject(self.data);
         data.$index = o;
         data[ast.variable] = item;
-        var section = new Section(data);
-
-        section.$on('digest', function(){
-          self.$digest();
-        });
-
+        var section = self.$new(Section, data);
+        section.$update()
         var insert = group.children.length && o !== 0? combine.last(group) : placeholder;
         placeholder.parentNode.insertBefore(combine.node(section), insert.nextSibling);
         group.children.splice(o , 0, section);
@@ -293,12 +384,6 @@ walkers.list = function(ast){
   }else{
     update(ast.sequence , _.equals( ast.sequence, []));
   }
-  function notifyChild(){
-    group.children.forEach(function(section){
-      section.$digest();
-    })
-  }
-  this.$on('digest', notifyChild)
 
   return {
     node: function(){
@@ -308,23 +393,25 @@ walkers.list = function(ast){
     destroy: function(){
       group.destroy();
       if(watchid) self.$unwatch(watchid);
-      self.$off('digest', notifyChild);
       self = null;
     }
   }
 }
 
-
-
-walkers.partial = function(ast){
+walkers.template = function(ast){
   var content = ast.content, compiled;
-  var placeholder = document.createComment('haha');
+  var placeholder = document.createComment('template');
   var compiled;
+  // var fragment = dom.fragment();
+  // fragment.appendChild(placeholder);
   if(content){
     var self = this;
+
     this.$watch(content, function(value){
       if(compiled) compiled.destroy();
-      compiled = self.$compile(new Parser(value).parse()); 
+      this._record()
+      compiled = self.$compile(value, true); 
+      var records = this._release();
       node = combine.node(compiled);
       placeholder.parentNode && placeholder.parentNode.insertBefore( node, placeholder );
     });
@@ -342,14 +429,13 @@ walkers.partial = function(ast){
   }
 };
 
-
 walkers['if'] = function(ast){
   var test, consequent, alternate, node;
   var placeholder = document.createComment("Regular if");
   var self = this;
-  this.$watch(ast.test, function(nvalue){
+  this.$watch(ast.test, function(nvalue, old){
     if(!!nvalue){ //true
-      consequent = self.$compile( ast.consequent )
+      consequent = self.$compile( ast.consequent , true)
       node = combine.node(consequent); //return group
       if(alternate){ alternate.destroy() };
       alternate = null;
@@ -358,11 +444,10 @@ walkers['if'] = function(ast){
     }else{ //false
       if(consequent){ consequent.destroy(); }
       consequent = null;
-      if(ast.alternate) alternate = self.$compile(ast.alternate);
+      if(ast.alternate) alternate = self.$compile(ast.alternate, true);
       node = combine.node(alternate);
       placeholder.parentNode && placeholder.parentNode.insertBefore( node, placeholder );
     }
-    self.$digest();
   });
 
   return {
@@ -385,34 +470,38 @@ walkers.expression = function(ast){
   var self = this;
   var node = document.createTextNode("");
   var watchid = this.$watch(ast, function(newval){
-    dom.text(node, "" + (newval||""));
+    dom.text(node, "" + (newval == null? "": String(newval)));
   })
-  return {
-    node: function(){
-      return node;
-    },
-    destroy: function(){
-      self.$unwatch(watchid)
-    }
-  }
+  return node;
 }
 
 
 
 walkers.element = function(ast){
-  var attrs = ast.attrs;
-  var Component = Regular.component(ast.tag) 
+  var attrs = ast.attrs, component;
   var watchids = [];
-  if(Component ){
-    var component = new Component({});
+
+  if(component = this.$new(ast.tag) ){
     for(var i = 0, len = attrs.length; i < len; i++){
       var attr = attrs[i];
       var value = attr.value||"";
-      if(value.type === 'expression'){
-        watchids.push(this.$watch(value, component.set.bind(component,attr.name)));
-      }else{
-        component.set(attr.name, value);
+      if(attr.name === 'ref' && value){
+         this.$refs[attr.value] = component;
       }
+      if(value.type === 'expression'){
+        var name = attr.name;
+        watchids.push(this.$watch(value, function(nvalue){
+          if(name === '&'){
+            component.data = nvalue;
+            component.$update();
+          }else{
+            component.$update(name, nvalue);
+          }
+        }) );
+      }else{
+        component.data[attr.name] = value;
+      }
+      
     }
     return component;
   }
@@ -445,23 +534,23 @@ walkers.element = function(ast){
       for(var i = 0,len = watchids.length; i< len ;i++){
         self.$unwatch(watchids[i]);
       }
-      dom.remove(element)
+      dom.remove(element);
     }
   }
 }
 
 // dada
 
-
 function bindAttrWatcher(element, attr){
   var name = attr.name,
-    value = attr.value || "", decorator=Regular.directive(name);
+    value = attr.value || "", directive=Regular.directive(name);
+  if(name === 'ref' && value) this.$refs[value] = element;
   var watchids = [];
-  if(decorator){
-    decorator.call(this, element, value);
+  if(directive){
+    directive.call(this, element, value);
   }else{
     if(value.type == 'expression' ){
-      watchids.push(this.$watch(value, function(nvalue){
+      watchids.push(this.$watch(value, function(nvalue, old){
         dom.attr(element, name, nvalue);
       }))
     }else{

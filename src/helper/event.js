@@ -15,7 +15,6 @@ var API = {
         return this;
     },
     $off: function(event, fn) {
-        if(event) this._handles = [];
         if(!this._handles) return;
         var handles = this._handles,
             calls;
@@ -34,15 +33,24 @@ var API = {
         }
         return this;
     },
-    $trigger: function(event){
+    // bubble event
+    $emit: function(event){
         var args = slice.call(arguments, 1),
             handles = this._handles,
+            $parent = this.$parent,
             calls;
+
+        if($parent) $parent.$emit.apply($parent, arguments)
         if (!handles || !(calls = handles[event])) return this;
         for (var i = 0, len = calls.length; i < len; i++) {
             calls[i].apply(this, args)
         }
+        // if(calls.length) this.$update();
         return this;
+    },
+    // capture  event
+    $broadcast: function(event){
+
     }
 }
 // container class

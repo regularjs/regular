@@ -48,9 +48,9 @@ module.exports = {
       expression:  expression
     }
   },
-  partial: function(template){
+  template: function(template){
     return {
-      type: 'partial',
+      type: 'template',
       content: template
     }
   }

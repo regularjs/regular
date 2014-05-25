@@ -6,33 +6,32 @@ var events = "click dblclick mouseover mouseout change focus blur keydown keyup 
 
 
 events.forEach(function(item){
-  Regular.directive('t-'+item, function(elem, value){
+  Regular.directive('r-'+item, function(elem, value){
     if(!value) return;
     var self = this; 
     dom.on(elem, item, function(event){
       self.data.$event = event;
       value.get(self);
-      self.$digest();
       self.data.$event = null;
+      self.$update();
     });
-    
   })
 });
 
 
-Regular.directive('t-enter', function(elem, value){
+Regular.directive('r-enter', function(elem, value){
   if(!value) return;
   var self = this;
   dom.on(elem, 'keypress', function(ev){
     if(ev.which == 13 || ev.keyCode == 13){
       value.get(self);
-      self.$digest();
+      self.$update();
     }
   });
 })
 
 
-Regular.directive('t-model', function(elem,value){
+Regular.directive('r-model', function(elem,value){
   var sign = elem.tagName.toLowerCase();
   if(typeof value === 'string') value = Regular.parse(value);
 
@@ -56,25 +55,25 @@ Regular.directive('t-model', function(elem,value){
 
 
 function initSelect(scope, elem, value, parseFn){
-  // 初始化一次
-  if(parseFn(scope)==null){
-    parseFn.assign(elem.value)(scope);
-  }
+  // // 初始化一次
+  // if(parseFn(scope)==null){
+  //   parseFn.assign(elem.value)(scope);
+  // }
 
-  scope.$watch(parseFn, function(newValue, oldValue){
-    var children = e._$all('option',elem)
-    children.forEach(function(node, index){
-      if(node.value == newValue){
-        elem.selectedIndex = index;
-      }
-    })
-  });
+  // scope.$watch(parseFn, function(newValue, oldValue){
+  //   var children = e._$all('option',elem)
+  //   children.forEach(function(node, index){
+  //     if(node.value == newValue){
+  //       elem.selectedIndex = index;
+  //     }
+  //   })
+  // });
 
-  function handler(ev){
-    parseFn.assign(this.value)(scope);
-    if(!scope.$phase) scope.$digest();
-  }
-  v._$addEvent(elem, 'change', handler)
+  // function handler(ev){
+  //   parseFn.assign(this.value)(scope);
+  //   if(!scope.$phase) scope.$update();
+  // }
+  // v._$addEvent(elem, 'change', handler)
 }
 
 function initText(elem, parsed){
@@ -90,7 +89,7 @@ function initText(elem, parsed){
     var value = (ev.srcElement || ev.target).value
     parsed.set(self, value);
     inProgress = true;
-    self.$digest();
+    self.$update();
     inProgress = false;
   }
 
@@ -115,7 +114,7 @@ function initCheckBox(elem, parsed){
     var value = this.checked;
     parsed.set(self, value);
     inProgress= true;
-    self.$digest();
+    self.$update();
     inProgress = false;
   }
   if(parsed.set) dom.on(elem, 'change', handler)

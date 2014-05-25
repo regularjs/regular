@@ -39,7 +39,7 @@ if (isNaN(dom.msie)) {
   dom.msie = parseInt((/trident\/.*; rv:(\d+)/.exec(navigator.userAgent.toLowerCase()) || [])[1]);
 }
 
-//http://stackoverflow.com/questions/11068196/ie8-ie7-onchange-event-is-triggered-only-after-repeated-selection
+//http://stackoverflow.com/questions/11068196/ie8-ie7-onchange-event-is-emited-only-after-repeated-selection
 function fixEventName(elem, name){
   return (name == 'change'  &&  dom.msie < 9 && 
       (elem && elem.tagName && elem.tagName.toLowerCase()==='input' && 
@@ -48,6 +48,9 @@ function fixEventName(elem, name){
     )? 'click': name;
 }
 
+dom.id = function(id){
+  return document.getElementById(id);
+}
 
 // createElement 
 dom.create = function(type, ns){
@@ -147,6 +150,7 @@ dom.remove = function(node){
 
 // css Settle & Getter from angular
 // =================================
+// it isnt computed style 
 dom.css = function(node, name, value){
   if (typeof value === "undefined") {
     node.style[name] = value;

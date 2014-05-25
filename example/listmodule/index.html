@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Regular.js • ListModule</title>
+    <link rel="stylesheet" href="listmodule.css">
+    <script src="../../dist/regular.js"></script>
+  </head>
+  <body>
+
+
+
+    <div id="app"></div>
+
+    <!-- Templates -->
+    <script id="listmodule" type="text/regular" name='listmodule'>
+      {{theme + 0| hello: 0 | fn: theme}}
+    </script>
+
+    <script id='application' type="text/regular">
+      <listmodule items={{}} total = {{total}}>
+        
+      </listmodule>
+    </script>
+
+    <script>
+
+    Regular.filter('hello', function(value, arg){
+      return value + arg;
+    }).filter('fn', function(value, arg){
+      return value + arg;
+    })
+
+    var Pager = Regular.derive({
+
+    })
+
+    var ListModule = Regular.derive({
+
+      template: 'listmodule', // id | template string | preparsed ast
+      init: function(){
+        // call parent.initialize function ()
+        this.supr();
+
+      },
+      add: function(){
+        this.data.comments.push({content: 'hello100'})
+      },
+      // destroy
+      destroy: function(){
+        this.supr();
+      }
+    })
+
+    var Comment = Regular.derive({
+      
+    })
+
+    var app = new ListModule({
+      theme: 0,
+      comments: [
+        {content: 'hello'},
+        {content: 'hello2'},
+        {content: 'hello3'}
+        ],
+      themes: ["<div>haha{{comment.content}}haha</div>", "131231231{{comment.content}}"]
+    })
+
+    app.inject('app')
+
+    </script>
+  </body>
+</html>

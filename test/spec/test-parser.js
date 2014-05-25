@@ -6,6 +6,7 @@ var _ = require_lib("util.js");
 var p = function(input){
   return new Parser(input).parse()
 }
+
 var p2 = function(input){
   return new Parser(input, {mode: 2}).parse()
 }
@@ -61,7 +62,7 @@ describe('Parse JST', function(){
       var json = p(new Array(100).join(input))
       // console.log(JSON.stringify(p(input),null, 4))
       // console.log(JSON.stringify(
-      //   node.if(
+      //   node["if"](
       //       node.expression("1>"+_.varName+"['test']",["test"]),
       //       [node.element("div", undefined, [{"type":"IDENT","value":"dadad","pos":26}])," "], 
       //       [" hello"])
@@ -69,14 +70,14 @@ describe('Parse JST', function(){
       // )
 
       expect( p(input) ).eql([
-        node.if(
+        node["if"](
             node.expression("1>"+_.varName+"['test']",["test"]),
             [node.element("div", undefined, [{"type":"IDENT","value":"dadad","pos":26}])," "], 
             [" hello"])
         ])
       //mode 2
       expect( p2(input) ).eql( [
-        node.if(
+        node["if"](
         {"type":"IDENT","value":"test","pos":4}, 
         ["<div data=data>",{"type":"IDENT","value":"dadad","pos":26},"</div> "], 
         [" hello"])
