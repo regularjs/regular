@@ -493,6 +493,11 @@ walkers.expression = function(ast){
   })
   return node;
 }
+walkers.text = function(ast){
+  var self = this;
+  var node = document.createTextNode(ast.text);
+  return node;
+}
 
 
 

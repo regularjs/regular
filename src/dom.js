@@ -54,8 +54,7 @@ dom.id = function(id){
 
 // createElement 
 dom.create = function(type, ns){
-  return document[  !ns? "createElement": 
-    _.assert( ns !== "svg" || evn.svg, "this browser has no svg support") && "createElementNS"](type, ns);
+  return !ns? document.createElement(type): document.createElementNS(type, ns);
 }
 
 // documentFragment

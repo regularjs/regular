@@ -122,7 +122,7 @@ op.statement = function(){
       while(ll = this.eat(['NAME', 'TEXT'])){
         text += ll.value;
       }
-      return text;
+      return {type:'text', text: text};
     case 'TAG_OPEN':
       return this.xml();
     case 'OPEN': 

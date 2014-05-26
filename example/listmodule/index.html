@@ -12,11 +12,7 @@
 
     <!-- Templates -->
     <script id="listmodule" type="text/regular" name='listmodule'>
-      {{#if hello}}
-        {{theme + 0| hello: 0 | fn: theme}}
-      {{#else}}
-        {{hello}}hdhadhada
-      {{/if}}
+    <div>Hello {{username}} !!</div>
     </script>
 
     <script id='application' type="text/regular">
@@ -55,6 +51,7 @@
 
     var app = new ListModule({
       theme: 0,
+      username: 'name',
       comments: [
         {content: 'hello'},
         {content: 'hello2'},
@@ -62,6 +59,10 @@
         ],
       themes: ["<div>haha{{comment.content}}haha</div>", "131231231{{comment.content}}"]
     })
+
+    // var app = new Regular('listmodule', {
+    //   username: 'list'      
+    // })
 
     app.inject('app')
 
