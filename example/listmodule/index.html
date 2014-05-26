@@ -8,13 +8,15 @@
   </head>
   <body>
 
-
-
     <div id="app"></div>
 
     <!-- Templates -->
     <script id="listmodule" type="text/regular" name='listmodule'>
-      {{theme + 0| hello: 0 | fn: theme}}
+      {{#if hello}}
+        {{theme + 0| hello: 0 | fn: theme}}
+      {{#else}}
+        {{hello}}hdhadhada
+      {{/if}}
     </script>
 
     <script id='application' type="text/regular">
@@ -38,11 +40,6 @@
     var ListModule = Regular.derive({
 
       template: 'listmodule', // id | template string | preparsed ast
-      init: function(){
-        // call parent.initialize function ()
-        this.supr();
-
-      },
       add: function(){
         this.data.comments.push({content: 'hello100'})
       },

@@ -40,6 +40,7 @@ MIT.
 3. filter该如何处理?
 4. 仔细看下Promise
 5. 好处就是不会有大量的j-xxx 也不会有data-xxx来保存页面数据
-
+6. tag 必须存在 end point 中(git)
+7. 常量， 以及undefined的expression不会触发watch。比如 if username 如果username未定义的话；第一个判断就不会出现
 
 

@@ -13,8 +13,20 @@ var idtest = /^\w{1,20}$/;
 
 
 var Regular = function( data, options){
+  var template, node, name;
+  if(typeof data === 'string'){
+    template = data;
+    if(idtest.test(template) && (node= dom.id(template))){
+      template = node.innerHTML;
+    }
+    if(typeof template == 'string'){
+      this.template = new Parser(template).parse();
+    }
+    data = options;
+    options = arguments[2];
+  }
   options = options || {};
-  if( this.template === 'undefined' )  throw "template is required";
+  if( typeof this.template === 'undefined' )  throw "template is required";
   this.data= data || {};
   this.$watchers = [];
   this.$children = [];
@@ -23,7 +35,7 @@ var Regular = function( data, options){
   this.group = this.$compile(this.template);
   this.element = combine.node(this);
   this.$parent = options.$parent;
-  if(!options.$parent) this.$digest();
+  if(!options.$parent) this.$digest(true);
   if( this.init ) this.init.apply(this, arguments);
 }
 
@@ -175,7 +187,10 @@ _.extend( Regular.prototype, {
       }else{
         eq = _.equals(now, watcher.last);
       }
-      if(eq===false){
+      if(eq === false || watcher.force){
+        eq = false;
+        watcher.force = null;
+
         watcher.fn.call(this, now, watcher.last);
         if(typeof now !== 'object'){
           watcher.last = _.clone(now);
@@ -228,10 +243,12 @@ _.extend( Regular.prototype, {
     }
     this.$phase = null;
   },
-  $watch: function(expr, fn){
+  $watch: function(expr, fn, options){
+    options = options || {};
     var uid = _.uid('w_');
     var expr = Regular.parse(expr);
-    var watcher = { get: expr.get, fn: fn, pathes: expr.pathes , id: uid};
+    var watcher = { get: expr.get, fn: fn, pathes: expr.pathes , id: uid, force: options.force};
+
     this.$watchers.push(watcher);
     this._records && this._records.push(watcher.id);
     return uid;
@@ -290,6 +307,7 @@ _.extend( Regular.prototype, {
       case 'before':
         node.parentNode.insertBefore(fragment, node);
       }
+      return this;
     },
     _path: _._path,
     _record: function(){
@@ -433,7 +451,7 @@ walkers['if'] = function(ast){
   var test, consequent, alternate, node;
   var placeholder = document.createComment("Regular if");
   var self = this;
-  this.$watch(ast.test, function(nvalue, old){
+  function update(nvalue, old){
     if(!!nvalue){ //true
       consequent = self.$compile( ast.consequent , true)
       node = combine.node(consequent); //return group
@@ -448,7 +466,8 @@ walkers['if'] = function(ast){
       node = combine.node(alternate);
       placeholder.parentNode && placeholder.parentNode.insertBefore( node, placeholder );
     }
-  });
+  }
+  this.$watch(ast.test, update, {force: true});
 
   return {
     node: function(){
