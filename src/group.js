@@ -18,7 +18,7 @@ _.extend(Group.prototype, {
   },
   push: function(item){
     this.children.push( item );
-  },
+  }
 
 })
 

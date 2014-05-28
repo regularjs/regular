@@ -5,7 +5,7 @@ var varName = _.varName;
 var ctxName = _.randomVar('c');
 var isPath = _.makePredicate("STRING IDENT NUMBER");
 var isKeyWord = _.makePredicate("true false undefined null this Array Date JSON Math NaN RegExp decodeURI decodeURIComponent encodeURI encodeURIComponent parseFloat parseInt Object");
-var exports = {_path: _._path}
+var exports = {_path: _._path, _r: _._range}
 
 
 function Parser(input, opts){
@@ -155,7 +155,19 @@ op.xml = function(){
 // attr    ::=     Name Eq attvalue
 op.attrs = function(){
 
-  var attrs = [], attr, ll;
+
+  var attrs = [], attr, ll = this.ll();
+  //   case 'OPEN': 
+  //     return this.directive();
+  //   case 'NAME':
+  //   case '&':
+  //     attr = { name: ll.value }
+  //     if( this.eat("=") ) attr.value = this.attvalue();
+
+  // switch(ll.type){
+  //   case: 
+  // }
+
   while( ll = this.eat(["NAME", "&"]) ){
     attr = { name: ll.value }
     if( this.eat("=") ) attr.value = this.attvalue();
@@ -177,16 +189,22 @@ op.attvalue = function(){
       this.next();
       var value = ll.value;
       if(value.type !== "expression" && ~value.indexOf('{{')){
+        var constant = true;
         var parsed = new Parser(value, {mode:2}).parse();
-        // @TODO deps;
+        for(var i =0, len = parsed.length; i < len; i++ ){
+          var item = parsed[i];
+          if(item.get && !item.constant) constant = false;
+        }
         var get = function(self){
           var res= parsed.map(function(item){
-            if(item && item.get) return item.get(self);
-            else return item || "";
+            if(item && item.get){
+              return item.get(self);
+            }
+            else return item.text || "";
           }).join("");
           return res;
         }
-        value = node.expression(get, null)
+        value = node.expression(get, null, constant);
       }
       return value;
     case "EXPR_OPEN":
@@ -283,10 +301,10 @@ op.list = function(){
 }
 
 
+// @TODO:
 op.expression = function(){
   var expression = this.expr();
-  if(!expression.depend) return expression.get;
-  else return expression;
+  return expression;
 }
 
 op.expr = function(filter){
@@ -294,7 +312,7 @@ op.expr = function(filter){
   var buffer = this.filter(), set, get;
   var body = buffer.get || buffer;
   
-  var prefix = this.depend.length? ("var "+ctxName+"=context.context||context;var "+varName+"=context.data;" ): "";
+  var prefix =  "var "+ctxName+"=context.context||context;"+ (this.depend.length? "var "+varName+"=context.data;" : "");
   var get = new Function("context", prefix + "return (" + body + ")");
 
 
@@ -304,9 +322,9 @@ op.expr = function(filter){
 
   if(!this.depend.length){
     // means no dependency
-    return node.expression(get.call(exports))
+    return node.expression(get)
   }else{
-    return node.expression(get, set, this.depend)
+    return node.expression(get, set, !this.depend || !this.depend.length )
   }
   return {}
 }
@@ -427,12 +445,27 @@ op.additive = function(){
 // multive / unary
 // multive % unary
 op.multive = function(){
-  var left = this.unary() ,ll;
+  var left = this.range() ,ll;
   if( ll = this.eat(['*', '/' ,'%']) ){
     return this.getset(left.get + ll.type + this.multive().get);
   }
   return left;
 }
+
+op.range = function(){
+  var left = this.unary(), ll, right;
+
+  if(ll = this.eat('..')){
+    right = this.unary();
+    var body = ctxName + '._r(' +left.get + ','+ right.get + ')'
+    return this.getset(body);
+  }
+
+  return left;
+}
+
+
+
 // lefthand
 // + unary
 // - unary

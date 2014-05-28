@@ -6,7 +6,7 @@ var Group = require('./group.js');
 var _ = require('./util');
 var Event = require('./helper/event.js');
 var combine = require('./helper/combine.js');
-var idtest = /^\w{1,20}$/;
+var idtest = /^[\w-]{1,20}$/;
 
 
 
@@ -26,15 +26,16 @@ var Regular = function( data, options){
     options = arguments[2];
   }
   options = options || {};
-  if( typeof this.template === 'undefined' )  throw "template is required";
-  this.data= data || {};
   this.$watchers = [];
   this.$children = [];
   this.$refs = {};
+  this.$parent = options.$parent;
   this.context = this.context || this;
+  if( typeof this.template === 'undefined' )  throw "template is required";
+  this.data= data || {};
+  this.config && this.config(this.data);
   this.group = this.$compile(this.template);
   this.element = combine.node(this);
-  this.$parent = options.$parent;
   if(!options.$parent) this.$digest(true);
   if( this.init ) this.init.apply(this, arguments);
 }
@@ -136,12 +137,21 @@ _.extend( Regular.prototype, {
     return group;
   },
   $update: function(path, value){
-    if(typeof path === 'function' ){
-      path.call(this, this.data);
-    }else if(path){
-      var base = this.data;
-      var path = Regular.parse(path);
-      path.set(this, value);
+    if(path != null){
+      var type = typeof path;
+      if(type === 'string' ){
+        var base = this.data;
+        var path = Regular.parse(path);
+        path.set(this, value);
+      }else if(type === 'function'){
+        path.call(this, this.data);
+      }else{
+        for(var i in path) {
+          if(path.hasOwnProperty(i)){
+            this.data[i] = path[i]
+          }
+        }
+      }
     }
     var self = this, root = self;
     // find the root
@@ -160,6 +170,14 @@ _.extend( Regular.prototype, {
     for(var i = 0, len = watchers.length;i<len; i++){
       var watcher = watchers[i];
       if(!watcher) continue;
+      if(watcher.test) {
+        var result = watcher.test(this);
+        if(result){
+          dirty = true;
+          watcher.fn.apply(this,result)
+        }
+        continue;
+      }
       var now = watcher.get(this);
       var last = watcher.last;
       // if(now && now.length )debugger
@@ -206,7 +224,11 @@ _.extend( Regular.prototype, {
         }
       }
       if(eq !== true) dirty = true;
+      if(watcher.constant){
+         watchers.splice(i, 1);
+      }
     }
+
 
     if(children && (len = children.length)){
       for(var i = 0; i < len ; i++){
@@ -246,8 +268,43 @@ _.extend( Regular.prototype, {
   $watch: function(expr, fn, options){
     options = options || {};
     var uid = _.uid('w_');
-    var expr = Regular.parse(expr);
-    var watcher = { get: expr.get, fn: fn, pathes: expr.pathes , id: uid, force: options.force};
+    if(Array.isArray(expr)){
+      // @todo 只需要watch一次
+      var tests = [];
+      for(var i=0,len = expr.length; i < len; i++){
+          tests.push(Regular.parse(expr[i]).get) 
+      }
+      var prev = [];
+      var test = function(context){
+        var equal = true;
+        for(var i =0, len = tests.length; i < len; i++){
+          var splice = tests[i](context);
+          if(!_.equals(splice, prev[i])){
+             equal = false;
+             prev[i] = _.clone(splice);
+          }
+        }
+        if(!equal){
+          return prev;
+        }else{
+          return false;
+        }
+
+      }
+    }else{
+      var expr = Regular.parse(expr);
+      var get = expr.get;
+      var constant = expr.constant;
+    }
+
+    var watcher = { 
+      id: uid, 
+      get: get, 
+      fn: fn, 
+      constant: constant, 
+      force: options.force,
+      test: test
+    };
 
     this.$watchers.push(watcher);
     this._records && this._records.push(watcher.id);
@@ -276,10 +333,9 @@ _.extend( Regular.prototype, {
     this.$emit('destroy');
     this.group.destroy();
     this.$watchers = null;
-    this.$children = null;
+    this._handles = null;
     this.$parent = null;
     this.$refs = null;
-    this.$off();
   },
   inject: function(node, position){
     position = position || 'bottom';
@@ -334,7 +390,8 @@ _.extend( Regular.prototype, {
       var filter = Regular.filter(name);
       if(typeof filter !== 'function') throw 'filter ' + name + 'is undefined';
       return filter;
-    }
+    },
+    _r: _._range
 });
 
 
@@ -348,6 +405,8 @@ walkers.list = function(ast){
     template: ast.body,
     context: this.context
   });
+  var fragment = dom.fragment();
+  fragment.appendChild(placeholder);
   var self = this;
   var group = new Group();
   // group.push(placeholder);
@@ -381,20 +440,13 @@ walkers.list = function(ast){
         data[ast.variable] = item;
         var section = self.$new(Section, data);
         section.$update()
-        var insert = group.children.length && o !== 0? combine.last(group) : placeholder;
+        var insert = o !== 0 && group.children[o-1]? combine.last(group.get(o-1)) : placeholder;
         placeholder.parentNode.insertBefore(combine.node(section), insert.nextSibling);
         group.children.splice(o , 0, section);
       }
       m = index + splice.add - splice.removed.length;
       m  = m < 0? 0 : m;
     }
-    if(m < len){
-      for(var i = m; i < len; i++){
-        var pair = group.get(i);
-        pair.data.$index = i;
-      }
-    }
-   
   }
 
   if(ast.sequence && ast.sequence.type === 'expression'){
@@ -405,7 +457,7 @@ walkers.list = function(ast){
 
   return {
     node: function(){
-      return placeholder;
+      return fragment;
     },
     group: group,
     destroy: function(){
@@ -504,6 +556,7 @@ walkers.text = function(ast){
 walkers.element = function(ast){
   var attrs = ast.attrs, component;
   var watchids = [];
+  var self = this;
 
   if(component = this.$new(ast.tag) ){
     for(var i = 0, len = attrs.length; i < len; i++){
@@ -514,14 +567,16 @@ walkers.element = function(ast){
       }
       if(value.type === 'expression'){
         var name = attr.name;
-        watchids.push(this.$watch(value, function(nvalue){
-          if(name === '&'){
-            component.data = nvalue;
-            component.$update();
-          }else{
-            component.$update(name, nvalue);
+        void function(name, value){
+          if(value.set){
+            component.$watch(name, function(nvalue){
+              value.set(self, nvalue);
+            })
           }
-        }) );
+          self.$watch(value, function(nvalue){
+            component.$update(name, nvalue);
+          });
+        }(name, value);
       }else{
         component.data[attr.name] = value;
       }
@@ -536,7 +591,8 @@ walkers.element = function(ast){
   // @TODO must mark the attr bind;
   var directive = [];
   for(var i = 0, len = attrs.length; i < len; i++){
-    watchids.push.apply(watchids,bindAttrWatcher.call(this, element, attrs[i]))
+    bindAttrWatcher.call(this, element, attrs[i])
+  //   watchids.push.apply(watchids,)
   }
   if(children && children.length){
     var group = new Group;
@@ -555,9 +611,9 @@ walkers.element = function(ast){
     },
     destroy: function(){
       if(group) group.destroy();
-      for(var i = 0,len = watchids.length; i< len ;i++){
-        self.$unwatch(watchids[i]);
-      }
+      // for(var i = 0,len = watchids.length; i< len ;i++){
+      //   self.$unwatch(watchids[i]);
+      // }
       dom.remove(element);
     }
   }

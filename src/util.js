@@ -63,7 +63,7 @@ _.makePredicate = function makePredicate(words, prefix) {
         cats.push([words[i]]);
     }
     function compareTo(arr) {
-        if (arr.length === 1) return f += "return str === " + arr[0] + ";";
+        if (arr.length === 1) return f += "return str === '" + arr[0] + "';";
         f += "switch(str){";
         for (var i = 0; i < arr.length; ++i){
            f += "case '" + arr[i] + "':";
@@ -77,7 +77,7 @@ _.makePredicate = function makePredicate(words, prefix) {
         cats.sort(function(a, b) {
             return b.length - a.length;
         });
-        f += "var prefix = " + (prefix ? "true": "false") + ";if(prefix) str = str.replace(/^-(?:\\w+)-/,'');switch(str.length){";
+        f += "switch(str.length){";
         for (var i = 0; i < cats.length; ++i) {
             var cat = cats[i];
             f += "case " + cat[0].length + ":";
@@ -291,10 +291,12 @@ _.clone = function clone(obj){
 
 
 _.equals = function(now, old){
-  if(_.typeOf(now) == 'array'){
+  var type = _.typeOf(now);
+  if(type === 'array'){
     var splices = ld(now, old||[]);
     return splices;
   }
+  if(type === 'number' && typeof old === 'number'&& isNaN(now) && isNaN(old)) return true
   return now === old;
 }
 
@@ -431,6 +433,17 @@ var ld = (function(){
 
 _._path = function(base, path){
   return base == undefined? base: base[path];
+}
+
+_._range = function(start, end){
+  if(typeof start !== 'number' || typeof end !== 'number'){
+    return []
+  }
+  var res = [];
+  for(var i = start; i <= end; i++){
+    res.push(i);
+  }
+  return res;
 }
 
 

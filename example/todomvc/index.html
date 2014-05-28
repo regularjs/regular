@@ -14,17 +14,6 @@
       <p>Created by @leeluolee</a></p>
       <p>Part of <a href="http://todomvc.com">TodoMVC</a></p>
     </footer>
-    <!-- Templates -->
-    <script id='todo' type="template/regular" name="todo">
-      <li class="{{ completed ? 'completed' : '' }} {{ editing ? 'editing' : '' }}">
-        <div class="view">
-          <input class="toggle" type="checkbox" r-model={{ completed }}>
-          <label r-dblclick={{editing = true}}>{{ description }}</label>
-          <button r-click={{ this.$emit('remove', this.data) }} class="destroy"></button>
-        </div>
-        <input id="edit" class="edit" r-enter={{ editing = false }} r-model={{description}} autofocus>
-      </li>
-    </script>
 
     <script id="application" type="template/regular">
       <div id="div">
@@ -37,9 +26,15 @@
           <label for="toggle-all">Mark all as complete</label>
           <ul id="todo-list">
             {{#list this.filter(filter) as i}}
-              <!-- & means the this.data self, just like sass placeholder -->
-              <todo &= {{i}} /> 
-              <!--<li r-click={{ this.remove(i) }} class="{{ i.completed ? 'completed' : '' }}">{{i.description}}</li>-->
+              <li class="{{ i.completed ? 'completed' : '' }} {{ i.editing ? 'editing' : '' }}">
+                <div class="view">
+                  <input class="toggle" type="checkbox" r-model={{ i.completed }}>
+                  <label r-dblclick={{i.editing = true}}>{{ i.description }}</label>
+                  <button r-click={{ this.$emit('remove', i) }} class="destroy"></button>
+                </div>
+                <input id="edit" class="edit" r-enter={{ i.editing = false }} r-model={{i.description}} autofocus>
+              </li>
+
             {{/list}}
           </ul>
         </section>
@@ -61,7 +56,7 @@
 
     <script>
     // name can specify in template node,  the dead simplest component example;
-    var Todo = Regular.derive({template: "todo"});
+    // var Todo = Regular.derive({template: "todo"});
 
     var TodoApp = Regular.derive({
       template: 'application', // id | template string | preparsed ast

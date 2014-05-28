@@ -30,12 +30,12 @@ module.exports = {
       body: body
     }
   },
-  expression: function(get, set,  depend){
+  expression: function(get, set,  constant){
     return {
       type: "expression",
       get: get,
       set: set,
-      depend: depend
+      constant: constant
 
     }
   },
