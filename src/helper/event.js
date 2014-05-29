@@ -16,6 +16,7 @@ var API = {
     },
     $off: function(event, fn) {
         if(!this._handles) return;
+        if(!event) this._handles = [];
         var handles = this._handles,
             calls;
 
@@ -35,13 +36,20 @@ var API = {
     },
     // bubble event
     $emit: function(event){
+        if(!event) return;
+        if(typeof event === 'object'){
+           var type = event.type, 
+            args = event.data || [],
+            stop = event.stop;
+        }else{
         var args = slice.call(arguments, 1),
+            type = event,
             handles = this._handles,
             $parent = this.$parent,
             calls;
-
-        if($parent) $parent.$emit.apply($parent, arguments)
-        if (!handles || !(calls = handles[event])) return this;
+        }
+        if($parent && !stop) $parent.$emit.apply($parent, arguments)
+        if (!handles || !(calls = handles[type])) return this;
         for (var i = 0, len = calls.length; i < len; i++) {
             calls[i].apply(this, args)
         }

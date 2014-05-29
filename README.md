@@ -29,8 +29,8 @@ Regular combine the advantage of react(nested component) and ractive(string base
 
 MIT.
 
-# event bubble,  data down flow( children component can easily destroied);
 
+# event bubble,  data down flow( children component can easily destroied);
 
 
 # TODO

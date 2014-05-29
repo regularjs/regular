@@ -3,95 +3,34 @@
   <head>
     <meta charset="utf-8">
     <title>Regular.js • TodoMVC</title>
-    <style>
-     .m-page{margin:20px 0;text-align:center;line-height:32px;font-size:0;letter-spacing:-0.307em;word-wrap:normal;white-space:nowrap;color:#999;}
-     .m-page a,.m-page i{display:inline-block;vertical-align:top;padding:0 12px;margin-left:-1px;border:1px solid #ddd;font-size:12px;letter-spacing:normal;text-shadow:0 1px #fff;background:#fff;-webkit-transition:background-color 0.3s;-moz-transition:background-color 0.3s;transition:background-color 0.3s;}
-     .m-page a,.m-page a:hover{text-decoration:none;color:#39c;}
-     .m-page a:first-child{margin-left:0;border-top-left-radius:5px;border-bottom-left-radius:5px;}
-     .m-page a:last-child{margin-right:0;border-top-right-radius:5px;border-bottom-right-radius:5px;}
-     .m-page a.pageprv:before,.m-page a.pagenxt:after{font-weight:bold;font-family:"\5b8b\4f53";vertical-align:top;}
-     .m-page a.pageprv:before{margin-right:3px;content:"\3C";}
-     .m-page a.pagenxt:after{margin-left:3px;content:"\3E";}
-     .m-page a:hover{background:#f5f5f5;}
-     .m-page a:active{background:#f0f0f0;}
-     .m-page a.z-crt,.m-page a.z-crt:hover,.m-page a.z-crt:active{cursor:default;color:#999;background:#f5f5f5;}
-     .m-page a.z-dis,.m-page a.z-dis:hover,.m-page a.z-dis:active{cursor:default;color:#ccc;background:#fff;}
-    </style>
-
+    <link rel="stylesheet" href="pager.css">
     <script src="../../dist/regular.js"></script>
+    <script src="pager.js"></script>
   </head>
   <body>
 
-    <div id="app">
-      
-    </div>
+    <div id="app"> </div>
     <!-- Templates -->
     <script id="pager" type="text/regular" name="pager">
-
     
-    <div class="m-page {{clazz}}">
-     <a  href="javascript:;" r-click={{ this.nav(current-1)}} class="pageprv {{current==1? 'z-dis': ''}}">上一页</a>
-      {{#if total - 5 > show * 2}}
-        <a href="javascript:;" r-click={{ this.nav(1)}} class="{{current==1? 'z-crt': ''}}">1</a>
-        {{#if begin > 2}}<i>...</i>{{/if}}
-        {{#list begin..end as i}}
-        <a href="javascript:;"r-click={{ this.nav(i)}} class="{{current==i? 'z-crt': ''}}" >{{i}}</a>
-        {{/list}}
-        {{#if (end < total-1)}}
-         <i>...</i>
-        {{/if}}
-       <a href="javascript:;" r-click={{this.nav(total)}} class="{{current==total? 'z-crt':''}}">{{total}}</a>
-      {{#else}}
-        {{#list 1..total as i}}
-          <a href="javascript:;" r-click={{ this.nav(i)}}  class="{{current==i? 'z-crt': ''}}">{{i}}</a>
-        {{/list}}
-      {{/if}}
-    <a href="javascript:;" r-click={{this.nav(current + 1)}}  class="pagenxt {{current == total? 'z-dis': ''}}">下一页</a>
-  </div>
 
     </script>
 
 
     <script>
 
-    var Pager = Regular.derive({
-      template: 'pager',
-      // before init
-      config: function(data){
-        var count =  5;
-        var show = data.show = Math.floor( count/2 );
-        data.current = data.current || 1;
-        data.total = data.total || 1;
-
-        this.$watch(['current', 'total'], function( current, total ){
-          data.begin = current - show;
-          data.end = current + show;
-          if(data.begin < 2) data.begin = 2;
-          if(data.end > data.total-1) data.end = data.total-1;
-          if(current-data.begin <= 1) data.end = data.end + show + data.begin- current;
-          if(data.end - current <= 1) data.begin = data.begin-show-current+ data.end;
-        })
-
-      },
-      nav: function(page){
-        var data = this.data;
-        if(page < 1) return;
-        if(page > data.total) return;
-        if(page === data.current) return;
-        data.current = page;
-        this.$emit('nav', page);
-      }
-    });
-
-    //1.嵌入式
-    new Regular(
+    //1. nest style
+    app = new Regular(
         '{{total}}:{{current}}<button r-click={{total = total + 1}}>total+1</button>'+
-        '<div><pager total={{Math.floor(total/20)}} current={{current}}/></div>', 
+        '<div> <pager total={{Math.floor(total/20)}} current={{current}}/> </div><pager total={{Math.floor(total/20)}} current={{current}}/> </div>', 
         {total: 292, current:1})
       .inject('app')
 
-    //2.调用式
+
+
+    //2. initialize style
     var pager = new Pager({total: 100, current:1}).inject('app');
+
     pager.$on('nav', function(page){
       console.log('nav to page:' + page);
     })

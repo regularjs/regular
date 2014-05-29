@@ -84,7 +84,9 @@
     <script id="syntax-editor" type="template/regular">
       <div class="editor">
         <h3>template：</h3>
-        <div class="template"><textarea id="" cols="30" rows="10"></textarea></div>
+        <div class="template">
+        <textarea id="" cols="30" rows="10"></textarea>
+        </div>
       </div>
       <div class="editor">
         <h3>data: </h3>
@@ -111,10 +113,10 @@
             autofocus: true,
             dragDrop: false,
             extraKeys: {
-                Tab: function(cm) {
-                    var spaces = new Array(cm.getOption("indentUnit") + 1).join(" ")
-                    cm.replaceSelection(spaces, "end", "+input")
-                }
+              Tab: function(cm) {
+                  var spaces = new Array(cm.getOption("indentUnit") + 1).join(" ")
+                  cm.replaceSelection(spaces, "end", "+input")
+              }
             }
         });
         templateEditor.on('change', function(mirror){

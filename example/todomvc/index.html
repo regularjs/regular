@@ -25,6 +25,7 @@
           <input id="toggle-all" type="checkbox" name='toggle' r-change={{this.toggleAll(items.length === this.filter('completed').length)}} checked={{items.length === this.filter('completed').length }}>
           <label for="toggle-all">Mark all as complete</label>
           <ul id="todo-list">
+          
             {{#list this.filter(filter) as i}}
               <li class="{{ i.completed ? 'completed' : '' }} {{ i.editing ? 'editing' : '' }}">
                 <div class="view">
@@ -34,8 +35,8 @@
                 </div>
                 <input id="edit" class="edit" r-enter={{ i.editing = false }} r-model={{i.description}} autofocus>
               </li>
-
             {{/list}}
+
           </ul>
         </section>
         <footer id="footer">
@@ -57,12 +58,12 @@
     <script>
     // name can specify in template node,  the dead simplest component example;
     // var Todo = Regular.derive({template: "todo"});
-
+    
     var TodoApp = Regular.derive({
       template: 'application', // id | template string | preparsed ast
       init: function(){
         // call parent.init function ()
-        this.supr();
+        // this.supr();
         var data = this.data;
         // localStorage
         if(window.localStorage){
@@ -70,8 +71,6 @@
             localStorage.setItem('items',JSON.stringify(this.data.items))
           })
         }
-        // todo component bubble this event to parent component;
-        this.$on('remove', this.remove.bind(this));
       },
       // get the list;
       filter: function(token){
@@ -79,7 +78,6 @@
         else return this.data.items.filter(function(item){
           return token === 'completed'? item.completed : !item.completed;
         });
-        
       },
       // toggle all todo's completed state
       toggleAll: function(sign){

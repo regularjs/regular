@@ -340,17 +340,22 @@ _.extend( Regular.prototype, {
       var self = this;
       if(records.length){
         // auto destroy all wather;
-        group.ondestroy = function(){
-          self.$unwatch(records);
-        } 
+        group.ondestroy = function(){ self.$unwatch(records); }
       }
     }
     return group;
   },
+  /**
+   * **tips**: whatever param you passed in $update, after the function called, dirty-check(digest) phase will enter;
+   * 
+   * @param  {Function|String|Expression} path  
+   * @param  {Whatever} value optional, when path is Function, the value is ignored
+   * @return {this}     this 
+   */
   $update: function(path, value){
     if(path != null){
-      var type = typeof path;
-      if(type === 'string' ){
+      var type = _.typeOf(path);
+      if( type === 'string' || path.type === 'expression' ){
         var base = this.data;
         var path = Regular.parse(path);
         path.set(this, value);
@@ -369,6 +374,80 @@ _.extend( Regular.prototype, {
     while(self = self.$parent){ root = self }
     root.$digest();
   },
+  /**
+   * two way bind with another component;
+   * *warn*: 
+   *   expr1 and expr2 must can operate set&get, for example: the 'a.b' or 'a[b + 1]' is set-able, but 'a.b + 1' is not, 
+   *   beacuse Regular dont know how to inverse set through the expression;
+   *   
+   *   if before $bind, two component's state is not sync, the component(passed param) will sync with the called component;
+   *
+   * *example: *
+   *
+   * ```javascript
+   * // in this example, we need to link two pager component
+   * var pager = new Pager({}) // pager compoennt
+   * var pager2 = new Pager({}) // another pager component
+   * pager.$bind(pager2, 'current'); // two way bind throw two component
+   * pager.$bind(pager2, 'total');   // 
+   * // or just
+   * pager.$bind(pager2, {"current": "current", "total": "total"}) 
+   * ```
+   * 
+   * @param  {Regular} component the
+   * @param  {String|Expression} expr1     required, self expr1 to operate binding
+   * @param  {String|Expression} expr2     optional, other component's expr to bind with, if not passed, the expr2 will use the expr1;
+   * @return          this;
+   */
+  $bind: function(component, expr1, expr2){
+    var type = _.typeOf(expr1);
+    // multiply same path binding through array
+    if( type === 'array' ){
+      for(var i = 0, len = expr1.length; i < len; i++){
+        this._bind(component, expr1[i]);
+      }
+    }else if(type === 'object'){
+      for(var i in expr1) if(expr1.hasOwnProperty(i)){
+        this._bind(component, i, expr1[i]);
+      }
+    }else{
+      this._bind(component, expr1, expr2);
+    }
+    // digest
+    component.$update();
+  },
+  _bind: function(component, expr1, expr2){
+    var self = this;
+    // basic binding
+    if(!component || !(component instanceof Regular)) throw "$bind() should pass Regular component as first argument";
+    if(!expr1) throw "$bind() should as least pass one expression to bind";
+    expr1 = Regular.parse(expr1);
+
+    if(!expr2) expr2 = expr1;
+    else expr2 = Regular.parse(expr2);
+
+    // set is need to operate setting ;
+    if(expr2.set){
+      var wid1 = this.$watch(expr1, function(value){
+        component.$update(expr2, value)
+      });
+      component.$on('destroy', function(){
+        console.log(component)
+        debugger
+        self.$unwatch(wid1)
+      })
+    }
+    if(expr1.set){
+      var wid2 = component.$watch(expr2, function(value){
+        self.$update(expr1, value)
+      });
+      // when brother destroy, we unlink this watcher
+      this.$on('destroy', component.$unwatch.bind(component,wid2))
+    }
+    // sync the component's state to called's state
+    expr2.set(component, expr1.get(this));
+  },
+
   _digest: function(path ,deep){
     // if(this.context) return this.context.$digest();
 
@@ -508,6 +587,7 @@ _.extend( Regular.prototype, {
       var constant = expr.constant;
     }
 
+
     var watcher = { 
       id: uid, 
       get: get, 
@@ -541,12 +621,13 @@ _.extend( Regular.prototype, {
     return this.$refs[id]; 
   },
   destroy: function(){
-    this.$emit('destroy');
+    this.$emit({type: 'destroy', stop: true });
     this.group.destroy();
     this.$watchers = null;
-    this._handles = null;
+    this.$children = null;
     this.$parent = null;
     this.$refs = null;
+    this.$off();
   },
   inject: function(node, position){
     position = position || 'bottom';
@@ -1618,7 +1699,7 @@ function Group(list){
 _.extend(Group.prototype, {
   destroy: function(){
     combine.destroy(this.children);
-    this.ondestroy && this.ondestroy();
+    if(this.ondestroy) this.ondestroy();
     this.children = null;
   },
   get: function(i){
@@ -2841,6 +2922,7 @@ var API = {
     },
     $off: function(event, fn) {
         if(!this._handles) return;
+        if(!event) this._handles = [];
         var handles = this._handles,
             calls;
 
@@ -2860,13 +2942,20 @@ var API = {
     },
     // bubble event
     $emit: function(event){
+        if(!event) return;
+        if(typeof event === 'object'){
+           var type = event.type, 
+            args = event.data || [],
+            stop = event.stop;
+        }else{
         var args = slice.call(arguments, 1),
+            type = event,
             handles = this._handles,
             $parent = this.$parent,
             calls;
-
-        if($parent) $parent.$emit.apply($parent, arguments)
-        if (!handles || !(calls = handles[event])) return this;
+        }
+        if($parent && !stop) $parent.$emit.apply($parent, arguments)
+        if (!handles || !(calls = handles[type])) return this;
         for (var i = 0, len = calls.length; i < len; i++) {
             calls[i].apply(this, args)
         }

@@ -8,31 +8,14 @@
   </head>
   <body>
 
-    <div id="app">
-      <div id="app"></div>
-    </div>
-
+    <div id="app"></div>
     <!-- Templates -->
-    <script id="modal" type="text/regular" name='modal'>
-      <div class="modal show {{clazz}}">
-        <div class="modal-dialog">
-          <div class="modal-content">
-            <div class="modal-header">
-              <button type="button" class="close" r-click={{this.close()}} data-dismiss="modal" aria-hidden="true">×</button>
-              <h4 class="modal-title">{{title}}</h4>
-            </div>
-            <div class="modal-body">
-              {{~ content }}
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-default" r-click={{this.close()}} >Close</button>
-              <button type="button" class="btn btn-primary" r-click={{this.confirm()}}>Confirm</button>
-            </div>
-          </div>
-        </div>
-      </div>
+    <script id="login" type="text/regular">
+      <modal title="please login">
+        <input type="text" placeholder="username" r-model = {{username}}/>
+      </modal>
     </script>
-    
+
     <script>
     var Modal = Regular.derive({
       template: 'modal',
@@ -58,6 +41,17 @@
     modal.$on('confirm', function(data){
       console.log(data.email)
     });
+
+
+
+    // 潜入式
+
+
+
+
+
+   
+
     </script>
   </body>
 </html>

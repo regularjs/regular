@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Regular.js • $bind</title>
+    <link rel="stylesheet" href="../pager/pager.css">
+    <script src="../../dist/regular.js"></script>
+    <script src="../pager/pager.js"></script>
+  </head>
+  <body>
+
+    <div id="app"></div>
+
+    <script>
+    // insert
+    var pager = new Pager({total: 100, current:20}).inject('app');
+    var pager2 = new Pager({total: 100, current:20}).inject('app');
+
+    // style 1
+    pager.$bind(pager2, ['current', 'total']);
+
+    
+
+    // style 2
+    // pager.$bind(pager2, 'current', 'current')
+    // pager.$bind(pager2, 'total', 'total')
+
+    // style 3
+    // pager.$bind(pager2, {current: "current", total: "total"});
+
+    </script>
+  </body>
+</html>

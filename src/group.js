@@ -10,7 +10,7 @@ function Group(list){
 _.extend(Group.prototype, {
   destroy: function(){
     combine.destroy(this.children);
-    this.ondestroy && this.ondestroy();
+    if(this.ondestroy) this.ondestroy();
     this.children = null;
   },
   get: function(i){
