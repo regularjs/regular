@@ -17,23 +17,24 @@
 
     <script id="application" type="template/regular">
       <div id="div">
-        <h1>regular-todo</h1>
-        <input id="new-todo" r-enter={{ this.newTodo(editTodo) }} placeholder="What needs to be done?" r-model={{ editTodo }}>
+        <h1>regulaon-todo</h1>
+        <input id="new-todo" on-enter={{ this.newTodo(editTodo) }} placeholder="What needs to be done?" r-model={{ editTodo }}>
       </div>
       {{#if !!items.length}}
         <section id="main">
-          <input id="toggle-all" type="checkbox" name='toggle' r-change={{this.toggleAll(items.length === this.filter('completed').length)}} checked={{items.length === this.filter('completed').length }}>
+          <!-- why not use r-model directly, beacuse the expression have not set function, so use checked with on-change -->
+          <input id="toggle-all" type="checkbox" name='toggle' on-change={{this.toggleAll(items.length === this.getList('completed').length)}} checked={{items.length === this.getList('completed').length }}>
           <label for="toggle-all">Mark all as complete</label>
           <ul id="todo-list">
           
-            {{#list this.filter(filter) as i}}
+            {{#list this.getList(filter) as i}}
               <li class="{{ i.completed ? 'completed' : '' }} {{ i.editing ? 'editing' : '' }}">
                 <div class="view">
                   <input class="toggle" type="checkbox" r-model={{ i.completed }}>
-                  <label r-dblclick={{i.editing = true}}>{{ i.description }}</label>
-                  <button r-click={{ this.$emit('remove', i) }} class="destroy"></button>
+                  <label on-dblclick={{i.editing = true}}>{{ i.description }}</label>
+                  <button on-click={{ this.remove(i) }} class="destroy"></button>
                 </div>
-                <input id="edit" class="edit" r-enter={{ i.editing = false }} r-model={{i.description}} autofocus>
+                <input id="edit" class="edit" on-enter={{ i.editing = false }} r-model={{i.description}} autofocus>
               </li>
             {{/list}}
 
@@ -41,15 +42,15 @@
         </section>
         <footer id="footer">
           <span id="todo-count">
-            <strong>{{ this.filter('active').length }}</strong> {{ this.filter('active').length === 1 ? 'item' : 'items' }} left
+            <strong>{{ this.getList('active').length }}</strong> {{ this.getList('active').length === 1 ? 'item' : 'items' }} left
           </span>
           <ul id="filters">
-            <li><a class="{{ filter === 'all'? 'selected' : '' }}"  href="javascript:;" r-click={{filter='all'}}>All</a></li>
-            <li><a class="{{ filter === 'active'? 'selected' : '' }}" href='javascript:;' r-click={{filter = 'active'}}>Active</a></li>
-            <li><a class="{{ filter === 'completed'? 'selected' : '' }}" href="javascript:;" r-click={{filter = 'completed'}}>Completed</a></li>
+            <li><a class="{{ filter === 'all'? 'selected' : '' }}"  href="javascript:;" on-click={{filter='all'}}>All</a></li>
+            <li><a class="{{ filter === 'active'? 'selected' : '' }}" href='javascript:;' on-click={{filter = 'active'}}>Active</a></li>
+            <li><a class="{{ filter === 'completed'? 'selected' : '' }}" href="javascript:;" on-click={{filter = 'completed'}}>Completed</a></li>
           </ul>
-          {{#if this.filter('completed').length > 0 }}
-            <button id="clear-completed" r-click={{this.clearCompleted()}}>Clear completed ({{ this.filter('completed').length }})</button>
+          {{#if this.getList('completed').length > 0 }}
+            <button id="clear-completed" on-click={{this.clearCompleted()}}>Clear completed ({{ this.getList('completed').length }})</button>
           {{/if}}
         </footer>
       {{/if}}
@@ -57,9 +58,9 @@
 
     <script>
     // name can specify in template node,  the dead simplest component example;
-    // var Todo = Regular.derive({template: "todo"});
+    // var Todo = Regular.extend({template: "todo"});
     
-    var TodoApp = Regular.derive({
+    var TodoApp = Regular.extend({
       template: 'application', // id | template string | preparsed ast
       init: function(){
         // call parent.init function ()
@@ -73,10 +74,10 @@
         }
       },
       // get the list;
-      filter: function(token){
-        if(!token || token === 'all') return this.data.items;
+      getList: function(filter){
+        if(!filter || filter === 'all') return this.data.items;
         else return this.data.items.filter(function(item){
-          return token === 'completed'? item.completed : !item.completed;
+          return filter === 'completed'? item.completed : !item.completed;
         });
       },
       // toggle all todo's completed state

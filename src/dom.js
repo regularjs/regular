@@ -62,15 +62,28 @@ dom.fragment = function(){
   return document.createDocumentFragment();
 }
 
-var BOOLEAN_ATTR = {};
-'multiple,selected,checked,disabled,readOnly,required,open'.split(',').forEach(function(value) {
-  BOOLEAN_ATTR[value] = value;
-});
+
+
+var specialAttr = {
+  'class': function(node, value){
+    ('className' in node) ? node.className = (value || '') : node.setAttribute('class', value);
+  },
+  'for': function(node, value){
+    ('htmlFor' in node) ? node.htmlFor = value : node.setAttribute('for', value);
+  },
+  'style': function(node, value){
+    (node.style) ? node.style.cssText = value : node.setAttribute('style', value);
+  },
+  'value': function(node, value){
+    node.value = (value != null) ? value : '';
+  }
+}
+
 
 // attribute Setter & Getter
 dom.attr = function(node, name, value){
   name = name.toLowerCase();
-  if (BOOLEAN_ATTR[name]) {
+  if (_.isBooleanAttr(name)) {
     if (typeof value !== 'undefined') {
       if (!!value) {
         node[name] = true;
@@ -86,7 +99,8 @@ dom.attr = function(node, name, value){
              : undefined;
     }
   } else if (typeof (value) !== 'undefined') {
-    if(name === 'class') node.className = value;
+    // if in specialAttr;
+    if(specialAttr[name]) specialAttr[name](node, value);
     else node.setAttribute(name, value);
   } else if (node.getAttribute) {
     // the extra argument "2" is to get the right thing for a.href in IE, see jQuery code
@@ -151,7 +165,7 @@ dom.remove = function(node){
 // =================================
 // it isnt computed style 
 dom.css = function(node, name, value){
-  if (typeof value === "undefined") {
+  if (typeof value !== "undefined") {
     node.style[name] = value;
   } else {
     var val;
@@ -184,4 +198,8 @@ dom.hasClass = function(node, className){
   var current = node.className || "";
   return (" " + current + " ").indexOf(" " + className + " ") !== -1;
 }
+
+
+
+
 

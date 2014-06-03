@@ -21,15 +21,23 @@
 
     //1. nest style
     app = new Regular(
-        '{{total}}:{{current}}<button r-click={{total = total + 1}}>total+1</button>'+
-        '<div> <pager total={{Math.floor(total/20)}} current={{current}}/> </div><pager total={{Math.floor(total/20)}} current={{current}}/> </div>', 
+        "{{total}}:{{current}}<button on-click={{total = total + 1}}>total+1</button>\
+         <div>\
+          <pager total={{Math.floor(total/20)}} current={{current}}/>\
+          <pager total={{Math.floor(total/20)}} current={{current}}/>\
+         </div>", 
         {total: 292, current:1})
-      .inject('app')
+      .inject("app");
 
 
 
     //2. initialize style
     var pager = new Pager({total: 100, current:1}).inject('app');
+    console.log(pager)
+    for(var i = 0; i < 100; i++){
+      var pager = new Pager({total: 100, current:1}).inject('app').$bind(pager, ['total', 'current']);
+    }
+    
 
     pager.$on('nav', function(page){
       console.log('nav to page:' + page);

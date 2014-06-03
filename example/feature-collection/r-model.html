@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Regular.js • r-model</title>
+    <link rel="stylesheet" href="http://getbootstrap.com/dist/css/bootstrap.min.css">
+    <script src="../../dist/regular.js"></script>
+  </head>
+  <body>
+    <div id="app" class='container'></div>
+    <!-- Templates -->
+    <script id="form" type="text/regular">
+      <form role="form">
+        <div class="form-group">
+          <label for="exampleInputEmail1">Email address(value: {{email}})</label>
+          <input 
+            type="email" class="form-control" id="exampleInputEmail1" placeholder="Enter email" value="87399126@163.com" 
+            r-model={{email}}>
+        </div>
+        <div class="form-group">
+          <label for="exampleInputPassword1">Password(value: {{password}})</label>
+          <input type="password" class="form-control" id="exampleInputPassword1" placeholder="Password" value='default' r-model='password'>
+        </div>
+        <div class="checkbox">
+          <label>
+            <input type="checkbox" checked  r-model={{checked}}> Check me out (value: {{checked}})
+          </label>
+        </div>
+
+        <div class="form-group">
+          radio: {{radio}}
+        </div>
+        <div class="radio">
+          <label>
+            <input type="radio" name="optionsRadios" id="optionsRadios1" value="option1" r-model={{radio}}>
+            Option one is this and that&mdash;be sure to include why its great
+          </label>
+        </div>
+        <div class="radio">
+          <label>
+            <input type="radio" name="optionsRadios" id="optionsRadios2" value="option2" r-model={{radio}}>
+            Option two can be something else and selecting it will deselect option one
+          </label>
+        </div>
+        <div class="form-group" ng-repeat>
+        <!-- no wrap in {{}} is allowed -->
+        {{textarea}}
+        <textarea class="form-control" rows="3" r-model='textarea'>hahah</textarea>
+        </div>
+        {{select}}
+        <select class="form-control" r-model='select'>
+          <option selected>1</option>
+          <option>2</option>
+          <option>3</option>
+          <option>4</option>
+          <option>5</option>
+        </select>
+          
+        <button type="submit" class="btn btn-default">Submit</button>
+      </form>
+    </script>
+    
+    <script>
+    var Modal = Regular.extend({template: 'form'});
+
+    var app = new Modal({radio:'option1'}).inject("app");
+
+    </script>
+  </body>
+</html>

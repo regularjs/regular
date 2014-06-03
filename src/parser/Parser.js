@@ -98,8 +98,6 @@ op.program = function(){
   return statements;
 }
 
-// dada
-// dadad
 op.statements = function(until){
   var ll, body = [];
   while( !(ll = this.eat('CLOSE', until)) ){
@@ -110,7 +108,7 @@ op.statements = function(until){
 
 // statement
 //  : xml
-//  | dust
+//  | jst
 //  | text
 op.statement = function(){
   var ll = this.ll(),la;
@@ -216,6 +214,7 @@ op.attvalue = function(){
 }
 
 
+// {{#}}
 op.directive = function(name){
   name = name || (this.ll().value);
   if(typeof this[name] == 'function'){
@@ -225,6 +224,7 @@ op.directive = function(name){
   }
 }
 
+// {{}}
 op.interplation = function(){
   var nowatch = this.match('EXPR_OPEN').nowatch;
   var res = this.expression(true);
@@ -232,6 +232,7 @@ op.interplation = function(){
   return res;
 }
 
+// {{~}}
 op.template = function(){
   this.next();
   var content = this.expression();
@@ -239,6 +240,7 @@ op.template = function(){
   return node.template(content);
 }
 
+// {{#if}}
 op["if"] = function(){
   this.next();
   var test = this.expr();
@@ -274,7 +276,8 @@ op["if"] = function(){
 }
 
 
-// @mark   mustache syntax have natrure failutre, canot with expression
+// @mark   mustache syntax have natrure dis, canot with expression
+// {{#list}}
 op.list = function(){
   this.next();
   // sequence can be a list or hash
@@ -330,6 +333,8 @@ op.expr = function(filter){
 }
 
 
+// filter
+// assign ('|' filtername[':' args]) * 
 op.filter = function(){
   var left = this.assign();
   var ll = this.eat('|');
@@ -354,6 +359,8 @@ op.filter = function(){
   return left;
 }
 
+// assign
+// left-hand-expr = condition
 op.assign = function(){
   var left = this.condition(), ll;
   if(ll = this.eat(['=', '+=', '-=', '*=', '/=', '%='])){

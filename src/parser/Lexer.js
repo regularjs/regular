@@ -1,6 +1,6 @@
-var _ = require('../util.js');
+var _ = require("../util.js");
 
-var test = /a|(b)/.exec('a');
+var test = /a|(b)/.exec("a");
 var testSubCapure = test && test[1] === undefined? 
   function(str){ return str !== undefined }
   :function(str){return !!str};
@@ -18,10 +18,10 @@ function wrapKeyValue(key, num){
 
 
 function Lexer(input, opts){
-  this.input = (input||'').trim();
+  this.input = (input||"").trim();
   this.opts = opts || {};
   this.map = this.opts.mode != 2?  map1: map2;
-  this.states = ['INIT']
+  this.states = ["INIT"];
   if(this.opts.state) this.states.push(this.opts.state);
 
 }

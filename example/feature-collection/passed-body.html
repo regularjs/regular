@@ -17,7 +17,7 @@
     </script>
 
     <script>
-    var Modal = Regular.derive({
+    var Modal = Regular.extend({
       template: 'modal',
       init: function(){
         if(!this.$parent) this.inject(document.body)

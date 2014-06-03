@@ -1,9 +1,9 @@
 // simplest event emitter 60 lines
 // ===============================
-var slice = [].slice, _ = require('../util.js');
+var slice = [].slice, _ = require("../util.js");
 var API = {
     $on: function(event, fn) {
-        if(typeof event === 'object'){
+        if(typeof event === "object"){
             for (var i in event) {
                 this.$on(i, event[i]);
             }
@@ -36,19 +36,18 @@ var API = {
     },
     // bubble event
     $emit: function(event){
+        var handles = this._handles, calls;
         if(!event) return;
-        if(typeof event === 'object'){
+        if(typeof event === "object"){
            var type = event.type, 
             args = event.data || [],
             stop = event.stop;
         }else{
         var args = slice.call(arguments, 1),
             type = event,
-            handles = this._handles,
-            $parent = this.$parent,
-            calls;
+            $parent = this.$parent;
         }
-        if($parent && !stop) $parent.$emit.apply($parent, arguments)
+        if(this.$parent && !stop) this.$parent.$emit.apply($parent, arguments)
         if (!handles || !(calls = handles[type])) return this;
         for (var i = 0, len = calls.length; i < len; i++) {
             calls[i].apply(this, args)
@@ -58,7 +57,7 @@ var API = {
     },
     // capture  event
     $broadcast: function(event){
-
+        
     }
 }
 // container class

@@ -9,7 +9,13 @@
   </head>
   <body>
 
-    <div id="app"></div>
+    <div id="app">
+        <h2>simply bind</h2>
+        
+    </div>
+    <div id="app2">
+        <h2>bind chain</h2>
+    </div>
 
     <script>
     // insert
@@ -27,6 +33,16 @@
 
     // style 3
     // pager.$bind(pager2, {current: "current", total: "total"});
+
+
+    // bind chain
+    var pager = new Pager({total: 1000, current:1}).inject('app2');
+    for(var i = 0; i < 10; i++){
+      var pager = new Pager({total: 1000, current: i})
+        .$bind(pager, ['total', 'current'])
+        .inject('app2');
+    }
+
 
     </script>
   </body>

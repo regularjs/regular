@@ -1,3 +1,3 @@
-function require_base(src){
-  return require( (typeof process !== "undefined" && process.env? "../../src/" : "terminator/src/")+src);
-}
+var Parser = require_lib("parser/Parser.js");
+var node = require_lib("parser/node.js");
+

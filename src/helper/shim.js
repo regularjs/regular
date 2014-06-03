@@ -1,4 +1,4 @@
-// shim for non es5 js env 
+// shim for es5
 var slice = [].slice;
 var tstr = ({}).toString;
 

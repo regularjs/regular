@@ -3,6 +3,7 @@ var _  = module.exports;
 var slice = [].slice;
 var o2str = ({}).toString;
 
+_.noop = function(){};
 _.uid = (function(){
   var _uid=0;
   return function(){
@@ -198,9 +199,7 @@ _.createObject = function(o, props){
     function foo() {}
     foo.prototype = o;
     var res = new foo;
-    if(props){
-      _.extend(res, props)
-    }
+    if(props) _.extend(res, props);
     return res;
 }
 
@@ -209,61 +208,6 @@ _.createProto = function(fn, o){
     foo.prototype = o;
     return (fn.prototype = new foo());
 }
-
-// (c) 2010-2014 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
-// Backbone may be freely distributed under the MIT license.
-// For all details and documentation:
-// http://backbonejs.org
-
-// klass: a classical JS OOP façade
-// https://github.com/ded/klass
-// License MIT (c) Dustin Diaz 2014
-  
-// inspired by backbone's extend and klass
-_.derive = (function(){
-var fnTest = /xy/.test(function(){xy}) ? /\bsupr\b/ : /.*/,
-  isFn = function(o){return typeof o === 'function'};
-
-  function wrap(k, fn, supro) {
-    return function () {
-      var tmp = this.supr;
-      this.supr = supro[k];
-      var ret = fn.apply(this, arguments);
-      this.supr = tmp;
-      return ret;
-    }
-  }
-  function process( what, o, supro ) {
-    for ( var k in o ) {
-      if (o.hasOwnProperty(k)) {
-
-        what[k] = isFn( o[k] ) && isFn( supro[k] )
-          && fnTest.test( o[k] ) ? wrap(k, o[k], supro) : o[k];
-      }
-    }
-  }
-
-  return function derive(o){
-    var supr = this, proto,
-      supro = supr.prototype;
-
-    function fn() {
-      supr.apply(this, arguments);
-    }
-
-    proto = _.createProto(fn, supro);
-
-    (fn.use = function (o) {
-      process(proto, o, supro); 
-      return fn;
-    })(o);
-
-    if(supr.__after__) supr.__after__.call(fn, supr, o);
-    fn.derive = supr.derive;
-    // _.extend(fn, supr, supr.__statics__ || []);
-    return fn;
-  }
-})();
 
 
 
@@ -527,4 +471,6 @@ _.cache = function(max){
 
 //http://www.w3.org/html/wg/drafts/html/master/single-page.html#void-elements
 _.isVoidTag = _.makePredicate("area base br col embed hr img input keygen link menuitem meta param source track wbr");
+_.isBooleanAttr = _.makePredicate('selected checked disabled readOnly required open autofocus controls autoplay compact loop defer multiple');
+
 
