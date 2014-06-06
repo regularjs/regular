@@ -254,6 +254,11 @@ _.extend( Regular.prototype, {
     options = options || {};
     if(options === true) options = {deep: true}
     var uid = _.uid('w_');
+
+    if(this.context){
+      for(var i in context);
+    }
+
     if(Array.isArray(expr)){
       // @todo 只需要watch一次
       var tests = [];

@@ -56,6 +56,8 @@
         box-sizing: border-box;
         position: relative;
       }
+      li.drag{
+      }
       li.drag a {
         color: transparent;
         border: 1px dotted #666;
@@ -78,7 +80,10 @@
         width: 33.3333333333%;
       }
       .m-menu-3 > li{
-        width: 33.333333333%;
+        width: 25%;
+      }
+      .m-menu-4 > li{
+        width: 25%;
       }
       .m-menu > li{
         height: 32px;
@@ -108,15 +113,14 @@
 
     <!-- Templates -->
     <script id="menu" type="text/regular" name='menu'>
-      <ul class='m-menu m-menu-{{menus.length}} clearfix' r-sort={{menus}}>
+      <ul class='m-menu m-menu-{{menus.length}} clearfix' >
         {{#list menus as menu}}
-          <li class='m-smenu {{menu.drag? "drag": ""}}'  >
+          <li class='m-smenu menu {{menu.drag? "drag": ""}}'  >
             <a href="#" on-drag={{this.drag($index, menus, $event)}} on-click={{menu.show= !menu.show}}>{{menu.name}}</a><span class='close' on-click={{this.remove(menu, menus)}}>x</span>
             <ul r-hide={{!menu.show || menu.drag}}>
               <li r-hide={{menu.children.length > 7}} >
                 <a href='#' on-click={{this.add(menu.children)}}> + </a> 
               </li>
-
               {{#list menu.children as smenu }}
                 <li class={{smenu.drag? "drag": ""}}><a href="#" on-drag={{this.drag($index, menu.children, $event)}}>{{smenu.name}}</a><span class='close' on-click={{this.remove(smenu, menu.children)}}>x</span>
                 </li>
@@ -124,46 +128,78 @@
             </ul>
           </li>
         {{/list}}
-        <li r-hide={{menus.length >= 3}} on-click={{this.add()}}><a href='#'> + </a> </li>
+        <li r-hide={{menus.length >= 4}} on-click={{this.add()}}><a href='#'> + </a> </li>
       </ul>
     </script>
 
     <script>
-    Regular.directive('')
+    function getRect(elem){
+      var docElem, body, win, clientTop, clientLeft, scrollTop, scrollLeft,
+        box = { top: 0, left: 0 },
+        doc = elem && elem.ownerDocument,win = window, body = doc.body;
+
+      if ( !doc ) {
+        return;
+      }
+
+      docElem = doc.documentElement;
+
+      // If we don't have gBCR, just use 0,0 rather than error
+      // BlackBerry 5, iOS 3 (original iPhone)
+      if ( typeof elem.getBoundingClientRect !== "undefined" ) {
+        box = elem.getBoundingClientRect();
+      }
+      clientTop  = docElem.clientTop  || body.clientTop  || 0;
+      clientLeft = docElem.clientLeft || body.clientLeft || 0;
+      scrollTop  = win.pageYOffset || docElem.scrollTop;
+      scrollLeft = win.pageXOffset || docElem.scrollLeft;
+      return {
+        top: box.top  + scrollTop  - clientTop,
+        left: box.left + scrollLeft - clientLeft
+      };
+    }
+
+    function getPage(ev){
+      var doc = document;
+      doc = (!doc.compatMode || doc.compatMode == 'CSS1Compat') ? doc.documentElement : doc.body;
+      return {
+        x: (ev.pageX != null) ? ev.pageX : ev.clientX + doc.scrollLeft,
+        y: (ev.pageX != null) ? ev.pageY : ev.clientY + doc.scrollTop
+      }
+    }
     // 扩展drag方法
     Regular.events.drag = function(elem, fire){
       var isStart = false;
       var timeoutId = null;
       var pageX,pageY;
       function start(ev){
-        pageX = ev.pageX;
-        pageY = ev.pageY;
-        timeoutId = setTimeout(function(){
-          fire({type: 'dragstart', target: elem});
-          isStart = true;
-        },200)
+        isStart = true;
+        var win = window;
+        var page = getPage(ev);
+        pageX = page.x;
+        pageY = page.y;
+
+        fire({type: 'dragstart', target: elem, pageX: page.x, pageY: page.y});
+
         
       }
       function move(ev){
-        clearTimeout(timeoutId)
         if(!isStart) return;
-        ev.preventDefault();
-        var deltaX = ev.pageX - pageX;
-        var deltaY = ev.pageY - pageY;
-        fire({type: 'dragmove', target:elem, deltaY:deltaY, deltaX: deltaX});
+        if(ev.preventDefault) ev.preventDefault()
+        else ev.returnValue = false;
+        var page = getPage(ev);
+        fire({type: 'dragmove', target:elem, deltaX: page.x-pageX, deltaY: page.y-pageY});
 
       }
       function end(ev){
-        clearTimeout(timeoutId)
         if(!isStart) return;
-        var deltaX = ev.pageX - pageX;
-        var deltaY = ev.pageY - pageY;
         isStart = false;
-        fire({type: 'dragend', target:elem, deltaY:deltaY, deltaX: deltaX});
+        fire({type: 'dragend'})
+
       }
-      dom.on(elem, 'mousedown', start);
       dom.on(document, 'mousemove', move);
       dom.on(document, 'mouseup', end);
+      dom.on(elem, 'mousedown', start);
       return function(){
         dom.off(elem, 'mousedown', start);
         dom.off(document, 'mousemove', move);
@@ -174,8 +210,16 @@
 
     function swap(container, index1, index2){
       var tmp = container[index1];
-      container[index1] = container[index2];
-      container[index2] = tmp;
+      container.splice(index1, 1)
+      container.splice(index2,0, tmp)
+    }
+
+    function clone(obj){
+      var res = {};
+      for(var i in obj) if(obj.hasOwnProperty(i)){
+        res[i] = obj[i];
+      }
+      return res;
     }
 
 
@@ -185,21 +229,28 @@
       drag: function(index, container, ev){
         switch(ev.type){
           case 'dragstart':
-            container[index].drag = true;
+            var rect = getRect(ev.target);
+            this.index = index;
+            this.offset = {x: ev.pageX - rect.left, y: ev.pageY - rect.top}
+            var item = container[index];
+            this.cloned = item;
+            this.cloned.drag = true;
+            this.index = index;
             break;
           case 'dragmove':
+            var delta = this.cloned.children? (ev.deltaX+this.offset.x) / 320 * (container.length>3? container.length: container.length+1) : (ev.deltaY+this.offset.y) / 34 ;
+            delta = delta > 0? Math.floor(delta): Math.ceil(delta);
+            var indx = container.indexOf(this.cloned);
+
+            var cursor = Math.max( 0, Math.min(this.index + delta, container.length - 1 ));
+            if(cursor !== indx){
+               swap(container, indx, cursor );;
+            }
             break;
           case 'dragend':
-            var item = container[index];
-            var delta = item.children? ev.deltaX / 320 * (container.length + 1) : ev.deltaY / 34 ;
-            delta = delta > 0? Math.floor(delta): Math.ceil(delta);
-            if(delta !== 0){
-              var cursor = Math.max(0, Math.min(index + delta, container.length - 1 ));
-              if(cursor !== index){
-                swap(container, index, cursor  );
-              }
-            }
-            item.drag = false;
+            this.cloned.drag = false;
+            this.index = '';
+            this.cloned = null;
         }
 
       },
