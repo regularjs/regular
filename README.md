@@ -1,29 +1,29 @@
 # Regular = react(ractive) + angular.
 
-regular provide angular-way's data-binding, string-based template to help us create reusable and reactive component that can be integrated with whatever framework you already used;
+regular is a live template engine that provide angular-way's data-binding, string-based template to help us create reusable and reactive component that can be integrated with whatever framework you already used;
 
-with less than 10 line code then you already have a simple but whole note component, you can also see it in [jsfiddle]()
+with less than 20 line code then you already have a simple note component, you can also see it in [jsfiddle](http://jsfiddle.net/leeluolee/e6yD3/)
 
 ```
 var NoteApp = Regular.extend({
   template: 
-    "{{#list nodes as c}}\
-      <p>{{c.content}} <a on-click={{this.remove(c)}}>Delete The Note</a></p>\
+    "{{#list notes as c}}\
+        <p>{{c.content}} <a href='#' on-click={{this.remove(c)}}>remove</a></p>\
      {{/list}}\
-     <textarea r-model={{draftComment}}></textarea><button on-click={{this.add()}}>Post new Note</button>\
-    "
+     <textarea r-model={{draftComment}}></textarea><button on-click={{this.add()}}>new Note</button>",
   remove: function(c){
-    var notes = this.data.nodes;
+    var notes = this.data.notes;
     var index = notes.indexOf(c);
     if(~index) notes.splice(index,1);
   },
   add: function(){
     var data = this.data;
-    data.items.push({content: data.draftComment})
+    data.notes.push({content: data.draftComment})
     data.draftComment = "";
   }
 });
-new CommentApp({nodes:[]}).inject(document.body);
+
+new NoteApp({notes:[]}).inject(document.body);
 ```
 
 
@@ -48,6 +48,10 @@ currently, there is only __Chinese version__
 *. [中文文档](https://github.com/regularjs/regular/wiki/Document/Chinese.md)
 
 
+## Guide
+
+Coming soon...
+
 
 ## [LICENSE](https://github.com/regularjs/regular/blob/master/LICENSE)
 
@@ -61,6 +65,8 @@ MIT.
 3. maybe add casper
 4. directive 的link放在init之前做，这样初始化的结构已经出现了。
 5. @TODO watch 同一个表达式(将不会创建两个watcher)
+6. group 还需要回收ref ，watchid event， 必须想一个两全的方式了。
+7. html插值
 
 
 

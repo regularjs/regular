@@ -221,33 +221,34 @@ var combine = require('./helper/combine.js');
 var walkers = require('./walkers.js');
 var idtest = /^[\w-]{1,20}$/;
 
-var Regular = function( data, options){
-  var template, node, name;
-  if(typeof data === 'string'){
-    template = data;
-    if(idtest.test(template) && (node= dom.id(template))){
-      template = node.innerHTML;
-    }
-    if(typeof template == 'string'){
-      this.template = new Parser(template).parse();
-    }
-    data = options;
-    options = arguments[2];
-  }
+
+var Regular = function(options){
+  var node, template, name;
+
   options = options || {};
+  _.extend(this, options, true);
+
+  template = this.template;
+
+  if(!this.data) this.data = {};
+  if(typeof template === 'string' && template.length < 20 && (node = dom.find(template))) {
+    template = node.innerHTML;
+  }
+  if(typeof template === 'string') this.template = new Parser(template).parse()
   this.$watchers = [];
-  this.$children = [];
-  this.$parent = options.$parent;
-  this.context = this.context || this;
-  if( typeof this.template === 'undefined' )  throw "template is required";
-  this.data= data || {};
   this.config && this.config(this.data);
-  this.group = this.$compile(this.template);
-  this.element = combine.node(this);
-  if(!options.$parent) this.$update();
+  this.$root = this.$root || this;
+  this.$context = this.$context || this;
+  if(template){
+    this.group = this.$compile(this.template);
+    this.element = combine.node(this);
+  }
+  if(this.$root == this) this.$update();
   this.$emit({type: 'init', stop: true });
-  if( this.init ) this.init.apply(this, arguments);
-  if(!options.$parent) this.$update();
+  if( this.init ) this.init(this.data);
+  if(this.$root == this) this.$update();
+
+  // children is not required;
 }
 
 // description
@@ -269,7 +270,7 @@ _.extend(Regular, {
     if(o.name) Regular.component(o.name, this);
     if(template = o.template){
       var node, name;
-      if(idtest.test(template) && (node= dom.id(template))){
+      if(typeof template === 'string' && template.length < 20 && (node= dom.find(template))){
         template = node.innerHTML;
         if(name = dom.attr(node, 'name')) Regular.component(name, this);
       }
@@ -277,7 +278,6 @@ _.extend(Regular, {
         this.prototype.template = new Parser(template).parse();
       }
     }
-
   },
   extend: extend,
   /**
@@ -384,10 +384,8 @@ _.extend( Regular.prototype, {
         }
       }
     }
-    var self = this, root = self;
-    // find the root
-    while(self = self.$parent){ root = self }
-    root.$digest();
+    if(!this.$root) debugger
+    ;(this.$root || this).$digest();
   },
   /**
    * create two-way binding with another component;
@@ -416,8 +414,9 @@ _.extend( Regular.prototype, {
    */
   $bind: function(component, expr1, expr2){
     var type = _.typeOf(expr1);
-    // multiply same path binding through array
-    if( type === "array" ){
+    if(expr1.type === 'expression' || type == 'string'){
+      this._bind(component, expr1, expr2)
+    }else if( type === "array" ){ // multiply same path binding through array
       for(var i = 0, len = expr1.length; i < len; i++){
         this._bind(component, expr1[i]);
       }
@@ -425,8 +424,6 @@ _.extend( Regular.prototype, {
       for(var i in expr1) if(expr1.hasOwnProperty(i)){
         this._bind(component, i, expr1[i]);
       }
-    }else{
-      this._bind(component, expr1, expr2);
     }
     // digest
     component.$update();
@@ -444,26 +441,6 @@ _.extend( Regular.prototype, {
     // todo
   },
 
-  /**
-   * create sub  compoennt
-   * @param  {Regular| name} name Compoennt's name or constructor
-   * @param  {Object} data the data passed in sub component
-   * @return {Regular}    the sub component
-   */
-  $new: function(name, data){
-    var type = typeof name;
-    var Component;
-    if(type === "string"){
-      Component = Regular.component(name);
-    }else if(type === 'function'){
-      Component = name;
-    }
-    if(Component){
-      var instance = new Component(data, { $parent: this});
-      this.$children.push(instance);
-    }
-    return instance;
-  },
   /**
    * the whole digest loop ,just like angular, it just a dirty-check loop;
    * @param  {String} path  now regular process a pure dirty-check loop, but in parse phase, 
@@ -550,17 +527,16 @@ _.extend( Regular.prototype, {
     // destroy event wont propgation;
     this.$emit({type: 'destroy', stop: true });
     this.group.destroy();
+    this.element = null;
     this.$watchers = null;
-    this.$children = null;
-    this.$parent = null;
-    this.$refs = null;
     this.$off();
   },
   inject: function(node, position){
     position = position || 'bottom';
     var firstChild,lastChild, parentNode, next;
     var fragment = this.element || combine.node(this);
-    if(typeof node === 'string') node = document.getElementById(node);
+    if(typeof node === 'string') node = dom.find(node);
+    if(!node) throw 'injected node is not found'
     switch(position){
       case 'bottom':
         node.appendChild(fragment)
@@ -581,10 +557,9 @@ _.extend( Regular.prototype, {
         break;
       case 'before':
         node.parentNode.insertBefore(fragment, node);
-      }
-      return this;
-    },
-
+    }
+    return this;
+  },
   // private bind logic
   _bind: function(component, expr1, expr2){
 
@@ -621,8 +596,8 @@ _.extend( Regular.prototype, {
   _digest: function(path){
     // if(this.context) return this.context.$digest();
 
+    this.$emit('digest');
     var watchers = this.$watchers;
-    var children = this.$children;
 
     if(!watchers || !watchers.length) return;
     var dirty = false;
@@ -689,17 +664,9 @@ _.extend( Regular.prototype, {
       }
     }
 
-
-    if(children && (len = children.length)){
-      for(var i = 0; i < len ; i++){
-        if(children[i]._digest()) dirty = true;
-      }
-    }
-
     if(dirty) this.$emit('update');
     return dirty;
   },
-  _path: _._path,
   _record: function(){
     this._records = [];
   },
@@ -758,7 +725,12 @@ _.host = "data";
 
 
 _.slice = function(obj, start, end){
-  return slice.call(obj, start, end);
+  var res = [];
+  for(var i = start || 0, len = end || obj.length; i < len; i++){
+    var item = obj[i];
+    res.push(item)
+  }
+  return res;
 }
 
 _.typeOf = function (o) {
@@ -1221,10 +1193,8 @@ var walkers = module.exports = {};
 
 walkers.list = function(ast){
   var placeholder = document.createComment("Regular list");
-  var Section =  Regular.extend({
-    template: ast.body,
-    context: this.context
-  });
+  // proxy Component to implement list item, so the behaviar is similar with angular;
+  var Section =  Regular.extend( { template: ast.body, $context: this.$context } );
   var fragment = dom.fragment();
   fragment.appendChild(placeholder);
   var self = this;
@@ -1234,9 +1204,9 @@ walkers.list = function(ast){
   function update(newValue, splices){
     if(!splices || !splices.length) return;
     var cur = placeholder;
-    var m = 0,
-      len=newValue.length,
+    var m = 0, len=newValue.length,
       mIndex = splices[0].index;
+
     for(var i=0; i < splices.length; i++){ //init
       var splice = splices[i];
       var index = splice.index;
@@ -1248,8 +1218,8 @@ walkers.list = function(ast){
       for(var j = 0,jlen = splice.removed.length; j< jlen; j++){ //removed
         var removed = group.children.splice( index, 1)[0];
         // var removed = group.children.splice(j,1)[0];
+        var parent = removed.$parent
         removed.destroy();
-        removed = null;
       }
 
       for(var o=index; o < index + splice.add; o++){ //add
@@ -1258,22 +1228,31 @@ walkers.list = function(ast){
         var data = _.createObject(self.data);
         data.$index = o;
         data[ast.variable] = item;
-        var section = self.$new(Section, data);
-        section.$update()
+
+        var section = new Section({data: data, $root: self.$root});
+        var update = section.$digest.bind(section);
+
+        self.$on('digest', update);
+        section.$on('destroy', self.$off.bind(self, 'digest', update));
+        // autolink
         var insert = o !== 0 && group.children[o-1]? combine.last(group.get(o-1)) : placeholder;
-        placeholder.parentNode.insertBefore(combine.node(section), insert.nextSibling);
+        insert.parentNode.insertBefore(combine.node(section), insert.nextSibling);
         group.children.splice(o , 0, section);
       }
       m = index + splice.add - splice.removed.length;
       m  = m < 0? 0 : m;
+
+    }
+    if(m < len){
+      for(var i = m; i < len; i++){
+        var pair = group.get(i);
+        pair.data.$index = i;
+      }
     }
   }
 
-  if(ast.sequence && ast.sequence.type === 'expression'){
-    var watchid = this.$watch(ast.sequence, update);
-  }else{
-    update(ast.sequence , _.equals( ast.sequence, []));
-  }
+
+  var watchid = this.$watch(ast.sequence, update);
 
   return {
     node: function(){
@@ -1282,8 +1261,8 @@ walkers.list = function(ast){
     group: group,
     destroy: function(){
       group.destroy();
+      dom.remove(placeholder);
       if(watchid) self.$unwatch(watchid);
-      self = null;
     }
   }
 }
@@ -1377,32 +1356,32 @@ walkers.element = function(ast){
   var attrs = ast.attrs, component;
   var watchids = [];
   var self = this;
+  var Component = Regular.component(ast.tag);
+  if(Component){
+    var data = {};
 
-  if(component = this.$new(ast.tag) ){
     for(var i = 0, len = attrs.length; i < len; i++){
       var attr = attrs[i];
       var value = attr.value||"";
-      if(attr.name === 'ref' && value){
-         this.$refs[attr.value] = component;
+      if(value.type !== 'expression' && attr.name !== 'ref'){
+        data[attr.name] = value;
       }
+    }
+
+    if(ast.children) data.$body = this.$compile(ast.children);
+    var component = new Component({data: data});
+    for(var i = 0, len = attrs.length; i < len; i++){
+      var attr = attrs[i];
+      var value = attr.value||"";
       if(value.type === 'expression'){
-        var name = attr.name;
-        void function(name, value){
-          if(value.set){
-            component.$watch(name, function(nvalue){
-              value.set(self, nvalue);
-            })
-          }
-          self.$watch(value, function(nvalue){
-            component.$update(name, nvalue);
-          });
-        }(name, value);
+        this.$bind(component, value, attr.name);
       }else{
-        component.data[attr.name] = value;
+        if(attr.name === 'ref' ) this.$refs.push(value);
       }
-      
     }
     return component;
+  }else if(ast.tag === 'r:content' && this.data.$body){
+    return this.data.$body;
   }
   var element = dom.create(ast.tag);
   var children = ast.children;
@@ -1412,14 +1391,9 @@ walkers.element = function(ast){
   var directive = [];
   for(var i = 0, len = attrs.length; i < len; i++){
     bindAttrWatcher.call(this, element, attrs[i])
-  //   watchids.push.apply(watchids,)
   }
   if(children && children.length){
-    var group = new Group;
-    for(var i =0, len = children.length; i < len ;i++){
-      child = this.$compile(children[i]);
-      if(child !== null) group.push(child);
-    }
+    var group = this.$compile(children);
   }
   
   return {
@@ -1483,6 +1457,8 @@ exports.transition = (function(){
 require.register("regularjs/src/index.js", function(exports, require, module){
 module.exports = require('./Regular.js');
 require('./directive/base.js')
+module.exports.dom = require('./dom.js');
+module.exports.util = require('./util.js');
 
 
 });
@@ -1503,6 +1479,14 @@ var env = require("./env.js");
 var _ = require("./util");
 var tNode = document.createElement('div')
 var addEvent, removeEvent, isFixEvent;
+
+// camelCase
+function camelCase(str){
+  return ("" + str).replace(/-\D/g, function(match){
+    return match.charAt(1).toUpperCase();
+  });
+}
+
 
 dom.tNode = tNode;
 
@@ -1526,6 +1510,17 @@ if(tNode.addEventListener){
 dom.msie = parseInt((/msie (\d+)/.exec(navigator.userAgent.toLowerCase()) || [])[1]);
 if (isNaN(dom.msie)) {
   dom.msie = parseInt((/trident\/.*; rv:(\d+)/.exec(navigator.userAgent.toLowerCase()) || [])[1]);
+}
+
+dom.find = function(sl){
+  if(document.querySelector) {
+    try{
+      return document.querySelector(sl);
+    }catch(e){
+
+    }
+  }
+  if(sl.indexOf('#')!==-1) return document.getElementById( sl.slice(1) );
 }
 
 //http://stackoverflow.com/questions/11068196/ie8-ie7-onchange-event-is-emited-only-after-repeated-selection
@@ -1655,7 +1650,8 @@ dom.remove = function(node){
 // it isnt computed style 
 dom.css = function(node, name, value){
   if (typeof value !== "undefined") {
-    node.style[name] = value;
+    name = camelCase(name);
+    if(name) node.style[name] = value;
   } else {
     var val;
     if (dom.msie <= 8) {
@@ -1944,6 +1940,7 @@ var rules = {
 
   ENTER_TAG: [/[^\x00<>]*?(?=<)/, function(all){ 
     this.enter('TAG');
+    all = all.trim();
     if(all) return {type: 'TEXT', value: all}
   }],
 
@@ -2023,7 +2020,7 @@ var rules = {
   },'JST'],
 
   JST_STRING:  [ /'([^']*)'|"([^"]*)"/, function(all, one, two){ //"'
-    return {type: 'STRING', value: one == null? two: one}
+    return {type: 'STRING', value: one || two || ""}
   }, 'JST'],
   JST_NUMBER: [/(?:[0-9]*\.[0-9]+|[0-9]+)(e\d+)?/, function(all){
     return {type: 'NUMBER', value: parseFloat(all, 10)};
@@ -2158,7 +2155,6 @@ var varName = _.varName;
 var ctxName = _.randomVar('c');
 var isPath = _.makePredicate("STRING IDENT NUMBER");
 var isKeyWord = _.makePredicate("true false undefined null this Array Date JSON Math NaN RegExp decodeURI decodeURIComponent encodeURI encodeURIComponent parseFloat parseInt Object");
-var exports = {_path: _._path, _r: _._range}
 
 
 function Parser(input, opts){
@@ -2468,7 +2464,7 @@ op.expr = function(filter){
   var buffer = this.filter(), set, get;
   var body = buffer.get || buffer;
   
-  var prefix =  "var "+ctxName+"=context.context||context;"+ (this.depend.length? "var "+varName+"=context.data;" : "");
+  var prefix =  "var "+ctxName+"=context.$context||context;"+ (this.depend.length? "var "+varName+"=context.data;" : "");
   var get = new Function("context", prefix + "return (" + body + ")");
 
 
@@ -2647,7 +2643,7 @@ op.unary = function(){
 
 op.member = function(base, last, pathes){
   // @TODO depend must deregular in this step
-  var ll, path, value;
+  var ll, path, value, computed;
   var first = !base;
 
   if(!base){ //first
@@ -2691,11 +2687,7 @@ op.member = function(base, last, pathes){
       case '[':
           // member(object, property, computed)
         path = this.assign();
-        if(pathes && pathes.length){
-          base = ctxName + "._path("+base+", "+ path.get + ")";
-        }else{
-          base += "['" + path.get + "']";
-        }        
+        base += "['" + path.get + "']";
         this.match(']')
         return this.member(base, path, pathes);
       case '(':
@@ -2781,7 +2773,9 @@ op.object = function(){
     ll = this.eat(['STRING', 'IDENT', 'NUMBER']);
     if(ll){
       code.push("'" + ll.value + "'" + this.match(':').type);
-      code.push(this.assign().get);
+      var get = this.assign().get;
+      console.log(get);
+      code.push(get);
       if(this.eat(",")) code.push(",");
     }else{
       code.push(this.match('}').type);
@@ -3027,7 +3021,6 @@ var API = {
             type = event,
             $parent = this.$parent;
         }
-        if(this.$parent && !stop) this.$parent.$emit.apply($parent, arguments)
         if (!handles || !(calls = handles[type])) return this;
         for (var i = 0, len = calls.length; i < len; i++) {
             calls[i].apply(this, args)
@@ -3063,10 +3056,15 @@ var combine = module.exports = {
   // get the initial dom in object
   node: function(item){
     var children;
+    if(item.element) return item.element;
     if(typeof item.node === "function") return item.node();
     if(typeof item.nodeType === "number") return item;
     if(item.group) return combine.node(item.group)
     if(children = item.children){
+      if(children.length == 1){
+        var node = combine.node(children[0])
+        return node;
+      }
       var fragment = dom.fragment();
       for(var i = 0, len = children.length; i < len; i++ ){
         fragment.appendChild(combine.node(children[i]))
@@ -3111,11 +3109,14 @@ var _ = require("../util.js");
 var dom = require("../dom.js");
 var Regular = require("../Regular.js");
 
+
+
 require("./event.js");
 require("./form.js");
 
 
 // **warn**: class inteplation will override this directive 
+
 Regular.directive('r-class', function(elem, value){
   if(value.type !== 'expression') value = Regular.parse(value);
 
@@ -3133,6 +3134,7 @@ Regular.directive('r-class', function(elem, value){
 });
 
 // **warn**: style inteplation will override this directive 
+
 Regular.directive('r-style', function(elem, value){
   if(value.type !== 'expression') value = Regular.parse(value);
 
@@ -3145,6 +3147,7 @@ Regular.directive('r-style', function(elem, value){
 
 // when expression is evaluate to true, the elem will add display:none
 // Example: <div r-hide={{items.length > 0}}></div>
+
 Regular.directive('r-hide', function(elem, value){
 
   if(value.type !== 'expression') value = Regular.parse(value);
@@ -3177,6 +3180,7 @@ var modelHandlers = {
 
 // two-way binding with r-model
 // works on input, textarea, checkbox, radio, select
+
 Regular.directive("r-model", function(elem, value){
   var tag = elem.tagName.toLowerCase();
   var sign = tag;
@@ -3193,6 +3197,7 @@ Regular.directive("r-model", function(elem, value){
 
 
 // binding <select>
+
 function initSelect( elem, parsed){
   var self = this;
   var inProgress = false;
@@ -3208,6 +3213,7 @@ function initSelect( elem, parsed){
   });
 
   function handler(ev){
+    console.log(this.value)
     parsed.set(self, this.value);
     inProgress = true;
     self.$update();
@@ -3216,12 +3222,14 @@ function initSelect( elem, parsed){
   dom.on(elem, "change", handler);
   this.$on('init', function(){
     if(parsed.get(self) === undefined){
+      console.log('haha')
        parsed.set(self, elem.value);
     }
   })
 }
 
 // input,textarea binding
+
 function initText(elem, parsed){
   var inProgress = false;
   var self = this;
@@ -3254,6 +3262,7 @@ function initText(elem, parsed){
 }
 
 // input:checkbox  binding
+
 function initCheckBox(elem, parsed){
   var inProgress = false;
   var self = this;
@@ -3279,6 +3288,7 @@ function initCheckBox(elem, parsed){
 
 
 // input:radio binding
+
 function initRadio(elem, parsed){
   var self = this;
   var inProgress = false;
@@ -3312,11 +3322,18 @@ require.register("regularjs/src/directive/event.js", function(exports, require, 
 var _ = require("../util.js");
 var dom = require("../dom.js");
 var Regular = require("../Regular.js");
+var prevent = function(ev){
+  if(ev.preventDefualt) ev.preventDefault();
+  else ev.returnValue = false;
+}
 
 Regular.events = {
   enter: function(elem, fire){
     function update(ev){
-      if(ev.which == 13 || ev.keyCode == 13) fire(ev);
+      if(ev.which == 13 || ev.keyCode == 13){
+        prevent(ev||window.event);
+        fire(ev);
+      }
     }
     dom.on(elem, "keypress", update);
     return function(){
@@ -3324,6 +3341,8 @@ Regular.events = {
     }
   }
 }
+
+
 
 Regular.directive(/^on-\w+$/, function(elem, value, name){
 

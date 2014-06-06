@@ -10,33 +10,34 @@ var combine = require('./helper/combine.js');
 var walkers = require('./walkers.js');
 var idtest = /^[\w-]{1,20}$/;
 
-var Regular = function( data, options){
-  var template, node, name;
-  if(typeof data === 'string'){
-    template = data;
-    if(idtest.test(template) && (node= dom.id(template))){
-      template = node.innerHTML;
-    }
-    if(typeof template == 'string'){
-      this.template = new Parser(template).parse();
-    }
-    data = options;
-    options = arguments[2];
-  }
+
+var Regular = function(options){
+  var node, template, name;
+
   options = options || {};
+  _.extend(this, options, true);
+
+  template = this.template;
+
+  if(!this.data) this.data = {};
+  if(typeof template === 'string' && template.length < 20 && (node = dom.find(template))) {
+    template = node.innerHTML;
+  }
+  if(typeof template === 'string') this.template = new Parser(template).parse()
   this.$watchers = [];
-  this.$children = [];
-  this.$parent = options.$parent;
-  this.context = this.context || this;
-  if( typeof this.template === 'undefined' )  throw "template is required";
-  this.data= data || {};
   this.config && this.config(this.data);
-  this.group = this.$compile(this.template);
-  this.element = combine.node(this);
-  if(!options.$parent) this.$update();
+  this.$root = this.$root || this;
+  this.$context = this.$context || this;
+  if(template){
+    this.group = this.$compile(this.template);
+    this.element = combine.node(this);
+  }
+  if(this.$root == this) this.$update();
   this.$emit({type: 'init', stop: true });
-  if( this.init ) this.init.apply(this, arguments);
-  if(!options.$parent) this.$update();
+  if( this.init ) this.init(this.data);
+  if(this.$root == this) this.$update();
+
+  // children is not required;
 }
 
 // description
@@ -58,7 +59,7 @@ _.extend(Regular, {
     if(o.name) Regular.component(o.name, this);
     if(template = o.template){
       var node, name;
-      if(idtest.test(template) && (node= dom.id(template))){
+      if(typeof template === 'string' && template.length < 20 && (node= dom.find(template))){
         template = node.innerHTML;
         if(name = dom.attr(node, 'name')) Regular.component(name, this);
       }
@@ -66,7 +67,6 @@ _.extend(Regular, {
         this.prototype.template = new Parser(template).parse();
       }
     }
-
   },
   extend: extend,
   /**
@@ -173,10 +173,8 @@ _.extend( Regular.prototype, {
         }
       }
     }
-    var self = this, root = self;
-    // find the root
-    while(self = self.$parent){ root = self }
-    root.$digest();
+    if(!this.$root) debugger
+    ;(this.$root || this).$digest();
   },
   /**
    * create two-way binding with another component;
@@ -205,8 +203,9 @@ _.extend( Regular.prototype, {
    */
   $bind: function(component, expr1, expr2){
     var type = _.typeOf(expr1);
-    // multiply same path binding through array
-    if( type === "array" ){
+    if(expr1.type === 'expression' || type == 'string'){
+      this._bind(component, expr1, expr2)
+    }else if( type === "array" ){ // multiply same path binding through array
       for(var i = 0, len = expr1.length; i < len; i++){
         this._bind(component, expr1[i]);
       }
@@ -214,8 +213,6 @@ _.extend( Regular.prototype, {
       for(var i in expr1) if(expr1.hasOwnProperty(i)){
         this._bind(component, i, expr1[i]);
       }
-    }else{
-      this._bind(component, expr1, expr2);
     }
     // digest
     component.$update();
@@ -233,26 +230,6 @@ _.extend( Regular.prototype, {
     // todo
   },
 
-  /**
-   * create sub  compoennt
-   * @param  {Regular| name} name Compoennt's name or constructor
-   * @param  {Object} data the data passed in sub component
-   * @return {Regular}    the sub component
-   */
-  $new: function(name, data){
-    var type = typeof name;
-    var Component;
-    if(type === "string"){
-      Component = Regular.component(name);
-    }else if(type === 'function'){
-      Component = name;
-    }
-    if(Component){
-      var instance = new Component(data, { $parent: this});
-      this.$children.push(instance);
-    }
-    return instance;
-  },
   /**
    * the whole digest loop ,just like angular, it just a dirty-check loop;
    * @param  {String} path  now regular process a pure dirty-check loop, but in parse phase, 
@@ -339,17 +316,16 @@ _.extend( Regular.prototype, {
     // destroy event wont propgation;
     this.$emit({type: 'destroy', stop: true });
     this.group.destroy();
+    this.element = null;
     this.$watchers = null;
-    this.$children = null;
-    this.$parent = null;
-    this.$refs = null;
     this.$off();
   },
   inject: function(node, position){
     position = position || 'bottom';
     var firstChild,lastChild, parentNode, next;
     var fragment = this.element || combine.node(this);
-    if(typeof node === 'string') node = document.getElementById(node);
+    if(typeof node === 'string') node = dom.find(node);
+    if(!node) throw 'injected node is not found'
     switch(position){
       case 'bottom':
         node.appendChild(fragment)
@@ -370,10 +346,9 @@ _.extend( Regular.prototype, {
         break;
       case 'before':
         node.parentNode.insertBefore(fragment, node);
-      }
-      return this;
-    },
-
+    }
+    return this;
+  },
   // private bind logic
   _bind: function(component, expr1, expr2){
 
@@ -410,8 +385,8 @@ _.extend( Regular.prototype, {
   _digest: function(path){
     // if(this.context) return this.context.$digest();
 
+    this.$emit('digest');
     var watchers = this.$watchers;
-    var children = this.$children;
 
     if(!watchers || !watchers.length) return;
     var dirty = false;
@@ -478,17 +453,9 @@ _.extend( Regular.prototype, {
       }
     }
 
-
-    if(children && (len = children.length)){
-      for(var i = 0; i < len ; i++){
-        if(children[i]._digest()) dirty = true;
-      }
-    }
-
     if(dirty) this.$emit('update');
     return dirty;
   },
-  _path: _._path,
   _record: function(){
     this._records = [];
   },

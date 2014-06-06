@@ -5,11 +5,18 @@
 var _ = require("../util.js");
 var dom = require("../dom.js");
 var Regular = require("../Regular.js");
+var prevent = function(ev){
+  if(ev.preventDefualt) ev.preventDefault();
+  else ev.returnValue = false;
+}
 
 Regular.events = {
   enter: function(elem, fire){
     function update(ev){
-      if(ev.which == 13 || ev.keyCode == 13) fire(ev);
+      if(ev.which == 13 || ev.keyCode == 13){
+        prevent(ev||window.event);
+        fire(ev);
+      }
     }
     dom.on(elem, "keypress", update);
     return function(){
@@ -17,6 +24,8 @@ Regular.events = {
     }
   }
 }
+
+
 
 Regular.directive(/^on-\w+$/, function(elem, value, name){
 

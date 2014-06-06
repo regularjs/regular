@@ -101,7 +101,7 @@
 
 
     var SyntaxEditor = Regular.extend({
-      template: 'syntax-editor',
+      template: '#syntax-editor',
       init: function(){
         var self = this;
         var data = this.data;
@@ -140,7 +140,6 @@
 
         inputEditor.on('change', function(mirror){
           self.$update('input', mirror.getValue())
-          console.log(data.input)
         });
 
 
@@ -162,13 +161,13 @@
 
         if(input && template){
           this.component && this.component.destroy();
-          this.component = new Regular(template, input).inject('dashboard')
+          this.component = new Regular({template: template, data:input}).inject('#dashboard')
         }
       }
     }) 
   
 
-    var editor = new SyntaxEditor().inject('editor');
+    var editor = new SyntaxEditor().inject('#editor');
     
 
     </script>

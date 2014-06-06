@@ -215,6 +215,7 @@ var rules = {
 
   ENTER_TAG: [/[^\x00<>]*?(?=<)/, function(all){ 
     this.enter('TAG');
+    all = all.trim();
     if(all) return {type: 'TEXT', value: all}
   }],
 
@@ -294,7 +295,7 @@ var rules = {
   },'JST'],
 
   JST_STRING:  [ /'([^']*)'|"([^"]*)"/, function(all, one, two){ //"'
-    return {type: 'STRING', value: one == null? two: one}
+    return {type: 'STRING', value: one || two || ""}
   }, 'JST'],
   JST_NUMBER: [/(?:[0-9]*\.[0-9]+|[0-9]+)(e\d+)?/, function(all){
     return {type: 'NUMBER', value: parseFloat(all, 10)};

@@ -5,7 +5,6 @@ var varName = _.varName;
 var ctxName = _.randomVar('c');
 var isPath = _.makePredicate("STRING IDENT NUMBER");
 var isKeyWord = _.makePredicate("true false undefined null this Array Date JSON Math NaN RegExp decodeURI decodeURIComponent encodeURI encodeURIComponent parseFloat parseInt Object");
-var exports = {_path: _._path, _r: _._range}
 
 
 function Parser(input, opts){
@@ -315,7 +314,7 @@ op.expr = function(filter){
   var buffer = this.filter(), set, get;
   var body = buffer.get || buffer;
   
-  var prefix =  "var "+ctxName+"=context.context||context;"+ (this.depend.length? "var "+varName+"=context.data;" : "");
+  var prefix =  "var "+ctxName+"=context.$context||context;"+ (this.depend.length? "var "+varName+"=context.data;" : "");
   var get = new Function("context", prefix + "return (" + body + ")");
 
 
@@ -494,7 +493,7 @@ op.unary = function(){
 
 op.member = function(base, last, pathes){
   // @TODO depend must deregular in this step
-  var ll, path, value;
+  var ll, path, value, computed;
   var first = !base;
 
   if(!base){ //first
@@ -538,11 +537,7 @@ op.member = function(base, last, pathes){
       case '[':
           // member(object, property, computed)
         path = this.assign();
-        if(pathes && pathes.length){
-          base = ctxName + "._path("+base+", "+ path.get + ")";
-        }else{
-          base += "['" + path.get + "']";
-        }        
+        base += "['" + path.get + "']";
         this.match(']')
         return this.member(base, path, pathes);
       case '(':
@@ -628,7 +623,9 @@ op.object = function(){
     ll = this.eat(['STRING', 'IDENT', 'NUMBER']);
     if(ll){
       code.push("'" + ll.value + "'" + this.match(':').type);
-      code.push(this.assign().get);
+      var get = this.assign().get;
+      console.log(get);
+      code.push(get);
       if(this.eat(",")) code.push(",");
     }else{
       code.push(this.match('}').type);

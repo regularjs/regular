@@ -10,14 +10,14 @@
     <!-- Templates -->
     <script id="basic" type="text/regular">
       <span r-hide='hide'>r-hide</span>
-      <span class='m-home' r-class='{one: test > 7, two: test > 6 }'>r-class</span>
-      <div style='cursor: pointer' r-style='{height: a + "px", width: b + "px", "background-color": "#ccc" }'>r-style</div>
+      <span class='m-home' r-class='{one: test > 7 + 2, two: test > 6 }'>r-class</span>
+      <div style='cursor: pointer' r-style='{height: a + "px", width: b + "px", "backgroundColor": "#ccc" }'>r-style</div>
     </script>
 
     <script>
-    var App = Regular.extend({template: 'basic'});
+    var App = Regular.extend({template: '#basic'});
 
-    var app = new App({hide:true, test:100, a: 7, b:100}).inject("app");
+    var app = new App({data: {hide:true, test:100, a: 1, b:100}}).inject("#app");
 
 
     </script>

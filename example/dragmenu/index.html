@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Regular.js • dragmenu</title>
+    <link rel="stylesheet" href="http://getbootstrap.com/dist/css/bootstrap.min.css">
+    <script src="../../dist/regular.js"></script>
+    <style>
+    .clearfix{
+      zoom:1;
+    }
+    .clearfix:after{
+      display:block;
+      clear:both;
+      visibility:hidden;
+      height:0;
+      overflow:hidden;
+      content:".";
+    }
+      .m-screen{
+        height: 800px;
+      }
+      .m-screen  .container{
+        width: 320px;
+        height: 640px;
+        margin: 80px auto;
+        border: 1px solid #ccc;
+        position: relative;
+      }
+      ul{
+        list-style-type: none;
+        padding: 0;
+        margin:0;
+      }
+      .m-menu{
+        position: absolute;
+        bottom:0;
+        left: 0;
+        right: 0;
+      }
+
+      .m-menu li:hover .close{
+        display: block;
+      }
+      
+      .m-menu .close{
+        display: none;
+        position: absolute;
+        font-weight: bold;
+        cursor: pointer;
+        right: 6px;
+        top:0px;
+        line-height: 32px;
+      }
+      .m-menu li {
+        box-sizing: border-box;
+        position: relative;
+      }
+      li.drag a {
+        color: transparent;
+        border: 1px dotted #666;
+      }
+      .m-menu a{
+        display: block;
+      }
+      .m-menu a{
+        box-sizing: border-box;
+        border: 1px solid #ccc;
+        text-align: center;
+      }
+      .m-menu-0 > li{
+        width: 100%;
+      }
+      .m-menu-1 > li{
+        width: 50%;
+      }
+      .m-menu-2 > li{
+        width: 33.3333333333%;
+      }
+      .m-menu-3 > li{
+        width: 33.333333333%;
+      }
+      .m-menu > li{
+        height: 32px;
+        line-height: 32px;
+        float: left;
+        position: relative;
+      }
+      .m-smenu > ul{
+        width: 100%;
+        position: absolute;
+        bottom: 32px;
+        left: 0px;
+      }
+      .m-smenu > ul li{
+          width: 100%;
+      }
+    </style>
+  </head>
+  <body>
+
+    <div id="app">
+      <div class="m-screen">
+        <div id="container" class='container'>
+        </div>
+      </div>
+    </div>
+
+    <!-- Templates -->
+    <script id="menu" type="text/regular" name='menu'>
+      <ul class='m-menu m-menu-{{menus.length}} clearfix' r-sort={{menus}}>
+        {{#list menus as menu}}
+          <li class='m-smenu {{menu.drag? "drag": ""}}'  >
+            <a href="#" on-drag={{this.drag($index, menus, $event)}} on-click={{menu.show= !menu.show}}>{{menu.name}}</a><span class='close' on-click={{this.remove(menu, menus)}}>x</span>
+            <ul r-hide={{!menu.show || menu.drag}}>
+              <li r-hide={{menu.children.length > 7}} >
+                <a href='#' on-click={{this.add(menu.children)}}> + </a> 
+              </li>
+
+              {{#list menu.children as smenu }}
+                <li class={{smenu.drag? "drag": ""}}><a href="#" on-drag={{this.drag($index, menu.children, $event)}}>{{smenu.name}}</a><span class='close' on-click={{this.remove(smenu, menu.children)}}>x</span>
+                </li>
+              {{/list}}
+            </ul>
+          </li>
+        {{/list}}
+        <li r-hide={{menus.length >= 3}} on-click={{this.add()}}><a href='#'> + </a> </li>
+      </ul>
+    </script>
+
+    <script>
+    Regular.directive('')
+    // 扩展drag方法
+    Regular.events.drag = function(elem, fire){
+      var isStart = false;
+      var timeoutId = null;
+      var pageX,pageY;
+      function start(ev){
+        pageX = ev.pageX;
+        pageY = ev.pageY;
+        timeoutId = setTimeout(function(){
+          fire({type: 'dragstart', target: elem});
+          isStart = true;
+        },200)
+        
+      }
+      function move(ev){
+        clearTimeout(timeoutId)
+        if(!isStart) return;
+        ev.preventDefault();
+        var deltaX = ev.pageX - pageX;
+        var deltaY = ev.pageY - pageY;
+        fire({type: 'dragmove', target:elem, deltaY:deltaY, deltaX: deltaX});
+
+      }
+      function end(ev){
+        clearTimeout(timeoutId)
+        if(!isStart) return;
+        var deltaX = ev.pageX - pageX;
+        var deltaY = ev.pageY - pageY;
+        isStart = false;
+        fire({type: 'dragend', target:elem, deltaY:deltaY, deltaX: deltaX});
+      }
+      dom.on(elem, 'mousedown', start);
+      dom.on(document, 'mousemove', move);
+      dom.on(document, 'mouseup', end);
+      return function(){
+        dom.off(elem, 'mousedown', start);
+        dom.off(document, 'mousemove', move);
+        dom.off(document, 'mouseup', end);
+      }
+    }
+
+
+    function swap(container, index1, index2){
+      var tmp = container[index1];
+      container[index1] = container[index2];
+      container[index2] = tmp;
+    }
+
+
+    var dom = Regular.dom;
+    var Menu = Regular.extend({
+      template: '#menu',
+      drag: function(index, container, ev){
+        switch(ev.type){
+          case 'dragstart':
+            container[index].drag = true;
+            break;
+          case 'dragmove':
+            break;
+          case 'dragend':
+            var item = container[index];
+            var delta = item.children? ev.deltaX / 320 * (container.length + 1) : ev.deltaY / 34 ;
+            delta = delta > 0? Math.floor(delta): Math.ceil(delta);
+            if(delta !== 0){
+              var cursor = Math.max(0, Math.min(index + delta, container.length - 1 ));
+              if(cursor !== index){
+                swap(container, index, cursor  );
+              }
+            }
+            item.drag = false;
+        }
+
+      },
+      remove: function(item, list){
+        var index= list.indexOf(item)
+        if(~index) list.splice(index,1);
+
+      },
+      add: function(container){
+        if(container){
+          container.unshift({name:'smenu' + container.length})
+        }else{
+          this.data.menus.push({name: 'menu' + this.data.menus.length, children: []})
+        }
+      }
+
+    });
+
+
+    var app =new Menu({
+      data:{
+        menus: [
+          {name: 'menu0', children:[]},
+          {name: 'menu1', children:[]}
+        ]}
+      }
+     ).inject('#container')
+    </script>
+
+
+
+    
+  </body>
+</html>

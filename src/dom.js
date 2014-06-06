@@ -15,6 +15,14 @@ var _ = require("./util");
 var tNode = document.createElement('div')
 var addEvent, removeEvent, isFixEvent;
 
+// camelCase
+function camelCase(str){
+  return ("" + str).replace(/-\D/g, function(match){
+    return match.charAt(1).toUpperCase();
+  });
+}
+
+
 dom.tNode = tNode;
 
 if(tNode.addEventListener){
@@ -37,6 +45,17 @@ if(tNode.addEventListener){
 dom.msie = parseInt((/msie (\d+)/.exec(navigator.userAgent.toLowerCase()) || [])[1]);
 if (isNaN(dom.msie)) {
   dom.msie = parseInt((/trident\/.*; rv:(\d+)/.exec(navigator.userAgent.toLowerCase()) || [])[1]);
+}
+
+dom.find = function(sl){
+  if(document.querySelector) {
+    try{
+      return document.querySelector(sl);
+    }catch(e){
+
+    }
+  }
+  if(sl.indexOf('#')!==-1) return document.getElementById( sl.slice(1) );
 }
 
 //http://stackoverflow.com/questions/11068196/ie8-ie7-onchange-event-is-emited-only-after-repeated-selection
@@ -166,7 +185,8 @@ dom.remove = function(node){
 // it isnt computed style 
 dom.css = function(node, name, value){
   if (typeof value !== "undefined") {
-    node.style[name] = value;
+    name = camelCase(name);
+    if(name) node.style[name] = value;
   } else {
     var val;
     if (dom.msie <= 8) {

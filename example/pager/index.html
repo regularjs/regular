@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>Regular.js • TodoMVC</title>
+    <title>Regular.js • Pager</title>
     <link rel="stylesheet" href="pager.css">
     <script src="../../dist/regular.js"></script>
     <script src="pager.js"></script>
@@ -11,37 +11,23 @@
 
     <div id="app"> </div>
     <!-- Templates -->
-    <script id="pager" type="text/regular" name="pager">
-    
-
-    </script>
-
 
     <script>
 
     //1. nest style
-    app = new Regular(
+    app = new Regular({
+      template: 
         "{{total}}:{{current}}<button on-click={{total = total + 1}}>total+1</button>\
-         <div>\
-          <pager total={{Math.floor(total/20)}} current={{current}}/>\
-          <pager total={{Math.floor(total/20)}} current={{current}}/>\
-         </div>", 
-        {total: 292, current:1})
-      .inject("app");
-
+          <pager total={{Math.floor(total/20)}} current={{current}} />\
+          <pager total={{Math.floor(total/20)}} current={{current}} />\
+          <pager total={{Math.floor(total/20)}} current={{current}} />",
+      data: {total: 292, current:10} 
+    } ).inject("#app");
 
 
     //2. initialize style
-    var pager = new Pager({total: 100, current:1}).inject('app');
-    console.log(pager)
-    for(var i = 0; i < 100; i++){
-      var pager = new Pager({total: 100, current:1}).inject('app').$bind(pager, ['total', 'current']);
-    }
+    var pager = new Pager({data: {total: 100, current:11}}).inject('#app');
     
-
-    pager.$on('nav', function(page){
-      console.log('nav to page:' + page);
-    })
 
     
 

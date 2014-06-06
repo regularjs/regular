@@ -8,10 +8,8 @@ var walkers = module.exports = {};
 
 walkers.list = function(ast){
   var placeholder = document.createComment("Regular list");
-  var Section =  Regular.extend({
-    template: ast.body,
-    context: this.context
-  });
+  // proxy Component to implement list item, so the behaviar is similar with angular;
+  var Section =  Regular.extend( { template: ast.body, $context: this.$context } );
   var fragment = dom.fragment();
   fragment.appendChild(placeholder);
   var self = this;
@@ -21,9 +19,9 @@ walkers.list = function(ast){
   function update(newValue, splices){
     if(!splices || !splices.length) return;
     var cur = placeholder;
-    var m = 0,
-      len=newValue.length,
+    var m = 0, len=newValue.length,
       mIndex = splices[0].index;
+
     for(var i=0; i < splices.length; i++){ //init
       var splice = splices[i];
       var index = splice.index;
@@ -35,8 +33,8 @@ walkers.list = function(ast){
       for(var j = 0,jlen = splice.removed.length; j< jlen; j++){ //removed
         var removed = group.children.splice( index, 1)[0];
         // var removed = group.children.splice(j,1)[0];
+        var parent = removed.$parent
         removed.destroy();
-        removed = null;
       }
 
       for(var o=index; o < index + splice.add; o++){ //add
@@ -45,22 +43,31 @@ walkers.list = function(ast){
         var data = _.createObject(self.data);
         data.$index = o;
         data[ast.variable] = item;
-        var section = self.$new(Section, data);
-        section.$update()
+
+        var section = new Section({data: data, $root: self.$root});
+        var update = section.$digest.bind(section);
+
+        self.$on('digest', update);
+        section.$on('destroy', self.$off.bind(self, 'digest', update));
+        // autolink
         var insert = o !== 0 && group.children[o-1]? combine.last(group.get(o-1)) : placeholder;
-        placeholder.parentNode.insertBefore(combine.node(section), insert.nextSibling);
+        insert.parentNode.insertBefore(combine.node(section), insert.nextSibling);
         group.children.splice(o , 0, section);
       }
       m = index + splice.add - splice.removed.length;
       m  = m < 0? 0 : m;
+
+    }
+    if(m < len){
+      for(var i = m; i < len; i++){
+        var pair = group.get(i);
+        pair.data.$index = i;
+      }
     }
   }
 
-  if(ast.sequence && ast.sequence.type === 'expression'){
-    var watchid = this.$watch(ast.sequence, update);
-  }else{
-    update(ast.sequence , _.equals( ast.sequence, []));
-  }
+
+  var watchid = this.$watch(ast.sequence, update);
 
   return {
     node: function(){
@@ -69,8 +76,8 @@ walkers.list = function(ast){
     group: group,
     destroy: function(){
       group.destroy();
+      dom.remove(placeholder);
       if(watchid) self.$unwatch(watchid);
-      self = null;
     }
   }
 }
@@ -164,32 +171,32 @@ walkers.element = function(ast){
   var attrs = ast.attrs, component;
   var watchids = [];
   var self = this;
+  var Component = Regular.component(ast.tag);
+  if(Component){
+    var data = {};
 
-  if(component = this.$new(ast.tag) ){
     for(var i = 0, len = attrs.length; i < len; i++){
       var attr = attrs[i];
       var value = attr.value||"";
-      if(attr.name === 'ref' && value){
-         this.$refs[attr.value] = component;
+      if(value.type !== 'expression' && attr.name !== 'ref'){
+        data[attr.name] = value;
       }
+    }
+
+    if(ast.children) data.$body = this.$compile(ast.children);
+    var component = new Component({data: data});
+    for(var i = 0, len = attrs.length; i < len; i++){
+      var attr = attrs[i];
+      var value = attr.value||"";
       if(value.type === 'expression'){
-        var name = attr.name;
-        void function(name, value){
-          if(value.set){
-            component.$watch(name, function(nvalue){
-              value.set(self, nvalue);
-            })
-          }
-          self.$watch(value, function(nvalue){
-            component.$update(name, nvalue);
-          });
-        }(name, value);
+        this.$bind(component, value, attr.name);
       }else{
-        component.data[attr.name] = value;
+        if(attr.name === 'ref' ) this.$refs.push(value);
       }
-      
     }
     return component;
+  }else if(ast.tag === 'r:content' && this.data.$body){
+    return this.data.$body;
   }
   var element = dom.create(ast.tag);
   var children = ast.children;
@@ -199,14 +206,9 @@ walkers.element = function(ast){
   var directive = [];
   for(var i = 0, len = attrs.length; i < len; i++){
     bindAttrWatcher.call(this, element, attrs[i])
-  //   watchids.push.apply(watchids,)
   }
   if(children && children.length){
-    var group = new Group;
-    for(var i =0, len = children.length; i < len ;i++){
-      child = this.$compile(children[i]);
-      if(child !== null) group.push(child);
-    }
+    var group = this.$compile(children);
   }
   
   return {

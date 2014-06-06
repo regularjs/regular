@@ -47,7 +47,6 @@ var API = {
             type = event,
             $parent = this.$parent;
         }
-        if(this.$parent && !stop) this.$parent.$emit.apply($parent, arguments)
         if (!handles || !(calls = handles[type])) return this;
         for (var i = 0, len = calls.length; i < len; i++) {
             calls[i].apply(this, args)

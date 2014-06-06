@@ -61,7 +61,7 @@
     // var Todo = Regular.extend({template: "todo"});
     
     var TodoApp = Regular.extend({
-      template: 'application', // id | template string | preparsed ast
+      template: '#application', // id | template string | preparsed ast
       init: function(){
         // call parent.init function ()
         // this.supr();
@@ -112,12 +112,12 @@
       items = JSON.parse(items);
     }
     
-    var todo = new TodoApp({
+    var todo = new TodoApp({data: {
       filter:"all",
       items: items || []
-    });
+    }});
 
-    todo.inject('todoapp')
+    todo.inject('#todoapp')
 
     </script>
     

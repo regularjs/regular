@@ -22,7 +22,7 @@
               <h4 class="modal-title">{{title}}</h4>
             </div>
             <div class="modal-body">
-              {{~ content }}
+              {{~ this.content }}
             </div>
             <div class="modal-footer">
               <button type="button" class="btn btn-default" on-click={{this.close()}} >Close</button>
@@ -35,7 +35,7 @@
     
     <script>
     var Modal = Regular.extend({
-      template: 'modal',
+      template: '#modal',
       init: function(){
         if(!this.$parent) this.inject(document.body)
       },
@@ -51,9 +51,12 @@
 
     // 直接调用
     var modal = new Modal({
-      title: '请确认您的邮箱',
-      content: '<input type="email" class="form-control" r-model={{email}} on-enter={{this.confirm()}}>'
-    });
+      content: '<input type="email" class="form-control" r-model={{email}} on-enter={{this.confirm()}}>',
+      data: {
+        title: '请确认您的邮箱'
+      }
+    }
+    );
 
     modal.$on('confirm', function(data){
       console.log(data.email)

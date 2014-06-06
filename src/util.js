@@ -24,7 +24,12 @@ _.host = "data";
 
 
 _.slice = function(obj, start, end){
-  return slice.call(obj, start, end);
+  var res = [];
+  for(var i = start || 0, len = end || obj.length; i < len; i++){
+    var item = obj[i];
+    res.push(item)
+  }
+  return res;
 }
 
 _.typeOf = function (o) {

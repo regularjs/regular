@@ -13,6 +13,7 @@ var modelHandlers = {
 
 // two-way binding with r-model
 // works on input, textarea, checkbox, radio, select
+
 Regular.directive("r-model", function(elem, value){
   var tag = elem.tagName.toLowerCase();
   var sign = tag;
@@ -29,6 +30,7 @@ Regular.directive("r-model", function(elem, value){
 
 
 // binding <select>
+
 function initSelect( elem, parsed){
   var self = this;
   var inProgress = false;
@@ -44,6 +46,7 @@ function initSelect( elem, parsed){
   });
 
   function handler(ev){
+    console.log(this.value)
     parsed.set(self, this.value);
     inProgress = true;
     self.$update();
@@ -52,12 +55,14 @@ function initSelect( elem, parsed){
   dom.on(elem, "change", handler);
   this.$on('init', function(){
     if(parsed.get(self) === undefined){
+      console.log('haha')
        parsed.set(self, elem.value);
     }
   })
 }
 
 // input,textarea binding
+
 function initText(elem, parsed){
   var inProgress = false;
   var self = this;
@@ -90,6 +95,7 @@ function initText(elem, parsed){
 }
 
 // input:checkbox  binding
+
 function initCheckBox(elem, parsed){
   var inProgress = false;
   var self = this;
@@ -115,6 +121,7 @@ function initCheckBox(elem, parsed){
 
 
 // input:radio binding
+
 function initRadio(elem, parsed){
   var self = this;
   var inProgress = false;
