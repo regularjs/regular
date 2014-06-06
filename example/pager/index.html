@@ -10,28 +10,19 @@
   <body>
 
     <div id="app"> </div>
-    <!-- Templates -->
 
     <script>
-
     //1. nest style
-    app = new Regular({
+    var app = new Regular({
       template: 
         "{{total}}:{{current}}<button on-click={{total = total + 1}}>total+1</button>\
-          <pager total={{Math.floor(total/20)}} current={{current}} />\
           <pager total={{Math.floor(total/20)}} current={{current}} />\
           <pager total={{Math.floor(total/20)}} current={{current}} />",
       data: {total: 292, current:10} 
     } ).inject("#app");
 
-
     //2. initialize style
     var pager = new Pager({data: {total: 100, current:11}}).inject('#app');
-    
-
-    
-
-
     </script>
 
   </body>

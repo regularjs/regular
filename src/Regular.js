@@ -20,7 +20,7 @@ var Regular = function(options){
   template = this.template;
 
   if(!this.data) this.data = {};
-  if(typeof template === 'string' && template.length < 20 && (node = dom.find(template))) {
+  if(typeof template === 'string' && template.length < 40 && (node = dom.find(template))) {
     template = node.innerHTML;
   }
   if(typeof template === 'string') this.template = new Parser(template).parse()
@@ -456,6 +456,14 @@ _.extend( Regular.prototype, {
     if(dirty) this.$emit('update');
     return dirty;
   },
+  _enter: function(context){
+    this.context.push()
+  },
+
+  _leave: function(){
+
+  },
+
   _record: function(){
     this._records = [];
   },
@@ -481,7 +489,7 @@ _.extend( Regular.prototype, {
     if(typeof filter !== 'function') throw 'filter ' + name + 'is undefined';
     return filter;
   },
-  _r: _._range
+  _r: _._range,
 });
 
 module.exports = Regular;

@@ -16,6 +16,7 @@ walkers.list = function(ast){
   var group = new Group();
   // group.push(placeholder);
 
+
   function update(newValue, splices){
     if(!splices || !splices.length) return;
     var cur = placeholder;
