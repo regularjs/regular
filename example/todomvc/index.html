@@ -26,7 +26,6 @@
           <input id="toggle-all" type="checkbox" name='toggle' on-change={{this.toggleAll(items.length === this.getList('completed').length)}} checked={{items.length === this.getList('completed').length }}>
           <label for="toggle-all">Mark all as complete</label>
           <ul id="todo-list">
-          
             {{#list this.getList(filter) as i}}
               <li class="{{ i.completed ? 'completed' : '' }} {{ i.editing ? 'editing' : '' }}">
                 <div class="view">

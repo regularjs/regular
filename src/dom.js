@@ -58,14 +58,6 @@ dom.find = function(sl){
   if(sl.indexOf('#')!==-1) return document.getElementById( sl.slice(1) );
 }
 
-//http://stackoverflow.com/questions/11068196/ie8-ie7-onchange-event-is-emited-only-after-repeated-selection
-function fixEventName(elem, name){
-  return (name == 'change'  &&  dom.msie < 9 && 
-      (elem && elem.tagName && elem.tagName.toLowerCase()==='input' && 
-        (elem.type === 'checkbox' || elem.type === 'radio')
-      )
-    )? 'click': name;
-}
 
 dom.id = function(id){
   return document.getElementById(id);
@@ -135,13 +127,15 @@ var handlers = {};
 
 dom.on = function(node, type, handler){
   type = fixEventName(node, type);
-  if("attachEvent" in node) handler.real = handler.bind(node);
-  addEvent.call(dom, node, type, handler.real || handler);
+  handler.real = function(ev){
+    handler.call(node, new Event(ev));
+  }
+  addEvent(node, type, handler.real);
 }
 dom.off = function(node, type, handler){
   type = fixEventName(node, type);
-  if("detachEvent" in node) handler = handler.real;
-  removeEvent.call(dom, node, type, handler);
+  handler = handler.real || handler;
+  removeEvent(node, type, handler);
 }
 
 
@@ -221,5 +215,69 @@ dom.hasClass = function(node, className){
 
 
 
+// simple Event wrap
 
+//http://stackoverflow.com/questions/11068196/ie8-ie7-onchange-event-is-emited-only-after-repeated-selection
+function fixEventName(elem, name){
+  return (name == 'change'  &&  dom.msie < 9 && 
+      (elem && elem.tagName && elem.tagName.toLowerCase()==='input' && 
+        (elem.type === 'checkbox' || elem.type === 'radio')
+      )
+    )? 'click': name;
+}
+
+var rMouseEvent = /^(?:click|dblclick|contextmenu|DOMMouseScroll|mouse(?:\w+))$/
+var doc = document;
+doc = (!doc.compatMode || doc.compatMode == 'CSS1Compat') ? doc.documentElement : doc.body;
+function Event(ev){
+  ev = ev || window.event;
+  if(ev._fixed) return ev;
+  this.event = ev;
+
+  var type = this.type = ev.type;
+  var button = this.button = ev.button;
+  // if is mouse event patch pageX
+  if(rMouseEvent.test(type)){ //fix pageX
+    this.pageX = (ev.pageX != null) ? ev.pageX : ev.clientX + doc.scrollLeft;
+    this.pageY = (ev.pageX != null) ? ev.pageY : ev.clientY + doc.scrollTop;
+    if (type === 'mouseover' || type === 'mouseout'){// fix relatedTarget
+      var related = ev.relatedTarget || ev[(type === 'mouseover' ? 'from' : 'to') + 'Element'];
+      while (related && related.nodeType == 3) related = related.parentNode;
+      this.relatedTarget = related;
+    }
+  }
+  // if is mousescroll
+  if (type == 'DOMMouseScroll' || type == 'mousewheel'){
+    // ff ev.detail: 3    other ev.wheelDelta: -120
+    this.wheelDelta = (ev.wheelDelta) ? ev.wheelDelta / 120 : -(ev.detail || 0) / 3;
+  }
+  
+  // fix which
+  this.which = ev.charCode != null ? ev.charCode : ev.keyCode;
+  if( !this.which && button !== undefined){
+    // http://api.jquery.com/event.which/ use which
+    this.which = ( button & 1 ? 1 : ( button & 2 ? 3 : ( button & 4 ? 2 : 0 ) ) );
+  }
+  this._fixed = true;
+}
+
+_.extend(Event.prototype, {
+  immediateStop: _.isFalse,
+  stop: function(){
+    this.preventDefault().stopPropgation();
+  },
+  preventDefault: function(){
+    if (this.event.preventDefault) this.event.preventDefault();
+    else this.event.returnValue = false;
+    return this;
+  },
+  stopPropgation: function(){
+    if (this.event.stopPropagation) this.event.stopPropagation();
+    else this.event.cancelBubble = true;
+    return this;
+  },
+  stopImmediatePropagation: function(){
+    if(this.event.stopImmediatePropagation) this.event.stopImmediatePropagation();
+  }
+})
 

@@ -530,6 +530,7 @@ _.extend( Regular.prototype, {
     // destroy event wont propgation;
     this.$emit({type: 'destroy', stop: true });
     this.group.destroy();
+    this.group = null;
     this.element = null;
     this.$watchers = null;
     this.$off();
@@ -670,13 +671,6 @@ _.extend( Regular.prototype, {
     if(dirty) this.$emit('update');
     return dirty;
   },
-  _enter: function(context){
-    this.context.push()
-  },
-
-  _leave: function(){
-
-  },
 
   _record: function(){
     this._records = [];
@@ -703,7 +697,7 @@ _.extend( Regular.prototype, {
     if(typeof filter !== 'function') throw 'filter ' + name + 'is undefined';
     return filter;
   },
-  _r: _._range,
+  _r: _._range
 });
 
 module.exports = Regular;
@@ -1004,91 +998,89 @@ var ld = (function(){
       var edits = [];
       var current = matrix[i][j];
       while(i>0 || j>0){
-        // 最后一列
-          if (i == 0) {
-            edits.unshift(3);
-            j--;
-            continue;
-          }
-          // 最后一行
-          if (j == 0) {
-            edits.unshift(2);
-            i--;
-            continue;
-          }
-          var northWest = matrix[i - 1][j - 1];
-          var west = matrix[i - 1][j];
-          var north = matrix[i][j - 1];
+      // 最后一列
+        if (i == 0) {
+          edits.unshift(3);
+          j--;
+          continue;
+        }
+        // 最后一行
+        if (j == 0) {
+          edits.unshift(2);
+          i--;
+          continue;
+        }
+        var northWest = matrix[i - 1][j - 1];
+        var west = matrix[i - 1][j];
+        var north = matrix[i][j - 1];
 
-          var min = Math.min(north, west, northWest);
+        var min = Math.min(north, west, northWest);
 
-          if (min == northWest) {
-            if (northWest == current) {
-              edits.unshift(0); //no change
-            } else {
-              edits.unshift(1); //update
-              current = northWest;
-            }
-            i--;
-            j--;
-          } else if (min == west) {
-            edits.unshift(2); //delete
-            i--;
-            current = west;
+        if (min == west) {
+          edits.unshift(2); //delete
+          i--;
+          current = west;
+        } else if (min == northWest ) {
+          if (northWest == current) {
+            edits.unshift(0); //no change
           } else {
-            edits.unshift(3); //add
-            j--;
-            current = north;
+            edits.unshift(1); //update
+            current = northWest;
           }
-          
+          i--;
+          j--;
+        } else {
+          edits.unshift(3); //add
+          j--;
+          current = north;
         }
-        var LEAVE = 0;
-        var ADD = 3;
-        var DELELE = 2;
-        var UPDATE = 1;
-        var n = 0;m=0;
-        var steps = [];
-        var step = {index: null, add:0, removed:[]};
-
-        for(var i=0;i<edits.length;i++){
-          if(edits[i]>0 ){
-            if(step.index == null){
-              step.index = m;
-            }
-          }
-          else {
-            if(step.index != null){
-              steps.push(step)
-              step = {index: null, add:0, removed:[]};
-            }
-          }
-          switch(edits[i]){
-            case LEAVE:
-              n++;
-              m++;
-              break;
-            case ADD:
-              step.add++;
-              m++;
-              break;
-            case DELELE:
-              step.removed.push(arr1[n])
-              n++;
-              break;
-            case UPDATE:
-              step.add++;
-              step.removed.push(arr1[n])
-              n++;
-              m++;
-              break;
-          }
-        }
-        if(step.index != null){
-          steps.push(step)
-        }
-        return steps
       }
-      return whole;
+      var LEAVE = 0;
+      var ADD = 3;
+      var DELELE = 2;
+      var UPDATE = 1;
+      var n = 0;m=0;
+      var steps = [];
+      var step = {index: null, add:0, removed:[]};
+
+      for(var i=0;i<edits.length;i++){
+        if(edits[i] > 0 ){ // NOT LEAVE
+          if(step.index == null){
+            step.index = m;
+          }
+        } else { //LEAVE
+          if(step.index != null){
+            steps.push(step)
+            step = {index: null, add:0, removed:[]};
+          }
+        }
+        switch(edits[i]){
+          case LEAVE:
+            n++;
+            m++;
+            break;
+          case ADD:
+            step.add++;
+            m++;
+            break;
+          case DELELE:
+            step.removed.push(arr1[n])
+            n++;
+            break;
+          case UPDATE:
+            step.add++;
+            step.removed.push(arr1[n])
+            n++;
+            m++;
+            break;
+        }
+      }
+      if(step.index != null){
+        steps.push(step)
+      }
+      return steps
+    }
+    return whole;
   })();
 
 
@@ -1189,6 +1181,9 @@ _.cache = function(max){
 //http://www.w3.org/html/wg/drafts/html/master/single-page.html#void-elements
 _.isVoidTag = _.makePredicate("area base br col embed hr img input keygen link menuitem meta param source track wbr");
 _.isBooleanAttr = _.makePredicate('selected checked disabled readOnly required open autofocus controls autoplay compact loop defer multiple');
+
+_.isFalse - function(){return false}
+_.isTrue - function(){return true}
 
 
 
@@ -1397,12 +1392,14 @@ walkers.element = function(ast){
   }
   var element = dom.create(ast.tag);
   var children = ast.children;
+  var destroies = [];
   var child;
   var self = this;
   // @TODO must mark the attr bind;
   var directive = [];
   for(var i = 0, len = attrs.length; i < len; i++){
-    bindAttrWatcher.call(this, element, attrs[i])
+    var destroy = bindAttrWatcher.call(this, element, attrs[i])
+    if(typeof destroy === 'function') destroies.push(destroy);
   }
   if(children && children.length){
     var group = this.$compile(children);
@@ -1418,6 +1415,9 @@ walkers.element = function(ast){
     },
     destroy: function(){
       if(group) group.destroy();
+      if(destroies.length) {
+        destroies.forEach(function(destroy){destroy() })
+      }
       // for(var i = 0,len = watchids.length; i< len ;i++){
       //   self.$unwatch(watchids[i]);
       // }
@@ -1432,14 +1432,13 @@ function bindAttrWatcher(element, attr){
   var name = attr.name,
     value = attr.value || "", directive=Regular.directive(name);
   if(name === 'ref' && value) this.$refs[value] = element;
-  var watchids = [];
   if(directive && directive.link){
-    directive.link.call(this, element, value, name);
+    return directive.link.call(this, element, value, name);
   }else{
     if(value.type == 'expression' ){
-      watchids.push(this.$watch(value, function(nvalue, old){
+      this.$watch(value, function(nvalue, old){
         dom.attr(element, name, nvalue);
-      }));
+      });
     }else{
       if(_.isBooleanAttr(name)){
         dom.attr(element, name, true);
@@ -1448,7 +1447,7 @@ function bindAttrWatcher(element, attr){
       }
     }
   }
-  return watchids;
+  
 }
 
 });
@@ -1535,14 +1534,6 @@ dom.find = function(sl){
   if(sl.indexOf('#')!==-1) return document.getElementById( sl.slice(1) );
 }
 
-//http://stackoverflow.com/questions/11068196/ie8-ie7-onchange-event-is-emited-only-after-repeated-selection
-function fixEventName(elem, name){
-  return (name == 'change'  &&  dom.msie < 9 && 
-      (elem && elem.tagName && elem.tagName.toLowerCase()==='input' && 
-        (elem.type === 'checkbox' || elem.type === 'radio')
-      )
-    )? 'click': name;
-}
 
 dom.id = function(id){
   return document.getElementById(id);
@@ -1612,13 +1603,15 @@ var handlers = {};
 
 dom.on = function(node, type, handler){
   type = fixEventName(node, type);
-  if("attachEvent" in node) handler.real = handler.bind(node);
-  addEvent.call(dom, node, type, handler.real || handler);
+  handler.real = function(ev){
+    handler.call(node, new Event(ev));
+  }
+  addEvent(node, type, handler.real);
 }
 dom.off = function(node, type, handler){
   type = fixEventName(node, type);
-  if("detachEvent" in node) handler = handler.real;
-  removeEvent.call(dom, node, type, handler);
+  handler = handler.real || handler;
+  removeEvent(node, type, handler);
 }
 
 
@@ -1698,7 +1691,71 @@ dom.hasClass = function(node, className){
 
 
 
+// simple Event wrap
 
+//http://stackoverflow.com/questions/11068196/ie8-ie7-onchange-event-is-emited-only-after-repeated-selection
+function fixEventName(elem, name){
+  return (name == 'change'  &&  dom.msie < 9 && 
+      (elem && elem.tagName && elem.tagName.toLowerCase()==='input' && 
+        (elem.type === 'checkbox' || elem.type === 'radio')
+      )
+    )? 'click': name;
+}
+
+var rMouseEvent = /^(?:click|dblclick|contextmenu|DOMMouseScroll|mouse(?:\w+))$/
+var doc = document;
+doc = (!doc.compatMode || doc.compatMode == 'CSS1Compat') ? doc.documentElement : doc.body;
+function Event(ev){
+  ev = ev || window.event;
+  if(ev._fixed) return ev;
+  this.event = ev;
+
+  var type = this.type = ev.type;
+  var button = this.button = ev.button;
+  // if is mouse event patch pageX
+  if(rMouseEvent.test(type)){ //fix pageX
+    this.pageX = (ev.pageX != null) ? ev.pageX : ev.clientX + doc.scrollLeft;
+    this.pageY = (ev.pageX != null) ? ev.pageY : ev.clientY + doc.scrollTop;
+    if (type === 'mouseover' || type === 'mouseout'){// fix relatedTarget
+      var related = ev.relatedTarget || ev[(type === 'mouseover' ? 'from' : 'to') + 'Element'];
+      while (related && related.nodeType == 3) related = related.parentNode;
+      this.relatedTarget = related;
+    }
+  }
+  // if is mousescroll
+  if (type == 'DOMMouseScroll' || type == 'mousewheel'){
+    // ff ev.detail: 3    other ev.wheelDelta: -120
+    this.wheelDelta = (ev.wheelDelta) ? ev.wheelDelta / 120 : -(ev.detail || 0) / 3;
+  }
+  
+  // fix which
+  this.which = ev.charCode != null ? ev.charCode : ev.keyCode;
+  if( !this.which && button !== undefined){
+    // http://api.jquery.com/event.which/ use which
+    this.which = ( button & 1 ? 1 : ( button & 2 ? 3 : ( button & 4 ? 2 : 0 ) ) );
+  }
+  this._fixed = true;
+}
+
+_.extend(Event.prototype, {
+  immediateStop: _.isFalse,
+  stop: function(){
+    this.preventDefault().stopPropgation();
+  },
+  preventDefault: function(){
+    if (this.event.preventDefault) this.event.preventDefault();
+    else this.event.returnValue = false;
+    return this;
+  },
+  stopPropgation: function(){
+    if (this.event.stopPropagation) this.event.stopPropagation();
+    else this.event.cancelBubble = true;
+    return this;
+  },
+  stopImmediatePropagation: function(){
+    if(this.event.stopImmediatePropagation) this.event.stopImmediatePropagation();
+  }
+})
 
 
 });
@@ -1759,8 +1816,7 @@ function Lexer(input, opts){
   this.opts = opts || {};
   this.map = this.opts.mode != 2?  map1: map2;
   this.states = ["INIT"];
-  if(this.opts.state) this.states.push(this.opts.state);
-
+  if(this.opts.state) this.states.push( this.opts.state );
 }
 
 var lo = Lexer.prototype
@@ -1952,7 +2008,6 @@ var rules = {
 
   ENTER_TAG: [/[^\x00<>]*?(?=<)/, function(all){ 
     this.enter('TAG');
-    all = all.trim();
     if(all) return {type: 'TEXT', value: all}
   }],
 
@@ -1966,7 +2021,7 @@ var rules = {
   TAG_OPEN: [/<({NAME})\s*/, function(all, one){
     return {type: 'TAG_OPEN', value: one.toLowerCase() }
   }, 'TAG'],
-  TAG_CLOSE: [/<\/({NAME})[\r\n\f ]*>[\r\n\f ]*/, function(all, one){
+  TAG_CLOSE: [/<\/({NAME})[\r\n\f ]*>/, function(all, one){
     this.leave();
     return {type: 'TAG_CLOSE', value: one }
   }, 'TAG'],
@@ -3225,7 +3280,6 @@ function initSelect( elem, parsed){
   });
 
   function handler(ev){
-    console.log(this.value)
     parsed.set(self, this.value);
     inProgress = true;
     self.$update();
@@ -3234,7 +3288,6 @@ function initSelect( elem, parsed){
   dom.on(elem, "change", handler);
   this.$on('init', function(){
     if(parsed.get(self) === undefined){
-      console.log('haha')
        parsed.set(self, elem.value);
     }
   })
@@ -3252,7 +3305,7 @@ function initText(elem, parsed){
 
   // @TODO to fixed event
   var handler = function handler(ev){
-    var value = (ev.srcElement || ev.target).value
+    var value = this.value
     parsed.set(self, value);
     inProgress = true;
     self.$update();
@@ -3334,16 +3387,12 @@ require.register("regularjs/src/directive/event.js", function(exports, require, 
 var _ = require("../util.js");
 var dom = require("../dom.js");
 var Regular = require("../Regular.js");
-var prevent = function(ev){
-  if(ev.preventDefualt) ev.preventDefault();
-  else ev.returnValue = false;
-}
 
 Regular.events = {
   enter: function(elem, fire){
     function update(ev){
-      if(ev.which == 13 || ev.keyCode == 13){
-        prevent(ev||window.event);
+      if(ev.which == 13){
+        ev.preventDefault();
         fire(ev);
       }
     }
@@ -3366,7 +3415,8 @@ Regular.directive(/^on-\w+$/, function(elem, value, name){
 
   function fire(obj){
     self.data.$event = obj;
-    parsed.get(self);
+    var res = parsed.get(self);
+    if(res === false && obj && obj.preventDefault) obj.preventDefault();
     self.data.$event = null;
     self.$update();
   }
@@ -3376,12 +3426,9 @@ Regular.directive(/^on-\w+$/, function(elem, value, name){
   }else{
     dom.on( elem, type, fire );
   }
-  return {
-    destroy: handler? destroy : function(){
-      dom.off(elem, type, fire);
-    }
+  return  handler? destroy : function(){
+    dom.off(elem, type, fire);
   }
-
 });
 
 

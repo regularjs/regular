@@ -39,9 +39,12 @@
         right: 0;
       }
 
-      .m-menu li:hover .close{
+      .m-menu a:hover + .close, .m-menu .close:hover{
         display: block;
       }
+      .drag .close, .drag .close:hover{
+        display: none !important;
+      } 
       
       .m-menu .close{
         display: none;
@@ -52,15 +55,9 @@
         top:0px;
         line-height: 32px;
       }
-      .m-menu li {
+      .m-menu .u-menu {
         box-sizing: border-box;
         position: relative;
-      }
-      li.drag{
-      }
-      li.drag a {
-        color: transparent;
-        border: 1px dotted #666;
       }
       .m-menu a{
         display: block;
@@ -70,22 +67,22 @@
         border: 1px solid #ccc;
         text-align: center;
       }
-      .m-menu-0 > li{
+      .m-menu-0 > .u-menu{
         width: 100%;
       }
-      .m-menu-1 > li{
+      .m-menu-1 > .u-menu{
         width: 50%;
       }
-      .m-menu-2 > li{
+      .m-menu-2 > .u-menu{
         width: 33.3333333333%;
       }
-      .m-menu-3 > li{
+      .m-menu-3 > .u-menu{
         width: 25%;
       }
-      .m-menu-4 > li{
+      .m-menu-4 > .u-menu{
         width: 25%;
       }
-      .m-menu > li{
+      .m-menu > .u-menu{
         height: 32px;
         line-height: 32px;
         float: left;
@@ -99,6 +96,14 @@
       }
       .m-smenu > ul li{
           width: 100%;
+      }
+      .m-menu >.u-drag{
+        opacity: .2;
+        position: fixed;
+        z-index: 1000;
+        background: #ccc;
+        left:0;
+        top:0;
       }
     </style>
   </head>
@@ -115,37 +120,34 @@
     <script id="menu" type="text/regular" name='menu'>
       <ul class='m-menu m-menu-{{menus.length}} clearfix' >
         {{#list menus as menu}}
-          <li class='m-smenu menu {{menu.drag? "drag": ""}}'  >
-            <a href="#" on-drag={{this.drag($index, menus, $event)}} on-click={{menu.show= !menu.show}}>{{menu.name}}</a><span class='close' on-click={{this.remove(menu, menus)}}>x</span>
+          <li class='m-smenu u-menu {{menu.drag? "drag": ""}}'  >
+            <a href="#"  on-click={{ this.toggleShow(menu) }}  on-drag={{this.drag($index, menus, $event)}}>{{menu.name}}</a><span class='close' on-click={{this.remove(menu, menus)}}>x</span>
             <ul r-hide={{!menu.show || menu.drag}}>
-              <li r-hide={{menu.children.length > 7}} >
+              <li r-hide={{menu.children.length > 7}} class='u-menu'>
                 <a href='#' on-click={{this.add(menu.children)}}> + </a> 
               </li>
               {{#list menu.children as smenu }}
-                <li class={{smenu.drag? "drag": ""}}><a href="#" on-drag={{this.drag($index, menu.children, $event)}}>{{smenu.name}}</a><span class='close' on-click={{this.remove(smenu, menu.children)}}>x</span>
+                <li class={{smenu.drag? "drag": ""}}><a href="#" on-drag={{this.drag($index, menu.children, $event)}}>{{smenu.name}}</a><span class='close' on-click={{this.remove(smenu, menu.children)}} >x</span>
                 </li>
               {{/list}}
             </ul>
           </li>
         {{/list}}
-        <li r-hide={{menus.length >= 4}} on-click={{this.add()}}><a href='#'> + </a> </li>
+        <li class='u-menu' r-hide={{menus.length >= 4}} on-click={{this.add()}}><a href='#'> + </a> </li>
+        {{#if this.draged}} <li class="u-drag u-menu" style="width: {{320/(menus.length+1) + 'px'}}; left: {{(this.pageX||0) + 'px'}}; top: {{(this.pageY||0) + 'px'}}"> <a>{{this.draged && this.draged.name}}</a> </li> {{/if}}
       </ul>
     </script>
 
+    
     <script>
     function getRect(elem){
       var docElem, body, win, clientTop, clientLeft, scrollTop, scrollLeft,
         box = { top: 0, left: 0 },
         doc = elem && elem.ownerDocument,win = window, body = doc.body;
 
-      if ( !doc ) {
-        return;
-      }
-
+      if ( !doc ) return;
       docElem = doc.documentElement;
 
-      // If we don't have gBCR, just use 0,0 rather than error
-      // BlackBerry 5, iOS 3 (original iPhone)
       if ( typeof elem.getBoundingClientRect !== "undefined" ) {
         box = elem.getBoundingClientRect();
       }
@@ -159,53 +161,45 @@
       };
     }
 
-    function getPage(ev){
-      var doc = document;
-      doc = (!doc.compatMode || doc.compatMode == 'CSS1Compat') ? doc.documentElement : doc.body;
-      return {
-        x: (ev.pageX != null) ? ev.pageX : ev.clientX + doc.scrollLeft,
-        y: (ev.pageX != null) ? ev.pageY : ev.clientY + doc.scrollTop
-      }
-    }
-    // 扩展drag方法
-    Regular.events.drag = function(elem, fire){
-      var isStart = false;
-      var timeoutId = null;
-      var pageX,pageY;
+    var drag = Regular.events.drag = function(elem, fire){
+      var pageX,pageY,tid;
       function start(ev){
-        isStart = true;
         var win = window;
-        var page = getPage(ev);
-        pageX = page.x;
-        pageY = page.y;
-
-        fire({type: 'dragstart', target: elem, pageX: page.x, pageY: page.y});
-
-        
+        pageX = ev.pageX;
+        pageY = ev.pageY;
+        ev.preventDefault();
+        tid = setTimeout(function(){
+          dom.on(document, 'mousemove', move);
+          dom.on(document, 'mouseup', end);
+          fire({type: 'dragstart', target: elem, pageX: pageX, pageY: pageY});
+        },200)
       }
       function move(ev){
-        if(!isStart) return;
-        if(ev.preventDefault) ev.preventDefault()
-        else ev.returnValue = false;
-        var page = getPage(ev);
-        fire({type: 'dragmove', target:elem, deltaX: page.x-pageX, deltaY: page.y-pageY});
-
+        ev.preventDefault();
+        fire({type: 'dragmove', target:elem, deltaX: ev.pageX - pageX, deltaY: ev.pageY - pageY, pageX: ev.pageX, pageY: ev.pageY})
       }
       function end(ev){
-        if(!isStart) return;
-        isStart = false;
-        fire({type: 'dragend'})
-
-      }
-      dom.on(document, 'mousemove', move);
-      dom.on(document, 'mouseup', end);
-      dom.on(elem, 'mousedown', start);
-      return function(){
-        dom.off(elem, 'mousedown', start);
+        ev.preventDefault();
+        ev.stopImmediatePropagation();
+        fire({type: 'dragend'});
         dom.off(document, 'mousemove', move);
         dom.off(document, 'mouseup', end);
       }
+      function cancel(ev){
+        clearTimeout(tid);
+      }
+      dom.on(elem, 'mousedown', start);
+      dom.on(elem, 'mouseup', cancel);
+      return function(){
+        dom.off(elem, 'mousedown', start);
+        dom.off(elem, 'mouseup', cancel);
+      }
     }
+    // 创建一个节点
+    Regular.directive('drag-edit', function(elem, value){
+      var input = document.create
+    });
+
 
 
     function swap(container, index1, index2){
@@ -222,7 +216,7 @@
       return res;
     }
 
-
+    // event.stopImmediatePropagation
     var dom = Regular.dom;
     var Menu = Regular.extend({
       template: '#menu',
@@ -233,24 +227,35 @@
             this.index = index;
             this.offset = {x: ev.pageX - rect.left, y: ev.pageY - rect.top}
             var item = container[index];
-            this.cloned = item;
-            this.cloned.drag = true;
+            this.draged = item;
+            // this.draged.drag = true;
+            this.pageX = ev.pageX-this.offset.x;
+            this.pageY = ev.pageY-this.offset.y;
+
             this.index = index;
             break;
           case 'dragmove':
-            var delta = this.cloned.children? (ev.deltaX+this.offset.x) / 320 * (container.length>3? container.length: container.length+1) : (ev.deltaY+this.offset.y) / 34 ;
-            delta = delta > 0? Math.floor(delta): Math.ceil(delta);
-            var indx = container.indexOf(this.cloned);
+            var delta = this.draged.children? (ev.deltaX+this.offset.x) / 320 * (container.length>3? container.length: container.length+1) : (ev.deltaY+this.offset.y) / 34 ;
 
+            if(this.draged.children){
+              this.pageX = ev.pageX-this.offset.x;
+            }else{
+              this.pageY = ev.pageY-this.offset.y;
+            }
+            
+            
+            delta = Math.floor(delta)
+            var indx = container.indexOf(this.draged);
             var cursor = Math.max( 0, Math.min(this.index + delta, container.length - 1 ));
             if(cursor !== indx){
                swap(container, indx, cursor );;
             }
             break;
           case 'dragend':
-            this.cloned.drag = false;
+            this.draged.drag = false;
+            this.pageX = 0;
             this.index = '';
-            this.cloned = null;
+            this.draged = null;
         }
 
       },
@@ -258,6 +263,12 @@
         var index= list.indexOf(item)
         if(~index) list.splice(index,1);
 
+      },
+      edit: function(menu){
+        console.log(menu);
+      },
+      toggleShow: function(menu){
+        menu.show = !menu.show
       },
       add: function(container){
         if(container){

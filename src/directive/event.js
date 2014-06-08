@@ -5,16 +5,12 @@
 var _ = require("../util.js");
 var dom = require("../dom.js");
 var Regular = require("../Regular.js");
-var prevent = function(ev){
-  if(ev.preventDefualt) ev.preventDefault();
-  else ev.returnValue = false;
-}
 
 Regular.events = {
   enter: function(elem, fire){
     function update(ev){
-      if(ev.which == 13 || ev.keyCode == 13){
-        prevent(ev||window.event);
+      if(ev.which == 13){
+        ev.preventDefault();
         fire(ev);
       }
     }
@@ -37,7 +33,8 @@ Regular.directive(/^on-\w+$/, function(elem, value, name){
 
   function fire(obj){
     self.data.$event = obj;
-    parsed.get(self);
+    var res = parsed.get(self);
+    if(res === false && obj && obj.preventDefault) obj.preventDefault();
     self.data.$event = null;
     self.$update();
   }
@@ -47,11 +44,8 @@ Regular.directive(/^on-\w+$/, function(elem, value, name){
   }else{
     dom.on( elem, type, fire );
   }
-  return {
-    destroy: handler? destroy : function(){
-      dom.off(elem, type, fire);
-    }
+  return  handler? destroy : function(){
+    dom.off(elem, type, fire);
   }
-
 });
 

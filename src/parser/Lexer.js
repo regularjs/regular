@@ -22,8 +22,7 @@ function Lexer(input, opts){
   this.opts = opts || {};
   this.map = this.opts.mode != 2?  map1: map2;
   this.states = ["INIT"];
-  if(this.opts.state) this.states.push(this.opts.state);
-
+  if(this.opts.state) this.states.push( this.opts.state );
 }
 
 var lo = Lexer.prototype
@@ -215,7 +214,6 @@ var rules = {
 
   ENTER_TAG: [/[^\x00<>]*?(?=<)/, function(all){ 
     this.enter('TAG');
-    all = all.trim();
     if(all) return {type: 'TEXT', value: all}
   }],
 
@@ -229,7 +227,7 @@ var rules = {
   TAG_OPEN: [/<({NAME})\s*/, function(all, one){
     return {type: 'TAG_OPEN', value: one.toLowerCase() }
   }, 'TAG'],
-  TAG_CLOSE: [/<\/({NAME})[\r\n\f ]*>[\r\n\f ]*/, function(all, one){
+  TAG_CLOSE: [/<\/({NAME})[\r\n\f ]*>/, function(all, one){
     this.leave();
     return {type: 'TAG_CLOSE', value: one }
   }, 'TAG'],

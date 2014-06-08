@@ -292,91 +292,89 @@ var ld = (function(){
       var edits = [];
       var current = matrix[i][j];
       while(i>0 || j>0){
-        // 最后一列
-          if (i == 0) {
-            edits.unshift(3);
-            j--;
-            continue;
-          }
-          // 最后一行
-          if (j == 0) {
-            edits.unshift(2);
-            i--;
-            continue;
-          }
-          var northWest = matrix[i - 1][j - 1];
-          var west = matrix[i - 1][j];
-          var north = matrix[i][j - 1];
+      // 最后一列
+        if (i == 0) {
+          edits.unshift(3);
+          j--;
+          continue;
+        }
+        // 最后一行
+        if (j == 0) {
+          edits.unshift(2);
+          i--;
+          continue;
+        }
+        var northWest = matrix[i - 1][j - 1];
+        var west = matrix[i - 1][j];
+        var north = matrix[i][j - 1];
 
-          var min = Math.min(north, west, northWest);
+        var min = Math.min(north, west, northWest);
 
-          if (min == northWest) {
-            if (northWest == current) {
-              edits.unshift(0); //no change
-            } else {
-              edits.unshift(1); //update
-              current = northWest;
-            }
-            i--;
-            j--;
-          } else if (min == west) {
-            edits.unshift(2); //delete
-            i--;
-            current = west;
+        if (min == west) {
+          edits.unshift(2); //delete
+          i--;
+          current = west;
+        } else if (min == northWest ) {
+          if (northWest == current) {
+            edits.unshift(0); //no change
           } else {
-            edits.unshift(3); //add
-            j--;
-            current = north;
+            edits.unshift(1); //update
+            current = northWest;
           }
-          
+          i--;
+          j--;
+        } else {
+          edits.unshift(3); //add
+          j--;
+          current = north;
         }
-        var LEAVE = 0;
-        var ADD = 3;
-        var DELELE = 2;
-        var UPDATE = 1;
-        var n = 0;m=0;
-        var steps = [];
-        var step = {index: null, add:0, removed:[]};
-
-        for(var i=0;i<edits.length;i++){
-          if(edits[i]>0 ){
-            if(step.index == null){
-              step.index = m;
-            }
-          }
-          else {
-            if(step.index != null){
-              steps.push(step)
-              step = {index: null, add:0, removed:[]};
-            }
-          }
-          switch(edits[i]){
-            case LEAVE:
-              n++;
-              m++;
-              break;
-            case ADD:
-              step.add++;
-              m++;
-              break;
-            case DELELE:
-              step.removed.push(arr1[n])
-              n++;
-              break;
-            case UPDATE:
-              step.add++;
-              step.removed.push(arr1[n])
-              n++;
-              m++;
-              break;
-          }
-        }
-        if(step.index != null){
-          steps.push(step)
-        }
-        return steps
       }
-      return whole;
+      var LEAVE = 0;
+      var ADD = 3;
+      var DELELE = 2;
+      var UPDATE = 1;
+      var n = 0;m=0;
+      var steps = [];
+      var step = {index: null, add:0, removed:[]};
+
+      for(var i=0;i<edits.length;i++){
+        if(edits[i] > 0 ){ // NOT LEAVE
+          if(step.index == null){
+            step.index = m;
+          }
+        } else { //LEAVE
+          if(step.index != null){
+            steps.push(step)
+            step = {index: null, add:0, removed:[]};
+          }
+        }
+        switch(edits[i]){
+          case LEAVE:
+            n++;
+            m++;
+            break;
+          case ADD:
+            step.add++;
+            m++;
+            break;
+          case DELELE:
+            step.removed.push(arr1[n])
+            n++;
+            break;
+          case UPDATE:
+            step.add++;
+            step.removed.push(arr1[n])
+            n++;
+            m++;
+            break;
+        }
+      }
+      if(step.index != null){
+        steps.push(step)
+      }
+      return steps
+    }
+    return whole;
   })();
 
 
@@ -477,5 +475,8 @@ _.cache = function(max){
 //http://www.w3.org/html/wg/drafts/html/master/single-page.html#void-elements
 _.isVoidTag = _.makePredicate("area base br col embed hr img input keygen link menuitem meta param source track wbr");
 _.isBooleanAttr = _.makePredicate('selected checked disabled readOnly required open autofocus controls autoplay compact loop defer multiple');
+
+_.isFalse - function(){return false}
+_.isTrue - function(){return true}
 
 

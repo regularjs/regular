@@ -321,6 +321,7 @@ _.extend( Regular.prototype, {
     // destroy event wont propgation;
     this.$emit({type: 'destroy', stop: true });
     this.group.destroy();
+    this.group = null;
     this.element = null;
     this.$watchers = null;
     this.$off();
@@ -461,13 +462,6 @@ _.extend( Regular.prototype, {
     if(dirty) this.$emit('update');
     return dirty;
   },
-  _enter: function(context){
-    this.context.push()
-  },
-
-  _leave: function(){
-
-  },
 
   _record: function(){
     this._records = [];
@@ -494,7 +488,7 @@ _.extend( Regular.prototype, {
     if(typeof filter !== 'function') throw 'filter ' + name + 'is undefined';
     return filter;
   },
-  _r: _._range,
+  _r: _._range
 });
 
 module.exports = Regular;

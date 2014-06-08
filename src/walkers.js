@@ -201,12 +201,14 @@ walkers.element = function(ast){
   }
   var element = dom.create(ast.tag);
   var children = ast.children;
+  var destroies = [];
   var child;
   var self = this;
   // @TODO must mark the attr bind;
   var directive = [];
   for(var i = 0, len = attrs.length; i < len; i++){
-    bindAttrWatcher.call(this, element, attrs[i])
+    var destroy = bindAttrWatcher.call(this, element, attrs[i])
+    if(typeof destroy === 'function') destroies.push(destroy);
   }
   if(children && children.length){
     var group = this.$compile(children);
@@ -222,6 +224,9 @@ walkers.element = function(ast){
     },
     destroy: function(){
       if(group) group.destroy();
+      if(destroies.length) {
+        destroies.forEach(function(destroy){destroy() })
+      }
       // for(var i = 0,len = watchids.length; i< len ;i++){
       //   self.$unwatch(watchids[i]);
       // }
@@ -236,14 +241,13 @@ function bindAttrWatcher(element, attr){
   var name = attr.name,
     value = attr.value || "", directive=Regular.directive(name);
   if(name === 'ref' && value) this.$refs[value] = element;
-  var watchids = [];
   if(directive && directive.link){
-    directive.link.call(this, element, value, name);
+    return directive.link.call(this, element, value, name);
   }else{
     if(value.type == 'expression' ){
-      watchids.push(this.$watch(value, function(nvalue, old){
+      this.$watch(value, function(nvalue, old){
         dom.attr(element, name, nvalue);
-      }));
+      });
     }else{
       if(_.isBooleanAttr(name)){
         dom.attr(element, name, true);
@@ -252,5 +256,5 @@ function bindAttrWatcher(element, attr){
       }
     }
   }
-  return watchids;
+  
 }

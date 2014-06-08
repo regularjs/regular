@@ -46,7 +46,6 @@ function initSelect( elem, parsed){
   });
 
   function handler(ev){
-    console.log(this.value)
     parsed.set(self, this.value);
     inProgress = true;
     self.$update();
@@ -55,7 +54,6 @@ function initSelect( elem, parsed){
   dom.on(elem, "change", handler);
   this.$on('init', function(){
     if(parsed.get(self) === undefined){
-      console.log('haha')
        parsed.set(self, elem.value);
     }
   })
@@ -73,7 +71,7 @@ function initText(elem, parsed){
 
   // @TODO to fixed event
   var handler = function handler(ev){
-    var value = (ev.srcElement || ev.target).value
+    var value = this.value
     parsed.set(self, value);
     inProgress = true;
     self.$update();
