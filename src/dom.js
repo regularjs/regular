@@ -14,6 +14,7 @@ var env = require("./env.js");
 var _ = require("./util");
 var tNode = document.createElement('div')
 var addEvent, removeEvent, isFixEvent;
+var noop = function(){}
 
 // camelCase
 function camelCase(str){

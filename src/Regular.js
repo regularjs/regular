@@ -32,10 +32,9 @@ var Regular = function(options){
     this.group = this.$compile(this.template);
     this.element = combine.node(this);
   }
-  if(this.$root == this) this.$update();
   this.$emit({type: 'init', stop: true });
-  if( this.init ) this.init(this.data);
   if(this.$root == this) this.$update();
+  if( this.init ) this.init(this.data);
 
   // children is not required;
 }
@@ -312,10 +311,6 @@ _.extend( Regular.prototype, {
         }
       }
     }
-  },
-  // find a element have a refrence anchor(ref='1234') in template
-  find: function(id){
-    return this.$refs[id]; 
   },
   destroy: function(){
     // destroy event wont propgation;

@@ -62,9 +62,7 @@ MIT.
 ## TODO
 
 3. maybe add casper
-4. directive 的link放在init之前做，这样初始化的结构已经出现了。
 5. @TODO watch 同一个表达式(将不会创建两个watcher)
-6. group 还需要回收ref ，watchid event， 必须想一个两全的方式了。
 7. html插值
 8. https://developer.github.com/v3/ , loadmore  component;
 
