@@ -9,6 +9,7 @@ var isKeyWord = _.makePredicate("true false undefined null this Array Date JSON 
 
 function Parser(input, opts){
   opts = opts || {};
+
   this.input = input;
   this.tokens = new Lexer(input, opts).lex();
   this.pos = 0;
@@ -624,7 +625,6 @@ op.object = function(){
     if(ll){
       code.push("'" + ll.value + "'" + this.match(':').type);
       var get = this.assign().get;
-      console.log(get);
       code.push(get);
       if(this.eat(",")) code.push(",");
     }else{

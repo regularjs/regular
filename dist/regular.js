@@ -277,6 +277,7 @@ _.extend(Regular, {
         this.prototype.template = new Parser(template).parse();
       }
     }
+    this.use = supr.use;
   },
   extend: extend,
   /**
@@ -327,6 +328,7 @@ _.extend(Regular, {
   },
   use: function(fn){
     fn(this, Regular);
+    return this;
   },
   Parser: Parser,
   Lexer: Lexer
@@ -383,7 +385,6 @@ _.extend( Regular.prototype, {
         }
       }
     }
-    if(!this.$root) debugger
     ;(this.$root || this).$digest();
   },
   /**
@@ -2224,6 +2225,7 @@ var isKeyWord = _.makePredicate("true false undefined null this Array Date JSON 
 
 function Parser(input, opts){
   opts = opts || {};
+
   this.input = input;
   this.tokens = new Lexer(input, opts).lex();
   this.pos = 0;
@@ -2839,7 +2841,6 @@ op.object = function(){
     if(ll){
       code.push("'" + ll.value + "'" + this.match(':').type);
       var get = this.assign().get;
-      console.log(get);
       code.push(get);
       if(this.eat(",")) code.push(",");
     }else{

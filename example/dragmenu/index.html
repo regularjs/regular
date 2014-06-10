@@ -3,10 +3,105 @@
   <head>
     <meta charset="utf-8">
     <title>Regular.js • dragmenu</title>
-    <link rel="stylesheet" href="http://getbootstrap.com/dist/css/bootstrap.min.css">
     <script src="../../dist/regular.js"></script>
     <script src="drag.js"></script>
     <style>
+    .clearfix{
+      zoom:1;
+    }
+    .clearfix:after{
+      display:block;
+      clear:both;
+      visibility:hidden;
+      height:0;
+      overflow:hidden;
+      content:".";
+    }
+      .m-screen{
+        height: 800px;
+      }
+      .m-screen  .container{
+        width: 320px;
+        height: 640px;
+        margin: 80px auto;
+        border: 1px solid #ccc;
+        position: relative;
+      }
+      ul{
+        list-style-type: none;
+        padding: 0;
+        margin:0;
+      }
+      .m-menu{
+        position: absolute;
+        bottom:0;
+        left: 0;
+        right: 0;
+      }
+
+      .m-menu a:hover + .close, .m-menu .close:hover{
+        display: block;
+      }
+      .drag .close, .drag .close:hover{
+        display: none !important;
+      } 
+      
+      .m-menu .close{
+        display: none;
+        position: absolute;
+        font-weight: bold;
+        cursor: pointer;
+        right: 6px;
+        top:0px;
+        line-height: 32px;
+      }
+      .u-menu {
+        box-sizing: border-box;
+        position: relative;
+      }
+      .m-menu a{
+        display: block;
+      }
+      .m-menu a{
+        box-sizing: border-box;
+        border: 1px solid #ccc;
+        text-align: center;
+      }
+      .m-menu > .u-menu{
+        width: 100%;
+      }
+      .m-menu-2 > .u-menu{
+        width: 50%;
+      }
+      .m-menu-3 > .u-menu{
+        width: 33.3333333333%;
+      }
+      .m-menu-4 > .u-menu{
+        width: 25%;
+      }
+      .u-menu{
+        height: 32px;
+        line-height: 32px;
+        float: left;
+        position: relative;
+      }
+      .m-smenu > ul{
+        width: 100%;
+        position: absolute;
+        bottom: 32px;
+        left: 0px;
+      }
+      .m-smenu > ul li{
+          width: 100%;
+      }
+      .m-menu >.u-drag{
+        opacity: .2;
+        position: absolute;
+        z-index: 1000;
+        background: #ccc;
+        left:0;
+        cursor: pointer;
+      }
     </style>
   </head>
   <body>
@@ -17,7 +112,7 @@
         </div>
       </div>
     </div>
-
+    
     <!-- Templates -->
     <script id="menu" type="text/regular" name='menu'>
       <ul class='m-menu m-menu-{{this.count()}} clearfix' >

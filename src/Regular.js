@@ -66,6 +66,7 @@ _.extend(Regular, {
         this.prototype.template = new Parser(template).parse();
       }
     }
+    this.use = supr.use;
   },
   extend: extend,
   /**
@@ -116,6 +117,7 @@ _.extend(Regular, {
   },
   use: function(fn){
     fn(this, Regular);
+    return this;
   },
   Parser: Parser,
   Lexer: Lexer
@@ -172,7 +174,6 @@ _.extend( Regular.prototype, {
         }
       }
     }
-    if(!this.$root) debugger
     ;(this.$root || this).$digest();
   },
   /**
