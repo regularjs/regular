@@ -34,6 +34,9 @@ new NoteApp({
 > __Regular is still in heavily development, current version is not stable enough__
 
 
+_There also a  [todomvc demo](http://jsfiddle.net/leeluolee/5Err9/) rewirte by regularjs_
+
+
 ## Download
 
 1. install with bower 
