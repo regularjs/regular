@@ -23,7 +23,11 @@ var NoteApp = Regular.extend({
   }
 });
 
-new NoteApp({notes:[]}).inject(document.body);
+new NoteApp({
+  data{
+    notes:[]
+  }
+}).inject(document.body);
 ```
 
 
