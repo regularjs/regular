@@ -2,6 +2,8 @@
 
 regular is a live template engine that provide angular-way's data-binding, string-based template to help us create reusable and reactive component that can be integrated with whatever framework you already used;
 
+__example__
+
 with less than 20 line code then you already have a simple note component, you can also see it in [jsfiddle](http://jsfiddle.net/leeluolee/e6yD3/)
 
 ```
@@ -49,14 +51,15 @@ __There also a  [todomvc demo](http://jsfiddle.net/leeluolee/5Err9/) rewirte by 
 
 ## Document
 
-currently, there is only __Chinese version__
+now, there is only __Chinese version__, english version is comming soon
 
-*. [中文文档](https://github.com/regularjs/regular/wiki/Document/Chinese.md)
+*. [中文文档](https://github.com/regularjs/regular/wiki/Chinese)
+
 
 
 ## Guide
 
-Coming soon...
+*. []
 
 
 ## [LICENSE](https://github.com/regularjs/regular/blob/master/LICENSE)
