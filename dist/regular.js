@@ -2196,7 +2196,10 @@ module.exports = {
     }
   },
   text: function(text){
-    return text;
+    return {
+      type: "text",
+      text: text
+    }
   },
   interplation: function(expression){
     return {
@@ -2336,7 +2339,7 @@ op.statement = function(){
       while(ll = this.eat(['NAME', 'TEXT'])){
         text += ll.value;
       }
-      return {type:'text', text: text};
+      return node.text(text);
     case 'TAG_OPEN':
       return this.xml();
     case 'OPEN': 
@@ -2541,9 +2544,10 @@ op.expr = function(filter){
 
   if(!this.depend.length){
     // means no dependency
-    return node.expression(get)
+    return node.expression(get, null, true)
   }else{
-    return node.expression(get, set, !this.depend || !this.depend.length )
+
+    return node.expression(get, set, !!(!this.depend || !this.depend.length) )
   }
   return {}
 }
@@ -2754,7 +2758,7 @@ op.member = function(base, last, pathes){
       case '[':
           // member(object, property, computed)
         path = this.assign();
-        base += "['" + path.get + "']";
+        base += "[" + path.get + "]";
         this.match(']')
         return this.member(base, path, pathes);
       case '(':

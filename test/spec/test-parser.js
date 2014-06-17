@@ -24,26 +24,30 @@ describe("Parse XML", function(){
     var input = "<ul><div>hello name</div></ul>";
     // mode 1
     expect(p(input)).to.eql([
-      node.element("ul", undefined, [
-        node.element("div", undefined, [
-          "hello name"
+      node.element("ul", [], [
+        node.element("div", [], [
+          node.text("hello name")
           ])
       ])
     ]);
 
     // mode 2
-    expect(p2(input)).to.eql([input]);
+    expect(p2(input)).to.eql([node.text(input)]);
   });
 
 
 
 
   it('if directive should parse as expect', function(){
-    var if_input = "{#if test}hello{#else}<div>{dadad}</div>{/if}";
-    var if_else_input = "{#if test}hello{#else}<div>{dadad}</div>{/if}";
-    var if_elseif_input = "{#if test}hello{#else}<div>{dadad}</div>{/if}";
-    var error_input = "{#if}hello{else}<div>{dadad}</div>{/if}";
+    var if_input = "{{#if test}}hello{{/if}}";
+    var if_else_input = "{{#if test}}hello{{#else}}<div>{dadad}</div>{/if}";
+    var if_elseif_input = "{{#if test}}hello{{#elseif test2}}<div>{{dadad}}</div>{{/if}}";
+    var if_elseif_input = "{{#if test}}<div>hello{{#else}}<div>{{dadad}}</div>{{/if}}</div>";
 
+    console.log(p(if_input))
+
+    expect(p(if_input)).to.eql([
+      ])
 
     expect(function(){
       p(error_input);

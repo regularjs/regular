@@ -1,6 +1,7 @@
 <!-- the container -->
 <div id="app"></div>
 
+<!-- Regular template container(optional) -->
 <!-- if you need this component used in other component, you can specify name in the tag-->
 <script id="helloword" type="text/regular" name="helloword">
   Hello 
@@ -19,7 +20,7 @@
 var LoginApp = Regular.extend({
   // name: 'helloword',  if this component need used in other component , you need specify name
   // you can pass [String| preparsed AST | node selector]
-  template: '#helloword',
+  template: '#helloword', //if es6 released,  multi-line string is 
   login: function(){
     // all data is store in the plain object `this.data`;
     var data = this.data;

@@ -40,7 +40,10 @@ module.exports = {
     }
   },
   text: function(text){
-    return text;
+    return {
+      type: "text",
+      text: text
+    }
   },
   interplation: function(expression){
     return {
