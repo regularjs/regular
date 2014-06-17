@@ -35,7 +35,7 @@ Regular.directive(/^on-\w+$/, function(elem, value, name){
     self.data.$event = obj;
     var res = parsed.get(self);
     if(res === false && obj && obj.preventDefault) obj.preventDefault();
-    self.data.$event = null;
+    delete self.data.$event;
     self.$update();
   }
   var handler = events[type];

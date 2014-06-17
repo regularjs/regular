@@ -17,8 +17,7 @@ try{
 }
 
 
-gulp.task('default', ['build'], function() {
-});
+gulp.task('default', ['build'], function() {});
 
 
 gulp.task('build', function(){

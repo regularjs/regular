@@ -53,13 +53,13 @@ __There also a  [todomvc demo](http://jsfiddle.net/leeluolee/5Err9/) rewirte by 
 
 now, there is only __Chinese version__, english version is comming soon
 
-*. [中文文档](https://github.com/regularjs/regular/wiki/Chinese)
+* [中文文档](https://github.com/regularjs/regular/wiki/Chinese)
 
 
 
 ## Guide
 
-*. []
+* __Regular Getting Starting__: Temporarily, You can copy this [getting-start-html](https://github.com/regularjs/regular/tree/master/example/getting-start.html) for learning
 
 
 ## [LICENSE](https://github.com/regularjs/regular/blob/master/LICENSE)
@@ -70,10 +70,13 @@ MIT.
 
 ## TODO
 
-3. maybe add casper
-5. @TODO watch 同一个表达式(将不会创建两个watcher)
-7. html插值
-8. https://developer.github.com/v3/ , loadmore  component;
+1. maybe add casper
+2. @TODO watch 同一个表达式(将不会创建两个watcher)
+3. static html inteplation
+4. https://developer.github.com/v3/ , loadmore  component example
+5. svg support!
+6. remove defulat set compile
+
 
 
 
