@@ -2,7 +2,7 @@ var _ = require("../util.js");
 var node = require("./node.js");
 var Lexer = require("./Lexer.js");
 var varName = _.varName;
-var ctxName = _.randomVar('c');
+var ctxName = _.ctxName;
 var isPath = _.makePredicate("STRING IDENT NUMBER");
 var isKeyWord = _.makePredicate("true false undefined null this Array Date JSON Math NaN RegExp decodeURI decodeURIComponent encodeURI encodeURIComponent parseFloat parseInt Object");
 
@@ -17,8 +17,6 @@ function Parser(input, opts){
 }
 
 
-// @TODO : to detect prop cache length;
-var cache = Parser.cache = _.cache(1000);
 var op = Parser.prototype;
 
 
@@ -52,7 +50,7 @@ op.match = function(type, value){
 
 // @TODO
 op.error = function(msg, pos){
-  console.log(this.ll())
+  // console.log(this.ll())
   throw "Parse Error: " + msg +  ':\n' + _.trackErrorPos(this.input, pos != null? pos: this.ll().pos);
 }
 
@@ -79,13 +77,6 @@ op.eat = function(type, value){
   return false;
 }
 
-op.isEmpty = function(value){
-  return !value || value.length;
-}
-
-
-
-
 // program
 //  :EOF
 //  | (statement)* EOF
@@ -96,14 +87,6 @@ op.program = function(){
     ll = this.ll();
   }
   return statements;
-}
-
-op.statements = function(until){
-  var ll, body = [];
-  while( !(ll = this.eat('CLOSE', until)) ){
-    body.push(this.statement());
-  }
-  return body;
 }
 
 // statement
@@ -167,10 +150,10 @@ op.attrs = function(){
   // }
 
   while( ll = this.eat(["NAME", "&"]) ){
-    attr = { name: ll.value }
-    if( this.eat("=") ) attr.value = this.attvalue();
+    var name = ll.value;
+    if( this.eat("=") ) var value = this.attvalue();
 
-    attrs.push( attr );
+    attrs.push(node.attribute( name, value ));
   }
   return attrs;
 }
@@ -189,20 +172,14 @@ op.attvalue = function(){
       if(value.type !== "expression" && ~value.indexOf('{{')){
         var constant = true;
         var parsed = new Parser(value, {mode:2}).parse();
-        for(var i =0, len = parsed.length; i < len; i++ ){
-          var item = parsed[i];
-          if(item.get && !item.constant) constant = false;
-        }
-        var get = function(self){
-          var res= parsed.map(function(item){
-            if(item && item.get){
-              return item.get(self);
-            }
-            else return item.text || "";
-          }).join("");
-          return res;
-        }
-        value = node.expression(get, null, constant);
+        if(parsed.length==1 && parsed[0].type==='expression') return parsed[0];
+        var body = [];
+        parsed.forEach(function(item){
+          if(!item.constant) constant=false;
+          body.push(item.body || "'" + item.text + "'");
+        });
+        body = "[" + body.join(",") + "].join('')";
+        value = node.expression(body, null, constant);
       }
       return value;
     case "EXPR_OPEN":
@@ -210,7 +187,6 @@ op.attvalue = function(){
     default:
       this.error('Unexpected token: '+ this.la())
   }
-  return ll.value;
 }
 
 
@@ -299,7 +275,7 @@ op.list = function(){
       container.push(this.statement());
     }
   }
-  if(ll.value !== 'list') this.error('expect ' + '{/list} got ' + '{/' + ll.value + '}', ll.pos );
+  if(ll.value !== 'list') this.error('expect ' + '{{/list}} got ' + '{{/' + ll.value + '}}', ll.pos );
   return node.list(sequence, variable, consequent, alternate);
 }
 
@@ -312,25 +288,12 @@ op.expression = function(){
 
 op.expr = function(filter){
   this.depend = [];
-  var buffer = this.filter(), set, get;
+
+  var buffer = this.filter()
+
   var body = buffer.get || buffer;
-  
-  var prefix =  "var "+ctxName+"=context.$context||context;"+ (this.depend.length? "var "+varName+"=context.data;" : "");
-  var get = new Function("context", prefix + "return (" + body + ")");
-
-
-  if(buffer.set) var set =  new Function("context", _.setName ,
-    prefix +";return (" + buffer.set + ")" 
-    );
-
-  if(!this.depend.length){
-    // means no dependency
-    return node.expression(get, null, true)
-  }else{
-
-    return node.expression(get, set, !!(!this.depend || !this.depend.length) )
-  }
-  return {}
+  var setbody = buffer.set;
+  return node.expression(body, setbody, !this.depend.length);
 }
 
 
@@ -342,8 +305,8 @@ op.filter = function(){
   var buffer, attr;
   if(ll){
     buffer = [
-      "(function(data){", 
-          "var ", attr = _.randomVar('f'), "=", left.get, ";"]
+      "(function(){", 
+          "var ", attr = "_f_", "=", left.get, ";"]
     do{
 
       buffer.push(attr + " = "+ctxName+"._f('" + this.match('IDENT').value+ "')(" + attr) ;
@@ -465,7 +428,8 @@ op.range = function(){
 
   if(ll = this.eat('..')){
     right = this.unary();
-    var body = ctxName + '._r(' +left.get + ','+ right.get + ')'
+    var body = 
+      "(function(start,end){var res = []; for(var i = start; i <= end; i++){res.push(i); } return res })("+left.get+","+right.get+")"
     return this.getset(body);
   }
 
@@ -594,7 +558,7 @@ op.primary = function(){
       return this.getset("'" + ll.value + "'")
     case 'NUMBER':
       this.next();
-      return this.getset(ll.value);
+      return this.getset(""+ll.value);
     case "IDENT":
       this.next();
       if(isKeyWord(ll.value)){
@@ -620,19 +584,15 @@ op.primary = function(){
 op.object = function(){
   var code = [this.match('{').type];
 
-  var ll;
-  while(true){
-    ll = this.eat(['STRING', 'IDENT', 'NUMBER']);
-    if(ll){
-      code.push("'" + ll.value + "'" + this.match(':').type);
-      var get = this.assign().get;
-      code.push(get);
-      if(this.eat(",")) code.push(",");
-    }else{
-      code.push(this.match('}').type);
-      break;
-    }
+  var ll = this.eat(['STRING', 'IDENT', 'NUMBER']);;
+  while(ll){
+    code.push("'" + ll.value + "'" + this.match(':').type);
+    var get = this.assign().get;
+    code.push(get);
+    ll=null;
+    if(this.eat(",") && (ll = this.eat(['STRING', 'IDENT', 'NUMBER'])) ) code.push(",");
   }
+  code.push(this.match('}').type);
   return {get: code.join("")}
 }
 
@@ -662,13 +622,6 @@ op.getset = function(get, set){
   return {
     get: get,
     set: set
-  }
-}
-
-//
-op.flatenDepend = function(depend){
-  for(var i = 0, len = depend.length; i < len; i++){
-
   }
 }
 

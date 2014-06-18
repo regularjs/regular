@@ -1,10 +1,3 @@
-var Parser = require_lib("parser/Parser.js");
-var node = require_lib("parser/node.js");
+var dom = require('dom.js');
 
-
-void function(){
-
-  
-
-}
 

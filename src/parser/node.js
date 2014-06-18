@@ -30,25 +30,18 @@ module.exports = {
       body: body
     }
   },
-  expression: function(get, set,  constant){
+  expression: function( body, setbody, constant ){
     return {
       type: "expression",
-      get: get,
-      set: set,
-      constant: constant
-
+      body: body,
+      constant: constant || false,
+      setbody: setbody || false
     }
   },
   text: function(text){
     return {
       type: "text",
       text: text
-    }
-  },
-  interplation: function(expression){
-    return {
-      type: 'interplation',
-      expression:  expression
     }
   },
   template: function(template){

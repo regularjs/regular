@@ -10,12 +10,6 @@ function wrapHander(handler){
     return {type: handler, value: all }
   }
 }
-function wrapKeyValue(key, num){
-  return function(){
-    return {type: key, value: arguments[num] }
-  }
-}
-
 
 function Lexer(input, opts){
   this.input = (input||"").trim();
@@ -54,17 +48,6 @@ lo.lex = function(str){
   tokens.push({type: 'EOF'});
 
   return tokens;
-}
-
-lo.next = function(){
-
-  var split = this.map[this.state()] 
-  var test = split.TRUNK.exec(str);
-  if(!test) this.error('Unrecoginized Token');
-  var mlen = test[0].length;
-  var token = this._process.apply(this, test)
-  this.input = this.input.slice(mlen)
-  return token;
 }
 
 lo.error = function(msg){
@@ -169,13 +152,7 @@ function setup(map){
       handler = rule[1];
 
       if(typeof handler == 'string'){
-        if(~handler.indexOf(':')){
-          var tmp = handler.split(':');
-          var key = tmp[0], value = parseInt(tmp[1].replace('$', ''))
-          handler = wrapKeyValue(key, value);
-        }else{
-          handler = wrapHander(handler);
-        }
+        handler = wrapHander(handler);
       }
       if(_.typeOf(reg) == 'regexp') reg = reg.toString().slice(1, -1);
 

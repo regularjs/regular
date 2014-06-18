@@ -11,124 +11,436 @@ var p2 = function(input){
   return new Parser(input, {mode: 2}).parse()
 }
 
+var s = function(input, jst){
+  var parse = jst? p2: p;
+  return JSON.stringify(parse(input), null, 2)
+}
+
 
 var eqExp = function(input, result){
   return expect( p(input)[0].expression.body ).eql(result);
 }
 
 
+var list2 = expect.template.set(function list2(){/*
+{{#list [a,2,3,4,5] as num}} 
+  <p>{{num}}</p>
+{{/list}}
+*/});
+
+
+
 
 describe("Parse XML", function(){
-  it("pure xml input should return diff ast under mode 1 and 2", function(){
-    var input = "<ul><div>hello name</div></ul>";
-    var input = "<ul><div>hello name</div></ul>";
-    // mode 1
-    expect(p(input)).to.eql([
-      node.element("ul", [], [
-        node.element("div", [], [
-          node.text("hello name")
-          ])
-      ])
-    ]);
 
-    // mode 2
-    expect(p2(input)).to.eql([node.text(input)]);
+  describe("basic XML should parsed as expect", function(){
+    it("pure xml input should return diff ast under mode 1 and 2", function(){
+      var input = "<ul><div>hello name</div></ul>";
+      var input2 = "<ul><div>hello name</div></ul>";
+      // mode 1
+      expect(p(input)).to.eql([
+        node.element("ul", [], [
+          node.element("div", [], [
+            node.text("hello name")
+            ])
+        ])
+      ]);
+
+      // mode 2
+      expect(p2(input)).to.eql([node.text(input)]);
+    });
+  })
+
+  describe("attribute should parsed as expect", function(){
+    var string_attr = "<ul class='a'></ul>";
+    var expression_attr = "<ul class={{a}}></ul>";
+    var inteplation_attr = "<ul class='a {{a}} b'></ul>";
+    var inteplation_attr_2 = "<ul class='{{a}}'></ul>";
+    var entity_attr = "<ul class=-hl*lo-></ul>";
+    var num_attr = "<ul class=1></ul>";
+    var empty_attr = "<ul class></ul>";
+    it("attribute should accept String", function(){
+      expect(p(string_attr)[0].attrs).eql([{ type: 'attribute', name: 'class', value: 'a' } ])
+    })
+
+    it("attribute should accept Number", function(){
+      expect(p(num_attr)[0].attrs).eql([{ type: 'attribute', name: 'class', value: '1' } ])
+    })
+
+    it("attribute should accept expression", function(){
+      expect(p(expression_attr)[0].attrs).eql([
+        { 
+          type: 'attribute',
+          name: 'class',
+          value: 
+            { 
+              type: 'expression',
+              body: '_d_[\'a\']',
+              constant: false,
+              setbody: '_d_[\'a\']=_p_' 
+            }
+        }
+      ]);
+    })
+
+    it("attribute should accept StringInteplation", function(){
+      expect( p(inteplation_attr)[0].attrs[0].value ).eql(
+        { 
+          type: 'expression',
+          body: '[\'a \',_d_[\'a\'],\' b\'].join(\'\')',
+          constant: false,
+          setbody: false 
+        }
+      )
+      expect( p(inteplation_attr_2)[0].attrs[0].value ).eql(
+        { 
+          type: 'expression',
+          body: '_d_[\'a\']',
+          constant: false,
+          setbody: '_d_[\'a\']=_p_' 
+        }
+      )
+    })
+
+    it("attribute should accept Entity", function(){
+      expect( p(entity_attr)[0].attrs[0].value ).eql("-hl*lo-")
+    })
+
+    it("attribute should throw error when encountered excepition", function(){
+      expect(function(){
+        p('<div name=&>\
+          </div>')
+      }).to.throwError();
+    })
+
+  })
+
+
+  describe("tag should closed correspond with html5's specs", function(){
+    it("read unclosed tag should throw error", function(){
+      expect(function(){
+        p("<div>")
+      }).to.throwError();
+    })
+    it("read unclosed void tag should not throw error", function(){
+      expect(p("<input>")).to.eql([
+        { type: 'element',
+           tag: 'input',
+           attrs: [],
+           children: undefined } 
+      ])
+    })
+
+  })
+  describe("some parse feature need work as expect", function(){
+    it("should join connected text", function(){
+
+    })
+  })
+
+  describe("must thrrow error when Syntax Error", function(){
+    it("read unclosed tag_open should throw error", function(){
+      expect(function(){
+        p("<div")
+      }).to.throwError();
+    })
+
   });
 
 
-
-
-  it('if directive should parse as expect', function(){
-    var if_input = "{{#if test}}hello{{/if}}";
-    var if_else_input = "{{#if test}}hello{{#else}}<div>{dadad}</div>{/if}";
-    var if_elseif_input = "{{#if test}}hello{{#elseif test2}}<div>{{dadad}}</div>{{/if}}";
-    var if_elseif_input = "{{#if test}}<div>hello{{#else}}<div>{{dadad}}</div>{{/if}}</div>";
-
-    console.log(p(if_input))
-
-    expect(p(if_input)).to.eql([
-      ])
-
-    expect(function(){
-      p(error_input);
-    }).to.throwError();
-
-  })
 });
+
+
+
 
 
 describe('Parse JST', function(){
 
-  describe('mode 1 and mode2 should work as expected', function(){
-    it("complex input should parse under mode 1 and 2", function(){
-      var input = "{#if 1 > test}<div data=data>{this.dadad() + data}</div> {#else} hello{/if}";
+  describe("complex if statement should parse correctly", function(){
+    var if_input = "{{#if test}}hello{{/if}}";
+    var if_else_input = "{{#if test}}hello{{#else}}<div>dadad</div>{{/if}}";
+    var if_elseif_input = "{{#if test}}hello{{#elseif test2}}<div>{{dadad}}</div>{{/if}}";
+    var if_error = "{{#if test}}<div>hello{{#else}}<div>{{dadad}}</div>{{/if}}</div>";
+    it("parse correctly under mode1", function(){
 
-      var json = p(new Array(100).join(input))
-      // console.log(JSON.stringify(p(input),null, 4))
-      // console.log(JSON.stringify(
-      //   node["if"](
-      //       node.expression("1>"+_.varName+"['test']",["test"]),
-      //       [node.element("div", undefined, [{"type":"IDENT","value":"dadad","pos":26}])," "], 
-      //       [" hello"])
-      //   ,null, 4)
-      // )
+      expect(p(if_input)).to.eql([
+        {
+          "type": "if",
+          "test": {
+            "type": "expression",
+            "body": "_d_['test']",
+            "constant": false,
+            "setbody": "_d_['test']=_p_"
+          },
+          "consequent": [
 
-      expect( p(input) ).eql([
-        node["if"](
-            node.expression("1>"+_.varName+"['test']",["test"]),
-            [node.element("div", undefined, [{"type":"IDENT","value":"dadad","pos":26}])," "], 
-            [" hello"])
-        ])
-      //mode 2
-      expect( p2(input) ).eql( [
-        node["if"](
-        {"type":"IDENT","value":"test","pos":4}, 
-        ["<div data=data>",{"type":"IDENT","value":"dadad","pos":26},"</div> "], 
-        [" hello"])
-      ] );
-    });
+            {
+              "type": "text",
+              "text": "hello"
+            }
+          ],
+          "alternate": []
+        }
+      ]) 
+      expect(p(if_else_input)).to.eql([
 
+        {
+          "type": "if",
+          "test": {
+            "type": "expression",
+            "body": "_d_['test']",
+            "constant": false,
+            "setbody": "_d_['test']=_p_"
+          },
+          "consequent": [
+            {
+              "type": "text",
+              "text": "hello"
+            }
+          ],
+          "alternate": [
+            {
+              "type": "element",
+              "tag": "div",
+              "attrs": [],
+              "children": [
+                {
+                  "type": "text",
+                  "text": "dadad"
+                }
+              ]
+            }
+          ]
+        }
+      ]) 
+      expect(p(if_elseif_input)).to.eql([
+        {
+          "type": "if",
+          "test": {
+            "type": "expression",
+            "body": "_d_['test']",
+            "constant": false,
+            "setbody": "_d_['test']=_p_"
+          },
+          "consequent": [
+            {
+              "type": "text",
+              "text": "hello"
+            }
+          ],
+          "alternate": [
+            {
+              "type": "if",
+              "test": {
+                "type": "expression",
+                "body": "_d_['test2']",
+                "constant": false,
+                "setbody": "_d_['test2']=_p_"
+              },
+              "consequent": [
+                {
+                  "type": "element",
+                  "tag": "div",
+                  "attrs": [],
+                  "children": [
+                    {
+                      "type": "expression",
+                      "body": "_d_['dadad']",
+                      "constant": false,
+                      "setbody": "_d_['dadad']=_p_"
+                    }
+                  ]
+                }
+              ],
+              "alternate": []
+            }
+          ]
+        }
+      ]);
+
+      expect(function(){
+        p(if_error);
+      }).to.throwError();
+
+
+    })
+    
+
+
+    it("should parse correctly under mode 2", function(){
+
+      expect(p2(if_elseif_input)).to.eql([
+        {
+          "type": "if",
+          "test": {
+            "type": "expression",
+            "body": "_d_['test']",
+            "constant": false,
+            "setbody": "_d_['test']=_p_"
+          },
+          "consequent": [
+            {
+              "type": "text",
+              "text": "hello"
+            }
+          ],
+          "alternate": [
+            {
+              "type": "if",
+              "test": {
+                "type": "expression",
+                "body": "_d_['test2']",
+                "constant": false,
+                "setbody": "_d_['test2']=_p_"
+              },
+              "consequent": [
+                {
+                  "type": "text",
+                  "text": "<div>"
+                },
+                {
+                  "type": "expression",
+                  "body": "_d_['dadad']",
+                  "constant": false,
+                  "setbody": "_d_['dadad']=_p_"
+                },
+                {
+                  "type": "text",
+                  "text": "</div>"
+                }
+              ],
+              "alternate": []
+            }
+          ]
+        }
+      ])
+
+    })
+  })
+
+  describe("list statement should parse correctly ", function(){
+    it("complex list statement should parse correctly under mode 1", function(){
+      var list1 = expect.template.set(function list1(){/*
+      {{#list [1,2,3,4,5] as num}} 
+        {{num}} : {{$index}}
+      {{/list}}
+      */})
+
+      expect(p(list1)).to.eql([
+        {
+            "type": "list",
+            "sequence": {
+              "type": "expression",
+              "body": "[1,2,3,4,5]",
+              "constant": true,
+              "setbody": false
+            },
+            "variable": "num",
+            "body": [
+              {
+                "type": "text",
+                "text": " \n        "
+              },
+              {
+                "type": "expression",
+                "body": "_d_['num']",
+                "constant": false,
+                "setbody": "_d_['num']=_p_"
+              },
+              {
+                "type": "text",
+                "text": " : "
+              },
+              {
+                "type": "expression",
+                "body": "_d_['$index']",
+                "constant": false,
+                "setbody": "_d_['$index']=_p_"
+              },
+              {
+                "type": "text",
+                "text": "\n      "
+              }
+            ]
+          }
+      ]);
+    })
+    it("complex list statement should parse correctly under mode 2", function(){
+      expect(p2(list2)).to.eql(
+        [
+          {
+            "type": "list",
+            "sequence": {
+              "type": "expression",
+              "body": "[_d_['a'],2,3,4,5]",
+              "constant": false,
+              "setbody": false
+            },
+            "variable": "num",
+            "body": [
+              {
+                "type": "text",
+                "text": " \n  <p>"
+              },
+              {
+                "type": "expression",
+                "body": "_d_['num']",
+                "constant": false,
+                "setbody": "_d_['num']=_p_"
+              },
+              {
+                "type": "text",
+                "text": "</p>\n"
+              }
+            ]
+          }
+        ] 
+      )
+
+    })
+
+
+  })
+
+
+
+
+  describe("template statement should parsed as expect", function(){
+    it("simple template statement", function(){
+      expect(p("{{~ hello.a}}")).eql(
+        [
+          {
+            "type": "template",
+            "content": {
+              "type": "expression",
+              "body": "_d_['hello']['a']",
+              "constant": false,
+              "setbody": "_d_['hello']['a']=_p_"
+            }
+          }
+        ]
+      );
+    })
+  })
+
+
+  describe("should throw error when encountered syntax error", function(){
+    it("list unmatched tag should throw error", function(){
+      expect(function(){
+        p("{{#list hello as name}}{{/if}}")
+      }).to.throwError();
+    })
+    it("if unmatched tag should throw error", function(){
+      expect(function(){
+        p("{{#if hello}}{{/list}}")
+      }).to.throwError();
+    })
   })
 
 });
 
-// describe("Parse Expression", function(){
-
-//   describe('Expression Syntax should equal as Javascript Expression', function(){
-
-//     it("no constant interplation should return expression when no genertic", function(){
-//       var input_dot_call = "{hello.haha('hahaha') + 1 + 1}";
-//       var input_call_call = "{hello('name')(1,2,3,4).haha}"
-//       var input_relation_ident = "{hello == true == undefined == null }"
-//       var input_this_call = "{this.hello(data+'1'+3)[1+2+'1234'] == true == undefined == null }"
-//       var input_native_fn = "{Math.random('haha')}"
-
-//       eqExp(input_dot_call, _.varName + "['hello']['haha']('hahaha')+1+1");
-//       eqExp(input_call_call, _.varName + "['hello']('name')(1,2,3,4)['haha']");
-//       eqExp(input_relation_ident, _.varName + "['hello']==true==undefined==null");
-
-//       console.log(p(input_dot_call));
-//       console.log(p(input_call_call));
-//       console.log(p(input_relation_ident));
-//       console.log(p(input_this_call));
-//       console.log(p(input_native_fn));
-//     });
-
-//     it("constant interplation should return value", function(){
-//       var input_num = "{ -1 + 1 + 1}";
-//       var input_str = "{ 'a' + 'b' + 1}"
-//       expect(p(input_num)).eql(
-//         [node.interplation(1, false)]
-//       );
-//       expect(p(input_str)).eql(
-//         [node.interplation('ab1', true)]
-//       );
-//     });
-//   })
 
 
-
-// })
 
 
 

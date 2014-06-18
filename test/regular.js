@@ -219,7 +219,6 @@ var combine = require('./helper/combine.js');
 var walkers = require('./walkers.js');
 var idtest = /^[\w-]{1,20}$/;
 
-
 var Regular = function(options){
   var node, template, name;
 
@@ -267,7 +266,7 @@ _.extend(Regular, {
     if(o.name) Regular.component(o.name, this);
     if(template = o.template){
       var node, name;
-      if(typeof template === 'string' && template.length < 20 && (node= dom.find(template))){
+      if( typeof template === 'string' && template.length < 20 && ( node = dom.find( template )) ){
         template = node.innerHTML;
         if(name = dom.attr(node, 'name')) Regular.component(name, this);
       }
@@ -319,10 +318,11 @@ _.extend(Regular, {
   },
   parse: function(expr){
     // @TODO cache
-    if(expr.type === 'expression') return expr;
-    var expr = expr.trim();
-    var res = this._exprCache[expr] || (this._exprCache[expr] = new Parser(expr,{state: 'JST'}).expression());
-    return res;
+    if(typeof expr === 'string'){
+      var expr = expr.trim();
+      expr = this._exprCache[expr] || (this._exprCache[expr] = new Parser(expr,{state: 'JST'}).expression());
+    }
+    return _.touchExpression(expr);
   },
   use: function(fn){
     fn(this, Regular);
@@ -692,8 +692,7 @@ _.extend( Regular.prototype, {
     var filter = Regular.filter(name);
     if(typeof filter !== 'function') throw 'filter ' + name + 'is undefined';
     return filter;
-  },
-  _r: _._range
+  }
 });
 
 module.exports = Regular;
@@ -705,6 +704,7 @@ var _  = module.exports;
 var slice = [].slice;
 var o2str = ({}).toString;
 
+
 _.noop = function(){};
 _.uid = (function(){
   var _uid=0;
@@ -713,13 +713,11 @@ _.uid = (function(){
   }
 })();
 
-_.varName = 'd_'+_.uid();
-_.setName = 'p_'+_.uid();
+_.varName = '_d_';
+_.setName = '_p_';
+_.ctxName = '_c_';
 
-// randomVar
-_.randomVar = function(suffix){
-  return (suffix || "var") + "_" + _.uid().toString(36);
-}
+var prefix =  "var " + _.ctxName + "=context.$context||context;" + "var " + _.varName + "=context.data;";
 
 
 _.host = "data";
@@ -861,46 +859,8 @@ _.escapeRegExp = function(string){// Credit: XRegExp 0.6.1 (c) 2007-2008 Steven 
 
 
 
-_.assert = function(test, msg){
-  if(!test) throw msg;
-  return true;
-}
-
-
-_.walk = function(proto){
-  var walkers = {};
-  proto.walk = function walk(ast, arg){
-    if(o2str.call(ast) === "[object Array]"){
-      var res = [];
-      for(var i = 0, len = ast.length; i < len; i++){
-        res.push(this.walk(ast[i]));
-      }
-      return res;
-    }
-    return walkers[ast.type || "default"].call(this, ast, arg);
-  }
-  return walkers;
-}
-
-
-
-_.isEmpty = function(obj){
-  return !obj || obj.length === 0;
-}
-
 
 // simple get accessor
-_.compileGetter = function(paths){
-  var base = "obj";
-  var code = "if(" +base+ " != null";
-  for(var i = 0, len = paths.length; i < len; i++){
-    base += "['" +paths[i]+ "']";
-    code += "&&" + base + "!=null";
-  }
-  code += ") return " + base + ";\n";
-  code += "else return undefined";
-  return new Function("obj", code);
-}
 
 _.createObject = function(o, props){
     function foo() {}
@@ -1080,21 +1040,6 @@ var ld = (function(){
   })();
 
 
-_._path = function(base, path){
-  return base == undefined? base: base[path];
-}
-
-_._range = function(start, end){
-  if(typeof start !== 'number' || typeof end !== 'number'){
-    return []
-  }
-  var res = [];
-  for(var i = start; i <= end; i++){
-    res.push(i);
-  }
-  return res;
-}
-
 
 _.throttle = function throttle(func, wait){
   var wait = wait || 100;
@@ -1154,7 +1099,7 @@ _.cache = function(max){
   return {
     set: function(key, value) {
       if (keys.length > this.max) {
-        cache[keys.shift()] = null;
+        cache[keys.shift()] = undefined;
       }
       // 只有非undefined才可以
       if(cache[key] == undefined){
@@ -1174,12 +1119,32 @@ _.cache = function(max){
   };
 }
 
+_.touchExpression = function(expr){
+  if(expr.type === 'expression'){
+    if(!expr.get){
+      expr.get = new Function("context", prefix + "return (" + expr.body + ")");
+      expr.body = null;
+      if(expr.setbody){
+        expr.set = function(ctx, value){
+          if(expr.setbody){
+            expr.set = new Function('context', _.setName ,  prefix + expr.setbody);
+            expr.setbody = null;
+          }
+          return expr.set(ctx, value);
+        }
+      }
+    }
+  }
+  return expr;
+}
+
 //http://www.w3.org/html/wg/drafts/html/master/single-page.html#void-elements
 _.isVoidTag = _.makePredicate("area base br col embed hr img input keygen link menuitem meta param source track wbr");
 _.isBooleanAttr = _.makePredicate('selected checked disabled readOnly required open autofocus controls autoplay compact loop defer multiple');
 
 _.isFalse - function(){return false}
 _.isTrue - function(){return true}
+
 
 
 
@@ -1340,7 +1305,6 @@ walkers['if'] = function(ast){
 
 
 walkers.expression = function(ast){
-  var self = this;
   var node = document.createTextNode("");
   var watchid = this.$watch(ast, function(newval){
     dom.text(node, "" + (newval == null? "": String(newval)));
@@ -1348,7 +1312,6 @@ walkers.expression = function(ast){
   return node;
 }
 walkers.text = function(ast){
-  var self = this;
   var node = document.createTextNode(ast.text);
   return node;
 }
@@ -1357,16 +1320,14 @@ walkers.text = function(ast){
 
 walkers.element = function(ast){
   var attrs = ast.attrs, component;
-  var watchids = [];
   var self = this;
   var Component = Regular.component(ast.tag);
   if(Component){
     var data = {};
-
     for(var i = 0, len = attrs.length; i < len; i++){
       var attr = attrs[i];
       var value = attr.value||"";
-      if(value.type !== 'expression' && attr.name !== 'ref'){
+      if(value.type !== 'expression'){
         data[attr.name] = value;
       }
     }
@@ -1378,20 +1339,18 @@ walkers.element = function(ast){
       var value = attr.value||"";
       if(value.type === 'expression'){
         this.$bind(component, value, attr.name);
-      }else{
-        if(attr.name === 'ref' ) this.$refs.push(value);
       }
     }
     return component;
   }else if(ast.tag === 'r:content' && this.data.$body){
     return this.data.$body;
   }
+
   var element = dom.create(ast.tag);
   var children = ast.children;
   var destroies = [];
   var child;
   var self = this;
-  // @TODO must mark the attr bind;
   var directive = [];
   for(var i = 0, len = attrs.length; i < len; i++){
     var destroy = bindAttrWatcher.call(this, element, attrs[i])
@@ -1400,6 +1359,7 @@ walkers.element = function(ast){
   if(children && children.length){
     var group = this.$compile(children);
   }
+
   
   return {
     node: function(){
@@ -1414,9 +1374,6 @@ walkers.element = function(ast){
       if(destroies.length) {
         destroies.forEach(function(destroy){destroy() })
       }
-      // for(var i = 0,len = watchids.length; i< len ;i++){
-      //   self.$unwatch(watchids[i]);
-      // }
       dom.remove(element);
     }
   }
@@ -1426,8 +1383,10 @@ walkers.element = function(ast){
 
 function bindAttrWatcher(element, attr){
   var name = attr.name,
-    value = attr.value || "", directive=Regular.directive(name);
-  if(name === 'ref' && value) this.$refs[value] = element;
+    value = attr.value || "", directive = Regular.directive(name);
+    
+  _.touchExpression(value);
+
   if(directive && directive.link){
     return directive.link.call(this, element, value, name);
   }else{
@@ -1801,12 +1760,6 @@ function wrapHander(handler){
     return {type: handler, value: all }
   }
 }
-function wrapKeyValue(key, num){
-  return function(){
-    return {type: key, value: arguments[num] }
-  }
-}
-
 
 function Lexer(input, opts){
   this.input = (input||"").trim();
@@ -1845,17 +1798,6 @@ lo.lex = function(str){
   tokens.push({type: 'EOF'});
 
   return tokens;
-}
-
-lo.next = function(){
-
-  var split = this.map[this.state()] 
-  var test = split.TRUNK.exec(str);
-  if(!test) this.error('Unrecoginized Token');
-  var mlen = test[0].length;
-  var token = this._process.apply(this, test)
-  this.input = this.input.slice(mlen)
-  return token;
 }
 
 lo.error = function(msg){
@@ -1960,13 +1902,7 @@ function setup(map){
       handler = rule[1];
 
       if(typeof handler == 'string'){
-        if(~handler.indexOf(':')){
-          var tmp = handler.split(':');
-          var key = tmp[0], value = parseInt(tmp[1].replace('$', ''))
-          handler = wrapKeyValue(key, value);
-        }else{
-          handler = wrapHander(handler);
-        }
+        handler = wrapHander(handler);
       }
       if(_.typeOf(reg) == 'regexp') reg = reg.toString().slice(1, -1);
 
@@ -2184,25 +2120,18 @@ module.exports = {
       body: body
     }
   },
-  expression: function(get, set,  constant){
+  expression: function( body, setbody, constant ){
     return {
       type: "expression",
-      get: get,
-      set: set,
-      constant: constant
-
+      body: body,
+      constant: constant || false,
+      setbody: setbody || false
     }
   },
   text: function(text){
     return {
       type: "text",
       text: text
-    }
-  },
-  interplation: function(expression){
-    return {
-      type: 'interplation',
-      expression:  expression
     }
   },
   template: function(template){
@@ -2219,7 +2148,7 @@ var _ = require("../util.js");
 var node = require("./node.js");
 var Lexer = require("./Lexer.js");
 var varName = _.varName;
-var ctxName = _.randomVar('c');
+var ctxName = _.ctxName;
 var isPath = _.makePredicate("STRING IDENT NUMBER");
 var isKeyWord = _.makePredicate("true false undefined null this Array Date JSON Math NaN RegExp decodeURI decodeURIComponent encodeURI encodeURIComponent parseFloat parseInt Object");
 
@@ -2234,8 +2163,6 @@ function Parser(input, opts){
 }
 
 
-// @TODO : to detect prop cache length;
-var cache = Parser.cache = _.cache(1000);
 var op = Parser.prototype;
 
 
@@ -2269,7 +2196,7 @@ op.match = function(type, value){
 
 // @TODO
 op.error = function(msg, pos){
-  console.log(this.ll())
+  // console.log(this.ll())
   throw "Parse Error: " + msg +  ':\n' + _.trackErrorPos(this.input, pos != null? pos: this.ll().pos);
 }
 
@@ -2296,13 +2223,6 @@ op.eat = function(type, value){
   return false;
 }
 
-op.isEmpty = function(value){
-  return !value || value.length;
-}
-
-
-
-
 // program
 //  :EOF
 //  | (statement)* EOF
@@ -2313,14 +2233,6 @@ op.program = function(){
     ll = this.ll();
   }
   return statements;
-}
-
-op.statements = function(until){
-  var ll, body = [];
-  while( !(ll = this.eat('CLOSE', until)) ){
-    body.push(this.statement());
-  }
-  return body;
 }
 
 // statement
@@ -2384,10 +2296,10 @@ op.attrs = function(){
   // }
 
   while( ll = this.eat(["NAME", "&"]) ){
-    attr = { name: ll.value }
-    if( this.eat("=") ) attr.value = this.attvalue();
+    var name = ll.value;
+    if( this.eat("=") ) var value = this.attvalue();
 
-    attrs.push( attr );
+    attrs.push(node.attribute( name, value ));
   }
   return attrs;
 }
@@ -2406,20 +2318,14 @@ op.attvalue = function(){
       if(value.type !== "expression" && ~value.indexOf('{{')){
         var constant = true;
         var parsed = new Parser(value, {mode:2}).parse();
-        for(var i =0, len = parsed.length; i < len; i++ ){
-          var item = parsed[i];
-          if(item.get && !item.constant) constant = false;
-        }
-        var get = function(self){
-          var res= parsed.map(function(item){
-            if(item && item.get){
-              return item.get(self);
-            }
-            else return item.text || "";
-          }).join("");
-          return res;
-        }
-        value = node.expression(get, null, constant);
+        if(parsed.length==1 && parsed[0].type==='expression') return parsed[0];
+        var body = [];
+        parsed.forEach(function(item){
+          if(!item.constant) constant=false;
+          body.push(item.body || "'" + item.text + "'");
+        });
+        body = "[" + body.join(",") + "].join('')";
+        value = node.expression(body, null, constant);
       }
       return value;
     case "EXPR_OPEN":
@@ -2427,7 +2333,6 @@ op.attvalue = function(){
     default:
       this.error('Unexpected token: '+ this.la())
   }
-  return ll.value;
 }
 
 
@@ -2516,7 +2421,7 @@ op.list = function(){
       container.push(this.statement());
     }
   }
-  if(ll.value !== 'list') this.error('expect ' + '{/list} got ' + '{/' + ll.value + '}', ll.pos );
+  if(ll.value !== 'list') this.error('expect ' + '{{/list}} got ' + '{{/' + ll.value + '}}', ll.pos );
   return node.list(sequence, variable, consequent, alternate);
 }
 
@@ -2529,25 +2434,12 @@ op.expression = function(){
 
 op.expr = function(filter){
   this.depend = [];
-  var buffer = this.filter(), set, get;
+
+  var buffer = this.filter()
+
   var body = buffer.get || buffer;
-  
-  var prefix =  "var "+ctxName+"=context.$context||context;"+ (this.depend.length? "var "+varName+"=context.data;" : "");
-  var get = new Function("context", prefix + "return (" + body + ")");
-
-
-  if(buffer.set) var set =  new Function("context", _.setName ,
-    prefix +";return (" + buffer.set + ")" 
-    );
-
-  if(!this.depend.length){
-    // means no dependency
-    return node.expression(get, null, true)
-  }else{
-
-    return node.expression(get, set, !!(!this.depend || !this.depend.length) )
-  }
-  return {}
+  var setbody = buffer.set;
+  return node.expression(body, setbody, !this.depend.length);
 }
 
 
@@ -2559,8 +2451,8 @@ op.filter = function(){
   var buffer, attr;
   if(ll){
     buffer = [
-      "(function(data){", 
-          "var ", attr = _.randomVar('f'), "=", left.get, ";"]
+      "(function(){", 
+          "var ", attr = "_f_", "=", left.get, ";"]
     do{
 
       buffer.push(attr + " = "+ctxName+"._f('" + this.match('IDENT').value+ "')(" + attr) ;
@@ -2682,7 +2574,8 @@ op.range = function(){
 
   if(ll = this.eat('..')){
     right = this.unary();
-    var body = ctxName + '._r(' +left.get + ','+ right.get + ')'
+    var body = 
+      "(function(start,end){var res = []; for(var i = start; i <= end; i++){res.push(i); } return res })("+left.get+","+right.get+")"
     return this.getset(body);
   }
 
@@ -2811,7 +2704,7 @@ op.primary = function(){
       return this.getset("'" + ll.value + "'")
     case 'NUMBER':
       this.next();
-      return this.getset(ll.value);
+      return this.getset(""+ll.value);
     case "IDENT":
       this.next();
       if(isKeyWord(ll.value)){
@@ -2837,19 +2730,15 @@ op.primary = function(){
 op.object = function(){
   var code = [this.match('{').type];
 
-  var ll;
-  while(true){
-    ll = this.eat(['STRING', 'IDENT', 'NUMBER']);
-    if(ll){
-      code.push("'" + ll.value + "'" + this.match(':').type);
-      var get = this.assign().get;
-      code.push(get);
-      if(this.eat(",")) code.push(",");
-    }else{
-      code.push(this.match('}').type);
-      break;
-    }
+  var ll = this.eat(['STRING', 'IDENT', 'NUMBER']);;
+  while(ll){
+    code.push("'" + ll.value + "'" + this.match(':').type);
+    var get = this.assign().get;
+    code.push(get);
+    ll=null;
+    if(this.eat(",") && (ll = this.eat(['STRING', 'IDENT', 'NUMBER'])) ) code.push(",");
   }
+  code.push(this.match('}').type);
   return {get: code.join("")}
 }
 
@@ -2879,13 +2768,6 @@ op.getset = function(get, set){
   return {
     get: get,
     set: set
-  }
-}
-
-//
-op.flatenDepend = function(depend){
-  for(var i = 0, len = depend.length; i < len; i++){
-
   }
 }
 

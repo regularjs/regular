@@ -1,5 +1,9 @@
 var Lexer = require_lib("parser/Lexer.js");
 
+/**
+ * setup template
+ */
+
 
 var l = function(input){
   return new Lexer(input).lex()
@@ -12,12 +16,24 @@ describe("Lexer works under mode 1 and 2", function(){
 
   it("pure xml lex should return diff tokens under mode 1 and 2", function(){
     var input = "<ul><div>hello name</div></ul>";
+    var input_attr = "<div attr='hello'></div>";
+    var input_attr_jst = "<div attr={{hello}}></div>";
     // mode 1
     expect(l(input))
       .typeEqual("TAG_OPEN,>,TAG_OPEN,>,TEXT,TAG_CLOSE,TAG_CLOSE,EOF");
     // mode 2
     expect(l2(input))
       .typeEqual("TEXT,EOF");
+
+    expect(l(input_attr))
+      .typeEqual("TAG_OPEN,NAME,=,STRING,>,TAG_CLOSE,EOF");
+
+    expect(l(input_attr_jst)).typeEqual("TAG_OPEN,NAME,=,EXPR_OPEN,IDENT,END,>,TAG_CLOSE,EOF")
+
+
+    expect(function(){
+      l("<<div>")
+    }).to.throwError();
   })
 
 
@@ -30,6 +46,11 @@ describe("Lexer works under mode 1 and 2", function(){
     // mode 2
     expect(l2(input))
       .typeEqual("OPEN,IDENT,END,EXPR_OPEN,IDENT,END,CLOSE,EOF");
+
+  })
+  it("inteplation is parsed as expect", function(){
+    expect(l2('{{hello}}'))
+      .typeEqual("EXPR_OPEN,IDENT,END,EOF");
   })
 
   it("complex input should works under mode 1 and 2", function(){
@@ -43,6 +64,7 @@ describe("Lexer works under mode 1 and 2", function(){
     // mode 2
     expect(l2(input))
       .typeEqual("OPEN,END,TEXT,EXPR_OPEN,IDENT,END,TEXT,CLOSE,EOF");
+
   })
 
 })

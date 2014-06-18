@@ -3,6 +3,7 @@ var _  = module.exports;
 var slice = [].slice;
 var o2str = ({}).toString;
 
+
 _.noop = function(){};
 _.uid = (function(){
   var _uid=0;
@@ -11,13 +12,11 @@ _.uid = (function(){
   }
 })();
 
-_.varName = 'd_'+_.uid();
-_.setName = 'p_'+_.uid();
+_.varName = '_d_';
+_.setName = '_p_';
+_.ctxName = '_c_';
 
-// randomVar
-_.randomVar = function(suffix){
-  return (suffix || "var") + "_" + _.uid().toString(36);
-}
+var prefix =  "var " + _.ctxName + "=context.$context||context;" + "var " + _.varName + "=context.data;";
 
 
 _.host = "data";
@@ -159,46 +158,8 @@ _.escapeRegExp = function(string){// Credit: XRegExp 0.6.1 (c) 2007-2008 Steven 
 
 
 
-_.assert = function(test, msg){
-  if(!test) throw msg;
-  return true;
-}
-
-
-_.walk = function(proto){
-  var walkers = {};
-  proto.walk = function walk(ast, arg){
-    if(o2str.call(ast) === "[object Array]"){
-      var res = [];
-      for(var i = 0, len = ast.length; i < len; i++){
-        res.push(this.walk(ast[i]));
-      }
-      return res;
-    }
-    return walkers[ast.type || "default"].call(this, ast, arg);
-  }
-  return walkers;
-}
-
-
-
-_.isEmpty = function(obj){
-  return !obj || obj.length === 0;
-}
-
 
 // simple get accessor
-_.compileGetter = function(paths){
-  var base = "obj";
-  var code = "if(" +base+ " != null";
-  for(var i = 0, len = paths.length; i < len; i++){
-    base += "['" +paths[i]+ "']";
-    code += "&&" + base + "!=null";
-  }
-  code += ") return " + base + ";\n";
-  code += "else return undefined";
-  return new Function("obj", code);
-}
 
 _.createObject = function(o, props){
     function foo() {}
@@ -378,21 +339,6 @@ var ld = (function(){
   })();
 
 
-_._path = function(base, path){
-  return base == undefined? base: base[path];
-}
-
-_._range = function(start, end){
-  if(typeof start !== 'number' || typeof end !== 'number'){
-    return []
-  }
-  var res = [];
-  for(var i = start; i <= end; i++){
-    res.push(i);
-  }
-  return res;
-}
-
 
 _.throttle = function throttle(func, wait){
   var wait = wait || 100;
@@ -452,7 +398,7 @@ _.cache = function(max){
   return {
     set: function(key, value) {
       if (keys.length > this.max) {
-        cache[keys.shift()] = null;
+        cache[keys.shift()] = undefined;
       }
       // 只有非undefined才可以
       if(cache[key] == undefined){
@@ -472,11 +418,31 @@ _.cache = function(max){
   };
 }
 
+_.touchExpression = function(expr){
+  if(expr.type === 'expression'){
+    if(!expr.get){
+      expr.get = new Function("context", prefix + "return (" + expr.body + ")");
+      expr.body = null;
+      if(expr.setbody){
+        expr.set = function(ctx, value){
+          if(expr.setbody){
+            expr.set = new Function('context', _.setName ,  prefix + expr.setbody);
+            expr.setbody = null;
+          }
+          return expr.set(ctx, value);
+        }
+      }
+    }
+  }
+  return expr;
+}
+
 //http://www.w3.org/html/wg/drafts/html/master/single-page.html#void-elements
 _.isVoidTag = _.makePredicate("area base br col embed hr img input keygen link menuitem meta param source track wbr");
 _.isBooleanAttr = _.makePredicate('selected checked disabled readOnly required open autofocus controls autoplay compact loop defer multiple');
 
 _.isFalse - function(){return false}
 _.isTrue - function(){return true}
+
 
 

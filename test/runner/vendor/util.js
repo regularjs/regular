@@ -14,3 +14,14 @@ ao.typeEqual = function(list){
 }
 
 
+expect.template = (function(){
+  var cache = {};
+  return {
+    get: function(name){
+      return cache[name];
+    },
+    set: function(fn){
+      return (cache[fn.name] = fn.toString().match(/\/\*([\s\S]*)\*\//)[1].trim())
+    }
+  }
+})()

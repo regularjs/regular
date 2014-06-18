@@ -10,7 +10,6 @@ var combine = require('./helper/combine.js');
 var walkers = require('./walkers.js');
 var idtest = /^[\w-]{1,20}$/;
 
-
 var Regular = function(options){
   var node, template, name;
 
@@ -58,7 +57,7 @@ _.extend(Regular, {
     if(o.name) Regular.component(o.name, this);
     if(template = o.template){
       var node, name;
-      if(typeof template === 'string' && template.length < 20 && (node= dom.find(template))){
+      if( typeof template === 'string' && template.length < 20 && ( node = dom.find( template )) ){
         template = node.innerHTML;
         if(name = dom.attr(node, 'name')) Regular.component(name, this);
       }
@@ -110,10 +109,11 @@ _.extend(Regular, {
   },
   parse: function(expr){
     // @TODO cache
-    if(expr.type === 'expression') return expr;
-    var expr = expr.trim();
-    var res = this._exprCache[expr] || (this._exprCache[expr] = new Parser(expr,{state: 'JST'}).expression());
-    return res;
+    if(typeof expr === 'string'){
+      var expr = expr.trim();
+      expr = this._exprCache[expr] || (this._exprCache[expr] = new Parser(expr,{state: 'JST'}).expression());
+    }
+    return _.touchExpression(expr);
   },
   use: function(fn){
     fn(this, Regular);
@@ -483,8 +483,7 @@ _.extend( Regular.prototype, {
     var filter = Regular.filter(name);
     if(typeof filter !== 'function') throw 'filter ' + name + 'is undefined';
     return filter;
-  },
-  _r: _._range
+  }
 });
 
 module.exports = Regular;

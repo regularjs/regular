@@ -153,7 +153,6 @@ walkers['if'] = function(ast){
 
 
 walkers.expression = function(ast){
-  var self = this;
   var node = document.createTextNode("");
   var watchid = this.$watch(ast, function(newval){
     dom.text(node, "" + (newval == null? "": String(newval)));
@@ -161,7 +160,6 @@ walkers.expression = function(ast){
   return node;
 }
 walkers.text = function(ast){
-  var self = this;
   var node = document.createTextNode(ast.text);
   return node;
 }
@@ -170,16 +168,14 @@ walkers.text = function(ast){
 
 walkers.element = function(ast){
   var attrs = ast.attrs, component;
-  var watchids = [];
   var self = this;
   var Component = Regular.component(ast.tag);
   if(Component){
     var data = {};
-
     for(var i = 0, len = attrs.length; i < len; i++){
       var attr = attrs[i];
       var value = attr.value||"";
-      if(value.type !== 'expression' && attr.name !== 'ref'){
+      if(value.type !== 'expression'){
         data[attr.name] = value;
       }
     }
@@ -191,20 +187,18 @@ walkers.element = function(ast){
       var value = attr.value||"";
       if(value.type === 'expression'){
         this.$bind(component, value, attr.name);
-      }else{
-        if(attr.name === 'ref' ) this.$refs.push(value);
       }
     }
     return component;
   }else if(ast.tag === 'r:content' && this.data.$body){
     return this.data.$body;
   }
+
   var element = dom.create(ast.tag);
   var children = ast.children;
   var destroies = [];
   var child;
   var self = this;
-  // @TODO must mark the attr bind;
   var directive = [];
   for(var i = 0, len = attrs.length; i < len; i++){
     var destroy = bindAttrWatcher.call(this, element, attrs[i])
@@ -213,6 +207,7 @@ walkers.element = function(ast){
   if(children && children.length){
     var group = this.$compile(children);
   }
+
   
   return {
     node: function(){
@@ -227,9 +222,6 @@ walkers.element = function(ast){
       if(destroies.length) {
         destroies.forEach(function(destroy){destroy() })
       }
-      // for(var i = 0,len = watchids.length; i< len ;i++){
-      //   self.$unwatch(watchids[i]);
-      // }
       dom.remove(element);
     }
   }
@@ -239,8 +231,10 @@ walkers.element = function(ast){
 
 function bindAttrWatcher(element, attr){
   var name = attr.name,
-    value = attr.value || "", directive=Regular.directive(name);
-  if(name === 'ref' && value) this.$refs[value] = element;
+    value = attr.value || "", directive = Regular.directive(name);
+    
+  _.touchExpression(value);
+
   if(directive && directive.link){
     return directive.link.call(this, element, value, name);
   }else{
