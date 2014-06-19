@@ -56,3 +56,11 @@ Regular.directive('r-hide', function(elem, value){
 
 });
 
+
+
+
+
+
+
+
+

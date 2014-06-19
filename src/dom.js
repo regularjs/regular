@@ -254,7 +254,7 @@ function Event(ev){
   }
   
   // fix which
-  this.which = ev.charCode != null ? ev.charCode : ev.keyCode;
+  this.which = ev.which || ev.keyCode;
   if( !this.which && button !== undefined){
     // http://api.jquery.com/event.which/ use which
     this.which = ( button & 1 ? 1 : ( button & 2 ? 3 : ( button & 4 ? 2 : 0 ) ) );

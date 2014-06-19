@@ -1,3 +1,3 @@
-var dom = require('dom.js');
+var dom = require_lib('dom.js');
 
 

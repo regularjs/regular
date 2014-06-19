@@ -230,9 +230,10 @@ walkers.element = function(ast){
 // dada
 
 function bindAttrWatcher(element, attr){
+  var Component = this.constructor;
   var name = attr.name,
-    value = attr.value || "", directive = Regular.directive(name);
-    
+    value = attr.value || "", directive = Component.directive(name);
+
   _.touchExpression(value);
 
   if(directive && directive.link){

@@ -38,15 +38,17 @@ var Regular = function(options){
   // children is not required;
 }
 
+
 // description
 // -------------------------
 // 1. Regular and derived Class use same filter
 _.extend(Regular, {
   // private data stuff
-  _directors: { __regexp__:[] },
+  _directives: { __regexp__:[] },
   _components: {},
   _filters: {},
-  _customers: {},
+  _events: {},
+
   _exprCache:{},
 
   __after__: function(supr, o) {
@@ -65,35 +67,46 @@ _.extend(Regular, {
         this.prototype.template = new Parser(template).parse();
       }
     }
-    this.use = supr.use;
+
+    // prototype inherit some Regular property
+    // so every Component will have own container to serve directive, filter etc..
+    void function(){
+      var self = this;
+      var keys = _.slice(arguments);
+      keys.forEach(function(key){
+        self[key] = supr[key];
+        var cacheKey = '_' + key + 's';
+        if(supr[cacheKey]) self[cacheKey] = _.createObject(supr[cacheKey]);
+      })
+    }.call(this, 'use', 'directive', 'event', 'filter')
   },
   extend: extend,
   /**
-   * director's setter and getter
+   * directive's setter and getter
    * @param  {String|RegExp} name  
    * @param  {[type]} cfg  [description]
    * @return {[type]}      [description]
    */
   directive: function(name, cfg){
     var type = _.typeOf(name);
-    var directors = this._directors, director;
+    var directives = this._directives, directive;
     if(cfg == null){
-      if( type === "string" && (director = directors[name]) ) return director;
+      if( type === "string" && (directive = directives[name]) ) return directive;
       else{
-        var regexp = directors.__regexp__;
+        var regexp = directives.__regexp__;
         for(var i = 0, len = regexp.length; i < len ; i++){
-          director = regexp[i];
-          var test = director.regexp.test(name);
-          if(test) return director;
+          directive = regexp[i];
+          var test = directive.regexp.test(name);
+          if(test) return directive;
         }
       }
       return;
     }
     if(typeof cfg === 'function') cfg = { link: cfg } 
-    if(type === 'string') directors[name] = cfg;
+    if(type === 'string') directives[name] = cfg;
     else if(type === 'regexp'){
       cfg.regexp = name;
-      directors.__regexp__.push(cfg)
+      directives.__regexp__.push(cfg)
     }
   },
   filter: function(name, fn){
@@ -107,6 +120,10 @@ _.extend(Regular, {
     this._components[name] = Component;
     return this;
   },
+  use: function(fn){
+    fn(this, Regular);
+    return this;
+  },
   parse: function(expr){
     // @TODO cache
     if(typeof expr === 'string'){
@@ -115,16 +132,13 @@ _.extend(Regular, {
     }
     return _.touchExpression(expr);
   },
-  use: function(fn){
-    fn(this, Regular);
-    return this;
-  },
   Parser: Parser,
   Lexer: Lexer
 });
 
 
 Event.mixTo(Regular)
+
 _.extend( Regular.prototype, {
   init: function(){},
   /**
@@ -412,7 +426,6 @@ _.extend( Regular.prototype, {
         if(!watcher.last){
            eq = false;
          }else{
-
           for(var j in now){
             if(watcher.last[j] !== now[j]){
               eq = false;
@@ -480,7 +493,8 @@ _.extend( Regular.prototype, {
   },
   // find filter
   _f: function(name){
-    var filter = Regular.filter(name);
+    var Component = this.constructor;
+    var filter = Component.filter(name);
     if(typeof filter !== 'function') throw 'filter ' + name + 'is undefined';
     return filter;
   }

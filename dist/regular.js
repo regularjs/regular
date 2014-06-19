@@ -249,15 +249,17 @@ var Regular = function(options){
   // children is not required;
 }
 
+
 // description
 // -------------------------
 // 1. Regular and derived Class use same filter
 _.extend(Regular, {
   // private data stuff
-  _directors: { __regexp__:[] },
+  _directives: { __regexp__:[] },
   _components: {},
   _filters: {},
-  _customers: {},
+  _events: {},
+
   _exprCache:{},
 
   __after__: function(supr, o) {
@@ -276,35 +278,46 @@ _.extend(Regular, {
         this.prototype.template = new Parser(template).parse();
       }
     }
-    this.use = supr.use;
+
+    // prototype inherit some Regular property
+    // so every Component will have own container to serve directive, filter etc..
+    void function(){
+      var self = this;
+      var keys = _.slice(arguments);
+      keys.forEach(function(key){
+        self[key] = supr[key];
+        var cacheKey = '_' + key + 's';
+        if(supr[cacheKey]) self[cacheKey] = _.createObject(supr[cacheKey]);
+      })
+    }.call(this, 'use', 'directive', 'event', 'filter')
   },
   extend: extend,
   /**
-   * director's setter and getter
+   * directive's setter and getter
    * @param  {String|RegExp} name  
    * @param  {[type]} cfg  [description]
    * @return {[type]}      [description]
    */
   directive: function(name, cfg){
     var type = _.typeOf(name);
-    var directors = this._directors, director;
+    var directives = this._directives, directive;
     if(cfg == null){
-      if( type === "string" && (director = directors[name]) ) return director;
+      if( type === "string" && (directive = directives[name]) ) return directive;
       else{
-        var regexp = directors.__regexp__;
+        var regexp = directives.__regexp__;
         for(var i = 0, len = regexp.length; i < len ; i++){
-          director = regexp[i];
-          var test = director.regexp.test(name);
-          if(test) return director;
+          directive = regexp[i];
+          var test = directive.regexp.test(name);
+          if(test) return directive;
         }
       }
       return;
     }
     if(typeof cfg === 'function') cfg = { link: cfg } 
-    if(type === 'string') directors[name] = cfg;
+    if(type === 'string') directives[name] = cfg;
     else if(type === 'regexp'){
       cfg.regexp = name;
-      directors.__regexp__.push(cfg)
+      directives.__regexp__.push(cfg)
     }
   },
   filter: function(name, fn){
@@ -318,6 +331,10 @@ _.extend(Regular, {
     this._components[name] = Component;
     return this;
   },
+  use: function(fn){
+    fn(this, Regular);
+    return this;
+  },
   parse: function(expr){
     // @TODO cache
     if(typeof expr === 'string'){
@@ -326,16 +343,13 @@ _.extend(Regular, {
     }
     return _.touchExpression(expr);
   },
-  use: function(fn){
-    fn(this, Regular);
-    return this;
-  },
   Parser: Parser,
   Lexer: Lexer
 });
 
 
 Event.mixTo(Regular)
+
 _.extend( Regular.prototype, {
   init: function(){},
   /**
@@ -623,7 +637,6 @@ _.extend( Regular.prototype, {
         if(!watcher.last){
            eq = false;
          }else{
-
           for(var j in now){
             if(watcher.last[j] !== now[j]){
               eq = false;
@@ -691,7 +704,8 @@ _.extend( Regular.prototype, {
   },
   // find filter
   _f: function(name){
-    var filter = Regular.filter(name);
+    var Component = this.constructor;
+    var filter = Component.filter(name);
     if(typeof filter !== 'function') throw 'filter ' + name + 'is undefined';
     return filter;
   }
@@ -1140,6 +1154,7 @@ _.touchExpression = function(expr){
   return expr;
 }
 
+
 //http://www.w3.org/html/wg/drafts/html/master/single-page.html#void-elements
 _.isVoidTag = _.makePredicate("area base br col embed hr img input keygen link menuitem meta param source track wbr");
 _.isBooleanAttr = _.makePredicate('selected checked disabled readOnly required open autofocus controls autoplay compact loop defer multiple');
@@ -1384,9 +1399,10 @@ walkers.element = function(ast){
 // dada
 
 function bindAttrWatcher(element, attr){
+  var Component = this.constructor;
   var name = attr.name,
-    value = attr.value || "", directive = Regular.directive(name);
-    
+    value = attr.value || "", directive = Component.directive(name);
+
   _.touchExpression(value);
 
   if(directive && directive.link){
@@ -1687,7 +1703,7 @@ function Event(ev){
   }
   
   // fix which
-  this.which = ev.charCode != null ? ev.charCode : ev.keyCode;
+  this.which = ev.which || ev.keyCode;
   if( !this.which && button !== undefined){
     // http://api.jquery.com/event.which/ use which
     this.which = ( button & 1 ? 1 : ( button & 2 ? 3 : ( button & 4 ? 2 : 0 ) ) );
@@ -3115,6 +3131,14 @@ Regular.directive('r-hide', function(elem, value){
 });
 
 
+
+
+
+
+
+
+
+
 });
 require.register("regularjs/src/directive/form.js", function(exports, require, module){
 // Regular
@@ -3273,7 +3297,7 @@ var _ = require("../util.js");
 var dom = require("../dom.js");
 var Regular = require("../Regular.js");
 
-Regular.events = {
+Regular._events = {
   enter: function(elem, fire){
     function update(ev){
       if(ev.which == 13){
@@ -3288,13 +3312,19 @@ Regular.events = {
   }
 }
 
+Regular.event = function(name, handler){
+  if(!handler) return this._events[name];
+  this._events[name] = handler;
+  return this;
+}
 
 
 Regular.directive(/^on-\w+$/, function(elem, value, name){
 
+  var Component = this.constructor;
+
   if(!name || !value) return;
-  var type = name.split("-")[1], 
-    events = Regular.events;
+  var type = name.split("-")[1];
   var parsed = Regular.parse(value);
   var self = this;
 
@@ -3305,7 +3335,8 @@ Regular.directive(/^on-\w+$/, function(elem, value, name){
     delete self.data.$event;
     self.$update();
   }
-  var handler = events[type];
+  
+  var handler = Component.event(type);
   if(handler){
     var destroy = handler(elem, fire);
   }else{

@@ -6,7 +6,7 @@ var _ = require("../util.js");
 var dom = require("../dom.js");
 var Regular = require("../Regular.js");
 
-Regular.events = {
+Regular._events = {
   enter: function(elem, fire){
     function update(ev){
       if(ev.which == 13){
@@ -21,13 +21,19 @@ Regular.events = {
   }
 }
 
+Regular.event = function(name, handler){
+  if(!handler) return this._events[name];
+  this._events[name] = handler;
+  return this;
+}
 
 
 Regular.directive(/^on-\w+$/, function(elem, value, name){
 
+  var Component = this.constructor;
+
   if(!name || !value) return;
-  var type = name.split("-")[1], 
-    events = Regular.events;
+  var type = name.split("-")[1];
   var parsed = Regular.parse(value);
   var self = this;
 
@@ -38,7 +44,8 @@ Regular.directive(/^on-\w+$/, function(elem, value, name){
     delete self.data.$event;
     self.$update();
   }
-  var handler = events[type];
+  
+  var handler = Component.event(type);
   if(handler){
     var destroy = handler(elem, fire);
   }else{
