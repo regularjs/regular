@@ -12,9 +12,9 @@ var pkg;
 
 try{
   pkg = JSON.parse(fs.readFileSync('./package.json', 'utf8'))
-}catch(e){
-  pkg = {}
-}
+  pkg_bower = JSON.parse(fs.readFileSync('./bower.json', 'utf8'))
+  pkg_component = JSON.parse(fs.readFileSync('./component.json', 'utf8'))
+}catch(e){}
 
 
 gulp.task('default', ['build'], function() {});
@@ -47,6 +47,20 @@ gulp.task('build', function(){
 })
 
 
+// gulp v  -0.0.1
+gulp.task('v', function(fn){
+  var version = process.argv[3].replace('-',"");
+  pkg.version = version
+  pkg_component.version = version
+  pkg_bower.version = version
+  try{
+    fs.writeFileSync('./package.json', JSON.stringify(pkg, null, 2), 'utf8');           
+    fs.writeFileSync('./component.json', JSON.stringify(pkg_component, null, 2), 'utf8');
+    fs.writeFileSync('./bower.json', JSON.stringify(pkg_bower, null, 2), 'utf8');
+  }catch(e){
+    console.error('update version faild' + e.message)
+  }
+})
 
 
 gulp.task('dev', function(){
