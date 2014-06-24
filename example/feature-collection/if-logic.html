@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Regular.js • if</title>
+    <script src="../../dist/regular.js"></script>
+
+  </head>
+  <body>
+    <div id="app" class='container'></div>
+    <!-- Templates -->
+    <script id="if" type="text/regular">
+      {{#if username}}
+        <div>dada</div>
+      {{#else}}
+        <div>dada</div>
+      {{/if}}
+    </script>
+
+    <script>
+
+    var App = Regular.extend({template: '#if'});
+
+
+    var app = new App({data:{username: 1}}).inject("#app");
+
+    </script>
+  </body>
+</html>

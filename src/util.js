@@ -16,6 +16,7 @@ _.varName = '_d_';
 _.setName = '_p_';
 _.ctxName = '_c_';
 
+
 var prefix =  "var " + _.ctxName + "=context.$context||context;" + "var " + _.varName + "=context.data;";
 
 

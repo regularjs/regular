@@ -27,6 +27,8 @@ var Regular = function(options){
   this.config && this.config(this.data);
   this.$root = this.$root || this;
   this.$context = this.$context || this;
+  // if have events
+  if(this.events) this.$on(this.events);
   if(template){
     this.group = this.$compile(this.template);
     this.element = combine.node(this);
@@ -124,13 +126,14 @@ _.extend(Regular, {
     fn(this, Regular);
     return this;
   },
-  parse: function(expr){
+  expression: function(expr){
     // @TODO cache
     if(typeof expr === 'string'){
       var expr = expr.trim();
       expr = this._exprCache[expr] || (this._exprCache[expr] = new Parser(expr,{state: 'JST'}).expression());
     }
-    return _.touchExpression(expr);
+    var res = _.touchExpression(expr);
+    return res;
   },
   Parser: Parser,
   Lexer: Lexer
@@ -176,7 +179,7 @@ _.extend( Regular.prototype, {
       var type = _.typeOf(path);
       if( type === 'string' || path.type === 'expression' ){
         var base = this.data;
-        var path = Regular.parse(path);
+        var path = Regular.expression(path);
         path.set(this, value);
       }else if(type === 'function'){
         path.call(this, this.data);
@@ -277,7 +280,7 @@ _.extend( Regular.prototype, {
       // @todo 只需要watch一次
       var tests = [];
       for(var i=0,len = expr.length; i < len; i++){
-          tests.push(Regular.parse(expr[i]).get) 
+          tests.push(Regular.expression(expr[i]).get) 
       }
       var prev = [];
       var test = function(context){
@@ -292,7 +295,7 @@ _.extend( Regular.prototype, {
         return equal? false: prev;
       }
     }else{
-      var expr = Regular.parse(expr);
+      var expr = Regular.expression(expr);
       var get = expr.get;
       var constant = expr.constant;
     }
@@ -372,10 +375,10 @@ _.extend( Regular.prototype, {
     // basic binding
     if(!component || !(component instanceof Regular)) throw "$bind() should pass Regular component as first argument";
     if(!expr1) throw "$bind() should as least pass one expression to bind";
-    expr1 = Regular.parse(expr1);
+    expr1 = Regular.expression(expr1);
 
     if(!expr2) expr2 = expr1;
-    else expr2 = Regular.parse(expr2);
+    else expr2 = Regular.expression(expr2);
 
     // set is need to operate setting ;
     if(expr2.set){

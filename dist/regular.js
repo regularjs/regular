@@ -1,6 +1,6 @@
 /**
 @author	leeluolee
-@version	0.0.1
+@version	0.1.0
 @homepage	http://regularjs.github.io
 */
 ;(function(){
@@ -238,6 +238,8 @@ var Regular = function(options){
   this.config && this.config(this.data);
   this.$root = this.$root || this;
   this.$context = this.$context || this;
+  // if have events
+  if(this.events) this.$on(this.events);
   if(template){
     this.group = this.$compile(this.template);
     this.element = combine.node(this);
@@ -335,13 +337,14 @@ _.extend(Regular, {
     fn(this, Regular);
     return this;
   },
-  parse: function(expr){
+  expression: function(expr){
     // @TODO cache
     if(typeof expr === 'string'){
       var expr = expr.trim();
       expr = this._exprCache[expr] || (this._exprCache[expr] = new Parser(expr,{state: 'JST'}).expression());
     }
-    return _.touchExpression(expr);
+    var res = _.touchExpression(expr);
+    return res;
   },
   Parser: Parser,
   Lexer: Lexer
@@ -387,7 +390,7 @@ _.extend( Regular.prototype, {
       var type = _.typeOf(path);
       if( type === 'string' || path.type === 'expression' ){
         var base = this.data;
-        var path = Regular.parse(path);
+        var path = Regular.expression(path);
         path.set(this, value);
       }else if(type === 'function'){
         path.call(this, this.data);
@@ -488,7 +491,7 @@ _.extend( Regular.prototype, {
       // @todo 只需要watch一次
       var tests = [];
       for(var i=0,len = expr.length; i < len; i++){
-          tests.push(Regular.parse(expr[i]).get) 
+          tests.push(Regular.expression(expr[i]).get) 
       }
       var prev = [];
       var test = function(context){
@@ -503,7 +506,7 @@ _.extend( Regular.prototype, {
         return equal? false: prev;
       }
     }else{
-      var expr = Regular.parse(expr);
+      var expr = Regular.expression(expr);
       var get = expr.get;
       var constant = expr.constant;
     }
@@ -583,10 +586,10 @@ _.extend( Regular.prototype, {
     // basic binding
     if(!component || !(component instanceof Regular)) throw "$bind() should pass Regular component as first argument";
     if(!expr1) throw "$bind() should as least pass one expression to bind";
-    expr1 = Regular.parse(expr1);
+    expr1 = Regular.expression(expr1);
 
     if(!expr2) expr2 = expr1;
-    else expr2 = Regular.parse(expr2);
+    else expr2 = Regular.expression(expr2);
 
     // set is need to operate setting ;
     if(expr2.set){
@@ -732,6 +735,7 @@ _.uid = (function(){
 _.varName = '_d_';
 _.setName = '_p_';
 _.ctxName = '_c_';
+
 
 var prefix =  "var " + _.ctxName + "=context.$context||context;" + "var " + _.varName + "=context.data;";
 
@@ -1286,6 +1290,9 @@ walkers.template = function(ast){
 walkers['if'] = function(ast){
   var test, consequent, alternate, node;
   var placeholder = document.createComment("Regular if");
+  var fragment = dom.fragment();
+  fragment.appendChild(placeholder);
+
   var self = this;
   function update(nvalue, old){
     if(!!nvalue){ //true
@@ -1307,7 +1314,7 @@ walkers['if'] = function(ast){
 
   return {
     node: function(){
-      return placeholder;
+      return fragment;
     },
     last: function(){
       var group = consequent || alternate;
@@ -1334,6 +1341,7 @@ walkers.text = function(ast){
 }
 
 
+var eventReg = /^on-(.+)$/
 
 walkers.element = function(ast){
   var attrs = ast.attrs, component;
@@ -1341,20 +1349,35 @@ walkers.element = function(ast){
   var Component = Regular.component(ast.tag);
   if(Component){
     var data = {};
+    var events;
     for(var i = 0, len = attrs.length; i < len; i++){
+
       var attr = attrs[i];
       var value = attr.value||"";
+      _.touchExpression(value);
+      var name = attr.name;
+      var etest = name.match(eventReg);
+
+      // bind event proxy
+      if(etest){
+        events = events || {};
+        if(typeof value === 'string') value = Regular.expression(value);
+        var fn  = value.get(self);
+        events[etest[1]] = fn.bind(this);
+        continue;
+      }
+
       if(value.type !== 'expression'){
         data[attr.name] = value;
       }
     }
 
     if(ast.children) data.$body = this.$compile(ast.children);
-    var component = new Component({data: data});
+    var component = new Component({data: data, events: events});
     for(var i = 0, len = attrs.length; i < len; i++){
       var attr = attrs[i];
       var value = attr.value||"";
-      if(value.type === 'expression'){
+      if(value.type === 'expression' && attr.name.indexOf('on-')===-1){
         this.$bind(component, value, attr.name);
       }
     }
@@ -1363,11 +1386,11 @@ walkers.element = function(ast){
     return this.data.$body;
   }
 
-  var element = dom.create(ast.tag);
+  if(ast.tag === 'svg') this._ns_ = 'svg';
+  var element = dom.create(ast.tag, this._ns_);
   var children = ast.children;
   var destroies = [];
   var child;
-  var self = this;
   var directive = [];
   for(var i = 0, len = attrs.length; i < len; i++){
     var destroy = bindAttrWatcher.call(this, element, attrs[i])
@@ -1376,8 +1399,8 @@ walkers.element = function(ast){
   if(children && children.length){
     var group = this.$compile(children);
   }
+  if(ast.tag === 'svg') this._ns_ = null;
 
-  
   return {
     node: function(){
       if(group && !_.isVoidTag(ast.tag)) element.appendChild(combine.node(group));
@@ -1515,7 +1538,11 @@ dom.id = function(id){
 
 // createElement 
 dom.create = function(type, ns){
-  return !ns? document.createElement(type): document.createElementNS(type, ns);
+  if(ns === 'svg'){
+    if(!env.svg) throw Error('the env need svg support')
+    ns = "http://www.w3.org/2000/svg";
+  }
+  return !ns? document.createElement(type): document.createElementNS(ns, type);
 }
 
 // documentFragment
@@ -3162,7 +3189,7 @@ Regular.directive("r-model", function(elem, value){
   var sign = tag;
   if(sign === "input") sign = elem.type || "text";
   else if(sign === "textarea") sign = "text";
-  if(typeof value === "string") value = Regular.parse(value);
+  if(typeof value === "string") value = Regular.expression(value);
 
   if( modelHandlers[sign] ) modelHandlers[sign].call(this, elem, value);
   else if(tag === "input"){
@@ -3325,7 +3352,7 @@ Regular.directive(/^on-\w+$/, function(elem, value, name){
 
   if(!name || !value) return;
   var type = name.split("-")[1];
-  var parsed = Regular.parse(value);
+  var parsed = Regular.expression(value);
   var self = this;
 
   function fire(obj){

@@ -19,7 +19,7 @@ Regular.directive("r-model", function(elem, value){
   var sign = tag;
   if(sign === "input") sign = elem.type || "text";
   else if(sign === "textarea") sign = "text";
-  if(typeof value === "string") value = Regular.parse(value);
+  if(typeof value === "string") value = Regular.expression(value);
 
   if( modelHandlers[sign] ) modelHandlers[sign].call(this, elem, value);
   else if(tag === "input"){

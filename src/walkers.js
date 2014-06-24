@@ -117,6 +117,9 @@ walkers.template = function(ast){
 walkers['if'] = function(ast){
   var test, consequent, alternate, node;
   var placeholder = document.createComment("Regular if");
+  var fragment = dom.fragment();
+  fragment.appendChild(placeholder);
+
   var self = this;
   function update(nvalue, old){
     if(!!nvalue){ //true
@@ -138,7 +141,7 @@ walkers['if'] = function(ast){
 
   return {
     node: function(){
-      return placeholder;
+      return fragment;
     },
     last: function(){
       var group = consequent || alternate;
@@ -165,6 +168,7 @@ walkers.text = function(ast){
 }
 
 
+var eventReg = /^on-(.+)$/
 
 walkers.element = function(ast){
   var attrs = ast.attrs, component;
@@ -172,20 +176,35 @@ walkers.element = function(ast){
   var Component = Regular.component(ast.tag);
   if(Component){
     var data = {};
+    var events;
     for(var i = 0, len = attrs.length; i < len; i++){
+
       var attr = attrs[i];
       var value = attr.value||"";
+      _.touchExpression(value);
+      var name = attr.name;
+      var etest = name.match(eventReg);
+
+      // bind event proxy
+      if(etest){
+        events = events || {};
+        if(typeof value === 'string') value = Regular.expression(value);
+        var fn  = value.get(self);
+        events[etest[1]] = fn.bind(this);
+        continue;
+      }
+
       if(value.type !== 'expression'){
         data[attr.name] = value;
       }
     }
 
     if(ast.children) data.$body = this.$compile(ast.children);
-    var component = new Component({data: data});
+    var component = new Component({data: data, events: events});
     for(var i = 0, len = attrs.length; i < len; i++){
       var attr = attrs[i];
       var value = attr.value||"";
-      if(value.type === 'expression'){
+      if(value.type === 'expression' && attr.name.indexOf('on-')===-1){
         this.$bind(component, value, attr.name);
       }
     }
@@ -194,11 +213,11 @@ walkers.element = function(ast){
     return this.data.$body;
   }
 
-  var element = dom.create(ast.tag);
+  if(ast.tag === 'svg') this._ns_ = 'svg';
+  var element = dom.create(ast.tag, this._ns_);
   var children = ast.children;
   var destroies = [];
   var child;
-  var self = this;
   var directive = [];
   for(var i = 0, len = attrs.length; i < len; i++){
     var destroy = bindAttrWatcher.call(this, element, attrs[i])
@@ -207,8 +226,8 @@ walkers.element = function(ast){
   if(children && children.length){
     var group = this.$compile(children);
   }
+  if(ast.tag === 'svg') this._ns_ = null;
 
-  
   return {
     node: function(){
       if(group && !_.isVoidTag(ast.tag)) element.appendChild(combine.node(group));

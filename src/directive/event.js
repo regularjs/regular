@@ -34,7 +34,7 @@ Regular.directive(/^on-\w+$/, function(elem, value, name){
 
   if(!name || !value) return;
   var type = name.split("-")[1];
-  var parsed = Regular.parse(value);
+  var parsed = Regular.expression(value);
   var self = this;
 
   function fire(obj){

@@ -66,7 +66,11 @@ dom.id = function(id){
 
 // createElement 
 dom.create = function(type, ns){
-  return !ns? document.createElement(type): document.createElementNS(type, ns);
+  if(ns === 'svg'){
+    if(!env.svg) throw Error('the env need svg support')
+    ns = "http://www.w3.org/2000/svg";
+  }
+  return !ns? document.createElement(type): document.createElementNS(ns, type);
 }
 
 // documentFragment

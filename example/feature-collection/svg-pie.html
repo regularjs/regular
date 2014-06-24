@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SVG</title>
+  <script src="../../dist/regular.js"></script>
+</head>
+<body>
+  <div id="pie"></div>
+
+  <script type="text/regular" id="app">
+    <svg height="400" version="1.1" width="400">
+      <circle on-click={{this.bigger()}} cx="{{width}}" cy="{{height}}" r="{{circle}}" fill="#fefefe" stroke="#333" stroke-width="4" ></circle>
+    </svg>
+  </script>
+
+  <script>
+    var Application = Regular.extend({
+      template: '#app',
+      init: function(){}
+    });
+    
+
+    var app = new Application({
+      data: {
+        width: 200,
+        height: 200,
+        circle: 100
+      },
+      init: function(data){
+        var self = this;
+        setInterval(function(){
+          data.circle *= 1.004
+          self.$update();
+        },100)
+      },
+      bigger: function(){
+        this.data.circle *= 1.2;
+      }
+    }).inject('#pie');
+  </script>
+</body>
+</html>
