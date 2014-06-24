@@ -123,6 +123,7 @@ walkers['if'] = function(ast){
   var self = this;
   function update(nvalue, old){
     if(!!nvalue){ //true
+      if(consequent) return;
       consequent = self.$compile( ast.consequent , true)
       node = combine.node(consequent); //return group
       if(alternate){ alternate.destroy() };
@@ -130,6 +131,7 @@ walkers['if'] = function(ast){
       // @TODO
       placeholder.parentNode && placeholder.parentNode.insertBefore( node, placeholder );
     }else{ //false
+      if(alternate) return;
       if(consequent){ consequent.destroy(); }
       consequent = null;
       if(ast.alternate) alternate = self.$compile(ast.alternate, true);

@@ -1,29 +1,32 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <title>Regular.js • if</title>
-    <script src="../../dist/regular.js"></script>
+<div id="app"></div>
 
-  </head>
-  <body>
-    <div id="app" class='container'></div>
-    <!-- Templates -->
-    <script id="if" type="text/regular">
-      {{#if username}}
-        <div>dada</div>
-      {{#else}}
-        <div>dada</div>
-      {{/if}}
-    </script>
+<script id="hello" type="text/regular" name="hello">
+ {{#if username}}
+  Hello, {{username}}. <a href='#' on-click={{username = ''}}>Logout</a>
+{{#else}}
+  Sorry, Guest. Please <a href='#' on-click={{this.login()}}>Login</a>
+{{/if}}
 
-    <script>
+</script>
 
-    var App = Regular.extend({template: '#if'});
+<!-- 引入regular.js -->
+<script src="../../dist/regular.js"></script>
 
 
-    var app = new App({data:{username: 1}}).inject("#app");
+<script>
+//利用Regular构建你的app吧
+var HelloRegular = Regular.extend({
+  template: '#hello',
+  login: function(){
+    var data = this.data; // get data
+    data.username = prompt("please enter your username", "")
+  }
+});
 
-    </script>
-  </body>
-</html>
+
+// initialize component then inject to #app's  bottom
+var component = new HelloRegular({
+  data: {username: null}
+});
+component.inject('#app'); 
+</script>
