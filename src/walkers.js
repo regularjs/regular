@@ -14,6 +14,8 @@ walkers.list = function(ast){
   fragment.appendChild(placeholder);
   var self = this;
   var group = new Group();
+  var indexName = ast.variable + '_index';
+  var variable = ast.variable;
   // group.push(placeholder);
 
 
@@ -29,7 +31,7 @@ walkers.list = function(ast){
 
       for(var k=m; k<index; k++){ // no change
         var sect = group.get(k);
-        sect.data.$index = k;
+        sect.data[indexName] = k;
       }
       for(var j = 0,jlen = splice.removed.length; j< jlen; j++){ //removed
         var removed = group.children.splice( index, 1)[0];
@@ -42,8 +44,8 @@ walkers.list = function(ast){
         // prototype inherit
         var item = newValue[o];
         var data = _.createObject(self.data);
-        data.$index = o;
-        data[ast.variable] = item;
+        data[indexName] = o;
+        data[variable] = item;
 
         var section = new Section({data: data, $root: self.$root});
         var update = section.$digest.bind(section);
@@ -62,7 +64,7 @@ walkers.list = function(ast){
     if(m < len){
       for(var i = m; i < len; i++){
         var pair = group.get(i);
-        pair.data.$index = i;
+        pair.data[indexName] = i;
       }
     }
   }

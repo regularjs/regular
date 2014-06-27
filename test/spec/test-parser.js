@@ -22,11 +22,7 @@ var eqExp = function(input, result){
 }
 
 
-var list2 = expect.template.set(function list2(){/*
-{{#list [a,2,3,4,5] as num}} 
-  <p>{{num}}</p>
-{{/list}}
-*/});
+
 
 
 
@@ -320,14 +316,11 @@ describe('Parse JST', function(){
 
   describe("list statement should parse correctly ", function(){
     it("complex list statement should parse correctly under mode 1", function(){
-      var list1 = expect.template.set(function list1(){/*
-      {{#list [1,2,3,4,5] as num}} 
-        {{num}} : {{$index}}
-      {{/list}}
-      */})
+      var list1 = "{{#list [1,2,3,4,5] as num}} {{num}} : {{$index}} {{/list}}";
+      
 
       expect(p(list1)).to.eql([
-        {
+          {
             "type": "list",
             "sequence": {
               "type": "expression",
@@ -339,7 +332,7 @@ describe('Parse JST', function(){
             "body": [
               {
                 "type": "text",
-                "text": " \n        "
+                "text": " "
               },
               {
                 "type": "expression",
@@ -359,13 +352,14 @@ describe('Parse JST', function(){
               },
               {
                 "type": "text",
-                "text": "\n      "
+                "text": " "
               }
             ]
           }
       ]);
     })
     it("complex list statement should parse correctly under mode 2", function(){
+      var list2 = "{{#list [a,2,3,4,5] as num}} <p>{{num}}</p> {{/list}}"
       expect(p2(list2)).to.eql(
         [
           {
@@ -380,7 +374,7 @@ describe('Parse JST', function(){
             "body": [
               {
                 "type": "text",
-                "text": " \n  <p>"
+                "text": " <p>"
               },
               {
                 "type": "expression",
@@ -390,11 +384,11 @@ describe('Parse JST', function(){
               },
               {
                 "type": "text",
-                "text": "</p>\n"
+                "text": "</p> "
               }
             ]
           }
-        ] 
+        ]
       )
 
     })
@@ -407,7 +401,7 @@ describe('Parse JST', function(){
 
   describe("template statement should parsed as expect", function(){
     it("simple template statement", function(){
-      expect(p("{{~ hello.a}}")).eql(
+      expect(p("{{#include hello.a}}")).eql(
         [
           {
             "type": "template",

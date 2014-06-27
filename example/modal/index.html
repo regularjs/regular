@@ -22,7 +22,7 @@
               <h4 class="modal-title">{{title}}</h4>
             </div>
             <div class="modal-body">
-              {{~ this.content }}
+              {{#include content }}
             </div>
             <div class="modal-footer">
               <button type="button" class="btn btn-default" on-click={{this.close()}} >Close</button>
@@ -51,8 +51,8 @@
 
     // 直接调用
     var modal = new Modal({
-      content: '<input type="email" class="form-control" r-model={{email}} on-enter={{this.confirm()}}>',
       data: {
+        content: '<input type="email" class="form-control" r-model={{email}} on-enter={{this.confirm()}}>',
         title: '请确认您的邮箱'
       }
     });

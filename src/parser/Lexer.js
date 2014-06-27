@@ -235,12 +235,6 @@ var rules = {
       value: name
     }
   }, 'JST'],
-  JST_PART_OPEN: ['{BEGIN}~', function(all, name){
-    return {
-      type: 'PART_OPEN',
-      value: name
-    }
-  }, 'JST'],
   JST_LEAVE: [/{END}/, function(){
     this.leave('JST');
     return {type: 'END'}
@@ -297,7 +291,6 @@ var map1 = genMap([
 
   // JST
   rules.JST_OPEN,
-  rules.JST_PART_OPEN,
   rules.JST_CLOSE,
   rules.JST_COMMENT,
   rules.JST_EXPR_OPEN,
@@ -318,7 +311,6 @@ var map2 = genMap([
   // JST
   rules.JST_COMMENT,
   rules.JST_OPEN,
-  rules.JST_PART_OPEN,
   rules.JST_CLOSE,
   rules.JST_EXPR_OPEN,
   rules.JST_IDENT,

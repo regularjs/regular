@@ -12,7 +12,7 @@ require("./form.js");
 // **warn**: class inteplation will override this directive 
 
 Regular.directive('r-class', function(elem, value){
-  if(value.type !== 'expression') value = Regular.parse(value);
+  if(value.type !== 'expression') value = Regular.expression(value);
 
   this.$watch(value, function(nvalue){
     var className = ' '+ elem.className.replace(/\s+/g, ' ') +' ';
@@ -30,7 +30,7 @@ Regular.directive('r-class', function(elem, value){
 // **warn**: style inteplation will override this directive 
 
 Regular.directive('r-style', function(elem, value){
-  if(value.type !== 'expression') value = Regular.parse(value);
+  if(value.type !== 'expression') value = Regular.expression(value);
 
   this.$watch(value, function(nvalue){
     for(var i in nvalue) if(nvalue.hasOwnProperty(i)){
@@ -44,7 +44,7 @@ Regular.directive('r-style', function(elem, value){
 
 Regular.directive('r-hide', function(elem, value){
 
-  if(value.type !== 'expression') value = Regular.parse(value);
+  if(value.type !== 'expression') value = Regular.expression(value);
 
   this.$watch(value, function(nvalue){
     if(!!nvalue){

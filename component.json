@@ -19,6 +19,7 @@
     "src/helper/combine.js",
     "src/directive/base.js",
     "src/directive/form.js",
-    "src/directive/event.js"
+    "src/directive/event.js",
+    "src/module/timeout.js"
   ]
 }

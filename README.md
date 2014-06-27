@@ -59,7 +59,7 @@ now, there is only __Chinese version__, english version is comming soon
 
 ## Guide
 
-* __Regular Getting Starting__: Temporarily, You can copy this [getting-start-html](https://github.com/regularjs/regular/tree/master/example/getting-start.html) for learning
+* __[regular's Offcial Guide](http://leeluolee.gitbooks.io/regular-guide/)__(use gitbook)
 
 
 ## [LICENSE](https://github.com/regularjs/regular/blob/master/LICENSE)

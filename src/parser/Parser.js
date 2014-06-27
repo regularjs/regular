@@ -209,7 +209,7 @@ op.interplation = function(){
 }
 
 // {{~}}
-op.template = function(){
+op.include = function(){
   this.next();
   var content = this.expression();
   this.match('END');
@@ -429,7 +429,7 @@ op.range = function(){
   if(ll = this.eat('..')){
     right = this.unary();
     var body = 
-      "(function(start,end){var res = []; for(var i = start; i <= end; i++){res.push(i); } return res })("+left.get+","+right.get+")"
+      "(function(start,end){var res = [],step=end>start?1:-1; for(var i = start; end>start?i <= end: i>=end; i=i+step){res.push(i); } return res })("+left.get+","+right.get+")"
     return this.getset(body);
   }
 

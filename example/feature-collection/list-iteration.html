@@ -12,21 +12,15 @@
     <!-- Templates -->
     <script id="iteration" type="text/regular">
       {{#list list as i}}
-        {{$index}}: {{i.user}}
+        {{i_index}}: {{i.user}}
         <p> {{i.content}} <a href="#" on-click={{this.remove(i)}}>delete</a></p>
 
-        <pager current={{$index}} total={{list.length}} />
       {{/list}}
       <textarea r-model={{draft}} on-enter={{this.add()}}></textarea>
 
     </script>
 
-    <script id="component-iteration" type="text/regular">
-      {{current}} {{total}}
-      {{#list 0..20 as i}}
-        <pager current={{current}} total={{total}} />
-      {{/list}}
-    </script>
+
 
 
     <script>
@@ -46,13 +40,6 @@
 
     var app = new App({data: {list: []}}).inject("#app");
 
-    new Regular({
-      template: '#component-iteration',
-      data: {
-        current: 1,  
-        total: 20
-      }
-    }).inject('#app')
 
     </script>
   </body>

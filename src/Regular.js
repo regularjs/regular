@@ -50,6 +50,7 @@ _.extend(Regular, {
   _components: {},
   _filters: {},
   _events: {},
+  _modules: {},
 
   _exprCache:{},
 
@@ -80,7 +81,7 @@ _.extend(Regular, {
         var cacheKey = '_' + key + 's';
         if(supr[cacheKey]) self[cacheKey] = _.createObject(supr[cacheKey]);
       })
-    }.call(this, 'use', 'directive', 'event', 'filter')
+    }.call(this, 'use', 'directive', 'event', 'filter', 'component')
   },
   extend: extend,
   /**
@@ -122,7 +123,15 @@ _.extend(Regular, {
     this._components[name] = Component;
     return this;
   },
+  module: function(name, fn){
+    var modules = this._modules;
+    if(fn == null) return modules[name];
+    modules[name] = fn;
+    return this;
+  },
   use: function(fn){
+    if(typeof fn === "string") fn = Regular.module(fn);
+    if(typeof fn !== "function") return this;
     fn(this, Regular);
     return this;
   },
@@ -134,6 +143,9 @@ _.extend(Regular, {
     }
     var res = _.touchExpression(expr);
     return res;
+  },
+  parse: function(template){
+    return new Parser(template).parse();
   },
   Parser: Parser,
   Lexer: Lexer

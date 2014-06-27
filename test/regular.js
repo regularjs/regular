@@ -259,6 +259,7 @@ _.extend(Regular, {
   _components: {},
   _filters: {},
   _events: {},
+  _modules: {},
 
   _exprCache:{},
 
@@ -289,7 +290,7 @@ _.extend(Regular, {
         var cacheKey = '_' + key + 's';
         if(supr[cacheKey]) self[cacheKey] = _.createObject(supr[cacheKey]);
       })
-    }.call(this, 'use', 'directive', 'event', 'filter')
+    }.call(this, 'use', 'directive', 'event', 'filter', 'component')
   },
   extend: extend,
   /**
@@ -331,7 +332,15 @@ _.extend(Regular, {
     this._components[name] = Component;
     return this;
   },
+  module: function(name, fn){
+    var modules = this._modules;
+    if(fn == null) return modules[name];
+    modules[name] = fn;
+    return this;
+  },
   use: function(fn){
+    if(typeof fn === "string") fn = Regular.module(fn);
+    if(typeof fn !== "function") return this;
     fn(this, Regular);
     return this;
   },
@@ -343,6 +352,9 @@ _.extend(Regular, {
     }
     var res = _.touchExpression(expr);
     return res;
+  },
+  parse: function(template){
+    return new Parser(template).parse();
   },
   Parser: Parser,
   Lexer: Lexer
@@ -1185,6 +1197,8 @@ walkers.list = function(ast){
   fragment.appendChild(placeholder);
   var self = this;
   var group = new Group();
+  var indexName = ast.variable + '_index';
+  var variable = ast.variable;
   // group.push(placeholder);
 
 
@@ -1200,7 +1214,7 @@ walkers.list = function(ast){
 
       for(var k=m; k<index; k++){ // no change
         var sect = group.get(k);
-        sect.data.$index = k;
+        sect.data[indexName] = k;
       }
       for(var j = 0,jlen = splice.removed.length; j< jlen; j++){ //removed
         var removed = group.children.splice( index, 1)[0];
@@ -1213,8 +1227,8 @@ walkers.list = function(ast){
         // prototype inherit
         var item = newValue[o];
         var data = _.createObject(self.data);
-        data.$index = o;
-        data[ast.variable] = item;
+        data[indexName] = o;
+        data[variable] = item;
 
         var section = new Section({data: data, $root: self.$root});
         var update = section.$digest.bind(section);
@@ -1233,7 +1247,7 @@ walkers.list = function(ast){
     if(m < len){
       for(var i = m; i < len; i++){
         var pair = group.get(i);
-        pair.data.$index = i;
+        pair.data[indexName] = i;
       }
     }
   }
@@ -1462,10 +1476,11 @@ exports.transition = (function(){
 
 });
 require.register("regularjs/src/index.js", function(exports, require, module){
-module.exports = require('./Regular.js');
-require('./directive/base.js')
-module.exports.dom = require('./dom.js');
-module.exports.util = require('./util.js');
+module.exports = require("./Regular.js");
+require("./directive/base.js");
+require("./module/timeout.js");
+module.exports.dom = require("./dom.js");
+module.exports.util = require("./util.js");
 
 
 });
@@ -2030,12 +2045,6 @@ var rules = {
       value: name
     }
   }, 'JST'],
-  JST_PART_OPEN: ['{BEGIN}~', function(all, name){
-    return {
-      type: 'PART_OPEN',
-      value: name
-    }
-  }, 'JST'],
   JST_LEAVE: [/{END}/, function(){
     this.leave('JST');
     return {type: 'END'}
@@ -2092,7 +2101,6 @@ var map1 = genMap([
 
   // JST
   rules.JST_OPEN,
-  rules.JST_PART_OPEN,
   rules.JST_CLOSE,
   rules.JST_COMMENT,
   rules.JST_EXPR_OPEN,
@@ -2113,7 +2121,6 @@ var map2 = genMap([
   // JST
   rules.JST_COMMENT,
   rules.JST_OPEN,
-  rules.JST_PART_OPEN,
   rules.JST_CLOSE,
   rules.JST_EXPR_OPEN,
   rules.JST_IDENT,
@@ -2400,7 +2407,7 @@ op.interplation = function(){
 }
 
 // {{~}}
-op.template = function(){
+op.include = function(){
   this.next();
   var content = this.expression();
   this.match('END');
@@ -2620,7 +2627,7 @@ op.range = function(){
   if(ll = this.eat('..')){
     right = this.unary();
     var body = 
-      "(function(start,end){var res = []; for(var i = start; i <= end; i++){res.push(i); } return res })("+left.get+","+right.get+")"
+      "(function(start,end){var res = [],step=end>start?1:-1; for(var i = start; end>start?i <= end: i>=end; i=i+step){res.push(i); } return res })("+left.get+","+right.get+")"
     return this.getset(body);
   }
 
@@ -3113,7 +3120,7 @@ require("./form.js");
 // **warn**: class inteplation will override this directive 
 
 Regular.directive('r-class', function(elem, value){
-  if(value.type !== 'expression') value = Regular.parse(value);
+  if(value.type !== 'expression') value = Regular.expression(value);
 
   this.$watch(value, function(nvalue){
     var className = ' '+ elem.className.replace(/\s+/g, ' ') +' ';
@@ -3131,7 +3138,7 @@ Regular.directive('r-class', function(elem, value){
 // **warn**: style inteplation will override this directive 
 
 Regular.directive('r-style', function(elem, value){
-  if(value.type !== 'expression') value = Regular.parse(value);
+  if(value.type !== 'expression') value = Regular.expression(value);
 
   this.$watch(value, function(nvalue){
     for(var i in nvalue) if(nvalue.hasOwnProperty(i)){
@@ -3145,7 +3152,7 @@ Regular.directive('r-style', function(elem, value){
 
 Regular.directive('r-hide', function(elem, value){
 
-  if(value.type !== 'expression') value = Regular.parse(value);
+  if(value.type !== 'expression') value = Regular.expression(value);
 
   this.$watch(value, function(nvalue){
     if(!!nvalue){
@@ -3375,5 +3382,47 @@ Regular.directive(/^on-\w+$/, function(elem, value, name){
 });
 
 
+});
+require.register("regularjs/src/module/timeout.js", function(exports, require, module){
+var Regular = require("../Regular.js");
+
+/**
+ * Timeout Module
+ * @param {Component} Component 
+ */
+function TimeoutModule(Component){
+
+  Component.implement({
+    /**
+     * just like setTimeout, but will enter digest automately
+     * @param  {Function} fn    
+     * @param  {Number}   delay 
+     * @return {Number}   timeoutid
+     */
+    $timeout: function(fn, delay){
+      delay = delay || 0;
+      return setTimeout(function(){
+        fn.call(this);
+        this.$update(); //enter digest
+      }.bind(this), delay);
+    },
+    /**
+     * just like setInterval, but will enter digest automately
+     * @param  {Function} fn    
+     * @param  {Number}   interval 
+     * @return {Number}   intervalid
+     */
+    $interval: function(fn, interval){
+      interval = interval || 1000/60;
+      return setInterval(function(){
+        fn.call(this);
+        this.$update(); //enter digest
+      }.bind(this), interval);
+    }
+  });
+}
+
+
+Regular.module('timeout', TimeoutModule);
 });
 require.alias("regularjs/src/index.js", "regularjs/index.js");
