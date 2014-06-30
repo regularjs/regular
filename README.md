@@ -6,7 +6,7 @@ __example__
 
 with less than 20 line code then you already have a simple note component, you can also see it in [jsfiddle](http://jsfiddle.net/leeluolee/e6yD3/)
 
-```
+```javascript
 var NoteApp = Regular.extend({
   template: 
     "{{#list notes as c}}\
@@ -49,15 +49,8 @@ __There also a  [todomvc demo](http://jsfiddle.net/leeluolee/5Err9/) rewirte by 
 3. now you can find `regular.js` and `regular.min.js` in `dist` folder;
 
 
-## Document
 
-now, there is only __Chinese version__, english version is comming soon
-
-* [中文文档](https://github.com/regularjs/regular/wiki/Chinese)
-
-
-
-## Guide
+## Guide && Docs
 
 * __[regular's Offcial Guide](http://leeluolee.gitbooks.io/regular-guide/)__(use gitbook)
 

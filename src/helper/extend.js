@@ -34,23 +34,32 @@ function process( what, o, supro ) {
 }
 
 module.exports = function extend(o){
+  o = o || {};
   var supr = this, proto,
-    supro = supr.prototype;
-
+    supro = supr && supr.prototype || {};
+  if(typeof o === 'function'){
+    proto = o.prototype;
+    o.implement = implement;
+    o.extend = extend;
+    return o;
+  } 
+  
   function fn() {
     supr.apply(this, arguments);
   }
 
   proto = _.createProto(fn, supro);
 
-  (fn.implement = function (o) {
+  function implement(o){
     process(proto, o, supro); 
     return fn;
-  })(o);
+  }
+
 
   if(supr.__after__) supr.__after__.call(fn, supr, o);
-  fn.extend = supr.extend;
-  // _.extend(fn, supr, supr.__statics__ || []);
+
+  (fn.implement = implement)(o);
+  fn.extend = extend;
   return fn;
 }
 

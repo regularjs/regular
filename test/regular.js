@@ -292,7 +292,6 @@ _.extend(Regular, {
       })
     }.call(this, 'use', 'directive', 'event', 'filter', 'component')
   },
-  extend: extend,
   /**
    * directive's setter and getter
    * @param  {String|RegExp} name  
@@ -360,10 +359,10 @@ _.extend(Regular, {
   Lexer: Lexer
 });
 
-
+extend(Regular);
 Event.mixTo(Regular)
 
-_.extend( Regular.prototype, {
+Regular.implement({
   init: function(){},
   /**
    * compile a block ast ; return a group;
@@ -1170,7 +1169,7 @@ _.touchExpression = function(expr){
 
 
 //http://www.w3.org/html/wg/drafts/html/master/single-page.html#void-elements
-_.isVoidTag = _.makePredicate("area base br col embed hr img input keygen link menuitem meta param source track wbr");
+_.isVoidTag = _.makePredicate("area base br col embed hr img input keygen link menuitem meta param source track wbr r-content");
 _.isBooleanAttr = _.makePredicate('selected checked disabled readOnly required open autofocus controls autoplay compact loop defer multiple');
 
 _.isFalse - function(){return false}
@@ -1386,8 +1385,8 @@ walkers.element = function(ast){
       }
     }
 
-    if(ast.children) data.$body = this.$compile(ast.children);
-    var component = new Component({data: data, events: events});
+    if(ast.children) var $body = this.$compile(ast.children);
+    var component = new Component({data: data, events: events, $body: $body});
     for(var i = 0, len = attrs.length; i < len; i++){
       var attr = attrs[i];
       var value = attr.value||"";
@@ -1396,8 +1395,8 @@ walkers.element = function(ast){
       }
     }
     return component;
-  }else if(ast.tag === 'r:content' && this.data.$body){
-    return this.data.$body;
+  }else if(ast.tag === 'r-content' && this.$body){
+    return this.$body;
   }
 
   if(ast.tag === 'svg') this._ns_ = 'svg';
@@ -2865,23 +2864,32 @@ function process( what, o, supro ) {
 }
 
 module.exports = function extend(o){
+  o = o || {};
   var supr = this, proto,
-    supro = supr.prototype;
-
+    supro = supr && supr.prototype || {};
+  if(typeof o === 'function'){
+    proto = o.prototype;
+    o.implement = implement;
+    o.extend = extend;
+    return o;
+  } 
+  
   function fn() {
     supr.apply(this, arguments);
   }
 
   proto = _.createProto(fn, supro);
 
-  (fn.implement = function (o) {
+  function implement(o){
     process(proto, o, supro); 
     return fn;
-  })(o);
+  }
+
 
   if(supr.__after__) supr.__after__.call(fn, supr, o);
-  fn.extend = supr.extend;
-  // _.extend(fn, supr, supr.__statics__ || []);
+
+  (fn.implement = implement)(o);
+  fn.extend = extend;
   return fn;
 }
 

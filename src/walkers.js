@@ -203,8 +203,8 @@ walkers.element = function(ast){
       }
     }
 
-    if(ast.children) data.$body = this.$compile(ast.children);
-    var component = new Component({data: data, events: events});
+    if(ast.children) var $body = this.$compile(ast.children);
+    var component = new Component({data: data, events: events, $body: $body});
     for(var i = 0, len = attrs.length; i < len; i++){
       var attr = attrs[i];
       var value = attr.value||"";
@@ -213,8 +213,8 @@ walkers.element = function(ast){
       }
     }
     return component;
-  }else if(ast.tag === 'r:content' && this.data.$body){
-    return this.data.$body;
+  }else if(ast.tag === 'r-content' && this.$body){
+    return this.$body;
   }
 
   if(ast.tag === 'svg') this._ns_ = 'svg';

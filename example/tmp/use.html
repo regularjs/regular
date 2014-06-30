@@ -35,92 +35,18 @@ new Regular({
 }).inject('#app')
 
 
+var Component = Regular.extend();
 
 
-```javascript
-/**
- * @event menu:share:appmessage
- * 监听webiew右上角的发送给好友按钮，并做相应处理
- */
-YixinJSBridge.on('menu:share:appmessage', handler)
+var component = new Component();
 
-/**
- * @event menu:share:timeline
- * 监听webiew右上角的发送到朋友圈按钮，并做相应处理
- */
-YixinJSBridge.on('menu:share:timeline', handler)
+// add hello to prototype
+Component.implement({
+  hello: function(){alert('hello')}
+})
 
-/**
-* @event menu:share:timeline
-* @param handler 回调函数
-*        
-* 监听webiew右上角的分享到微博按钮，并做相应处理
-*/
-YixinJSBridge.on('menu:share:weibo', handler)
+component.hello();
 
-//主动的发送给好友
-YixinJSBridge.invoke('sendAppMessage', data , handler);
-//主动的分享到朋友圈
-YixinJSBridge.invoke('shareTimeline', data , handler);
-//主动的分享到微博
-YixinJSBridge.invoke('shareWeibo', data , handler);
-
-// sendAppMessage, shareTimeline它们的参数data是一致的,即
-
-```
-
-```javascript
-{
-    // 分享图片宽度 ?
-  "img_width": "640",
-  // 分享图片高度 ?
-  "img_height": "640",
-  // 分享的链接地址
-  "link": ""
-  // 分享说明
-  "desc": ""
-  // 分享标题
-  "title": window.shareData.fTitle
-}
-```
-
-// 分享到微博特殊一些, 微信的分享到微博只有两个参数
-```
-{
-
-  //内容
-  "content": ""
-  //链接
-  "url": url
-}
-```
-
-即在微信中，要自定义右上角分享内容的个性化，需要两步
-
-1.捕获分享按钮的点击
-
-2.主动调用分享接口
-
-```
-YixinJSBridge.on('menu:share:timeline', function (argv) {
-    YixinJSBridge.invoke('shareTimeline', {
-        "img_url": 
-        // "img_width": "640",
-        // "img_height": "640",
-        "link": 
-        "desc": 
-        "title": 
-    }, function (res) {
-      if(res.err_msg) alert(res.err_msg)
-    });
-});
-```
-
-即Yixin的jsbridge还需要
-
-1. 实现一个简单事件系统，支持on, emit, off
-2. 实现menu的点击事件抛出
-3. 实现主动分享的js接口
 
 </script>
 

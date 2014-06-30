@@ -83,7 +83,6 @@ _.extend(Regular, {
       })
     }.call(this, 'use', 'directive', 'event', 'filter', 'component')
   },
-  extend: extend,
   /**
    * directive's setter and getter
    * @param  {String|RegExp} name  
@@ -151,10 +150,10 @@ _.extend(Regular, {
   Lexer: Lexer
 });
 
-
+extend(Regular);
 Event.mixTo(Regular)
 
-_.extend( Regular.prototype, {
+Regular.implement({
   init: function(){},
   /**
    * compile a block ast ; return a group;

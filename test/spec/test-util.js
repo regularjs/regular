@@ -27,12 +27,10 @@ describe("Regular util should works correctly", function(){
 
     var C = B.extend({
       hello: function(){
-        this.supr()
+        this.supr();
         this.c=3;
       },
-      say: function(){
-        
-      }
+      say: function(){}
     })
 
     var c = new C();
@@ -41,9 +39,54 @@ describe("Regular util should works correctly", function(){
     expect(c.a).to.equal(2);
     expect(c.b).to.equal(1);
     expect(c.c).to.equal(3);
+  })
 
+  it('extend can work on raw function', function(){
+    function A(){}
+    extend(A);
 
+    A.implement({
+      hello: function(){
+        this.b = 1;
+      }
+    });
+    expect(typeof A.implement).to.equal('function')
+    expect(typeof A.extend).to.equal('function')
 
+    var B = A.extend({
+      hello: function(){
+        this.supr();
+        this.a = 2;
+      }
+    });
+
+    var b = new B
+    b.hello();
+
+    expect(b.a).to.equal(2);
+    expect(b.b).to.equal(1);
+
+  })
+
+  it('klass.implement should works as expected', function(){
+    function A(){}
+    A.prototype.hello = function(){
+      this.b = 1;
+    }
+    extend(A);
+
+    var B = A.extend();
+    B.implement({
+      hello: function(){
+        this.supr();
+        this.a = 2;
+      }
+    })
+    var b = new B;
+    b.hello();
+
+    expect(b.a).to.equal(2);
+    expect(b.b).to.equal(1);
 
   })
 
