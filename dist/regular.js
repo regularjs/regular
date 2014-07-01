@@ -262,7 +262,7 @@ _.extend(Regular, {
   _components: {},
   _filters: {},
   _events: {},
-  _modules: {},
+  _plugins: {},
 
   _exprCache:{},
 
