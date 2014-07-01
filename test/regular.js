@@ -3432,6 +3432,6 @@ function TimeoutModule(Component){
 }
 
 
-Regular.module('timeout', TimeoutModule);
+Regular.plugin('timeout', TimeoutModule);
 });
 require.alias("regularjs/src/index.js", "regularjs/index.js");

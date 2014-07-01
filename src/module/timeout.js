@@ -37,4 +37,4 @@ function TimeoutModule(Component){
 }
 
 
-Regular.module('timeout', TimeoutModule);
+Regular.plugin('timeout', TimeoutModule);
