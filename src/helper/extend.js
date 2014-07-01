@@ -52,7 +52,7 @@ module.exports = function extend(o){
 
   function implement(o){
     process(proto, o, supro); 
-    return fn;
+    return this;
   }
 
 

@@ -9,6 +9,7 @@ var Event = require('./helper/event.js');
 var combine = require('./helper/combine.js');
 var walkers = require('./walkers.js');
 var idtest = /^[\w-]{1,20}$/;
+var doc = typeof document==='undefined'? {}: document;
 
 var Regular = function(options){
   var node, template, name;
@@ -122,14 +123,14 @@ _.extend(Regular, {
     this._components[name] = Component;
     return this;
   },
-  module: function(name, fn){
-    var modules = this._modules;
-    if(fn == null) return modules[name];
-    modules[name] = fn;
+  plugin: function(name, fn){
+    var plugins = this._plugins;
+    if(fn == null) return plugins[name];
+    plugins[name] = fn;
     return this;
   },
   use: function(fn){
-    if(typeof fn === "string") fn = Regular.module(fn);
+    if(typeof fn === "string") fn = Regular.plugin(fn);
     if(typeof fn !== "function") return this;
     fn(this, Regular);
     return this;
@@ -502,7 +503,7 @@ Regular.implement({
       }
       return new Group(res);
     }
-    if(typeof ast === 'string') return document.createTextNode(ast)
+    if(typeof ast === 'string') return doc.createTextNode(ast)
     return walkers[ast.type || "default"].call(this, ast);
   },
   // find filter

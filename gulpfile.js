@@ -1,5 +1,7 @@
 var fs = require('fs');
+var path = require('path');
 var gulp = require('gulp');
+var spawn = require('child_process').spawn;
 var component = require('gulp-component');
 var istanbul = require('gulp-istanbul');
 var jshint = require('gulp-jshint');
@@ -108,6 +110,25 @@ gulp.task('mocha', function() {
       });
 
 });
+
+
+gulp.task('casper', function(){
+  var casperjs = spawn('casperjs', ['test','--concise', 'spec'], {
+     cwd: path.resolve('test/fixtures')
+  })
+
+  casperjs.stdout.on('data', function (data) {
+    console.log(""+ data);
+  });
+  casperjs.stderr.on('data', function (data) {
+  console.log('stderr: ' + data);
+  });
+
+  casperjs.on('close', function (code) {
+    console.log('casperjs test compelete!');
+  });
+
+})
 
 
 

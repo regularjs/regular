@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <script src="../../../dist/regular.js"></script>
+  </head>
+  <body>
+    <div id="app" class='container'></div>
+    <script id="form" type="text/regular">
+      <form role="form">
+        <div class="form-group">
+          <label >Email address(value: {{email}})</label>
+          <input 
+            type="email" class="form-control" placeholder="Enter email" value="87399126@163.com" 
+            r-model={{email}}>
+        </div>
+        <div class="form-group">
+          <label >Password(value: {{password}})</label>
+          <input type="password" class="form-control" placeholder="Password" value='default' r-model='password'>
+        </div>
+        <div class="checkbox">
+          <label>
+            <input type="checkbox" checked  r-model={{checked}}> Check me out (value: {{checked}})
+          </label>
+        </div>
+
+        <div class="form-group">
+          radio: {{radio}}
+        </div>
+        <div class="radio">
+          <label>
+            <input type="radio" name="optionsRadios" id="optionsRadios1" value="option1" r-model={{radio}}>
+            Option one is this and that&mdash;be sure to include why its great
+          </label>
+        </div>
+        <div class="radio">
+          <label>
+            <input type="radio" name="optionsRadios" id="optionsRadios2" value="option2" checked=checked r-model={{radio}} >
+            Option two can be something else and selecting it will deselect option one
+          </label>
+        </div>
+        <div class="form-group" ng-repeat>
+        <!-- no wrap in {{}} is allowed -->
+        {{textarea}}
+        <textarea class="form-control" rows="3" r-model='textarea'>hahah</textarea>
+        </div>
+        <p>{{select}}</p>
+        <select class="form-control" id='select' r-model='select'>
+          <option selected value="1">1</option>
+          <option value="2">2</option>
+          <option value='3'>3</option>
+          <option value="4">4</option>
+          <option value='5'>5</option>
+        </select>
+          
+        <button type="submit" class="btn btn-default">Submit</button>
+      </form>
+    </script>
+    
+    <script>
+    var Modal = Regular.extend({template: '#form'});
+
+    var app = new Modal().inject("#app");
+
+    </script>
+  </body>
+</html>
