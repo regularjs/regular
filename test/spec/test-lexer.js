@@ -12,7 +12,7 @@ var l2 = function(input){
   return new Lexer(input, {mode: 2}).lex()
 }
 
-describe("Lexer works under mode 1 and 2", function(){
+describe("Lexer under mode 1 and 2", function(){
 
   it("pure xml lex should return diff tokens under mode 1 and 2", function(){
     var input = "<ul><div>hello name</div></ul>";

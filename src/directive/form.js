@@ -111,6 +111,7 @@ function initCheckBox(elem, parsed){
   }
   if(parsed.set) dom.on(elem, "change", handler)
   this.$on('init', function(){
+
     if(parsed.get(self) === undefined){
       parsed.set(self, elem.checked);
     }

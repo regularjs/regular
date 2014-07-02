@@ -259,9 +259,11 @@ function bindAttrWatcher(element, attr){
 
   _.touchExpression(value);
 
+
   if(directive && directive.link){
     return directive.link.call(this, element, value, name);
   }else{
+      
     if(value.type == 'expression' ){
       this.$watch(value, function(nvalue, old){
         dom.attr(element, name, nvalue);

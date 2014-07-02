@@ -6,8 +6,8 @@ void function(){
     Regular._filters = {}
   }
 
-  describe("The featrue of Regular's modular must works as expected", function(){
-    describe('fitler, directive, event"s extend mechanism should isolated ', function(){
+  describe("test Regular's modular mechanism", function(){
+    describe('fitler, directive, event isolation ', function(){
       var Root = Regular;
       var Parent = Regular.extend();
       var Children = Parent.extend();
@@ -32,7 +32,7 @@ void function(){
     })
 
 
-    describe('Component.use should works as expected', function(){
+    describe('Component.use', function(){
       reset();
       function foo1(){};
       function foo2(){};
@@ -43,29 +43,47 @@ void function(){
       function SomePlugin (Component){
         Component.implement({foo1: foo1 })
           .filter('foo2',foo2)
-          .directive('foo3',foo3)
+          .event('foo3',foo3)
       }
 
 
 
       it('use should works on Regular', function(){
-        Root.use(SomePlugin)
-        expect(Children.directive('foo3').link).to.equal(foo3)
-        expect(Parent.directive('foo3').link).to.equal(foo3)
+        function root(){}
+        Root.use(function(Component){
+          Component.event('root',root)
+        })
+        expect(Children.event('root')).to.equal(root)
+        expect(Parent.event('root')).to.equal(root)
       });
 
       it('use should works on SubClass', function(){
         reset();
+        var parent = new Parent();
         Parent.use(SomePlugin)
+        expect(parent.foo1).to.equal(foo1);
         expect(Children.filter('foo2')).to.equal(foo2)
         expect(Root.filter('foo2')).to.equal(undefined)
       });
 
-      it('Regular.module can register global plugin')
+      it('Regular.plugin can register global plugin', function(){
+        reset();
+        var Component = Regular.extend();
+        function hello(){}
+        Regular.plugin('some', function(Component){
+          Component.implement({'some':hello})
+        });
+        Component.use('some');
 
+        var component = new Component;
 
+        expect(component.some).to.equal(hello);
+      })
     })
   });
+
+
+
 }()
 
 

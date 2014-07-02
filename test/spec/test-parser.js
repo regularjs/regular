@@ -29,7 +29,7 @@ var eqExp = function(input, result){
 
 describe("Parse XML", function(){
 
-  describe("basic XML should parsed as expect", function(){
+  describe("basic XML ", function(){
     it("pure xml input should return diff ast under mode 1 and 2", function(){
       var input = "<ul><div>hello name</div></ul>";
       var input2 = "<ul><div>hello name</div></ul>";
@@ -47,7 +47,7 @@ describe("Parse XML", function(){
     });
   })
 
-  describe("attribute should parsed as expect", function(){
+  describe("attribute", function(){
     var string_attr = "<ul class='a'></ul>";
     var expression_attr = "<ul class={{a}}></ul>";
     var inteplation_attr = "<ul class='a {{a}} b'></ul>";
@@ -112,7 +112,7 @@ describe("Parse XML", function(){
   })
 
 
-  describe("tag should closed correspond with html5's specs", function(){
+  describe("Unclosed tag ", function(){
     it("read unclosed tag should throw error", function(){
       expect(function(){
         p("<div>")
@@ -128,13 +128,13 @@ describe("Parse XML", function(){
     })
 
   })
-  describe("some parse feature need work as expect", function(){
+  describe("Other feature", function(){
     it("should join connected text", function(){
 
     })
   })
 
-  describe("must thrrow error when Syntax Error", function(){
+  describe("error throw", function(){
     it("read unclosed tag_open should throw error", function(){
       expect(function(){
         p("<div")
@@ -314,7 +314,7 @@ describe('Parse JST', function(){
     })
   })
 
-  describe("list statement should parse correctly ", function(){
+  describe("list statement ", function(){
     it("complex list statement should parse correctly under mode 1", function(){
       var list1 = "{{#list [1,2,3,4,5] as num}} {{num}} : {{$index}} {{/list}}";
       
@@ -399,7 +399,7 @@ describe('Parse JST', function(){
 
 
 
-  describe("template statement should parsed as expect", function(){
+  describe("include statement", function(){
     it("simple template statement", function(){
       expect(p("{{#include hello.a}}")).eql(
         [

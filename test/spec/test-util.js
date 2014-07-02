@@ -4,7 +4,7 @@ var extend = require_lib('helper/extend.js');
 
 
 
-describe("Regular util should works correctly", function(){
+describe("Regular.util", function(){
   it('klass"s extend should works as expect', function(){
     function A(){}
     A.extend = extend;

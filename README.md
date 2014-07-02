@@ -1,6 +1,6 @@
 # Regular = react(ractive) + angular.
 
-regular is a live template engine that provide angular-way's data-binding, string-based template to help us create reusable and reactive component that can be integrated with whatever framework you already used;
+regular is a live template engine that provide angular-way's data-binding, string-based template to help us creating reactive component that can be integrated with whatever framework you already used
 
 __example__
 
@@ -63,12 +63,6 @@ MIT.
 
 ## TODO
 
-1. maybe add casper
-2. @TODO watch 同一个表达式(将不会创建两个watcher)
-3. static html inteplation
-4. https://developer.github.com/v3/ , loadmore  component example
-5. svg support!
-6. remove defulat set compile
 
 
 

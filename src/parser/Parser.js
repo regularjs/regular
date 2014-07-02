@@ -137,23 +137,13 @@ op.xml = function(){
 op.attrs = function(){
 
 
-  var attrs = [], attr, ll = this.ll();
-  //   case 'OPEN': 
-  //     return this.directive();
-  //   case 'NAME':
-  //   case '&':
-  //     attr = { name: ll.value }
-  //     if( this.eat("=") ) attr.value = this.attvalue();
-
-  // switch(ll.type){
-  //   case: 
-  // }
+  var attrs = [], attr, ll = this.ll(), value;
 
   while( ll = this.eat(["NAME", "&"]) ){
     var name = ll.value;
-    if( this.eat("=") ) var value = this.attvalue();
-
+    if( this.eat("=") ) value = this.attvalue();
     attrs.push(node.attribute( name, value ));
+    value = undefined;
   }
   return attrs;
 }

@@ -1444,9 +1444,11 @@ function bindAttrWatcher(element, attr){
 
   _.touchExpression(value);
 
+
   if(directive && directive.link){
     return directive.link.call(this, element, value, name);
   }else{
+      
     if(value.type == 'expression' ){
       this.$watch(value, function(nvalue, old){
         dom.attr(element, name, nvalue);
@@ -1587,12 +1589,14 @@ var specialAttr = {
 
 // attribute Setter & Getter
 dom.attr = function(node, name, value){
-  name = name.toLowerCase();
   if (_.isBooleanAttr(name)) {
     if (typeof value !== 'undefined') {
       if (!!value) {
         node[name] = true;
         node.setAttribute(name, name);
+        // lt ie7 . the javascript checked setting is in valid
+        //http://bytes.com/topic/javascript/insights/799167-browser-quirk-dynamically-appended-checked-checkbox-does-not-appear-checked-ie
+        if(dom.msie && dom.msie <=7 ) node.defaultChecked = true
       } else {
         node[name] = false;
         node.removeAttribute(name);
@@ -2337,23 +2341,13 @@ op.xml = function(){
 op.attrs = function(){
 
 
-  var attrs = [], attr, ll = this.ll();
-  //   case 'OPEN': 
-  //     return this.directive();
-  //   case 'NAME':
-  //   case '&':
-  //     attr = { name: ll.value }
-  //     if( this.eat("=") ) attr.value = this.attvalue();
-
-  // switch(ll.type){
-  //   case: 
-  // }
+  var attrs = [], attr, ll = this.ll(), value;
 
   while( ll = this.eat(["NAME", "&"]) ){
     var name = ll.value;
-    if( this.eat("=") ) var value = this.attvalue();
-
+    if( this.eat("=") ) value = this.attvalue();
     attrs.push(node.attribute( name, value ));
+    value = undefined;
   }
   return attrs;
 }
@@ -3299,6 +3293,7 @@ function initCheckBox(elem, parsed){
   }
   if(parsed.set) dom.on(elem, "change", handler)
   this.$on('init', function(){
+
     if(parsed.get(self) === undefined){
       parsed.set(self, elem.checked);
     }

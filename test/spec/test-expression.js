@@ -25,8 +25,8 @@ var run_expr = function(expr, context, value){
 
 
 
-describe("Expression should parse correctly", function(){
-  describe('simple Expression should parsed as expect', function(){
+describe("Expression", function(){
+  describe('simple', function(){
     it('Primary should parsed as expect', function(){
       var test = "1 1.1 'abc' true false undefined null [1,2,3,4]";
       test.split(" ").forEach(function(item){
@@ -40,7 +40,7 @@ describe("Expression should parse correctly", function(){
 
   })
 
-  describe('Filter should parsed as expect', function(){
+  describe('Filter ', function(){
     it("filter should parsed to string body", function(){
       body("name|lowercase").to.equal("(function(){var _f_=_d_['name'];_f_ = _c_._f('lowercase')(_f_);return _f_})()");
     })
@@ -76,7 +76,7 @@ describe("Expression should parse correctly", function(){
 })
 
 
-describe("compiled expression should run as expect", function(){
+describe("compiled expression", function(){
 
   var context = {
     data: {
@@ -97,7 +97,7 @@ describe("compiled expression should run as expect", function(){
     }
   }
 
-  describe('every types should returns correctly', function(){
+  describe('Primative Type', function(){
     it("object type returns correctly", function(){
       run_expr("{a: 1, b: b+1}", context).to.eql({a:1, b: 4});
       run_expr("{a: 1, b: b+1,}", context).to.eql({a:1, b: 4});
@@ -126,7 +126,7 @@ describe("compiled expression should run as expect", function(){
 
   })
 
-  describe('operation should run correctly', function(){
+  describe('Operation', function(){
     it("add/sub returns correctly", function(){
       run_expr("1+3", context).to.eql(4);
       run_expr("b-a", context).to.eql(1);
@@ -141,7 +141,7 @@ describe("compiled expression should run as expect", function(){
       run_expr("b && a", context).to.eql(2);
       run_expr("!b", context).to.eql(false);
     });
-    it("relation operation returns correctly", function(){
+    it("Relation operation returns correctly", function(){
       run_expr(" 3 === a ", context).to.eql(false);
       run_expr(" 3 == a ", context).to.eql(false);
       run_expr("b !== a", context).to.eql(true);
