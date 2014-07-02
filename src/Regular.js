@@ -34,8 +34,11 @@ var Regular = function(options){
     this.group = this.$compile(this.template);
     this.element = combine.node(this);
   }
+  if(this.$root !== this){
+    console.log(this.data.value.value)
+  }
+  this.$update();
   this.$emit({type: 'init', stop: true });
-  if(this.$root == this) this.$update();
   if( this.init ) this.init(this.data);
 
   // children is not required;
@@ -103,7 +106,7 @@ _.extend(Regular, {
           if(test) return directive;
         }
       }
-      return;
+      return undefined;
     }
     if(typeof cfg === 'function') cfg = { link: cfg } 
     if(type === 'string') directives[name] = cfg;
@@ -111,6 +114,7 @@ _.extend(Regular, {
       cfg.regexp = name;
       directives.__regexp__.push(cfg)
     }
+    return this
   },
   filter: function(name, fn){
     var filters = this._filters;

@@ -243,8 +243,11 @@ var Regular = function(options){
     this.group = this.$compile(this.template);
     this.element = combine.node(this);
   }
+  if(this.$root !== this){
+    console.log(this.data.value.value)
+  }
+  this.$update();
   this.$emit({type: 'init', stop: true });
-  if(this.$root == this) this.$update();
   if( this.init ) this.init(this.data);
 
   // children is not required;
@@ -312,7 +315,7 @@ _.extend(Regular, {
           if(test) return directive;
         }
       }
-      return;
+      return undefined;
     }
     if(typeof cfg === 'function') cfg = { link: cfg } 
     if(type === 'string') directives[name] = cfg;
@@ -320,6 +323,7 @@ _.extend(Regular, {
       cfg.regexp = name;
       directives.__regexp__.push(cfg)
     }
+    return this
   },
   filter: function(name, fn){
     var filters = this._filters;
@@ -1192,7 +1196,12 @@ var walkers = module.exports = {};
 walkers.list = function(ast){
   var placeholder = document.createComment("Regular list");
   // proxy Component to implement list item, so the behaviar is similar with angular;
-  var Section =  Regular.extend( { template: ast.body, $context: this.$context } );
+  var Section =  this.constructor.extend( { 
+    init: function(){},
+    destroy:function(){},
+    template: ast.body, 
+    $context: this.$context, 
+    fake:true } );
   var fragment = dom.fragment();
   fragment.appendChild(placeholder);
   var self = this;
@@ -1231,6 +1240,7 @@ walkers.list = function(ast){
         data[variable] = item;
 
         var section = new Section({data: data, $root: self.$root});
+        
         var update = section.$digest.bind(section);
 
         self.$on('digest', update);
@@ -1358,14 +1368,29 @@ walkers.text = function(ast){
 var eventReg = /^on-(.+)$/
 
 walkers.element = function(ast){
-  var attrs = ast.attrs, component;
-  var self = this;
-  var Component = Regular.component(ast.tag);
-  if(Component){
-    var data = {};
-    var events;
-    for(var i = 0, len = attrs.length; i < len; i++){
+  var attrs = ast.attrs, 
+    component, self = this,
+    Constructor=this.constructor,
+    children = ast.children,
+    Component = Constructor.component(ast.tag);
 
+
+  if(children && children.length){
+    var group = this.$compile(children);
+  }
+  attrs.sort(function(a, b){
+    var da = Constructor.directive(a.name);
+    var db = Constructor.directive(b.name);
+
+    if(!db) return !da? 0: 1;
+    if(!da) return -1;
+    return (b.priority||1) - (a.priority||1);
+  })
+
+
+  if(Component){
+    var data = {},events;
+    for(var i = 0, len = attrs.length; i < len; i++){
       var attr = attrs[i];
       var value = attr.value||"";
       _.touchExpression(value);
@@ -1402,18 +1427,15 @@ walkers.element = function(ast){
 
   if(ast.tag === 'svg') this._ns_ = 'svg';
   var element = dom.create(ast.tag, this._ns_);
-  var children = ast.children;
   var destroies = [];
   var child;
   var directive = [];
   for(var i = 0, len = attrs.length; i < len; i++){
-    var destroy = bindAttrWatcher.call(this, element, attrs[i])
-    if(typeof destroy === 'function') destroies.push(destroy);
-  }
-  if(children && children.length){
-    var group = this.$compile(children);
+    bindAttrWatcher.call(this, element, attrs[i],destroies)
   }
   if(ast.tag === 'svg') this._ns_ = null;
+
+
 
   return {
     node: function(){
@@ -1435,8 +1457,9 @@ walkers.element = function(ast){
 
 // dada
 
-function bindAttrWatcher(element, attr){
+function bindAttrWatcher(element, attr, destroies){
   var Component = this.constructor;
+  var self = this;
   var name = attr.name,
     value = attr.value || "", directive = Component.directive(name);
 
@@ -1444,7 +1467,8 @@ function bindAttrWatcher(element, attr){
 
 
   if(directive && directive.link){
-    return directive.link.call(this, element, value, name);
+    var destroy = directive.link.call(self, element, value, name);
+    if(typeof destroy === 'function') destroies.push(destroy);
   }else{
       
     if(value.type == 'expression' ){
@@ -3218,6 +3242,10 @@ function initSelect( elem, parsed){
   this.$watch(parsed, function(newValue, oldValue){
     if(inProgress) return;
     var children = _.slice(elem.getElementsByTagName('option'))
+
+    
+  
+
     children.forEach(function(node, index){
       if(node.value == newValue){
         elem.selectedIndex = index;
@@ -3236,7 +3264,7 @@ function initSelect( elem, parsed){
     if(parsed.get(self) === undefined){
        parsed.set(self, elem.value);
     }
-  })
+  });
 }
 
 // input,textarea binding

@@ -38,6 +38,10 @@ function initSelect( elem, parsed){
   this.$watch(parsed, function(newValue, oldValue){
     if(inProgress) return;
     var children = _.slice(elem.getElementsByTagName('option'))
+
+    
+  
+
     children.forEach(function(node, index){
       if(node.value == newValue){
         elem.selectedIndex = index;
@@ -56,7 +60,7 @@ function initSelect( elem, parsed){
     if(parsed.get(self) === undefined){
        parsed.set(self, elem.value);
     }
-  })
+  });
 }
 
 // input,textarea binding
