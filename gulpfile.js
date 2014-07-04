@@ -1,5 +1,7 @@
 var fs = require('fs');
 var path = require('path');
+var karma = require('karma').server;
+var _ = require('./src/util.js');
 var gulp = require('gulp');
 var spawn = require('child_process').spawn;
 var component = require('gulp-component');
@@ -19,7 +21,64 @@ try{
 }catch(e){}
 
 
-gulp.task('default', ['build'], function() {});
+gulp.task('default', ['test'], function() {});
+
+
+//one could also externalize common config into a separate file,
+//ex.: var karmaCommonConf = require('./karma-common-conf.js');
+var karmaCommonConf = {
+  browsers: ['Chrome', 'Firefox', 'IE', 'IE9', 'IE8', 'IE7'],
+  frameworks: ['mocha'],
+  files: [
+    'test/regular.js',
+    'test/karma.js',
+    'test/runner/vendor/expect.js',
+    'test/runner/vendor/jquery.js',
+    'test/runner/vendor/util.js',
+    'test/spec/test-*.js',
+    'test/spec/browser-*.js'
+  ],
+  client: {
+    mocha: {ui: 'bdd'}
+  },
+  customLaunchers: {
+    IE9: {
+      base: 'IE',
+      'x-ua-compatible': 'IE=EmulateIE9'
+    },
+    IE8: {
+      base: 'IE',
+      'x-ua-compatible': 'IE=EmulateIE8'
+    },
+    IE7: {
+      base: 'IE',
+      'x-ua-compatible': 'IE=EmulateIE8'
+    }
+  },
+
+  // coverage reporter generates the coverage
+  reporters: ['progress', 'coverage'],
+
+  preprocessors: {
+    // source files, that you wanna generate coverage for
+    // do not include tests or libraries
+    // (these files will be instrumented by Istanbul)
+    'test/regular.js': ['coverage']
+  },
+
+  // optionally, configure the reporter
+  coverageReporter: {
+    type : 'html',
+    dir : 'karma-coverage/'
+  }
+};
+
+/**
+ * Run test once and exit
+ */
+gulp.task('karma', function (done) {
+  karma.start(_.extend(karmaCommonConf, {singleRun: true}), done);
+});
 
 
 gulp.task('build', function(){
@@ -94,6 +153,8 @@ gulp.task('cover', function(cb){
         .on('end', cb);
     });
 })
+
+gulp.task('test', ['mocha', 'casper'])
 
 gulp.task('mocha', function() {
 

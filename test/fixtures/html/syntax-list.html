@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <script src="../../../dist/regular.js"></script>
+  </head>
+  <body>
+    <div id="app"></div>
+    
+    <script>
+    var Component = Regular.extend({
+      template: 
+        '{{#list 1..3 as num}}\
+          <p>{{num}}</p>\
+         {{/list}}'
+    });
+
+    var app = new Component().inject("#app");
+
+    </script>
+  </body>
+</html>

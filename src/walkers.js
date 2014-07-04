@@ -165,6 +165,7 @@ walkers['if'] = function(ast){
     destroy: function destroy(){
       if(alternate) alternate.destroy();
       if(consequent) consequent.destroy();
+      dom.remove(placeholder);
     }
   }
 }

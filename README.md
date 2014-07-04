@@ -47,8 +47,7 @@ __There also a  [todomvc demo](http://jsfiddle.net/leeluolee/5Err9/) rewirte by 
 
 ## Browser Compatibility
 
-regularjs's target browser contains __ie6/7/8/9__, and other mordern browser(desktop and mobile/tablet);
-
+regularjs's target browser contains __ie6/7/8/9__, and other mordern browser;
 
 
 ## Download
@@ -68,10 +67,10 @@ regularjs's target browser contains __ie6/7/8/9__, and other mordern browser(des
 * __[regular's Offcial Guide](http://leeluolee.gitbooks.io/regular-guide/)__(use gitbook)
 
 
-## Contribute && Community
+## Community
 
 
-* The regularjs is still in heavily development. please feel free to open [an issue](https://github.com/regularjs/regular/issues)
+* If you find bugs or have suggestion, please feel free to open [an issue](https://github.com/regularjs/regular/issues)
 
 * Ask any questions on [Stack Overflow](http://stackoverflow.com/questions/tagged/regularjs) with tag `regularjs`. 
 
@@ -82,7 +81,7 @@ regularjs's target browser contains __ie6/7/8/9__, and other mordern browser(des
 ## Contribute
 
 
-The regularjs is still in heavily development, helping us with pull-request. there is some recommend to contributor.
+regularjs is still in heavily development, helping us with pull-request. there is some recommend to contributor.
 
 * Please [open issue](https://github.com/regularjs/regular/issues) before sending pull request, 
 * if needed, add your testcase at `test/specs` folder. always make sure the `gulp mocha` is passed, and the `test/runner/index.html` is passed in every target browser
@@ -91,4 +90,3 @@ The regularjs is still in heavily development, helping us with pull-request. the
 ## [LICENSE](https://github.com/regularjs/regular/blob/master/LICENSE)
 
 MIT.
-

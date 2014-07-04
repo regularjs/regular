@@ -8,6 +8,7 @@ void function(){
 
   describe("List", function(){
     var container = document.createElement('div');
+
     describe("basic", function(){
       it("the list based on range should work", function(){
         var list = "<div t-test={{num}} class='m-model'>{{#list 1..3 as num}}<div class='a-{{num}}'>{{num}}</div> {{/list}}</div>"
@@ -118,8 +119,9 @@ void function(){
 
       })
     })
+    describe("list with nested", function(){
 
-    describe('list with sub component', function(){
+      it("list can work with component", function(){
 
       var TodoComponent = Regular.extend({
         name: 'todo',
@@ -132,12 +134,17 @@ void function(){
           "{{#list todos as todo}}\
             <todo content={{todo.content}}/>\
            {{/list}}"
-      })
+      }).inject(container);
 
+      expect($("div",container).length).to.equal(2);
+      expect($("div", container)[0].innerHTML).to.equal("hello");
+      expect($("div", container)[1].innerHTML).to.equal("hello2");
+
+      destroy(component, container)
+
+      })
 
     })
   })
-
-
 
 }()

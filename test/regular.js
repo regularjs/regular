@@ -1,6 +1,6 @@
 /**
 @author	leeluolee
-@version	0.1.0
+@version	0.1.1
 @homepage	http://regularjs.github.io
 */
 
@@ -264,6 +264,7 @@ _.extend(Regular, {
   _plugins: {},
 
   _exprCache:{},
+
 
   __after__: function(supr, o) {
 
@@ -735,6 +736,7 @@ require('./helper/shim.js');
 var _  = module.exports;
 var slice = [].slice;
 var o2str = ({}).toString;
+var win = typeof window !=='undefined'? window: global;
 
 
 _.noop = function(){};
@@ -751,7 +753,7 @@ _.ctxName = '_c_';
 
 
 _.nextTick = typeof setImmediate === 'function'
-  ? setImmediate.bind(window) 
+  ? setImmediate.bind(win) 
   : function(callback) {
     setTimeout(callback, 0) 
   }
@@ -1359,6 +1361,7 @@ walkers['if'] = function(ast){
     destroy: function destroy(){
       if(alternate) alternate.destroy();
       if(consequent) consequent.destroy();
+      dom.remove(placeholder);
     }
   }
 }
