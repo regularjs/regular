@@ -1,14 +1,14 @@
 # Regular = react(ractive) + angular.
 
-regular is a live template engine helping us to create reactive component, there are some basic featrue.
+regular is a live template engine helping us to create reactive component, there are some basic feature.
 
-1. data-binding like angular.
-2. string-based template, have some buildin rule like  if/else ,list and dynamic include.
+1. __data-binding__ like angular.
+2. __string-based__ template with buildin rule like  if/else ,list and dynamic include.
 3. the template's rule is extensiable(need Parser packaged).
-4. independent lifecycle in every component. so component can be integrated with whatever framework you already used.
-5. nested component
+4. __independent lifecycle__ in every component. so component can be integrated with whatever framework you already used.
+5. __nested component__
 6. the definition of Business logic based on Class, just like [angular-classy](http://davej.github.io/angular-classy/) do for angular
-7. directive, filter, event's support, and extend easily.
+7. __directive, filter, event__ is supported, and extend easily.
 
 __example__
 
