@@ -1,6 +1,14 @@
 # Regular = react(ractive) + angular.
 
-regular is a live template engine that provide angular-way's data-binding, string-based template to help us creating reactive component that can be integrated with whatever framework you already used
+regular is a live template engine helping us to create reactive component . regularjs's target browsers contains __ie6/7/8__.
+
+1. data-binding like angular.
+2. string-based template, have some buildin rule like  if/else ,list and dynamic include.
+3. the template's rule is extensiable(need Parser packaged).
+4. independent lifecycle in every component. so component can be integrated with whatever framework you already used.
+5. nested component
+6. the definition of Business logic based on Class, just like [angular-classy](http://davej.github.io/angular-classy/) do for angular
+7. directive, filter, event's support, and extend easily.
 
 __example__
 
@@ -38,6 +46,12 @@ new NoteApp({
 __There also a  [todomvc demo](http://jsfiddle.net/leeluolee/5Err9/) rewirte by regularjs__
 
 
+## Browser Compatibility
+
+regularjs's target browser contains __ie6/7/8/9__, and other mordern browser(desktop and mobile/tablet);
+
+
+
 ## Download
 
 1. install with bower 
@@ -61,7 +75,6 @@ MIT.
 
 
 
-## TODO
 
 
 

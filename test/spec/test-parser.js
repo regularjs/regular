@@ -55,6 +55,7 @@ describe("Parse XML", function(){
     var entity_attr = "<ul class=-hl*lo-></ul>";
     var num_attr = "<ul class=1></ul>";
     var empty_attr = "<ul class></ul>";
+    
     it("attribute should accept String and double_quote string", function(){
       expect(p(string_attr)[0].attrs).eql([{ type: 'attribute', name: 'class', value: 'a' } ])
     })

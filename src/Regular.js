@@ -8,18 +8,18 @@ var extend = require('./helper/extend.js');
 var Event = require('./helper/event.js');
 var combine = require('./helper/combine.js');
 var walkers = require('./walkers.js');
-var idtest = /^[\w-]{1,20}$/;
 var doc = typeof document==='undefined'? {}: document;
 
 var Regular = function(options){
   var node, template, name;
 
   options = options || {};
+  options.data = options.data || {};
+  if(this.data) _.extend(options.data, this.data);
   _.extend(this, options, true);
 
   template = this.template;
 
-  if(!this.data) this.data = {};
   if(typeof template === 'string' && template.length < 40 && (node = dom.find(template))) {
     template = node.innerHTML;
   }

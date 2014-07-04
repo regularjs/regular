@@ -11,7 +11,7 @@ walkers.list = function(ast){
   // proxy Component to implement list item, so the behaviar is similar with angular;
   var Section =  this.constructor.extend( { 
     init: function(){},
-    destroy:function(){},
+    destroy: Regular.prototype.destroy,
     template: ast.body, 
     $context: this.$context, 
     fake:true } );
@@ -88,6 +88,7 @@ walkers.list = function(ast){
     group: group,
     destroy: function(){
       group.destroy();
+
       dom.remove(placeholder);
       if(watchid) self.$unwatch(watchid);
     }
