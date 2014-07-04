@@ -24,6 +24,8 @@ walkers.list = function(ast){
   // group.push(placeholder);
 
 
+
+
   function update(newValue, splices){
     if(!splices || !splices.length) return;
     var cur = placeholder;
@@ -55,6 +57,7 @@ walkers.list = function(ast){
         var section = new Section({data: data, $root: self.$root});
         
         var update = section.$digest.bind(section);
+
 
         self.$on('digest', update);
         section.$on('destroy', self.$off.bind(self, 'digest', update));
@@ -121,6 +124,7 @@ walkers.template = function(ast){
     }
   }
 };
+
 
 walkers['if'] = function(ast){
   var test, consequent, alternate, node;
@@ -191,6 +195,7 @@ walkers.element = function(ast){
   if(children && children.length){
     var group = this.$compile(children);
   }
+  // make the directive after attribute
   attrs.sort(function(a, b){
     var da = Constructor.directive(a.name);
     var db = Constructor.directive(b.name);
@@ -239,7 +244,7 @@ walkers.element = function(ast){
   }
 
   if(ast.tag === 'svg') this._ns_ = 'svg';
-  var element = dom.create(ast.tag, this._ns_);
+  var element = dom.create(ast.tag, this._ns_, attrs);
   var destroies = [];
   var child;
   var directive = [];

@@ -1,4 +1,5 @@
 
+
 var Regular = require_lib("index.js");
 void function(){
 
@@ -75,25 +76,27 @@ describe("Directive", function(){
 describe('r-model directive', function(){
 
 
-  var container = document.createElement('div');
+  var container = document.createElement('form');
 
   describe('text binding', function(){
     it("input:email with 'model' directive should works as expect", function(){
-      var template = '<input type="email" value="87399126@163.com" r-model={{email}}>';
+      var template = '<input type="email" value="87399126@163.com" r-model={{email}}><div>{{email}}</div>';
       var component = new Regular({
         template: template
       }).inject(container)
 
-      expect($('[type=email]', container)[0].tagName.toLowerCase()).to.equal('input')
-      expect(component.data.email).to.equal('87399126@163.com')
+
+      expect($('input', container).length).to.equal(1);
+      // expect($('div', container).html()).to.equal('87399126@163.com')
 
       component.$update('email','hello');
 
-      expect(component.data.email).to.equal('hello')
-      expect($('[type=email]', container).val()).to.equal('hello')
 
-      component.destroy();
-      expect(container.innerHTML).to.equal('')
+
+      expect(component.data.email).to.equal('hello')
+      expect($('input', container).val()).to.equal('hello')
+
+      destroy(component, container)
 
     })
 
@@ -133,6 +136,22 @@ describe('r-model directive', function(){
 
       component.destroy()
     })
+
+    it('textarea binding should also works', function(){
+
+        var template = 
+          '<textarea r-model={{textarea}}></textarea>'+
+          '<textarea r-model={{textarea}}></textarea>'
+        var component = new Regular({
+          template: template,
+          data: {textarea: '100'}
+        }).inject(container);
+
+        expect($('textarea', container).length).to.equal(2);
+        expect($('textarea', container).val()).to.equal("100");
+        destroy(component, container);
+    })
+
 
 
   })
@@ -232,11 +251,15 @@ describe('r-model directive', function(){
 
       }).inject(container);
 
+
+      expect($('select', container).val()).to.equal("3");
+      expect(component.data.selected1).to.equal("3");
+
+      component.$update('selected1', "2");
+      expect($('select', container).val()).to.equal("2");
+
       //destroy
       destroy(component, container);
-
-
-
     })
 
     it('select combine with list should works as expected', function(){
@@ -254,27 +277,56 @@ describe('r-model directive', function(){
             { value:"10", name:"Ningbo" },
             { value:"20", name:"Hangzhou" },
             { value:"30", name:"Beijing" }
+
           ],
-          selected: "30"
+          selected: "10"
         }
 
       }).inject(container);
 
 
       // expect($('select option', container).length).to.equal(3)
-      expect($('select', container).val()).to.equal("30")
-      setTimeout(function(){
-        component.$update('selected', "10");
-      },100);
+        expect($('select', container).val()).to.equal("10");
+        component.$update("selected", "20");
+        expect($('select', container).val()).to.equal("20");
+
+        destroy(component, container);
+
+    })
+  })
 
 
+  describe('radio binding', function(){
 
-      // expect($('select', container).val()).to.equal("30")
+    it('input:checkbox"s initial state should be correct', function(){
+      var template = 
+        "<input type='radio' r-model={{radio}} value='radio1'>" + 
+        "<input type='radio' r-model={{radio}} checked value='radio2'>"
+      var component = new Regular({
+        template: template
+      }).inject(container);
 
+      expect($('input', container).length).to.equal(2);
+      expect(component.data.radio).to.equal('radio2');
 
+      destroy(component, container);
+    })
+    it('input:checkbox should work as expected', function(){
+      var template = 
+        "<input type='radio' r-model={{radio}} value='radio1'>" + 
+        "<input type='radio' r-model={{radio}} value='radio2'>"
+      var component = new Regular({
+        template: template
+      }).inject(container);
 
+      expect($('input', container).length).to.equal(2);
+      expect(component.data.radio).to.equal(undefined);
 
+      component.$update('radio', 'radio2')
 
+      expect($('input', container)[1].checked).to.equal(true);
+
+      destroy(component, container);
 
     })
   })
@@ -284,11 +336,115 @@ describe('r-model directive', function(){
 
 
 describe('other buildin directive', function(){
+  var container = document.createElement('form');
+
   it('r-hide should force element to "display:none" when the expression is evaluated to true', function(){
-    
+    var template = "<div r-hide={{!!user}}>Please Login</div>" 
+
+    var component = new Regular({
+      template: template,
+      data: {user: 'hello'}
+    }).inject(container);
+
+    expect($('div', container).css('display')).to.equal('none');
+
+    component.$update('user','');
+
+    expect($('div', container).css('display')).not.to.equal('none');
+
+    destroy(component, container);
+
   })
+
+  it('r-class should add all property as the class whose propertyValue is evaluated to true', function(){
+    var template = "<div r-class={{ {'z-show': num < 6, 'z-active': num > 3} }}>Please Login</div>" 
+
+    var component = new Regular({
+      template: template,
+      data: {num: 4}
+    }).inject(container);
+
+    expect($('div', container).hasClass('z-show')).to.equal(true);
+    expect($('div', container).hasClass('z-active')).to.equal(true);
+
+    component.$update('num', 2);
+    expect($('div', container).hasClass('z-show')).to.equal(true);
+    expect($('div', container).hasClass('z-active')).to.equal(false);
+
+    component.$update('num', 8);
+    expect($('div', container).hasClass('z-show')).to.equal(false);
+    expect($('div', container).hasClass('z-active')).to.equal(true);
+
+    destroy(component, container);
+
+  })
+
+  it("r-class can combine with raw class attribute", function(){
+    var template = "<div class='rawClass' r-class={{ {'z-show': num < 6, 'z-active': num > 3} }}>Please Login</div>" 
+    var component = new Regular({
+      template: template,
+      data: {num: 4}
+    }).inject(container);
+
+    expect($('div', container).hasClass('rawClass')).to.equal(true);
+    expect($('div', container).hasClass('z-active')).to.equal(true);
+    expect($('div', container).hasClass('z-show')).to.equal(true);
+
+    component.$update('num', 2);
+    expect($('div', container).hasClass('rawClass')).to.equal(true);
+    expect($('div', container).hasClass('z-show')).to.equal(true);
+    expect($('div', container).hasClass('z-active')).to.equal(false);
+
+    destroy(component, container)
+
+
+  })
+  it("r-class can not combine with class inteplation", function(){
+    var template = "<div class='{{topClass}}' r-class={{ {'z-show': num < 6, 'z-active': num > 3} }}>Please Login</div>" 
+    var component = new Regular({
+      template: template,
+      data: {num: 4}
+    }).inject(container);
+
+    expect($('div', container).hasClass('z-active')).to.equal(true);
+    expect($('div', container).hasClass('z-show')).to.equal(true);
+
+    component.$update('topClass', 'hello')
+
+    expect($('div', container).hasClass('z-active')).to.equal(false);
+    expect($('div', container).hasClass('z-show')).to.equal(false);
+    // override the r-class
+    expect($('div', container).hasClass('hello')).to.equal(true);
+
+    destroy(component, container);
+
+  })
+  it("r-style should add all property specify in the passed arguments(type Object)", function(){
+    var template = "<div class='{{topClass}}' r-class={{ {'z-show': num < 6, 'z-active': num > 3} }}>Please Login</div>" 
+    var component = new Regular({
+      template: template,
+      data: {num: 2}
+    }).inject(container);
+
+
+  })
+
+
 })
 
+
+
+describe('the atrributeValue with the string type is valid in most buildin directive', function(){
+    var container = document.createElement('div');
+    var template = "da"
+    var component = new Regular({
+      template: template,
+      data: {num: 2}
+    }).inject(container);
+
+
+    destroy(component, container);
+})
 
 
 

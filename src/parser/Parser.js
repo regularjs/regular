@@ -51,7 +51,9 @@ op.match = function(type, value){
 // @TODO
 op.error = function(msg, pos){
   // console.log(this.ll())
-  throw "Parse Error: " + msg +  ':\n' + _.trackErrorPos(this.input, pos != null? pos: this.ll().pos);
+  var msg =  "Parse Error: " + msg +  ':\n' + _.trackErrorPos(this.input, typeof pos === 'number'? pos: this.ll().pos||0);
+  alert(msg)
+  throw new Error(msg);
 }
 
 op.next = function(k){
@@ -159,7 +161,7 @@ op.attvalue = function(){
     case "STRING":
       this.next();
       var value = ll.value;
-      if(value.type !== "expression" && ~value.indexOf('{{')){
+      if(~value.indexOf('{{')){
         var constant = true;
         var parsed = new Parser(value, {mode:2}).parse();
         if(parsed.length==1 && parsed[0].type==='expression') return parsed[0];

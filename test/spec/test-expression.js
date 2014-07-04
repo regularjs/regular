@@ -170,9 +170,6 @@ describe("compiled expression", function(){
     it("assignment should works correctly", function(){
       run_expr("a=1", context).to.eql(1)
       expect(context.data.a).to.eql(1);
-      expect(function(){
-        run_expr("(a+1)=1", context)
-      }).to.throwError()
     })
 
     it("member should works correctly", function(){

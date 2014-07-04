@@ -245,11 +245,9 @@ var Regular = function(options){
     this.group = this.$compile(this.template);
     this.element = combine.node(this);
   }
-  if(this.$root !== this){
-    console.log(this.data.value.value)
-  }
-  this.$update();
+
   this.$emit({type: 'init', stop: true });
+  this.$update();
   if( this.init ) this.init(this.data);
 
   // children is not required;
@@ -417,8 +415,8 @@ Regular.implement({
           }
         }
       }
-    }
-    ;(this.$root || this).$digest();
+    };
+    this.$digest();
   },
   /**
    * create two-way binding with another component;
@@ -572,6 +570,7 @@ Regular.implement({
     var fragment = this.element || combine.node(this);
     if(typeof node === 'string') node = dom.find(node);
     if(!node) throw 'injected node is not found'
+    if(!fragment) return;
     switch(position){
       case 'bottom':
         node.appendChild(fragment)
@@ -753,6 +752,13 @@ _.setName = '_p_';
 _.ctxName = '_c_';
 
 
+_.nextTick = typeof setImmediate === 'function'
+  ? setImmediate.bind(window) 
+  : function(callback) {
+    setTimeout(callback, 0) 
+  }
+
+
 var prefix =  "var " + _.ctxName + "=context.$context||context;" + "var " + _.varName + "=context.data;";
 
 
@@ -862,6 +868,7 @@ _.trackErrorPos = function (input, pos){
   var remain = input.slice(min, max+1);
   var prefix = line + "> " + (min >= last? "..." : "")
   var postfix = max < nextLinePos ? "...": "";
+
 
   return prefix + remain + postfix + "\n" + new Array( prefix.length + pos - min + 1).join(" ") + "^";
 }
@@ -1213,6 +1220,8 @@ walkers.list = function(ast){
   // group.push(placeholder);
 
 
+
+
   function update(newValue, splices){
     if(!splices || !splices.length) return;
     var cur = placeholder;
@@ -1244,6 +1253,7 @@ walkers.list = function(ast){
         var section = new Section({data: data, $root: self.$root});
         
         var update = section.$digest.bind(section);
+
 
         self.$on('digest', update);
         section.$on('destroy', self.$off.bind(self, 'digest', update));
@@ -1310,6 +1320,7 @@ walkers.template = function(ast){
     }
   }
 };
+
 
 walkers['if'] = function(ast){
   var test, consequent, alternate, node;
@@ -1380,6 +1391,7 @@ walkers.element = function(ast){
   if(children && children.length){
     var group = this.$compile(children);
   }
+  // make the directive after attribute
   attrs.sort(function(a, b){
     var da = Constructor.directive(a.name);
     var db = Constructor.directive(b.name);
@@ -1428,7 +1440,7 @@ walkers.element = function(ast){
   }
 
   if(ast.tag === 'svg') this._ns_ = 'svg';
-  var element = dom.create(ast.tag, this._ns_);
+  var element = dom.create(ast.tag, this._ns_, attrs);
   var destroies = [];
   var child;
   var directive = [];
@@ -1580,10 +1592,28 @@ dom.id = function(id){
 }
 
 // createElement 
-dom.create = function(type, ns){
+dom.create = function(type, ns, attrs){
   if(ns === 'svg'){
     if(!env.svg) throw Error('the env need svg support')
     ns = "http://www.w3.org/2000/svg";
+  }
+  //@fix ie can't dynamic type
+  if(type === 'input'){
+    if(dom.msie < 9){
+      var str = '<input '
+      for(var i = 0; i < attrs.length; i++){
+        var attr = attrs[i];
+        if(attr.value && attr.value.type!=='expression' && attr.name.indexOf('r-')===-1){
+          str += (' '+attr.name + '="' + attr.value+'"');
+        }
+      }
+      try{
+        return document.createElement(str+'>');
+      }catch(e){
+        return document.createElement(input);
+      }
+      
+    }
   }
   return !ns? document.createElement(type): document.createElementNS(ns, type);
 }
@@ -2060,7 +2090,9 @@ var rules = {
     return {type: all, value: all }
   }, 'TAG'],
   TAG_STRING:  [ /'([^']*)'|"([^"]*)"/, function(all, one, two){ //"'
-    return {type: 'STRING', value: one || two}
+    var value = one || two || "";
+
+    return {type: 'STRING', value: value}
   }, 'TAG'],
 
   TAG_SPACE: [/{SPACE}+/, null, 'TAG'],
@@ -2279,7 +2311,9 @@ op.match = function(type, value){
 // @TODO
 op.error = function(msg, pos){
   // console.log(this.ll())
-  throw "Parse Error: " + msg +  ':\n' + _.trackErrorPos(this.input, pos != null? pos: this.ll().pos);
+  var msg =  "Parse Error: " + msg +  ':\n' + _.trackErrorPos(this.input, typeof pos === 'number'? pos: this.ll().pos||0);
+  alert(msg)
+  throw new Error(msg);
 }
 
 op.next = function(k){
@@ -2387,7 +2421,7 @@ op.attvalue = function(){
     case "STRING":
       this.next();
       var value = ll.value;
-      if(value.type !== "expression" && ~value.indexOf('{{')){
+      if(~value.indexOf('{{')){
         var constant = true;
         var parsed = new Parser(value, {mode:2}).parse();
         if(parsed.length==1 && parsed[0].type==='expression') return parsed[0];
@@ -3181,6 +3215,7 @@ Regular.directive('r-style', function(elem, value){
 
 Regular.directive('r-hide', function(elem, value){
 
+
   if(value.type !== 'expression') value = Regular.expression(value);
 
   this.$watch(value, function(nvalue){
@@ -3217,6 +3252,9 @@ var modelHandlers = {
 }
 
 
+// @TODO
+
+
 // two-way binding with r-model
 // works on input, textarea, checkbox, radio, select
 
@@ -3227,9 +3265,9 @@ Regular.directive("r-model", function(elem, value){
   else if(sign === "textarea") sign = "text";
   if(typeof value === "string") value = Regular.expression(value);
 
-  if( modelHandlers[sign] ) modelHandlers[sign].call(this, elem, value);
+  if( modelHandlers[sign] ) return modelHandlers[sign].call(this, elem, value);
   else if(tag === "input"){
-    modelHandlers["text"].call(this, elem, value);
+    return modelHandlers["text"].call(this, elem, value);
   }
 });
 
@@ -3244,10 +3282,6 @@ function initSelect( elem, parsed){
   this.$watch(parsed, function(newValue, oldValue){
     if(inProgress) return;
     var children = _.slice(elem.getElementsByTagName('option'))
-
-    
-  
-
     children.forEach(function(node, index){
       if(node.value == newValue){
         elem.selectedIndex = index;
@@ -3267,6 +3301,9 @@ function initSelect( elem, parsed){
        parsed.set(self, elem.value);
     }
   });
+  return function destroy(){
+    dom.off(elem, "change", handler);
+  }
 }
 
 // input,textarea binding
@@ -3281,10 +3318,20 @@ function initText(elem, parsed){
 
   // @TODO to fixed event
   var handler = function handler(ev){
-    var value = this.value
-    parsed.set(self, value);
-    inProgress = true;
-    self.$update();
+    var that = this;
+    if(ev.type==='cut' || ev.type==='paste'){
+      _.nextTick(function(){
+        var value = that.value
+        parsed.set(self, value);
+        inProgress = true;
+        self.$update();
+      })
+    }else{
+        var value = that.value
+        parsed.set(self, value);
+        inProgress = true;
+        self.$update();
+    }
     inProgress = false;
   };
 
@@ -3292,15 +3339,27 @@ function initText(elem, parsed){
     elem.addEventListener("input", handler );
   }else{
     dom.on(elem, "paste", handler)
-    dom.on(elem, "keypress", handler)
+    dom.on(elem, "keyup", handler)
     dom.on(elem, "cut", handler)
+    dom.on(elem, "change", handler)
   }
   this.$on('init', function(){
     if(parsed.get(self) === undefined){
        parsed.set(self, elem.value);
     }
   })
+  return function destroy(){
+    if(dom.msie !== 9 && "oninput" in dom.tNode ){
+      elem.removeEventListener("input", handler );
+    }else{
+      dom.off(elem, "paste", handler)
+      dom.off(elem, "keyup", handler)
+      dom.off(elem, "cut", handler)
+      dom.off(elem, "change", handler)
+    }
+  }
 }
+
 
 // input:checkbox  binding
 
@@ -3326,6 +3385,10 @@ function initCheckBox(elem, parsed){
       parsed.set(self, elem.checked);
     }
   });
+
+  return function destroy(){
+    if(parsed.set) dom.off(elem, "change", handler)
+  }
 }
 
 
@@ -3353,6 +3416,10 @@ function initRadio(elem, parsed){
       if(elem.checked) parsed.set(self, elem.value);
     }
   });
+
+  return function destroy(){
+    if(parsed.set) dom.off(elem, "change", handler)
+  }
 }
 
 });

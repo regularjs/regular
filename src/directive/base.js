@@ -44,6 +44,7 @@ Regular.directive('r-style', function(elem, value){
 
 Regular.directive('r-hide', function(elem, value){
 
+
   if(value.type !== 'expression') value = Regular.expression(value);
 
   this.$watch(value, function(nvalue){

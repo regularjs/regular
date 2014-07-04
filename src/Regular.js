@@ -34,11 +34,9 @@ var Regular = function(options){
     this.group = this.$compile(this.template);
     this.element = combine.node(this);
   }
-  if(this.$root !== this){
-    console.log(this.data.value.value)
-  }
-  this.$update();
+
   this.$emit({type: 'init', stop: true });
+  this.$update();
   if( this.init ) this.init(this.data);
 
   // children is not required;
@@ -206,8 +204,8 @@ Regular.implement({
           }
         }
       }
-    }
-    ;(this.$root || this).$digest();
+    };
+    this.$digest();
   },
   /**
    * create two-way binding with another component;
@@ -361,6 +359,7 @@ Regular.implement({
     var fragment = this.element || combine.node(this);
     if(typeof node === 'string') node = dom.find(node);
     if(!node) throw 'injected node is not found'
+    if(!fragment) return;
     switch(position){
       case 'bottom':
         node.appendChild(fragment)

@@ -17,6 +17,13 @@ _.setName = '_p_';
 _.ctxName = '_c_';
 
 
+_.nextTick = typeof setImmediate === 'function'
+  ? setImmediate.bind(window) 
+  : function(callback) {
+    setTimeout(callback, 0) 
+  }
+
+
 var prefix =  "var " + _.ctxName + "=context.$context||context;" + "var " + _.varName + "=context.data;";
 
 
@@ -126,6 +133,7 @@ _.trackErrorPos = function (input, pos){
   var remain = input.slice(min, max+1);
   var prefix = line + "> " + (min >= last? "..." : "")
   var postfix = max < nextLinePos ? "...": "";
+
 
   return prefix + remain + postfix + "\n" + new Array( prefix.length + pos - min + 1).join(" ") + "^";
 }

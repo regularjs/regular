@@ -65,10 +65,28 @@ dom.id = function(id){
 }
 
 // createElement 
-dom.create = function(type, ns){
+dom.create = function(type, ns, attrs){
   if(ns === 'svg'){
     if(!env.svg) throw Error('the env need svg support')
     ns = "http://www.w3.org/2000/svg";
+  }
+  //@fix ie can't dynamic type
+  if(type === 'input'){
+    if(dom.msie < 9){
+      var str = '<input '
+      for(var i = 0; i < attrs.length; i++){
+        var attr = attrs[i];
+        if(attr.value && attr.value.type!=='expression' && attr.name.indexOf('r-')===-1){
+          str += (' '+attr.name + '="' + attr.value+'"');
+        }
+      }
+      try{
+        return document.createElement(str+'>');
+      }catch(e){
+        return document.createElement(input);
+      }
+      
+    }
   }
   return !ns? document.createElement(type): document.createElementNS(ns, type);
 }

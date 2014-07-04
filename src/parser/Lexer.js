@@ -220,7 +220,9 @@ var rules = {
     return {type: all, value: all }
   }, 'TAG'],
   TAG_STRING:  [ /'([^']*)'|"([^"]*)"/, function(all, one, two){ //"'
-    return {type: 'STRING', value: one || two}
+    var value = one || two || "";
+
+    return {type: 'STRING', value: value}
   }, 'TAG'],
 
   TAG_SPACE: [/{SPACE}+/, null, 'TAG'],
