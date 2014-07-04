@@ -1,9 +1,6 @@
-## > __Regular is still in heavily development, current version is not stable enough__
-
-
 # Regular = react(ractive) + angular.
 
-regular is a live template engine helping us to create reactive component . regularjs's target browsers contains __ie6/7/8__.
+regular is a live template engine helping us to create reactive component, there are some basic featrue.
 
 1. data-binding like angular.
 2. string-based template, have some buildin rule like  if/else ,list and dynamic include.
@@ -74,20 +71,21 @@ regularjs's target browser contains __ie6/7/8/9__, and other mordern browser(des
 ## Contribute && Community
 
 
-* the regularjs is still in haveliy growth stage. please feel free to open [an issue](https://github.com/regularjs/regular/issues)
+* The regularjs is still in heavily development. please feel free to open [an issue](https://github.com/regularjs/regular/issues)
 
-* ask any questions on [Stack Overflow](http://stackoverflow.com/questions/tagged/regularjs) with tag `regularjs`. 
+* Ask any questions on [Stack Overflow](http://stackoverflow.com/questions/tagged/regularjs) with tag `regularjs`. 
 
-* social 
+* Social 
   1. twitter: follow the [@regularjs](https://twitter.com/regularjs). 
   2. weibo: chinese friends can also follow author's weibo[@拴萝卜的棍子](http://weibo.com/luobolee)
 
 ## Contribute
 
-feel free to send pull-request. there is some recommend to contributor.
 
-* please [open a issue](https://github.com/regularjs/regular/issues) before pull request, 
-* if needed, please add your testcase at `test/specs` folder. always make sure the `gulp mocha` is passed, and the `test/runner/index.html` is passed in every target browser
+The regularjs is still in heavily development, helping us with pull-request. there is some recommend to contributor.
+
+* Please [open issue](https://github.com/regularjs/regular/issues) before sending pull request, 
+* if needed, add your testcase at `test/specs` folder. always make sure the `gulp mocha` is passed, and the `test/runner/index.html` is passed in every target browser
 
 
 ## [LICENSE](https://github.com/regularjs/regular/blob/master/LICENSE)
