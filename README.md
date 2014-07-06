@@ -1,6 +1,6 @@
 # Regular = react(ractive) + angular.
 
-regular is a live template engine helping us to create reactive component, there are some basic feature.
+regular is a live template engine helping us to create interactive component, there are some basic feature.
 
 1. __data-binding__ like angular.
 2. __string-based__ template with buildin rule like  if/else ,list and dynamic include.
@@ -84,9 +84,13 @@ regularjs's target browser contains __ie6/7/8/9__, and other mordern browser;
 regularjs is still in heavily development, helping us with pull-request. there is some recommend to contributor.
 
 * Please [open issue](https://github.com/regularjs/regular/issues) before sending pull request, 
-* if needed, add your testcase at `test/specs` folder. always make sure the `gulp mocha` is passed, and the `test/runner/index.html` is passed in every target browser
+* if needed, add your testcase at `test/specs` folder. always make sure the `gulp test` is passed, and the `test/runner/index.html` is passed in every target browser (if you doesn't have some browser installed that list in [gulpfile's karmaConfig](https://github.com/regularjs/regular/blob/master/gulpfile.js#L30))
 
 
 ## [LICENSE](https://github.com/regularjs/regular/blob/master/LICENSE)
 
 MIT.
+
+
+## TODO
+

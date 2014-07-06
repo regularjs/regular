@@ -106,38 +106,40 @@ _.makePredicate = function makePredicate(words, prefix) {
     return new Function("str", f);
 }
 
-// linebreak
-var lb = /\r\n|[\n\r\u2028\u2029]/g
-_.trackErrorPos = function (input, pos){
-  lb.lastIndex = 0;
 
-  var line = 1, last = 0, nextLinePos;
-  var len = input.length;
-
-  var match;
-  while ((match = lb.exec(input))) {
-    if(match.index < pos){
-      ++line;
-      last = match.index + 1;
-    }else{
-      nextLinePos = match.index
+_.trackErrorPos = (function (){
+  // linebreak
+  var lb = /\r\n|[\n\r\u2028\u2029]/g;
+  function findLine(lines, pos){
+    var tmpLen = 0;
+    for(var i = 0,len = lines.length; i < len; i++){
+      var lineLen = (lines[i] || "").length;
+      if(tmpLen + lineLen > pos) return {num: i, line: lines[i], start: pos - tmpLen};
+      // 1 is for the linebreak
+      tmpLen = tmpLen + lineLen + 1;
     }
+    
   }
-  if(!nextLinePos)  nextLinePos = len - 1;
+  return function(input, pos){
+    if(pos > input.length-1) pos = input.length-1;
+    lb.lastIndex = 0;
+    var lines = input.split(lb);
+    var line = findLine(lines,pos);
+    var len = line.line.length;
 
-  var min = pos - 10;
-  if(min < last) min = last;
+    var min = line.start - 10;
+    if(min < 0) min = 0;
 
-  var max = pos + 10;
-  if(max > nextLinePos) max = nextLinePos;
+    var max = line.start + 10;
+    if(max > len) max = len;
 
-  var remain = input.slice(min, max+1);
-  var prefix = line + "> " + (min >= last? "..." : "")
-  var postfix = max < nextLinePos ? "...": "";
+    var remain = line.line.slice(min, max);
+    var prefix = (line.num+1) + "> " + (min > 0? "..." : "")
+    var postfix = max < len ? "...": "";
 
-
-  return prefix + remain + postfix + "\n" + new Array( prefix.length + pos - min + 1).join(" ") + "^";
-}
+    return prefix + remain + postfix + "\n" + new Array(line.start + prefix.length + 1).join(" ") + "^";
+  }
+})();
 
 
 var ignoredRef = /\(\?\!|\(\?\:|\?\=/g;

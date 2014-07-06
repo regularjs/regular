@@ -237,8 +237,8 @@ var Regular = function(options){
   if(typeof template === 'string') this.template = new Parser(template).parse()
   this.$watchers = [];
   this.config && this.config(this.data);
-  this.$root = this.$root || this;
   this.$context = this.$context || this;
+  this.$root = this.$root || this;
   // if have events
   if(this.events) this.$on(this.events);
   if(template){
@@ -269,6 +269,11 @@ _.extend(Regular, {
 
 
   __after__: function(supr, o) {
+
+
+    if(o.computed){
+      
+    }
 
     var template;
     this.__after__ = supr.__after__;
@@ -369,6 +374,7 @@ extend(Regular);
 Event.mixTo(Regular)
 
 Regular.implement({
+
   init: function(){},
   /**
    * compile a block ast ; return a group;
@@ -417,7 +423,7 @@ Regular.implement({
         }
       }
     };
-    this.$digest();
+    (this.$context || this).$digest();
   },
   /**
    * create two-way binding with another component;
@@ -559,7 +565,8 @@ Regular.implement({
   destroy: function(){
     // destroy event wont propgation;
     this.$emit({type: 'destroy', stop: true });
-    this.group.destroy();
+
+    this.group && this.group.destroy();
     this.group = null;
     this.element = null;
     this.$watchers = null;
@@ -842,38 +849,40 @@ _.makePredicate = function makePredicate(words, prefix) {
     return new Function("str", f);
 }
 
-// linebreak
-var lb = /\r\n|[\n\r\u2028\u2029]/g
-_.trackErrorPos = function (input, pos){
-  lb.lastIndex = 0;
 
-  var line = 1, last = 0, nextLinePos;
-  var len = input.length;
-
-  var match;
-  while ((match = lb.exec(input))) {
-    if(match.index < pos){
-      ++line;
-      last = match.index + 1;
-    }else{
-      nextLinePos = match.index
+_.trackErrorPos = (function (){
+  // linebreak
+  var lb = /\r\n|[\n\r\u2028\u2029]/g;
+  function findLine(lines, pos){
+    var tmpLen = 0;
+    for(var i = 0,len = lines.length; i < len; i++){
+      var lineLen = (lines[i] || "").length;
+      if(tmpLen + lineLen > pos) return {num: i, line: lines[i], start: pos - tmpLen};
+      // 1 is for the linebreak
+      tmpLen = tmpLen + lineLen + 1;
     }
+    
   }
-  if(!nextLinePos)  nextLinePos = len - 1;
+  return function(input, pos){
+    if(pos > input.length-1) pos = input.length-1;
+    lb.lastIndex = 0;
+    var lines = input.split(lb);
+    var line = findLine(lines,pos);
+    var len = line.line.length;
 
-  var min = pos - 10;
-  if(min < last) min = last;
+    var min = line.start - 10;
+    if(min < 0) min = 0;
 
-  var max = pos + 10;
-  if(max > nextLinePos) max = nextLinePos;
+    var max = line.start + 10;
+    if(max > len) max = len;
 
-  var remain = input.slice(min, max+1);
-  var prefix = line + "> " + (min >= last? "..." : "")
-  var postfix = max < nextLinePos ? "...": "";
+    var remain = line.line.slice(min, max);
+    var prefix = (line.num+1) + "> " + (min > 0? "..." : "")
+    var postfix = max < len ? "...": "";
 
-
-  return prefix + remain + postfix + "\n" + new Array( prefix.length + pos - min + 1).join(" ") + "^";
-}
+    return prefix + remain + postfix + "\n" + new Array(line.start + prefix.length + 1).join(" ") + "^";
+  }
+})();
 
 
 var ignoredRef = /\(\?\!|\(\?\:|\?\=/g;
@@ -1252,7 +1261,7 @@ walkers.list = function(ast){
         data[indexName] = o;
         data[variable] = item;
 
-        var section = new Section({data: data, $root: self.$root});
+        var section = new Section({data: data });
         
         var update = section.$digest.bind(section);
 
@@ -1430,7 +1439,7 @@ walkers.element = function(ast){
     }
 
     if(ast.children) var $body = this.$compile(ast.children);
-    var component = new Component({data: data, events: events, $body: $body});
+    var component = new Component({data: data, events: events, $body: $body, $root: self.$root||self});
     for(var i = 0, len = attrs.length; i < len; i++){
       var attr = attrs[i];
       var value = attr.value||"";
@@ -2316,7 +2325,6 @@ op.match = function(type, value){
 op.error = function(msg, pos){
   // console.log(this.ll())
   var msg =  "Parse Error: " + msg +  ':\n' + _.trackErrorPos(this.input, typeof pos === 'number'? pos: this.ll().pos||0);
-  alert(msg)
   throw new Error(msg);
 }
 

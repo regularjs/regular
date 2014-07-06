@@ -97,6 +97,24 @@ void function(){
 
       })
 
+      it("use if elseif should equal with if else if", function(){
+        var container = document.createElement('div');
+        var component = new Regular({
+          template: "{{#if test > 5}}<div>test</div>{{#else}}{{#if test<2}}<div>altname</div>{{#else}}<div>altname2</div>{{/if}}{{/if}}",
+          data: {test: 1}
+        }).inject(container);
+
+        expect($("div",container).length).to.equal(1);
+        expect($("div",container).html()).to.equal("altname");
+        component.$update("test", 6);
+        expect($("div",container).length).to.equal(1);
+        expect($("div",container).html()).to.equal("test");
+    
+
+        destroy(component, container)
+
+      })
+
     })
   })
 

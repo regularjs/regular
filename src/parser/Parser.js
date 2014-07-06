@@ -52,7 +52,6 @@ op.match = function(type, value){
 op.error = function(msg, pos){
   // console.log(this.ll())
   var msg =  "Parse Error: " + msg +  ':\n' + _.trackErrorPos(this.input, typeof pos === 'number'? pos: this.ll().pos||0);
-  alert(msg)
   throw new Error(msg);
 }
 

@@ -80,6 +80,12 @@ void function(){
         expect(component.some).to.equal(hello);
       })
     })
+
+    describe("some buildin plugin", function(){
+      it("timeout's $timeout should update when time is out", function(){
+        
+      })      
+    })
   });
 
 

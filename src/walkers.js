@@ -54,7 +54,7 @@ walkers.list = function(ast){
         data[indexName] = o;
         data[variable] = item;
 
-        var section = new Section({data: data, $root: self.$root});
+        var section = new Section({data: data });
         
         var update = section.$digest.bind(section);
 
@@ -232,7 +232,7 @@ walkers.element = function(ast){
     }
 
     if(ast.children) var $body = this.$compile(ast.children);
-    var component = new Component({data: data, events: events, $body: $body});
+    var component = new Component({data: data, events: events, $body: $body, $root: self.$root||self});
     for(var i = 0, len = attrs.length; i < len; i++){
       var attr = attrs[i];
       var value = attr.value||"";

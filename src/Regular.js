@@ -26,8 +26,8 @@ var Regular = function(options){
   if(typeof template === 'string') this.template = new Parser(template).parse()
   this.$watchers = [];
   this.config && this.config(this.data);
-  this.$root = this.$root || this;
   this.$context = this.$context || this;
+  this.$root = this.$root || this;
   // if have events
   if(this.events) this.$on(this.events);
   if(template){
@@ -58,6 +58,11 @@ _.extend(Regular, {
 
 
   __after__: function(supr, o) {
+
+
+    if(o.computed){
+      
+    }
 
     var template;
     this.__after__ = supr.__after__;
@@ -158,6 +163,7 @@ extend(Regular);
 Event.mixTo(Regular)
 
 Regular.implement({
+
   init: function(){},
   /**
    * compile a block ast ; return a group;
@@ -206,7 +212,7 @@ Regular.implement({
         }
       }
     };
-    this.$digest();
+    (this.$context || this).$digest();
   },
   /**
    * create two-way binding with another component;
@@ -348,7 +354,8 @@ Regular.implement({
   destroy: function(){
     // destroy event wont propgation;
     this.$emit({type: 'destroy', stop: true });
-    this.group.destroy();
+
+    this.group && this.group.destroy();
     this.group = null;
     this.element = null;
     this.$watchers = null;

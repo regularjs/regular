@@ -16,7 +16,9 @@
     "url": "https://github.com/regularjs"
   },
   "homepage": "http://regularjs.github.io",
-  "scripts": {},
+  "scripts": {
+    "test": "gulp travis"
+  },
   "bin": {
     "regular": "./bin/regular"
   },

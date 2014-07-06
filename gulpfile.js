@@ -154,7 +154,10 @@ gulp.task('cover', function(cb){
     });
 })
 
-gulp.task('test', ['mocha', 'casper'])
+gulp.task('test', ['mocha', 'casper', 'karma'])
+
+// for travis
+gulp.task('travis', ['build', 'mocha', 'casper']);
 
 gulp.task('mocha', function() {
 

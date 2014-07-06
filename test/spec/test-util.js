@@ -171,6 +171,19 @@ describe("Regular.util", function(){
    expect(_.escape('<div hello>')).to.equal('&lt;div hello&gt;')
    expect(_.escape('""')).to.equal('&quot;&quot;')
   })
+
+
+  describe('Error Track should work as expected', function(){
+
+    it("_.trackErrorPos should have no '...' prefix if not slice", function(){
+
+      expect(_.trackErrorPos("abcdefghi", 1)).to.equal('1> abcdefghi\n    ^');
+      expect(_.trackErrorPos("abcdefghi", 2)).to.equal('1> abcdefghi\n     ^');
+
+
+    })
+  })
+
   
 
 })

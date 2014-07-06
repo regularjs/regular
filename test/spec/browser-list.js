@@ -144,7 +144,79 @@ void function(){
 
       })
 
+      it("nested list should have the outerComponent's context", function(){
+        var container = document.createElement('div');
+
+        var list =
+          "{{#list 1..2 as todo}}" + 
+            "<div class='sub' data-value={{this.get(todo_index)}}>" + 
+            "{{#list 1..2 as num}}" + 
+            "<div class='sub2'>{{this.get(num_index)}}</div>"+
+            "{{/list}}" +
+            "</div>"+
+          "{{/list}}"
+        var List = Regular.extend({
+          hello: "123456",
+          template: list, 
+          get: function(index){
+            return this.data.todos[index].content;
+          }
+        });
+        var component = new List({
+          data: {todos: [{content: "hello"}, {content: "hello2"}]}
+        }).inject(container);
+
+        expect($("div",container).length).to.equal(6);
+        expect($(".sub:nth-child(10n+1)",container).attr("data-value")).to.equal("hello");
+        expect($(".sub:nth-child(10n+2)",container).attr("data-value")).to.equal("hello2");
+        expect($(".sub2:nth-child(10n+1)",container).html()).to.equal("hello");
+        expect($(".sub2:nth-child(10n+2)",container).html()).to.equal("hello2");
+
+        component.$update('todos[0].content', 'changedvalue');
+        expect($(".sub:nth-child(10n+1)",container).attr("data-value")).to.equal("changedvalue");
+        expect($(".sub2:nth-child(10n+1)",container).html()).to.equal("changedvalue");
+
+        destroy(component, container)
+
+      })
+
+      it("list with table should work correctly", function(){
+        var container = document.createElement('table')
+        var list =
+          "{{#list todos as todo}}" + 
+            "<tr class={{this.get(todo_index)}}>" + 
+            "{{#list 1..2 as num}}" + 
+            "<td>{{this.get(num_index)}}</td>"+
+            "{{/list}}" +
+            "</tr>"+
+          "{{/list}}"
+        var List = Regular.extend({
+          template: list, 
+          get: function(index){
+            return this.data.todos[index].content;
+          }
+        });
+        var component = new List({
+          data: {todos: [{content: "hello"}, {content: "hello2"}]}
+        }).inject(container);
+
+        expect($("td",container).length).to.equal(4);
+
+        expect($("td:nth-child(10n+1)",container).html()).to.equal("hello");
+        expect($("td:nth-child(10n+2)",container).html()).to.equal("hello2");
+
+        component.$update(function(data){
+          data.todos.push({content: "hello3"})
+        })
+
+        expect($("td",container).length).to.equal(6);
+        destroy(component, container);
+
+      })
+
+
     })
+
   })
 
 }()
