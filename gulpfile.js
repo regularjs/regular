@@ -77,7 +77,20 @@ var karmaCommonConf = {
  * Run test once and exit
  */
 gulp.task('karma', function (done) {
-  karma.start(_.extend(karmaCommonConf, {singleRun: true}), done);
+  var config = _.extend({}, karmaCommonConf);
+  if(process.argv[3] === '--phantomjs'){
+    config.browsers=["PhantomJS"]
+    config.coverageReporter = {
+      reporters: [
+        { type: 'lcov' },
+        { type: 'text-summary' }
+      ]
+    }
+    karma.start(_.extend(config, {singleRun: true}), done);
+  }else{
+    karma.start(_.extend(config, {singleRun: true}), done);
+  }
+  
 });
 
 
@@ -157,7 +170,7 @@ gulp.task('cover', function(cb){
 gulp.task('test', ['mocha', 'casper', 'karma'])
 
 // for travis
-gulp.task('travis', ['build', 'mocha', 'casper']);
+gulp.task('travis', ['build', 'mocha', 'casper', 'karma']);
 
 gulp.task('mocha', function() {
 
