@@ -27,7 +27,7 @@ gulp.task('default', ['test'], function() {});
 //one could also externalize common config into a separate file,
 //ex.: var karmaCommonConf = require('./karma-common-conf.js');
 var karmaCommonConf = {
-  browsers: ['Chrome', 'Firefox', 'IE', 'IE9', 'IE8', 'IE7'],
+  browsers: ['Chrome', 'Firefox', 'IE', 'IE9', 'IE8', 'IE7', 'PhantomJS'],
   frameworks: ['mocha'],
   files: [
     'test/regular.js',
@@ -67,10 +67,10 @@ var karmaCommonConf = {
   },
 
   // optionally, configure the reporter
-  coverageReporter: {
-    type : 'html',
-    dir : 'karma-coverage/'
+  coverageReporter: { 
+    type: 'html' 
   }
+  
 };
 
 /**
@@ -80,12 +80,8 @@ gulp.task('karma', function (done) {
   var config = _.extend({}, karmaCommonConf);
   if(process.argv[3] === '--phantomjs'){
     config.browsers=["PhantomJS"]
-    config.coverageReporter = {
-      reporters: [
-        { type: 'lcov' },
-        { type: 'text-summary' }
-      ]
-    }
+    config.coverageReporter = {type : 'text-summary'}
+    
     karma.start(_.extend(config, {singleRun: true}), done);
   }else{
     karma.start(_.extend(config, {singleRun: true}), done);
