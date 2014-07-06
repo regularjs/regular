@@ -1,14 +1,16 @@
-# Regular = react(ractive) + angular.
+# regular = react(ractive) + angular.
 
-regular is a live template engine helping us to create interactive component, there are some basic feature.
+regular is a live template engine helping us to create interactive component 
+
+__features__
 
 1. __data-binding__ like angular.
-2. __string-based__ template with buildin rule like  if/else ,list and dynamic include.
-3. the template's rule is extensiable(need Parser packaged).
-4. __independent lifecycle__ in every component. so component can be integrated with whatever framework you already used.
-5. __nested component__
-6. the definition of Business logic based on Class, just like [angular-classy](http://davej.github.io/angular-classy/) do for angular
-7. __directive, filter, event__ is supported, and extend easily.
+2. __string-based template__ with buildin rule like if/else ,list and dynamic include.
+3. __independent lifecycle__ in every component. so component can be integrated with whatever framework you already used.
+4. __nested component__
+5. the definition of Business logic based on Class, just like [angular-classy](http://davej.github.io/angular-classy/) do for angular
+6. __directive, filter, event__ is supported, and extend easily.
+7. The template's rule is extensiable(need Parser packaged).
 
 __example__
 
@@ -18,14 +20,18 @@ with less than 20 line code then you already have a simple note component, you c
 var NoteApp = Regular.extend({
   template: 
     "{{#list notes as c}}\
-        <p>{{c.content}} <a href='#' on-click={{this.remove(c)}}>remove</a></p>\
+        <p>\
+          {{c.content}}<a href='#' on-click={{this.remove(c)}}>remove</a>\
+        </p>\
      {{/list}}\
      <textarea r-model={{draftComment}}></textarea><button on-click={{this.add()}}>new Note</button>",
+
   remove: function(c){
     var notes = this.data.notes;
     var index = notes.indexOf(c);
     if(~index) notes.splice(index,1);
   },
+
   add: function(){
     var data = this.data;
     data.notes.push({content: data.draftComment})
@@ -33,11 +39,7 @@ var NoteApp = Regular.extend({
   }
 });
 
-new NoteApp({
-  data{
-    notes:[]
-  }
-}).inject(document.body);
+new NoteApp({ data: {notes:[] }}).inject(document.body);
 ```
 
 
