@@ -36,7 +36,7 @@ var Regular = function(options){
   }
 
   this.$emit({type: 'init', stop: true });
-  this.$update();
+  if(this.$root===this) this.$update();
   if( this.init ) this.init(this.data);
 
   // children is not required;
@@ -78,18 +78,9 @@ _.extend(Regular, {
         this.prototype.template = new Parser(template).parse();
       }
     }
+    // inherit directive and other config from supr
+    Regular._inheritConfig(this, supr);
 
-    // prototype inherit some Regular property
-    // so every Component will have own container to serve directive, filter etc..
-    void function(){
-      var self = this;
-      var keys = _.slice(arguments);
-      keys.forEach(function(key){
-        self[key] = supr[key];
-        var cacheKey = '_' + key + 's';
-        if(supr[cacheKey]) self[cacheKey] = _.createObject(supr[cacheKey]);
-      })
-    }.call(this, 'use', 'directive', 'event', 'filter', 'component')
   },
   /**
    * directive's setter and getter
@@ -155,8 +146,23 @@ _.extend(Regular, {
   parse: function(template){
     return new Parser(template).parse();
   },
+
   Parser: Parser,
-  Lexer: Lexer
+  Lexer: Lexer,
+
+  _inheritConfig: function(self, supr){
+
+    // prototype inherit some Regular property
+    // so every Component will have own container to serve directive, filter etc..
+    var defs =['use', 'directive', 'event', 'filter', 'component'] 
+    var keys = _.slice(defs);
+    keys.forEach(function(key){
+      self[key] = supr[key];
+      var cacheKey = '_' + key + 's';
+      if(supr[cacheKey]) self[cacheKey] = _.createObject(supr[cacheKey]);
+    })
+    return self;
+  }
 });
 
 extend(Regular);
@@ -275,6 +281,7 @@ Regular.implement({
    * @return {Void}   
    */
   $digest: function(path){
+
 
     if(this.$phase === 'digest') return;
     this.$phase = 'digest';
@@ -497,6 +504,7 @@ Regular.implement({
     if(dirty) this.$emit('update');
     return dirty;
   },
+
 
   _record: function(){
     this._records = [];

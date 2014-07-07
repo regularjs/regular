@@ -12,7 +12,7 @@
     <div id="app"> </div>
 
     <script>
-    //1. nest style
+    // //1. nest style
     var app = new Regular({
       template: 
         "{{total}}:{{current}}<button on-click={{total = total + 1}}>total+1</button>\
@@ -26,6 +26,7 @@
 
     //2. initialize style
     var pager = new Pager({data: {total: 100, current:11}}).inject('#app');
+
 
     </script>
 

@@ -9,12 +9,12 @@ var walkers = module.exports = {};
 walkers.list = function(ast){
   var placeholder = document.createComment("Regular list");
   // proxy Component to implement list item, so the behaviar is similar with angular;
-  var Section =  this.constructor.extend( { 
-    init: function(){},
-    destroy: Regular.prototype.destroy,
+  var Section =  Regular.extend( { 
     template: ast.body, 
     $context: this.$context, 
-    fake:true } );
+  });
+  Regular._inheritConfig(Section, this.constructor);
+
   var fragment = dom.fragment();
   fragment.appendChild(placeholder);
   var self = this;
@@ -55,9 +55,8 @@ walkers.list = function(ast){
         data[variable] = item;
 
         var section = new Section({data: data });
-        
-        var update = section.$digest.bind(section);
 
+        var update = section.$digest.bind(section);
 
         self.$on('digest', update);
         section.$on('destroy', self.$off.bind(self, 'digest', update));

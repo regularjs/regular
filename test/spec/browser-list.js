@@ -214,8 +214,24 @@ void function(){
 
       })
 
+      it("component in list should get the parent's directive", function(){
+        var container = document.createElement('table')
+        var num = 0;
+        var Component = Regular.extend({})
+          .directive('r-name', function(elem, value){
+            num++;
+          })
+        var component = new Component({
+          template: "{{#list 1..2 as num}}<div r-name='name'>haha</div>{{/list}}"
+        }).inject(container)
 
+        expect(num).to.equal(2);
+
+        destroy(component, container);
+      })
     })
+
+
 
   })
 

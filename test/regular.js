@@ -245,7 +245,7 @@ var Regular = function(options){
   }
 
   this.$emit({type: 'init', stop: true });
-  this.$update();
+  if(this.$root===this) this.$update();
   if( this.init ) this.init(this.data);
 
   // children is not required;
@@ -287,18 +287,9 @@ _.extend(Regular, {
         this.prototype.template = new Parser(template).parse();
       }
     }
+    // inherit directive and other config from supr
+    Regular._inheritConfig(this, supr);
 
-    // prototype inherit some Regular property
-    // so every Component will have own container to serve directive, filter etc..
-    void function(){
-      var self = this;
-      var keys = _.slice(arguments);
-      keys.forEach(function(key){
-        self[key] = supr[key];
-        var cacheKey = '_' + key + 's';
-        if(supr[cacheKey]) self[cacheKey] = _.createObject(supr[cacheKey]);
-      })
-    }.call(this, 'use', 'directive', 'event', 'filter', 'component')
   },
   /**
    * directive's setter and getter
@@ -364,8 +355,23 @@ _.extend(Regular, {
   parse: function(template){
     return new Parser(template).parse();
   },
+
   Parser: Parser,
-  Lexer: Lexer
+  Lexer: Lexer,
+
+  _inheritConfig: function(self, supr){
+
+    // prototype inherit some Regular property
+    // so every Component will have own container to serve directive, filter etc..
+    var defs =['use', 'directive', 'event', 'filter', 'component'] 
+    var keys = _.slice(defs);
+    keys.forEach(function(key){
+      self[key] = supr[key];
+      var cacheKey = '_' + key + 's';
+      if(supr[cacheKey]) self[cacheKey] = _.createObject(supr[cacheKey]);
+    })
+    return self;
+  }
 });
 
 extend(Regular);
@@ -484,6 +490,7 @@ Regular.implement({
    * @return {Void}   
    */
   $digest: function(path){
+
 
     if(this.$phase === 'digest') return;
     this.$phase = 'digest';
@@ -706,6 +713,7 @@ Regular.implement({
     if(dirty) this.$emit('update');
     return dirty;
   },
+
 
   _record: function(){
     this._records = [];
@@ -1214,12 +1222,12 @@ var walkers = module.exports = {};
 walkers.list = function(ast){
   var placeholder = document.createComment("Regular list");
   // proxy Component to implement list item, so the behaviar is similar with angular;
-  var Section =  this.constructor.extend( { 
-    init: function(){},
-    destroy: Regular.prototype.destroy,
+  var Section =  Regular.extend( { 
     template: ast.body, 
     $context: this.$context, 
-    fake:true } );
+  });
+  Regular._inheritConfig(Section, this.constructor);
+
   var fragment = dom.fragment();
   fragment.appendChild(placeholder);
   var self = this;
@@ -1260,9 +1268,8 @@ walkers.list = function(ast){
         data[variable] = item;
 
         var section = new Section({data: data });
-        
-        var update = section.$digest.bind(section);
 
+        var update = section.$digest.bind(section);
 
         self.$on('digest', update);
         section.$on('destroy', self.$off.bind(self, 'digest', update));
