@@ -194,7 +194,7 @@ gulp.task('casper', function(){
     console.log(""+ data);
   });
   casperjs.stderr.on('data', function (data) {
-  console.log('stderr: ' + data);
+    console.log('stderr: ' + data);
   });
 
   casperjs.on('close', function (code) {
