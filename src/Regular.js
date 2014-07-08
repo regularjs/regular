@@ -2,6 +2,7 @@ var Lexer = require("./parser/Lexer.js");
 var Parser = require("./parser/Parser.js");
 var node = require("./parser/node.js");
 var dom = require("./dom.js");
+require("./helper/animate.js");
 var Group = require('./group.js');
 var _ = require('./util');
 var extend = require('./helper/extend.js');
@@ -34,7 +35,8 @@ var Regular = function(options){
     this.group = this.$compile(this.template);
     this.element = combine.node(this);
   }
-
+  
+  this.$ready = true;
   this.$emit({type: 'init', stop: true });
   if(this.$root===this) this.$update();
   if( this.init ) this.init(this.data);
@@ -369,33 +371,11 @@ Regular.implement({
     this.$off();
   },
   inject: function(node, position){
-    position = position || 'bottom';
-    var firstChild,lastChild, parentNode, next;
     var fragment = this.element || combine.node(this);
     if(typeof node === 'string') node = dom.find(node);
     if(!node) throw 'injected node is not found'
     if(!fragment) return;
-    switch(position){
-      case 'bottom':
-        node.appendChild(fragment)
-        break;
-      case 'top':
-        if(firstChild = node.firstChild){
-          node.insertBefore(fragment, node.firstChild)
-        }else{
-          node.appendChild(fragment);
-        }
-        break;
-      case 'after':
-        if(next = node.nextSibling){
-          next.parentNode.insertBefore(fragment, next);
-        }else{
-          next.parentNode.appendChild(fragment);
-        }
-        break;
-      case 'before':
-        node.parentNode.insertBefore(fragment, node);
-    }
+    dom.inject(fragment, node, position);
     return this;
   },
   // private bind logic

@@ -1,6 +1,6 @@
 /**
 @author	leeluolee
-@version	0.1.1
+@version	0.1.2
 @homepage	http://regularjs.github.io
 */
 
@@ -211,6 +211,7 @@ var Lexer = require("./parser/Lexer.js");
 var Parser = require("./parser/Parser.js");
 var node = require("./parser/node.js");
 var dom = require("./dom.js");
+require("./helper/animate.js");
 var Group = require('./group.js');
 var _ = require('./util');
 var extend = require('./helper/extend.js');
@@ -243,7 +244,8 @@ var Regular = function(options){
     this.group = this.$compile(this.template);
     this.element = combine.node(this);
   }
-
+  
+  this.$ready = true;
   this.$emit({type: 'init', stop: true });
   if(this.$root===this) this.$update();
   if( this.init ) this.init(this.data);
@@ -578,33 +580,11 @@ Regular.implement({
     this.$off();
   },
   inject: function(node, position){
-    position = position || 'bottom';
-    var firstChild,lastChild, parentNode, next;
     var fragment = this.element || combine.node(this);
     if(typeof node === 'string') node = dom.find(node);
     if(!node) throw 'injected node is not found'
     if(!fragment) return;
-    switch(position){
-      case 'bottom':
-        node.appendChild(fragment)
-        break;
-      case 'top':
-        if(firstChild = node.firstChild){
-          node.insertBefore(fragment, node.firstChild)
-        }else{
-          node.appendChild(fragment);
-        }
-        break;
-      case 'after':
-        if(next = node.nextSibling){
-          next.parentNode.insertBefore(fragment, next);
-        }else{
-          next.parentNode.appendChild(fragment);
-        }
-        break;
-      case 'before':
-        node.parentNode.insertBefore(fragment, node);
-    }
+    dom.inject(fragment, node, position);
     return this;
   },
   // private bind logic
@@ -1207,12 +1187,17 @@ _.isFalse - function(){return false}
 _.isTrue - function(){return true}
 
 
+_.assert = function(test, msg){
+  if(!test) throw msg;
+}
+
 
 
 });
 require.register("regularjs/src/walkers.js", function(exports, require, module){
 var node = require("./parser/node.js");
 var dom = require("./dom.js");
+var animate = require("./helper/animate.js");
 var Group = require('./group.js');
 var _ = require('./util');
 var combine = require('./helper/combine.js');
@@ -1224,7 +1209,7 @@ walkers.list = function(ast){
   // proxy Component to implement list item, so the behaviar is similar with angular;
   var Section =  Regular.extend( { 
     template: ast.body, 
-    $context: this.$context, 
+    $context: this.$context
   });
   Regular._inheritConfig(Section, this.constructor);
 
@@ -1275,6 +1260,7 @@ walkers.list = function(ast){
         section.$on('destroy', self.$off.bind(self, 'digest', update));
         // autolink
         var insert = o !== 0 && group.children[o-1]? combine.last(group.get(o-1)) : placeholder;
+        // animate.inject(insert, 'after', combine.node(section))
         insert.parentNode.insertBefore(combine.node(section), insert.nextSibling);
         group.children.splice(o , 0, section);
       }
@@ -1537,6 +1523,7 @@ require.register("regularjs/src/index.js", function(exports, require, module){
 module.exports = require("./Regular.js");
 require("./directive/base.js");
 require("./module/timeout.js");
+require("./module/animation.js");
 module.exports.dom = require("./dom.js");
 module.exports.util = require("./util.js");
 
@@ -1602,6 +1589,34 @@ dom.find = function(sl){
     }
   }
   if(sl.indexOf('#')!==-1) return document.getElementById( sl.slice(1) );
+}
+
+dom.inject = function(node, refer, position){
+
+  position = position || 'bottom';
+  
+  var firstChild,lastChild, parentNode, next;
+  switch(position){
+    case 'bottom':
+      refer.appendChild( node );
+      break;
+    case 'top':
+      if( firstChild = refer.firstChild ){
+        refer.insertBefore( node, refer.firstChild );
+      }else{
+        refer.appendChild( node );
+      }
+      break;
+    case 'after':
+      if( next = refer.nextSibling ){
+        next.parentNode.insertBefore( node, next );
+      }else{
+        next.parentNode.appendChild( node );
+      }
+      break;
+    case 'before':
+      refer.parentNode.insertBefore( node, refer );
+  }
 }
 
 
@@ -1696,16 +1711,22 @@ dom.attr = function(node, name, value){
 var handlers = {};
 
 dom.on = function(node, type, handler){
-  type = fixEventName(node, type);
+  var types = type.split(' ');
   handler.real = function(ev){
     handler.call(node, new Event(ev));
   }
-  addEvent(node, type, handler.real);
+  types.forEach(function(type){
+    type = fixEventName(node, type);
+    addEvent(node, type, handler.real);
+  });
 }
 dom.off = function(node, type, handler){
-  type = fixEventName(node, type);
+  var types = type.split(' ');
   handler = handler.real || handler;
-  removeEvent(node, type, handler);
+  types.forEach(function(type){
+    type = fixEventName(node, type);
+    removeEvent(node, type, handler);
+  })
 }
 
 
@@ -3127,6 +3148,133 @@ Event.mixTo = function(obj){
 }
 module.exports = Event;
 });
+require.register("regularjs/src/helper/animate.js", function(exports, require, module){
+var _ = require("../util");
+var dom  = require("../dom.js");
+
+
+var transitionEnd = 'transitionend', 
+  animationEnd = 'animationend', 
+  transitionProperty = 'transition', 
+  animationProperty = 'animation';
+if('ontransitionend' in window) {
+  // W3C ignored @TODO
+  // transitionEnd = 
+} else if('onwebkittransitionend' in window) {
+  // Chrome/Saf (+ Mobile Saf)/Android
+  transitionEnd += ' webkitTransitionEnd';
+  transitionProperty = 'webkitTransition'
+} else if('onotransitionend' in dom.tNode || navigator.appName == 'Opera') {
+  // Opera
+  transitionEnd += ' oTransitionEnd';
+  transitionProperty = 'oTransition';
+}
+
+if('onanimationend' in window){
+  // W3C ignored @TODO
+  // animationEnd = 'animationend';
+}else if ('onwebkitanimationend' in window){
+  // Chrome/Saf (+ Mobile Saf)/Android
+  animationEnd += ' webkitAnimationEnd';
+  animationProperty = 'webkitAnimation';
+
+}else if ('onoanimationend' in dom.tNode){
+  // Opera
+  animationEnd += ' oAnimationEnd';
+  animationProperty = 'oAnimation';
+}
+
+
+
+/**
+ * inject node with animation
+ * @param  {[type]} node      [description]
+ * @param  {[type]} refer     [description]
+ * @param  {[type]} direction [description]
+ * @return {[type]}           [description]
+ */
+window.inject = _.inject = function(node, refer ,direction, callback){
+  callback = callback || _.noop;
+  dom.inject(node, refer, direction);
+  startAnimate(node, 'r-enter', callback);
+}
+
+/**
+ * remove node with animation
+ * @param  {[type]}   node     [description]
+ * @param  {Function} callback [description]
+ * @return {[type]}            [description]
+ */
+window.remove = _.remove = function(node, callback){
+  callback = callback || _.noop;;
+  startAnimate(node, 'r-leave', function(){
+    dom.remove(node);
+    callback();
+  })
+}
+
+function startAnimate(node, className, callback){
+  if(!animationEnd && !transitionEnd){
+    return callback();
+  }
+  var activeClassName = className + '-active';
+  dom.addClass(node, className);
+  dom.on(node, animationEnd, onAnimateEnd)
+  dom.on(node, transitionEnd, onAnimateEnd)
+  var timeout = getMaxTimeout(node);
+  var isEnd = false;
+  _.nextTick(function(){
+    dom.addClass(node, activeClassName);
+  })
+  var tid = setTimeout(onAnimateEnd, timeout);
+
+  function onAnimateEnd(){
+    clearTimeout(tid);
+    dom.delClass(node, activeClassName);
+    dom.delClass(node, className);
+    dom.off(node, animationEnd, onAnimateEnd)
+    dom.off(node, transitionEnd, onAnimateEnd)
+    callback();
+  }
+}
+
+/**
+ * get maxtimeout
+ * @param  {Node} node 
+ * @return {[type]}   [description]
+ */
+function getMaxTimeout(node){
+  var timeout = 0,
+    tDuration = 0,
+    tDelay = 0,
+    aDuration = 0,
+    aDelay = 0,
+    ratio = 5 / 3,
+    styles ;
+
+  if(window.getComputedStyle){
+
+    styles = window.getComputedStyle(node),
+    tDuration = getMaxTime(styles[transitionProperty + 'Duration']) || tDuration;
+    tDelay = getMaxTime(styles[transitionProperty + 'Delay']) || tDelay;
+    aDuration = getMaxTime(styles[animationProperty + 'Duration']) || aDuration;
+    aDelay = getMaxTime(styles[animationProperty + 'Delay']) || aDelay;
+    timeout = Math.max(tDuration+tDelay, aDuration + aDelay );
+  }
+  return timeout * 1000 * ratio;
+}
+
+function getMaxTime(str){
+  var maxTimeout = 0, time;
+  if(!str) return 0;
+  str.split(",").forEach(function(str){
+    time = parseFloat(str);
+    if( time > maxTimeout ) maxTimeout = time;
+  });
+
+  return maxTimeout;
+}
+});
 require.register("regularjs/src/helper/combine.js", function(exports, require, module){
 // some nested  operation in ast 
 // --------------------------------
@@ -3500,6 +3648,28 @@ Regular.directive(/^on-\w+$/, function(elem, value, name){
 });
 
 
+});
+require.register("regularjs/src/module/animation.js", function(exports, require, module){
+var Regular = require("../Regular.js");
+var _ = require("../util.js");
+var animate = require('../helper/animate.js');
+
+/**
+ * Timeout Module
+ * @param {Component} Component 
+ */
+
+var cache = _.cache();
+function AnimationPlugin(Component, Regular){
+
+  Component.directive('r-animate', function(el, value){
+    
+  })
+
+}
+
+
+// Regular.plugin('timeout', TimeoutModule);
 });
 require.register("regularjs/src/module/timeout.js", function(exports, require, module){
 var Regular = require("../Regular.js");

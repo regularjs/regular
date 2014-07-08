@@ -458,4 +458,8 @@ _.isFalse - function(){return false}
 _.isTrue - function(){return true}
 
 
+_.assert = function(test, msg){
+  if(!test) throw msg;
+}
+
 

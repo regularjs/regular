@@ -59,6 +59,34 @@ dom.find = function(sl){
   if(sl.indexOf('#')!==-1) return document.getElementById( sl.slice(1) );
 }
 
+dom.inject = function(node, refer, position){
+
+  position = position || 'bottom';
+  
+  var firstChild,lastChild, parentNode, next;
+  switch(position){
+    case 'bottom':
+      refer.appendChild( node );
+      break;
+    case 'top':
+      if( firstChild = refer.firstChild ){
+        refer.insertBefore( node, refer.firstChild );
+      }else{
+        refer.appendChild( node );
+      }
+      break;
+    case 'after':
+      if( next = refer.nextSibling ){
+        next.parentNode.insertBefore( node, next );
+      }else{
+        next.parentNode.appendChild( node );
+      }
+      break;
+    case 'before':
+      refer.parentNode.insertBefore( node, refer );
+  }
+}
+
 
 dom.id = function(id){
   return document.getElementById(id);
@@ -151,16 +179,22 @@ dom.attr = function(node, name, value){
 var handlers = {};
 
 dom.on = function(node, type, handler){
-  type = fixEventName(node, type);
+  var types = type.split(' ');
   handler.real = function(ev){
     handler.call(node, new Event(ev));
   }
-  addEvent(node, type, handler.real);
+  types.forEach(function(type){
+    type = fixEventName(node, type);
+    addEvent(node, type, handler.real);
+  });
 }
 dom.off = function(node, type, handler){
-  type = fixEventName(node, type);
+  var types = type.split(' ');
   handler = handler.real || handler;
-  removeEvent(node, type, handler);
+  types.forEach(function(type){
+    type = fixEventName(node, type);
+    removeEvent(node, type, handler);
+  })
 }
 
 

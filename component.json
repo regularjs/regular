@@ -16,10 +16,12 @@
     "src/helper/extend.js",
     "src/helper/shim.js",
     "src/helper/event.js",
+    "src/helper/animate.js",
     "src/helper/combine.js",
     "src/directive/base.js",
     "src/directive/form.js",
     "src/directive/event.js",
+    "src/module/animation.js",
     "src/module/timeout.js"
   ]
 }

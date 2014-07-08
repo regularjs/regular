@@ -1,5 +1,6 @@
 var node = require("./parser/node.js");
 var dom = require("./dom.js");
+var animate = require("./helper/animate.js");
 var Group = require('./group.js');
 var _ = require('./util');
 var combine = require('./helper/combine.js');
@@ -11,7 +12,7 @@ walkers.list = function(ast){
   // proxy Component to implement list item, so the behaviar is similar with angular;
   var Section =  Regular.extend( { 
     template: ast.body, 
-    $context: this.$context, 
+    $context: this.$context
   });
   Regular._inheritConfig(Section, this.constructor);
 
@@ -62,6 +63,7 @@ walkers.list = function(ast){
         section.$on('destroy', self.$off.bind(self, 'digest', update));
         // autolink
         var insert = o !== 0 && group.children[o-1]? combine.last(group.get(o-1)) : placeholder;
+        // animate.inject(insert, 'after', combine.node(section))
         insert.parentNode.insertBefore(combine.node(section), insert.nextSibling);
         group.children.splice(o , 0, section);
       }
