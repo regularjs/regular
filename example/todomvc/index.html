@@ -5,6 +5,28 @@
     <title>Regular.js • TodoMVC</title>
     <link rel="stylesheet" href="todo.css">
     <script src="../../dist/regular.js"></script>
+    <style>
+      #todo-list > li.r-enter{
+        transition: all .6s;
+        opacity: 0;
+        max-height: 0;
+      }
+      #todo-list > li.r-leave{
+        transition: all .6s;
+        max-height: 100px;
+        opacity: 1;
+      }
+      #todo-list > li.r-enter-active{
+        opacity: 1;
+        color: #111;
+        max-height: 100px;
+      }
+      #todo-list > li.r-leave-active{
+        opacity: 0;
+        max-height: 0;
+      }
+
+    </style>
 
   </head>
   <body>
@@ -27,7 +49,7 @@
           <label for="toggle-all">Mark all as complete</label>
           <ul id="todo-list">
             {{#list this.getList(filter) as i}}
-              <li class="{{ i.completed ? 'completed' : '' }} {{ i.editing ? 'editing' : '' }}">
+              <li r-animate='name' r-class="{'completed': i.completed, 'editing': i.editing}">
                 <div class="view">
                   <input class="toggle" type="checkbox" r-model={{ i.completed }}>
                   <label on-dblclick={{i.editing = true}}>{{ i.description }}</label>
@@ -116,6 +138,7 @@
       filter:"all",
       items: items || []
     }});
+
 
     todo.inject('#todoapp')
 

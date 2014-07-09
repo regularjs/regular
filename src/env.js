@@ -9,3 +9,5 @@ exports.transition = (function(){
   
 })();
 
+// whether have component in initializing
+exports.isRunning = false;

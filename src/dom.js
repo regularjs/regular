@@ -15,6 +15,7 @@ var _ = require("./util");
 var tNode = document.createElement('div')
 var addEvent, removeEvent, isFixEvent;
 var noop = function(){}
+var body = document.body;
 
 // camelCase
 function camelCase(str){
@@ -62,7 +63,15 @@ dom.find = function(sl){
 dom.inject = function(node, refer, position){
 
   position = position || 'bottom';
-  
+
+  if(Array.isArray(node)){
+    var tmp = node;
+    node = dom.fragment();
+    for(var i = 0,len = tmp.length; i < len ;i++){
+      node.appendChild(tmp[i]);
+    }
+  }
+
   var firstChild,lastChild, parentNode, next;
   switch(position){
     case 'bottom':
@@ -79,7 +88,7 @@ dom.inject = function(node, refer, position){
       if( next = refer.nextSibling ){
         next.parentNode.insertBefore( node, next );
       }else{
-        next.parentNode.appendChild( node );
+        refer.parentNode.appendChild( node );
       }
       break;
     case 'before':
@@ -339,4 +348,37 @@ _.extend(Event.prototype, {
     if(this.event.stopImmediatePropagation) this.event.stopImmediatePropagation();
   }
 })
+
+
+dom.nextFrame = (function(){
+    var request = window.requestAnimationFrame ||
+                  window.webkitRequestAnimationFrame ||
+                  window.mozRequestAnimationFrame|| 
+                  function(callback){
+                    setTimeout(callback, 16)
+                  }
+
+    var cancel = window.cancelAnimationFrame ||
+                 window.webkitCancelAnimationFrame ||
+                 window.mozCancelAnimationFrame ||
+                 window.webkitCancelRequestAnimationFrame ||
+                 function(tid){
+                    clearTimeout(tid)
+                 }
+  
+  return function(callback){
+    var id = request(callback);
+    return function cancel(){
+      cancel(id);
+    }
+  }
+})();
+
+// 3ks for angular's raf  service
+dom.nextReflow = function(callback){
+  dom.nextFrame(function(){
+    var k = document.body.offsetWidth;
+    callback();
+  })
+}
 

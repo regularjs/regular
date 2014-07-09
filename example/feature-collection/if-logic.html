@@ -2,9 +2,10 @@
 
 <script id="hello" type="text/regular" name="hello">
  {{#if username}}
-  Hello, {{username}}. <a href='#' on-click={{username = ''}}>Logout</a>
+
+  Hello, {{username}}. <a href='#' r-animte on-click={{username = ''}}>Logout</a>
 {{#else}}
-  Sorry, Guest. Please <a href='#' on-click={{this.login()}}>Login</a>
+  Sorry, Guest. Please <a href='#' r-animte on-click={{this.login()}}>Login</a>
 {{/if}}
 
 </script>

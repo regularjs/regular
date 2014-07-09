@@ -1,5 +1,7 @@
 var _ = require("../util");
 var dom  = require("../dom.js");
+var animate = {};
+var env = require("../env.js");
 
 
 var transitionEnd = 'transitionend', 
@@ -42,10 +44,34 @@ if('onanimationend' in window){
  * @param  {[type]} direction [description]
  * @return {[type]}           [description]
  */
-window.inject = _.inject = function(node, refer ,direction, callback){
-  callback = callback || _.noop;
-  dom.inject(node, refer, direction);
-  startAnimate(node, 'r-enter', callback);
+animate.inject = function(node, refer ,direction, callback){
+
+  callback = callback|| _.noop;
+  if(Array.isArray(node)){
+    var fragment = dom.fragment();
+    var total = 0, count=0;
+    for(var i = 0,len = node.length;i < len; i++ ){
+      fragment.appendChild(node[i]); 
+    }
+    dom.inject(fragment, refer, direction);
+    for(var i = 0; i < len; i++ ){
+      if(node[i].nodeType===1){
+        total++;
+        startAnimate(node[i], 'r-enter', function(){
+          count++;
+          if(count===count) callback();
+        })
+      }
+      if(total == count) callback();
+    }
+  }else{
+    dom.inject(node, refer, direction);
+    if(node.nodeType === 1 && callback !== false){
+      startAnimate(node, 'r-enter', callback);
+    }else{
+      // ignored
+    }
+  }
 }
 
 /**
@@ -54,30 +80,34 @@ window.inject = _.inject = function(node, refer ,direction, callback){
  * @param  {Function} callback [description]
  * @return {[type]}            [description]
  */
-window.remove = _.remove = function(node, callback){
+animate.remove = function(node, callback){
   callback = callback || _.noop;;
+  var d = +new Date();
   startAnimate(node, 'r-leave', function(){
     dom.remove(node);
     callback();
   })
 }
 
+
 function startAnimate(node, className, callback){
-  if(!animationEnd && !transitionEnd){
+  var animtion = dom.attr(node ,'r-animate')
+  if((!animationEnd && !transitionEnd) || env.isRunning || !animtion){
     return callback();
   }
+
   var activeClassName = className + '-active';
   dom.addClass(node, className);
   dom.on(node, animationEnd, onAnimateEnd)
   dom.on(node, transitionEnd, onAnimateEnd)
   var timeout = getMaxTimeout(node);
   var isEnd = false;
-  _.nextTick(function(){
+  dom.nextReflow(function(){
     dom.addClass(node, activeClassName);
   })
   var tid = setTimeout(onAnimateEnd, timeout);
 
-  function onAnimateEnd(){
+  function onAnimateEnd(ev){
     clearTimeout(tid);
     dom.delClass(node, activeClassName);
     dom.delClass(node, className);
@@ -86,6 +116,9 @@ function startAnimate(node, className, callback){
     callback();
   }
 }
+
+
+"<div r-animation={{left? 'left': 'right'}}></div>"
 
 /**
  * get maxtimeout
@@ -104,11 +137,11 @@ function getMaxTimeout(node){
   if(window.getComputedStyle){
 
     styles = window.getComputedStyle(node),
-    tDuration = getMaxTime(styles[transitionProperty + 'Duration']) || tDuration;
-    tDelay = getMaxTime(styles[transitionProperty + 'Delay']) || tDelay;
-    aDuration = getMaxTime(styles[animationProperty + 'Duration']) || aDuration;
-    aDelay = getMaxTime(styles[animationProperty + 'Delay']) || aDelay;
-    timeout = Math.max(tDuration+tDelay, aDuration + aDelay );
+    tDuration = getMaxTime( styles[transitionProperty + 'Duration']) || tDuration;
+    tDelay = getMaxTime( styles[transitionProperty + 'Delay']) || tDelay;
+    aDuration = getMaxTime( styles[animationProperty + 'Duration']) || aDuration;
+    aDelay = getMaxTime( styles[animationProperty + 'Delay']) || aDelay;
+    timeout = Math.max( tDuration+tDelay, aDuration + aDelay );
   }
   return timeout * 1000 * ratio;
 }
@@ -123,3 +156,5 @@ function getMaxTime(str){
 
   return maxTimeout;
 }
+
+module.exports = animate;

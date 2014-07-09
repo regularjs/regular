@@ -266,8 +266,6 @@ label[for='toggle-all'] {
   margin: auto 0;
   font-size: 22px;
   color: #a88a8a;
-  -webkit-transition: all 0.2s;
-  transition: all 0.2s;
 }
 
 #todo-list li .destroy:hover {

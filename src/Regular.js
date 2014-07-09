@@ -10,8 +10,11 @@ var Event = require('./helper/event.js');
 var combine = require('./helper/combine.js');
 var walkers = require('./walkers.js');
 var doc = typeof document==='undefined'? {}: document;
+var env = require('./env.js');
 
 var Regular = function(options){
+  var prevRunning = env.isRunning;
+  env.isRunning = true;
   var node, template, name;
 
   options = options || {};
@@ -35,11 +38,13 @@ var Regular = function(options){
     this.group = this.$compile(this.template);
     this.element = combine.node(this);
   }
-  
-  this.$ready = true;
+
   this.$emit({type: 'init', stop: true });
   if(this.$root===this) this.$update();
+  this.$ready = true;
   if( this.init ) this.init(this.data);
+
+  env.isRunning = prevRunning;
 
   // children is not required;
 }
@@ -57,14 +62,11 @@ _.extend(Regular, {
   _plugins: {},
 
   _exprCache:{},
-
+  _running: false,
 
   __after__: function(supr, o) {
 
 
-    if(o.computed){
-      
-    }
 
     var template;
     this.__after__ = supr.__after__;

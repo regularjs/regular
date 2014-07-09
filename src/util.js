@@ -25,6 +25,7 @@ _.nextTick = typeof setImmediate === 'function'
   }
 
 
+
 var prefix =  "var " + _.ctxName + "=context.$context||context;" + "var " + _.varName + "=context.data;";
 
 
@@ -461,5 +462,6 @@ _.isTrue - function(){return true}
 _.assert = function(test, msg){
   if(!test) throw msg;
 }
+
 
 

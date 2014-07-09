@@ -37,7 +37,7 @@ walkers.list = function(ast){
       var splice = splices[i];
       var index = splice.index;
 
-      for(var k=m; k<index; k++){ // no change
+      for(var k = m; k < index; k++){ // no change
         var sect = group.get(k);
         sect.data[indexName] = k;
       }
@@ -63,8 +63,9 @@ walkers.list = function(ast){
         section.$on('destroy', self.$off.bind(self, 'digest', update));
         // autolink
         var insert = o !== 0 && group.children[o-1]? combine.last(group.get(o-1)) : placeholder;
-        // animate.inject(insert, 'after', combine.node(section))
-        insert.parentNode.insertBefore(combine.node(section), insert.nextSibling);
+        // animate.inject(combine.node(section),insert,'after')
+        animate.inject(combine.node(section),insert,'after');
+        // insert.parentNode.insertBefore(combine.node(section), insert.nextSibling);
         group.children.splice(o , 0, section);
       }
       m = index + splice.add - splice.removed.length;
@@ -111,7 +112,7 @@ walkers.template = function(ast){
       compiled = self.$compile(value, true); 
       var records = this._release();
       node = combine.node(compiled);
-      placeholder.parentNode && placeholder.parentNode.insertBefore( node, placeholder );
+      animate.inject(node, placeholder, 'before')
     });
   }
   return {
@@ -136,6 +137,7 @@ walkers['if'] = function(ast){
 
   var self = this;
   function update(nvalue, old){
+
     if(!!nvalue){ //true
       if(consequent) return;
       consequent = self.$compile( ast.consequent , true)
@@ -143,15 +145,17 @@ walkers['if'] = function(ast){
       if(alternate){ alternate.destroy() };
       alternate = null;
       // @TODO
-      placeholder.parentNode && placeholder.parentNode.insertBefore( node, placeholder );
+      // placeholder.parentNode && placeholder.parentNode.insertBefore( node, placeholder );
+      animate.inject(node, placeholder, 'before');
     }else{ //false
       if(alternate) return;
       if(consequent){ consequent.destroy(); }
       consequent = null;
       if(ast.alternate) alternate = self.$compile(ast.alternate, true);
       node = combine.node(alternate);
-      placeholder.parentNode && placeholder.parentNode.insertBefore( node, placeholder );
+      animate.inject(node, placeholder, 'before');
     }
+
   }
   this.$watch(ast.test, update, {force: true});
 
@@ -260,18 +264,19 @@ walkers.element = function(ast){
 
   return {
     node: function(){
-      if(group && !_.isVoidTag(ast.tag)) element.appendChild(combine.node(group));
+      if(group && !_.isVoidTag(ast.tag)){
+        animate.inject(combine.node(group),element)
+      }
       return element;
     },
     last: function(){
       return element;
     },
     destroy: function(){
-      if(group) group.destroy();
       if(destroies.length) {
         destroies.forEach(function(destroy){destroy() })
       }
-      dom.remove(element);
+      animate.remove(element, group? group.destroy.bind(group): _.noop);
     }
   }
 }

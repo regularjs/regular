@@ -221,8 +221,11 @@ var Event = require('./helper/event.js');
 var combine = require('./helper/combine.js');
 var walkers = require('./walkers.js');
 var doc = typeof document==='undefined'? {}: document;
+var env = require('./env.js');
 
 var Regular = function(options){
+  var prevRunning = env.isRunning;
+  env.isRunning = true;
   var node, template, name;
 
   options = options || {};
@@ -246,11 +249,13 @@ var Regular = function(options){
     this.group = this.$compile(this.template);
     this.element = combine.node(this);
   }
-  
-  this.$ready = true;
+
   this.$emit({type: 'init', stop: true });
   if(this.$root===this) this.$update();
+  this.$ready = true;
   if( this.init ) this.init(this.data);
+
+  env.isRunning = prevRunning;
 
   // children is not required;
 }
@@ -268,14 +273,11 @@ _.extend(Regular, {
   _plugins: {},
 
   _exprCache:{},
-
+  _running: false,
 
   __after__: function(supr, o) {
 
 
-    if(o.computed){
-      
-    }
 
     var template;
     this.__after__ = supr.__after__;
@@ -756,6 +758,7 @@ _.nextTick = typeof setImmediate === 'function'
   }
 
 
+
 var prefix =  "var " + _.ctxName + "=context.$context||context;" + "var " + _.varName + "=context.data;";
 
 
@@ -1195,6 +1198,7 @@ _.assert = function(test, msg){
 
 
 
+
 });
 require.register("regularjs/src/walkers.js", function(exports, require, module){
 var node = require("./parser/node.js");
@@ -1236,7 +1240,7 @@ walkers.list = function(ast){
       var splice = splices[i];
       var index = splice.index;
 
-      for(var k=m; k<index; k++){ // no change
+      for(var k = m; k < index; k++){ // no change
         var sect = group.get(k);
         sect.data[indexName] = k;
       }
@@ -1262,8 +1266,9 @@ walkers.list = function(ast){
         section.$on('destroy', self.$off.bind(self, 'digest', update));
         // autolink
         var insert = o !== 0 && group.children[o-1]? combine.last(group.get(o-1)) : placeholder;
-        // animate.inject(insert, 'after', combine.node(section))
-        insert.parentNode.insertBefore(combine.node(section), insert.nextSibling);
+        // animate.inject(combine.node(section),insert,'after')
+        animate.inject(combine.node(section),insert,'after');
+        // insert.parentNode.insertBefore(combine.node(section), insert.nextSibling);
         group.children.splice(o , 0, section);
       }
       m = index + splice.add - splice.removed.length;
@@ -1310,7 +1315,7 @@ walkers.template = function(ast){
       compiled = self.$compile(value, true); 
       var records = this._release();
       node = combine.node(compiled);
-      placeholder.parentNode && placeholder.parentNode.insertBefore( node, placeholder );
+      animate.inject(node, placeholder, 'before')
     });
   }
   return {
@@ -1335,6 +1340,7 @@ walkers['if'] = function(ast){
 
   var self = this;
   function update(nvalue, old){
+
     if(!!nvalue){ //true
       if(consequent) return;
       consequent = self.$compile( ast.consequent , true)
@@ -1342,15 +1348,17 @@ walkers['if'] = function(ast){
       if(alternate){ alternate.destroy() };
       alternate = null;
       // @TODO
-      placeholder.parentNode && placeholder.parentNode.insertBefore( node, placeholder );
+      // placeholder.parentNode && placeholder.parentNode.insertBefore( node, placeholder );
+      animate.inject(node, placeholder, 'before');
     }else{ //false
       if(alternate) return;
       if(consequent){ consequent.destroy(); }
       consequent = null;
       if(ast.alternate) alternate = self.$compile(ast.alternate, true);
       node = combine.node(alternate);
-      placeholder.parentNode && placeholder.parentNode.insertBefore( node, placeholder );
+      animate.inject(node, placeholder, 'before');
     }
+
   }
   this.$watch(ast.test, update, {force: true});
 
@@ -1459,18 +1467,19 @@ walkers.element = function(ast){
 
   return {
     node: function(){
-      if(group && !_.isVoidTag(ast.tag)) element.appendChild(combine.node(group));
+      if(group && !_.isVoidTag(ast.tag)){
+        animate.inject(combine.node(group),element)
+      }
       return element;
     },
     last: function(){
       return element;
     },
     destroy: function(){
-      if(group) group.destroy();
       if(destroies.length) {
         destroies.forEach(function(destroy){destroy() })
       }
-      dom.remove(element);
+      animate.remove(element, group? group.destroy.bind(group): _.noop);
     }
   }
 }
@@ -1519,6 +1528,8 @@ exports.transition = (function(){
   
 })();
 
+// whether have component in initializing
+exports.isRunning = false;
 
 });
 require.register("regularjs/src/index.js", function(exports, require, module){
@@ -1549,6 +1560,7 @@ var _ = require("./util");
 var tNode = document.createElement('div')
 var addEvent, removeEvent, isFixEvent;
 var noop = function(){}
+var body = document.body;
 
 // camelCase
 function camelCase(str){
@@ -1596,7 +1608,15 @@ dom.find = function(sl){
 dom.inject = function(node, refer, position){
 
   position = position || 'bottom';
-  
+
+  if(Array.isArray(node)){
+    var tmp = node;
+    node = dom.fragment();
+    for(var i = 0,len = tmp.length; i < len ;i++){
+      node.appendChild(tmp[i]);
+    }
+  }
+
   var firstChild,lastChild, parentNode, next;
   switch(position){
     case 'bottom':
@@ -1613,7 +1633,7 @@ dom.inject = function(node, refer, position){
       if( next = refer.nextSibling ){
         next.parentNode.insertBefore( node, next );
       }else{
-        next.parentNode.appendChild( node );
+        refer.parentNode.appendChild( node );
       }
       break;
     case 'before':
@@ -1875,10 +1895,44 @@ _.extend(Event.prototype, {
 })
 
 
+dom.nextFrame = (function(){
+    var request = window.requestAnimationFrame ||
+                  window.webkitRequestAnimationFrame ||
+                  window.mozRequestAnimationFrame|| 
+                  function(callback){
+                    setTimeout(callback, 16)
+                  }
+
+    var cancel = window.cancelAnimationFrame ||
+                 window.webkitCancelAnimationFrame ||
+                 window.mozCancelAnimationFrame ||
+                 window.webkitCancelRequestAnimationFrame ||
+                 function(tid){
+                    clearTimeout(tid)
+                 }
+  
+  return function(callback){
+    var id = request(callback);
+    return function cancel(){
+      cancel(id);
+    }
+  }
+})();
+
+// 3ks for angular's raf  service
+dom.nextReflow = function(callback){
+  dom.nextFrame(function(){
+    var k = document.body.offsetWidth;
+    callback();
+  })
+}
+
+
 });
 require.register("regularjs/src/group.js", function(exports, require, module){
 var _ = require('./util');
 var dom = require('./dom');
+var animate = require('./helper/animate')
 var combine = require('./helper/combine')
 
 function Group(list){
@@ -3153,6 +3207,8 @@ module.exports = Event;
 require.register("regularjs/src/helper/animate.js", function(exports, require, module){
 var _ = require("../util");
 var dom  = require("../dom.js");
+var animate = {};
+var env = require("../env.js");
 
 
 var transitionEnd = 'transitionend', 
@@ -3195,10 +3251,34 @@ if('onanimationend' in window){
  * @param  {[type]} direction [description]
  * @return {[type]}           [description]
  */
-window.inject = _.inject = function(node, refer ,direction, callback){
-  callback = callback || _.noop;
-  dom.inject(node, refer, direction);
-  startAnimate(node, 'r-enter', callback);
+animate.inject = function(node, refer ,direction, callback){
+
+  callback = callback|| _.noop;
+  if(Array.isArray(node)){
+    var fragment = dom.fragment();
+    var total = 0, count=0;
+    for(var i = 0,len = node.length;i < len; i++ ){
+      fragment.appendChild(node[i]); 
+    }
+    dom.inject(fragment, refer, direction);
+    for(var i = 0; i < len; i++ ){
+      if(node[i].nodeType===1){
+        total++;
+        startAnimate(node[i], 'r-enter', function(){
+          count++;
+          if(count===count) callback();
+        })
+      }
+      if(total == count) callback();
+    }
+  }else{
+    dom.inject(node, refer, direction);
+    if(node.nodeType === 1 && callback !== false){
+      startAnimate(node, 'r-enter', callback);
+    }else{
+      // ignored
+    }
+  }
 }
 
 /**
@@ -3207,30 +3287,34 @@ window.inject = _.inject = function(node, refer ,direction, callback){
  * @param  {Function} callback [description]
  * @return {[type]}            [description]
  */
-window.remove = _.remove = function(node, callback){
+animate.remove = function(node, callback){
   callback = callback || _.noop;;
+  var d = +new Date();
   startAnimate(node, 'r-leave', function(){
     dom.remove(node);
     callback();
   })
 }
 
+
 function startAnimate(node, className, callback){
-  if(!animationEnd && !transitionEnd){
+  var animtion = dom.attr(node ,'r-animate')
+  if((!animationEnd && !transitionEnd) || env.isRunning || !animtion){
     return callback();
   }
+
   var activeClassName = className + '-active';
   dom.addClass(node, className);
   dom.on(node, animationEnd, onAnimateEnd)
   dom.on(node, transitionEnd, onAnimateEnd)
   var timeout = getMaxTimeout(node);
   var isEnd = false;
-  _.nextTick(function(){
+  dom.nextReflow(function(){
     dom.addClass(node, activeClassName);
   })
   var tid = setTimeout(onAnimateEnd, timeout);
 
-  function onAnimateEnd(){
+  function onAnimateEnd(ev){
     clearTimeout(tid);
     dom.delClass(node, activeClassName);
     dom.delClass(node, className);
@@ -3239,6 +3323,9 @@ function startAnimate(node, className, callback){
     callback();
   }
 }
+
+
+"<div r-animation={{left? 'left': 'right'}}></div>"
 
 /**
  * get maxtimeout
@@ -3257,11 +3344,11 @@ function getMaxTimeout(node){
   if(window.getComputedStyle){
 
     styles = window.getComputedStyle(node),
-    tDuration = getMaxTime(styles[transitionProperty + 'Duration']) || tDuration;
-    tDelay = getMaxTime(styles[transitionProperty + 'Delay']) || tDelay;
-    aDuration = getMaxTime(styles[animationProperty + 'Duration']) || aDuration;
-    aDelay = getMaxTime(styles[animationProperty + 'Delay']) || aDelay;
-    timeout = Math.max(tDuration+tDelay, aDuration + aDelay );
+    tDuration = getMaxTime( styles[transitionProperty + 'Duration']) || tDuration;
+    tDelay = getMaxTime( styles[transitionProperty + 'Delay']) || tDelay;
+    aDuration = getMaxTime( styles[animationProperty + 'Duration']) || aDuration;
+    aDelay = getMaxTime( styles[animationProperty + 'Delay']) || aDelay;
+    timeout = Math.max( tDuration+tDelay, aDuration + aDelay );
   }
   return timeout * 1000 * ratio;
 }
@@ -3276,6 +3363,8 @@ function getMaxTime(str){
 
   return maxTimeout;
 }
+
+module.exports = animate;
 });
 require.register("regularjs/src/helper/combine.js", function(exports, require, module){
 // some nested  operation in ast 
@@ -3297,11 +3386,16 @@ var combine = module.exports = {
         var node = combine.node(children[0])
         return node;
       }
-      var fragment = dom.fragment();
+      var nodes = [];
       for(var i = 0, len = children.length; i < len; i++ ){
-        fragment.appendChild(combine.node(children[i]))
+        var node = combine.node(children[i]);
+        if(Array.isArray(node)){
+          nodes.push.apply(nodes, node)
+        }else{
+          nodes.push(node)
+        }
       }
-      return fragment;
+      return nodes;
     }
   },
 

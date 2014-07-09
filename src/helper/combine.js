@@ -17,11 +17,16 @@ var combine = module.exports = {
         var node = combine.node(children[0])
         return node;
       }
-      var fragment = dom.fragment();
+      var nodes = [];
       for(var i = 0, len = children.length; i < len; i++ ){
-        fragment.appendChild(combine.node(children[i]))
+        var node = combine.node(children[i]);
+        if(Array.isArray(node)){
+          nodes.push.apply(nodes, node)
+        }else{
+          nodes.push(node)
+        }
       }
-      return fragment;
+      return nodes;
     }
   },
 
