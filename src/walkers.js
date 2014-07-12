@@ -155,7 +155,6 @@ walkers['if'] = function(ast){
       node = combine.node(alternate);
       animate.inject(node, placeholder, 'before');
     }
-
   }
   this.$watch(ast.test, update, {force: true});
 

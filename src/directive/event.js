@@ -40,7 +40,7 @@ Regular.directive(/^on-\w+$/, function(elem, value, name){
   function fire(obj){
     self.data.$event = obj;
     var res = parsed.get(self);
-    if(res === false && obj && obj.preventDefault) obj.preventDefault();
+    if(res !== false && obj && obj.preventDefault) obj.preventDefault();
     delete self.data.$event;
     self.$update();
   }

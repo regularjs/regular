@@ -1,6 +1,6 @@
 # regular = react(ractive) + angular.
 
-![travis-ci](https://travis-ci.org/regularjs/regular.svg?branch=master)
+[![Build Status](https://travis-ci.org/regularjs/regular.svg?branch=master)](https://travis-ci.org/regularjs/regular)
 
 regular is a live template engine helping us to create interactive component 
 

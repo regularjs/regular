@@ -500,7 +500,7 @@ op.member = function(base, last, pathes){
       case '(':
         // call(callee, args)
         var args = this.arguments().join(',');
-        base = "(typeof ("+ base + ") !=='function'?" + base+"(" + args +"):" + base + (".call(" + ctxName + (args? "," + args : "")  + "))");
+        base =  base+"(" + args +")";
         this.match(')')
         return this.member(base, null, pathes);
     }

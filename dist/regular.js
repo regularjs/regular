@@ -1358,7 +1358,6 @@ walkers['if'] = function(ast){
       node = combine.node(alternate);
       animate.inject(node, placeholder, 'before');
     }
-
   }
   this.$watch(ast.test, update, {force: true});
 
@@ -2855,7 +2854,7 @@ op.member = function(base, last, pathes){
       case '(':
         // call(callee, args)
         var args = this.arguments().join(',');
-        base = "(typeof ("+ base + ") !=='function'?" + base+"(" + args +"):" + base + (".call(" + ctxName + (args? "," + args : "")  + "))");
+        base =  base+"(" + args +")";
         this.match(')')
         return this.member(base, null, pathes);
     }
@@ -3299,7 +3298,7 @@ animate.remove = function(node, callback){
 
 function startAnimate(node, className, callback){
   var animtion = dom.attr(node ,'r-animate')
-  if((!animationEnd && !transitionEnd) || env.isRunning || !animtion){
+  if((!animationEnd && !transitionEnd) || env.isRunning || animtion==undefined){
     return callback();
   }
 
@@ -3727,7 +3726,7 @@ Regular.directive(/^on-\w+$/, function(elem, value, name){
   function fire(obj){
     self.data.$event = obj;
     var res = parsed.get(self);
-    if(res === false && obj && obj.preventDefault) obj.preventDefault();
+    if(res !== false && obj && obj.preventDefault) obj.preventDefault();
     delete self.data.$event;
     self.$update();
   }

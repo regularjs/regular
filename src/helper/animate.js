@@ -92,7 +92,7 @@ animate.remove = function(node, callback){
 
 function startAnimate(node, className, callback){
   var animtion = dom.attr(node ,'r-animate')
-  if((!animationEnd && !transitionEnd) || env.isRunning || !animtion){
+  if((!animationEnd && !transitionEnd) || env.isRunning || animtion==undefined){
     return callback();
   }
 
