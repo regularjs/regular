@@ -7,6 +7,8 @@ var isPath = _.makePredicate("STRING IDENT NUMBER");
 var isKeyWord = _.makePredicate("true false undefined null this Array Date JSON Math NaN RegExp decodeURI decodeURIComponent encodeURI encodeURIComponent parseFloat parseInt Object");
 
 
+
+
 function Parser(input, opts){
   opts = opts || {};
 
@@ -273,7 +275,14 @@ op.list = function(){
 
 // @TODO:
 op.expression = function(){
-  var expression = this.expr();
+  var ll = this.ll();
+  if(this.eat('@(')){ //once bind
+    expression = this.expr();
+    expression.once = true;
+    this.match(')')
+  }else{
+    var expression = this.expr();
+  }
   return expression;
 }
 

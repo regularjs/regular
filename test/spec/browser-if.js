@@ -116,6 +116,10 @@ void function(){
       })
 
     })
+
+    describe("If combine with attribute", function(){
+      
+    })
   })
 
 

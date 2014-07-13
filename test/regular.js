@@ -217,6 +217,7 @@ var _ = require('./util');
 var extend = require('./helper/extend.js');
 var Event = require('./helper/event.js');
 var combine = require('./helper/combine.js');
+var Watcher = require('./helper/watcher.js');
 var walkers = require('./walkers.js');
 var doc = typeof document==='undefined'? {}: document;
 var env = require('./env.js');
@@ -257,6 +258,8 @@ var Regular = function(options){
 
   // children is not required;
 }
+
+
 
 
 // description
@@ -379,7 +382,8 @@ _.extend(Regular, {
 });
 
 extend(Regular);
-Event.mixTo(Regular)
+Event.mixTo(Regular);
+Watcher.mixTo(Regular);
 
 Regular.implement({
 
@@ -486,91 +490,6 @@ Regular.implement({
   $unbind: function(component){
     // todo
   },
-
-  /**
-   * the whole digest loop ,just like angular, it just a dirty-check loop;
-   * @param  {String} path  now regular process a pure dirty-check loop, but in parse phase, 
-   *                  Regular's parser extract the dependencies, in future maybe it will change to dirty-check combine with path-aware update;
-   * @return {Void}   
-   */
-  $digest: function(path){
-
-
-    if(this.$phase === 'digest') return;
-    this.$phase = 'digest';
-    var dirty = false, n =0;
-    while(dirty = this._digest(path)){
-      n++
-      if(n > 20){ // max loop
-        throw 'there may a circular dependencies in this Component' 
-      }
-    }
-    this.$phase = null;
-  },
-  // watch a expression(parsed or not) 
-  $watch: function(expr, fn, options){
-    options = options || {};
-    if(options === true) options = {deep: true}
-    var uid = _.uid('w_');
-
-    if(this.context){
-      for(var i in context);
-    }
-
-    if(Array.isArray(expr)){
-      // @todo 只需要watch一次
-      var tests = [];
-      for(var i=0,len = expr.length; i < len; i++){
-          tests.push(Regular.expression(expr[i]).get) 
-      }
-      var prev = [];
-      var test = function(context){
-        var equal = true;
-        for(var i =0, len = tests.length; i < len; i++){
-          var splice = tests[i](context);
-          if(!_.equals(splice, prev[i])){
-             equal = false;
-             prev[i] = _.clone(splice);
-          }
-        }
-        return equal? false: prev;
-      }
-    }else{
-      var expr = Regular.expression(expr);
-      var get = expr.get;
-      var constant = expr.constant;
-    }
-    var watcher = { 
-      id: uid, 
-      get: get, 
-      fn: fn, 
-      constant: constant, 
-      force: options.force,
-      test: test,
-      deep: options.deep
-    };
-
-    this.$watchers.push(watcher);
-    this._records && this._records.push(watcher.id);
-    return uid;
-  },
-  // unwatch a watcher
-  $unwatch: function(uid){
-    if(Array.isArray(uid)){
-      for(var i =0, len = uid.length; i < len; i++){
-        this.$unwatch(uid[i]);
-      }
-    }else{
-      var watchers = this.$watchers, watcher, len;
-      if(!uid || !watchers || !(len = watchers.length)) return;
-      for(;len--;){
-        watcher = watchers[len];
-        if(watcher && watcher.id === uid ){
-          watchers.splice(len, 1);
-        }
-      }
-    }
-  },
   destroy: function(){
     // destroy event wont propgation;
     this.$emit({type: 'destroy', stop: true });
@@ -619,91 +538,6 @@ Regular.implement({
     }
     // sync the component's state to called's state
     expr2.set(component, expr1.get(this));
-  },
-
-  // private digest logic
-  _digest: function(path){
-    // if(this.context) return this.context.$digest();
-
-    this.$emit('digest');
-    var watchers = this.$watchers;
-
-    if(!watchers || !watchers.length) return;
-    var dirty = false;
-
-    for(var i = 0, len = watchers.length;i<len; i++){
-      var watcher = watchers[i];
-      if(!watcher) continue;
-      if(watcher.test) {
-        var result = watcher.test(this);
-        if(result){
-          dirty = true;
-          watcher.fn.apply(this,result)
-        }
-        continue;
-      }
-      var now = watcher.get(this);
-      var last = watcher.last;
-      // if(now && now.length )debugger
-      var eq = true;
-      if(_.typeOf(now) == 'object' && watcher.deep){
-        if(!watcher.last){
-           eq = false;
-         }else{
-          for(var j in now){
-            if(watcher.last[j] !== now[j]){
-              eq = false;
-              break;
-            }
-          }
-          if(eq !== false){
-            for(var j in watcher.last){
-              if(watcher.last[j] !== now[j]){
-                eq = false;
-                break;
-              }
-            }
-          }
-        }
-      }else{
-        eq = _.equals(now, watcher.last);
-      }
-      if(eq === false || watcher.force){
-        eq = false;
-        watcher.force = null;
-
-        watcher.fn.call(this, now, watcher.last);
-        if(typeof now !== 'object'){
-          watcher.last = _.clone(now);
-        }else{
-          watcher.last = now;
-        }
-      }else{
-        if(_.typeOf(eq)=='array' && eq.length){
-          watcher.fn.call(this, now, eq);
-          watcher.last = _.clone(now);
-        }else{
-          eq = true;
-        }
-      }
-      if(eq !== true) dirty = true;
-      if(watcher.constant){
-         watchers.splice(i, 1);
-      }
-    }
-
-    if(dirty) this.$emit('update');
-    return dirty;
-  },
-
-
-  _record: function(){
-    this._records = [];
-  },
-  _release: function(){
-    var _records = this._records;
-    this._records = null;
-    return _records;
   },
   _walk: function(ast){
     if(_.typeOf(ast) === 'array'){
@@ -874,7 +708,7 @@ _.trackErrorPos = (function (){
 })();
 
 
-var ignoredRef = /\(\?\!|\(\?\:|\?\=/g;
+var ignoredRef = /\((\?\!|\?\:|\?\=)/g;
 _.findSubCapture = function (regStr) {
   var left = 0,
     right = 0,
@@ -884,7 +718,7 @@ _.findSubCapture = function (regStr) {
   else ignored = 0;
   for (; len--;) {
     var letter = regStr.charAt(len);
-    if (len === 0 || regStr.charAt(len - 1) !== "\\" || regStr.charAt(len+1) !== "?") { //不包括转义括号
+    if (len === 0 || regStr.charAt(len - 1) !== "\\" ) { //不包括转义括号
       if (letter === "(") left++;
       if (letter === ")") right++;
     }
@@ -1226,8 +1060,6 @@ walkers.list = function(ast){
   // group.push(placeholder);
 
 
-
-
   function update(newValue, splices){
     if(!splices || !splices.length) return;
     var cur = placeholder;
@@ -1516,6 +1348,7 @@ function bindAttrWatcher(element, attr, destroies){
 require.register("regularjs/src/env.js", function(exports, require, module){
 // some fixture test;
 // ---------------
+var _ = require('./util');
 exports.svg = (function(){
   return typeof document !== "undefined" && document.implementation.hasFeature( "http://www.w3.org/TR/SVG11/feature#BasicStructure", "1.1" );
 })();
@@ -1526,6 +1359,7 @@ exports.transition = (function(){
 })();
 
 // whether have component in initializing
+exports.exprCache = _.cache(100);
 exports.isRunning = false;
 
 });
@@ -2223,7 +2057,7 @@ var rules = {
   }, 'JST'],
   JST_IDENT: ['{IDENT}', 'IDENT', 'JST'],
   JST_SPACE: [/[ \r\n\f]+/, null, 'JST'],
-  JST_PUNCHOR: [/[=!]?==|[-=><+*\/%\!]?\=|\|\||&&|\.\.|[\<\>\[\]\(\)\-\|\{}\+\*\/%?:\.!,]/, function(all){
+  JST_PUNCHOR: [/[=!]?==|[-=><+*\/%\!]?\=|\|\||&&|\@\(|\.\.|[\<\>\[\]\(\)\-\|\{}\+\*\/%?:\.!,]/, function(all){
     return { type: all, value: all }
   },'JST'],
 
@@ -2357,6 +2191,8 @@ var varName = _.varName;
 var ctxName = _.ctxName;
 var isPath = _.makePredicate("STRING IDENT NUMBER");
 var isKeyWord = _.makePredicate("true false undefined null this Array Date JSON Math NaN RegExp decodeURI decodeURIComponent encodeURI encodeURIComponent parseFloat parseInt Object");
+
+
 
 
 function Parser(input, opts){
@@ -2625,7 +2461,14 @@ op.list = function(){
 
 // @TODO:
 op.expression = function(){
-  var expression = this.expr();
+  var ll = this.ll();
+  if(this.eat('@(')){ //once bind
+    expression = this.expr();
+    expression.once = true;
+    this.match(')')
+  }else{
+    var expression = this.expr();
+  }
   return expression;
 }
 
@@ -3126,6 +2969,200 @@ extend(Array, {
   }
 })
 
+});
+require.register("regularjs/src/helper/parse.js", function(exports, require, module){
+var exprCache = require('../env').exprCache;
+var _ = require("../util");
+var Parser = require("../parser/Parser.js");
+module.exports = {
+  expression: function(expr){
+    // @TODO cache
+    if(typeof expr === 'string' && (expr = expr.trim()) ){
+      expr = exprCache.get(expr) || exprCache.set(expr, new Parser(expr, {state: 'JST', mode: 2}).expression() )
+    }
+    if(expr) return _.touchExpression(expr);
+  },
+  parse: function(template){
+    return new Parser(template).parse();
+  }
+}
+});
+require.register("regularjs/src/helper/watcher.js", function(exports, require, module){
+var _ = require('../util.js');
+var parseExpression = require('./parse.js').expression;
+
+
+function Watcher(){}
+
+var methods = {
+  $watch: function(expr, fn, options){
+    if(!this._watchers) this._watchers = [];
+    options = options || {};
+    if(options === true){
+       options = { deep: true }
+    }
+    var uid = _.uid('w_');
+    if(Array.isArray(expr)){
+      var tests = [];
+      for(var i=0,len = expr.length; i < len; i++){
+          tests.push(Regular.expression(expr[i]).get) 
+      }
+      var prev = [];
+      var test = function(context){
+        var equal = true;
+        for(var i =0, len = tests.length; i < len; i++){
+          var splice = tests[i](context);
+          if(!_.equals(splice, prev[i])){
+             equal = false;
+             prev[i] = _.clone(splice);
+          }
+        }
+        return equal? false: prev;
+      }
+    }else{
+      var expr = parseExpression(expr);
+      var get = expr.get;
+      var once = expr.once || expr.constant;
+    }
+    this._watchers.push({
+      id: uid, 
+      get: get, 
+      fn: fn, 
+      once: once, 
+      force: options.force,
+      test: test,
+      deep: options.deep
+    });
+    this._records && this._records.push(uid);
+    return uid;
+
+  },
+  $unwatch: function(uid){
+    if(!this._watchers) this._watchers = [];
+    if(Array.isArray(uid)){
+      for(var i =0, len = uid.length; i < len; i++){
+        this.$unwatch(uid[i]);
+      }
+    }else{
+      var watchers = this._watchers, watcher, len;
+      if(!uid || !watchers || !(len = watchers.length)) return;
+      for(;len--;){
+        watcher = watchers[len];
+        if(watcher && watcher.id === uid ){
+          watchers.splice(len, 1);
+        }
+      }
+    }
+  },
+
+  /**
+   * the whole digest loop ,just like angular, it just a dirty-check loop;
+   * @param  {String} path  now regular process a pure dirty-check loop, but in parse phase, 
+   *                  Regular's parser extract the dependencies, in future maybe it will change to dirty-check combine with path-aware update;
+   * @return {Void}   
+   */
+
+  $digest: function(){
+    if(this.$phase === 'digest') return;
+    this.$phase = 'digest';
+    var dirty = false, n =0;
+    while(dirty = this._digest()){
+      if((++n) > 20){ // max loop
+        throw 'there may a circular dependencies reaches' 
+      }
+    }
+    this.$phase = null;
+  },
+  // private digest logic
+  _digest: function(){
+    // if(this.context) return this.context.$digest();
+    if(this.$emit) this.$emit('digest');
+
+    var watchers = this._watchers || (this._watchers = []);
+    if(!watchers || !watchers.length) return;
+    var dirty = false, anyupdates;
+    for(var i = 0, len = watchers.length;i < len; i++){
+      var watcher = watchers[i];
+      if(!watcher) continue;
+      if(watcher.test) { //multi 
+        var result = watcher.test(this);
+        if(result){
+          dirty = true;
+          watcher.fn.apply(this, result)
+        }
+        continue;
+      }
+      var now = watcher.get(this);
+      var last = watcher.last;
+      var eq = true;
+      if(_.typeOf( now ) == 'object' && watcher.deep){
+        if(!watcher.last){
+           eq = false;
+         }else{
+          for(var j in now){
+            if(watcher.last[j] !== now[j]){
+              eq = false;
+              break;
+            }
+          }
+          if(eq !== false){
+            for(var j in last){
+              if(last[j] !== now[j]){
+                eq = false;
+                break;
+              }
+            }
+          }
+        }
+      }else{
+        eq = _.equals(now, watcher.last);
+      }
+      if(eq === false || watcher.force){
+        eq = false;
+        watcher.force = null;
+        watcher.fn.call(this, now, watcher.last);
+        if(typeof now !== 'object'|| watcher.deep){
+          if(watcher.deep) console.log(now)
+          watcher.last = _.clone(now);
+        }else{
+          watcher.last = now;
+        }
+      }else{
+        if(_.typeOf(eq)=='array' && eq.length){
+          watcher.fn.call(this, now, eq);
+          watcher.last = _.clone(now);
+        }else{
+          eq = true;
+        }
+      }
+      if(eq !== true) dirty = true;
+      if(watcher.once){
+         watchers.splice(i, 1);
+      }
+    }
+    if(this.$emit && dirty) this.$emit('update');
+    return dirty;
+  },
+  _record: function(){
+    this._records = [];
+  },
+  _release: function(){
+    var _records = this._records;
+    this._records = null;
+    return _records;
+  }
+}
+
+
+_.extend(Watcher.prototype, methods)
+
+
+Watcher.mixTo = function(obj){
+  obj = typeof obj == "function" ? obj.prototype : obj;
+  return _.extend(obj, methods)
+}
+
+module.exports = Watcher;
 });
 require.register("regularjs/src/helper/event.js", function(exports, require, module){
 // simplest event emitter 60 lines

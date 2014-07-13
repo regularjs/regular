@@ -143,7 +143,7 @@ _.trackErrorPos = (function (){
 })();
 
 
-var ignoredRef = /\(\?\!|\(\?\:|\?\=/g;
+var ignoredRef = /\((\?\!|\?\:|\?\=)/g;
 _.findSubCapture = function (regStr) {
   var left = 0,
     right = 0,
@@ -153,7 +153,7 @@ _.findSubCapture = function (regStr) {
   else ignored = 0;
   for (; len--;) {
     var letter = regStr.charAt(len);
-    if (len === 0 || regStr.charAt(len - 1) !== "\\" || regStr.charAt(len+1) !== "?") { //不包括转义括号
+    if (len === 0 || regStr.charAt(len - 1) !== "\\" ) { //不包括转义括号
       if (letter === "(") left++;
       if (letter === ")") right++;
     }
