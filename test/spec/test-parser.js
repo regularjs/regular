@@ -104,10 +104,10 @@ describe("Parse XML", function(){
     })
 
     it("attribute should throw error when encountered excepition", function(){
-      // expect(function(){
-      //   p('<div name=&>\
-      //     </div>')
-      // }).to.throwError();
+      expect(function(){
+        p('<div name=&>\
+          </div>')
+      }).to.throwError();
     })
 
   })
@@ -420,16 +420,16 @@ describe('Parse JST', function(){
 
 
   describe("should throw error when encountered syntax error", function(){
-    // it("list unmatched tag should throw error", function(){
-    //   expect(function(){
-    //     p("{{#list hello as name}}{{/if}}")
-    //   }).to.throwError();
-    // })
-    // it("if unmatched tag should throw error", function(){
-    //   expect(function(){
-    //     p("{{#if hello}}{{/list}}")
-    //   }).to.throwError();
-    // })
+    it("list unmatched tag should throw error", function(){
+      expect(function(){
+        p("{{#list hello as name}}{{/if}}")
+      }).to.throwError();
+    })
+    it("if unmatched tag should throw error", function(){
+      expect(function(){
+        p("{{#if hello}}{{/list}}")
+      }).to.throwError();
+    })
   })
 
 });

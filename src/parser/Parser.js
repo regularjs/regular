@@ -127,7 +127,7 @@ op.xml = function(){
   name = this.match('TAG_OPEN').value;
   attrs = this.attrs();
   selfClosed = this.eat('/')
-  this.match('>')
+  this.match('>');
   if( !selfClosed && !_.isVoidTag(name) ){
     children = this.program();
     if(!this.eat('TAG_CLOSE', name)) this.error('expect </'+name+'> got'+ 'no matched closeTag')
@@ -135,18 +135,37 @@ op.xml = function(){
   return node.element(name, attrs, children);
 }
 
+// xentity
+//  -rule(wrap attribute)
+//  -attribute
+//
+// __example__
+//  name = 1 |  
+//  ng-hide |
+//  on-click={{}} | 
+//  {{#if name}}on-click={{xx}}{{#else}}on-tap={{}}{{/if}}
+
+op.xentity = function(ll){
+  var name = ll.value, value;
+  if(ll.type === 'NAME'){
+    if( this.eat("=") ) value = this.attvalue();
+    return node.attribute( name, value );
+  }else{
+    if( name !== 'if') this.error("current version. ONLY RULE #if #else #elseif is valid in tag, the rule #" + name + ' is invalid');
+    return this['if'](true);
+  }
+
+}
+
 // stag     ::=    '<' Name (S attr)* S? '>'  
 // attr    ::=     Name Eq attvalue
 op.attrs = function(){
 
 
-  var attrs = [], attr, ll = this.ll(), value;
+  var attrs = [], ll;
 
-  while( ll = this.eat(["NAME", "&"]) ){
-    var name = ll.value;
-    if( this.eat("=") ) value = this.attvalue();
-    attrs.push(node.attribute( name, value ));
-    value = undefined;
+  while (ll = this.eat(["NAME", "OPEN"])){
+    attrs.push(this.xentity(ll))
   }
   return attrs;
 }
@@ -164,7 +183,7 @@ op.attvalue = function(){
       var value = ll.value;
       if(~value.indexOf('{{')){
         var constant = true;
-        var parsed = new Parser(value, {mode:2}).parse();
+        var parsed = new Parser(value, { mode: 2 }).parse();
         if(parsed.length==1 && parsed[0].type==='expression') return parsed[0];
         var body = [];
         parsed.forEach(function(item){
@@ -184,8 +203,9 @@ op.attvalue = function(){
 
 
 // {{#}}
-op.directive = function(name){
-  name = name || (this.ll().value);
+op.directive = function(){
+  name = this.ll().value;
+  this.next();
   if(typeof this[name] == 'function'){
     return this[name]()
   }else{
@@ -203,19 +223,18 @@ op.interplation = function(){
 
 // {{~}}
 op.include = function(){
-  this.next();
   var content = this.expression();
   this.match('END');
   return node.template(content);
 }
 
 // {{#if}}
-op["if"] = function(){
-  this.next();
+op["if"] = function(tag){
   var test = this.expr();
   var consequent = [], alternate=[];
 
   var container = consequent;
+  var statement = !tag? "statement" : "attrs";
 
   this.match('END');
 
@@ -230,13 +249,14 @@ op["if"] = function(){
           this.match('END');
           break;
         case 'elseif':
-          alternate.push(this["if"]())
+          this.next();
+          alternate.push(this["if"](tag))
           return node['if'](test, consequent, alternate)
         default:
-          container.push(this.statement())
+          container.push(this[statement]())
       }
     }else{
-      container.push(this.statement());
+      container.push(this[statement]());
     }
   }
   // if statement not matched
@@ -248,7 +268,6 @@ op["if"] = function(){
 // @mark   mustache syntax have natrure dis, canot with expression
 // {{#list}}
 op.list = function(){
-  this.next();
   // sequence can be a list or hash
   var sequence = this.expression(), variable, body, ll;
   var consequent = [], alternate=[];

@@ -148,12 +148,12 @@ _.findSubCapture = function (regStr) {
   var left = 0,
     right = 0,
     len = regStr.length,
-    ignored = regStr.match(ignoredRef); //忽略非捕获匹配
+    ignored = regStr.match(ignoredRef); // ignored uncapture
   if(ignored) ignored = ignored.length
   else ignored = 0;
   for (; len--;) {
     var letter = regStr.charAt(len);
-    if (len === 0 || regStr.charAt(len - 1) !== "\\" ) { //不包括转义括号
+    if (len === 0 || regStr.charAt(len - 1) !== "\\" ) { 
       if (letter === "(") left++;
       if (letter === ")") right++;
     }
@@ -266,13 +266,13 @@ var ld = (function(){
       var edits = [];
       var current = matrix[i][j];
       while(i>0 || j>0){
-      // 最后一列
+      // the last line
         if (i == 0) {
           edits.unshift(3);
           j--;
           continue;
         }
-        // 最后一行
+        // the last col
         if (j == 0) {
           edits.unshift(2);
           i--;
@@ -413,7 +413,7 @@ _.cache = function(max){
       if (keys.length > this.max) {
         cache[keys.shift()] = undefined;
       }
-      // 只有非undefined才可以
+      // 
       if(cache[key] == undefined){
         keys.push(key);
       }

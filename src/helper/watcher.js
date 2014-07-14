@@ -132,7 +132,6 @@ var methods = {
         watcher.force = null;
         watcher.fn.call(this, now, watcher.last);
         if(typeof now !== 'object'|| watcher.deep){
-          if(watcher.deep) console.log(now)
           watcher.last = _.clone(now);
         }else{
           watcher.last = now;
@@ -152,6 +151,32 @@ var methods = {
     }
     if(this.$emit && dirty) this.$emit('update');
     return dirty;
+  },
+  /**
+   * **tips**: whatever param you passed in $update, after the function called, dirty-check(digest) phase will enter;
+   * 
+   * @param  {Function|String|Expression} path  
+   * @param  {Whatever} value optional, when path is Function, the value is ignored
+   * @return {this}     this 
+   */
+  $update: function(path, value){
+    if(path != null){
+      var type = _.typeOf(path);
+      if( type === 'string' || path.type === 'expression' ){
+        var base = this.data;
+        path = parseExpression(path);
+        path.set(this, value);
+      }else if(type === 'function'){
+        path.call(this, this.data);
+      }else{
+        for(var i in path) {
+          if(path.hasOwnProperty(i)){
+            this.data[i] = path[i];
+          }
+        }
+      }
+    };
+    (this.$context || this).$digest();
   },
   _record: function(){
     this._records = [];

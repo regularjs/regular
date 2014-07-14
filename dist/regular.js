@@ -213,15 +213,15 @@ var Lexer = require("./parser/Lexer.js");
 var Parser = require("./parser/Parser.js");
 var node = require("./parser/node.js");
 var dom = require("./dom.js");
-require("./helper/animate.js");
 var Group = require('./group.js');
 var _ = require('./util');
 var extend = require('./helper/extend.js');
 var Event = require('./helper/event.js');
 var combine = require('./helper/combine.js');
 var Watcher = require('./helper/watcher.js');
+var parse = require('./helper/parse.js');
 var walkers = require('./walkers.js');
-var doc = typeof document==='undefined'? {}: document;
+var doc = typeof document==='undefined'? {} : document;
 var env = require('./env.js');
 
 var Regular = function(options){
@@ -240,7 +240,6 @@ var Regular = function(options){
     template = node.innerHTML;
   }
   if(typeof template === 'string') this.template = new Parser(template).parse()
-  this.$watchers = [];
   this.config && this.config(this.data);
   this.$context = this.$context || this;
   this.$root = this.$root || this;
@@ -352,18 +351,8 @@ _.extend(Regular, {
     fn(this, Regular);
     return this;
   },
-  expression: function(expr){
-    // @TODO cache
-    if(typeof expr === 'string'){
-      var expr = expr.trim();
-      expr = this._exprCache[expr] || (this._exprCache[expr] = new Parser(expr,{state: 'JST'}).expression());
-    }
-    var res = _.touchExpression(expr);
-    return res;
-  },
-  parse: function(template){
-    return new Parser(template).parse();
-  },
+  expression: parse.expression,
+  parse: parse.parse,
 
   Parser: Parser,
   Lexer: Lexer,
@@ -413,32 +402,7 @@ Regular.implement({
     }
     return group;
   },
-  /**
-   * **tips**: whatever param you passed in $update, after the function called, dirty-check(digest) phase will enter;
-   * 
-   * @param  {Function|String|Expression} path  
-   * @param  {Whatever} value optional, when path is Function, the value is ignored
-   * @return {this}     this 
-   */
-  $update: function(path, value){
-    if(path != null){
-      var type = _.typeOf(path);
-      if( type === 'string' || path.type === 'expression' ){
-        var base = this.data;
-        var path = Regular.expression(path);
-        path.set(this, value);
-      }else if(type === 'function'){
-        path.call(this, this.data);
-      }else{
-        for(var i in path) {
-          if(path.hasOwnProperty(i)){
-            this.data[i] = path[i];
-          }
-        }
-      }
-    };
-    (this.$context || this).$digest();
-  },
+
   /**
    * create two-way binding with another component;
    * *warn*: 
@@ -495,11 +459,10 @@ Regular.implement({
   destroy: function(){
     // destroy event wont propgation;
     this.$emit({type: 'destroy', stop: true });
-
     this.group && this.group.destroy();
     this.group = null;
     this.element = null;
-    this.$watchers = null;
+    this._watchers = null;
     this.$off();
   },
   inject: function(node, position){
@@ -715,12 +678,12 @@ _.findSubCapture = function (regStr) {
   var left = 0,
     right = 0,
     len = regStr.length,
-    ignored = regStr.match(ignoredRef); //忽略非捕获匹配
+    ignored = regStr.match(ignoredRef); // ignored uncapture
   if(ignored) ignored = ignored.length
   else ignored = 0;
   for (; len--;) {
     var letter = regStr.charAt(len);
-    if (len === 0 || regStr.charAt(len - 1) !== "\\" ) { //不包括转义括号
+    if (len === 0 || regStr.charAt(len - 1) !== "\\" ) { 
       if (letter === "(") left++;
       if (letter === ")") right++;
     }
@@ -833,13 +796,13 @@ var ld = (function(){
       var edits = [];
       var current = matrix[i][j];
       while(i>0 || j>0){
-      // 最后一列
+      // the last line
         if (i == 0) {
           edits.unshift(3);
           j--;
           continue;
         }
-        // 最后一行
+        // the last col
         if (j == 0) {
           edits.unshift(2);
           i--;
@@ -980,7 +943,7 @@ _.cache = function(max){
       if (keys.length > this.max) {
         cache[keys.shift()] = undefined;
       }
-      // 只有非undefined才可以
+      // 
       if(cache[key] == undefined){
         keys.push(key);
       }
@@ -1243,7 +1206,7 @@ walkers.element = function(ast){
 
     if(!db) return !da? 0: 1;
     if(!da) return -1;
-    return (b.priority||1) - (a.priority||1);
+    return ( b.priority || 1 ) - ( a.priority || 1 );
   })
 
 
@@ -1314,6 +1277,15 @@ walkers.element = function(ast){
     }
   }
 }
+
+
+walkers.attributes = function(array, ){
+  var node = document.createTextNode(ast.text);
+  return node;
+}
+
+
+
 
 // dada
 
@@ -1824,7 +1796,7 @@ lo.lex = function(str){
   str = (str||this.input).trim();
   var tokens = [], remain = this.input = str, 
     TRUNK, split, test,mlen, token, state;
-  // 初始化
+  // init the pos index
   this.index=0;
   var i = 0;
   while(str){
@@ -2315,7 +2287,7 @@ op.xml = function(){
   name = this.match('TAG_OPEN').value;
   attrs = this.attrs();
   selfClosed = this.eat('/')
-  this.match('>')
+  this.match('>');
   if( !selfClosed && !_.isVoidTag(name) ){
     children = this.program();
     if(!this.eat('TAG_CLOSE', name)) this.error('expect </'+name+'> got'+ 'no matched closeTag')
@@ -2323,18 +2295,37 @@ op.xml = function(){
   return node.element(name, attrs, children);
 }
 
+// xentity
+//  -rule(wrap attribute)
+//  -attribute
+//
+// __example__
+//  name = 1 |  
+//  ng-hide |
+//  on-click={{}} | 
+//  {{#if name}}on-click={{xx}}{{#else}}on-tap={{}}{{/if}}
+
+op.xentity = function(ll){
+  var name = ll.value, value;
+  if(ll.type === 'NAME'){
+    if( this.eat("=") ) value = this.attvalue();
+    return node.attribute( name, value );
+  }else{
+    if( name !== 'if') this.error("current version. ONLY RULE #if #else #elseif is valid in tag, the rule #" + name + ' is invalid');
+    return this['if'](true);
+  }
+
+}
+
 // stag     ::=    '<' Name (S attr)* S? '>'  
 // attr    ::=     Name Eq attvalue
 op.attrs = function(){
 
 
-  var attrs = [], attr, ll = this.ll(), value;
+  var attrs = [], ll;
 
-  while( ll = this.eat(["NAME", "&"]) ){
-    var name = ll.value;
-    if( this.eat("=") ) value = this.attvalue();
-    attrs.push(node.attribute( name, value ));
-    value = undefined;
+  while (ll = this.eat(["NAME", "OPEN"])){
+    attrs.push(this.xentity(ll))
   }
   return attrs;
 }
@@ -2352,7 +2343,7 @@ op.attvalue = function(){
       var value = ll.value;
       if(~value.indexOf('{{')){
         var constant = true;
-        var parsed = new Parser(value, {mode:2}).parse();
+        var parsed = new Parser(value, { mode: 2 }).parse();
         if(parsed.length==1 && parsed[0].type==='expression') return parsed[0];
         var body = [];
         parsed.forEach(function(item){
@@ -2372,8 +2363,9 @@ op.attvalue = function(){
 
 
 // {{#}}
-op.directive = function(name){
-  name = name || (this.ll().value);
+op.directive = function(){
+  name = this.ll().value;
+  this.next();
   if(typeof this[name] == 'function'){
     return this[name]()
   }else{
@@ -2391,19 +2383,18 @@ op.interplation = function(){
 
 // {{~}}
 op.include = function(){
-  this.next();
   var content = this.expression();
   this.match('END');
   return node.template(content);
 }
 
 // {{#if}}
-op["if"] = function(){
-  this.next();
+op["if"] = function(tag){
   var test = this.expr();
   var consequent = [], alternate=[];
 
   var container = consequent;
+  var statement = !tag? "statement" : "attrs";
 
   this.match('END');
 
@@ -2418,13 +2409,14 @@ op["if"] = function(){
           this.match('END');
           break;
         case 'elseif':
-          alternate.push(this["if"]())
+          this.next();
+          alternate.push(this["if"](tag))
           return node['if'](test, consequent, alternate)
         default:
-          container.push(this.statement())
+          container.push(this[statement]())
       }
     }else{
-      container.push(this.statement());
+      container.push(this[statement]());
     }
   }
   // if statement not matched
@@ -2436,7 +2428,6 @@ op["if"] = function(){
 // @mark   mustache syntax have natrure dis, canot with expression
 // {{#list}}
 op.list = function(){
-  this.next();
   // sequence can be a list or hash
   var sequence = this.expression(), variable, body, ll;
   var consequent = [], alternate=[];
@@ -3124,7 +3115,6 @@ var methods = {
         watcher.force = null;
         watcher.fn.call(this, now, watcher.last);
         if(typeof now !== 'object'|| watcher.deep){
-          if(watcher.deep) console.log(now)
           watcher.last = _.clone(now);
         }else{
           watcher.last = now;
@@ -3144,6 +3134,32 @@ var methods = {
     }
     if(this.$emit && dirty) this.$emit('update');
     return dirty;
+  },
+  /**
+   * **tips**: whatever param you passed in $update, after the function called, dirty-check(digest) phase will enter;
+   * 
+   * @param  {Function|String|Expression} path  
+   * @param  {Whatever} value optional, when path is Function, the value is ignored
+   * @return {this}     this 
+   */
+  $update: function(path, value){
+    if(path != null){
+      var type = _.typeOf(path);
+      if( type === 'string' || path.type === 'expression' ){
+        var base = this.data;
+        path = parseExpression(path);
+        path.set(this, value);
+      }else if(type === 'function'){
+        path.call(this, this.data);
+      }else{
+        for(var i in path) {
+          if(path.hasOwnProperty(i)){
+            this.data[i] = path[i];
+          }
+        }
+      }
+    };
+    (this.$context || this).$digest();
   },
   _record: function(){
     this._records = [];

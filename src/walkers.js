@@ -206,7 +206,7 @@ walkers.element = function(ast){
 
     if(!db) return !da? 0: 1;
     if(!da) return -1;
-    return (b.priority||1) - (a.priority||1);
+    return ( b.priority || 1 ) - ( a.priority || 1 );
   })
 
 
@@ -277,6 +277,15 @@ walkers.element = function(ast){
     }
   }
 }
+
+
+walkers.attributes = function(array, ){
+  var node = document.createTextNode(ast.text);
+  return node;
+}
+
+
+
 
 // dada
 

@@ -98,3 +98,7 @@ MIT.
 
 ## TODO
 
+1. interactive tutorial
+2. demo gallery
+3. __first
+4. blog 

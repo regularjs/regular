@@ -26,7 +26,7 @@ lo.lex = function(str){
   str = (str||this.input).trim();
   var tokens = [], remain = this.input = str, 
     TRUNK, split, test,mlen, token, state;
-  // 初始化
+  // init the pos index
   this.index=0;
   var i = 0;
   while(str){

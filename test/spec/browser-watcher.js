@@ -109,6 +109,8 @@ describe("Watcher-System", function(){
     component2.destroy();
     component.destroy();
     expect(container.innerHTML).to.equal("");
+    
+
   })
 
 

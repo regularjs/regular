@@ -2,15 +2,15 @@ var Lexer = require("./parser/Lexer.js");
 var Parser = require("./parser/Parser.js");
 var node = require("./parser/node.js");
 var dom = require("./dom.js");
-require("./helper/animate.js");
 var Group = require('./group.js');
 var _ = require('./util');
 var extend = require('./helper/extend.js');
 var Event = require('./helper/event.js');
 var combine = require('./helper/combine.js');
 var Watcher = require('./helper/watcher.js');
+var parse = require('./helper/parse.js');
 var walkers = require('./walkers.js');
-var doc = typeof document==='undefined'? {}: document;
+var doc = typeof document==='undefined'? {} : document;
 var env = require('./env.js');
 
 var Regular = function(options){
@@ -29,7 +29,6 @@ var Regular = function(options){
     template = node.innerHTML;
   }
   if(typeof template === 'string') this.template = new Parser(template).parse()
-  this.$watchers = [];
   this.config && this.config(this.data);
   this.$context = this.$context || this;
   this.$root = this.$root || this;
@@ -141,18 +140,8 @@ _.extend(Regular, {
     fn(this, Regular);
     return this;
   },
-  expression: function(expr){
-    // @TODO cache
-    if(typeof expr === 'string'){
-      var expr = expr.trim();
-      expr = this._exprCache[expr] || (this._exprCache[expr] = new Parser(expr,{state: 'JST'}).expression());
-    }
-    var res = _.touchExpression(expr);
-    return res;
-  },
-  parse: function(template){
-    return new Parser(template).parse();
-  },
+  expression: parse.expression,
+  parse: parse.parse,
 
   Parser: Parser,
   Lexer: Lexer,
@@ -202,32 +191,7 @@ Regular.implement({
     }
     return group;
   },
-  /**
-   * **tips**: whatever param you passed in $update, after the function called, dirty-check(digest) phase will enter;
-   * 
-   * @param  {Function|String|Expression} path  
-   * @param  {Whatever} value optional, when path is Function, the value is ignored
-   * @return {this}     this 
-   */
-  $update: function(path, value){
-    if(path != null){
-      var type = _.typeOf(path);
-      if( type === 'string' || path.type === 'expression' ){
-        var base = this.data;
-        var path = Regular.expression(path);
-        path.set(this, value);
-      }else if(type === 'function'){
-        path.call(this, this.data);
-      }else{
-        for(var i in path) {
-          if(path.hasOwnProperty(i)){
-            this.data[i] = path[i];
-          }
-        }
-      }
-    };
-    (this.$context || this).$digest();
-  },
+
   /**
    * create two-way binding with another component;
    * *warn*: 
@@ -284,11 +248,10 @@ Regular.implement({
   destroy: function(){
     // destroy event wont propgation;
     this.$emit({type: 'destroy', stop: true });
-
     this.group && this.group.destroy();
     this.group = null;
     this.element = null;
-    this.$watchers = null;
+    this._watchers = null;
     this.$off();
   },
   inject: function(node, position){

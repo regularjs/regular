@@ -1,4 +1,9 @@
-var Regular = require_lib("index.js");
+var container = document.createElement('div');
+var component = new Regular({
+  template: "<div {{#if username}}class='name' {{/if}} >haha</div>",
+  data: { test: 1 }
+}).inject(container);
+
 void function(){
 
   var container = document.createElement('div');
@@ -115,10 +120,87 @@ void function(){
 
       })
 
+      it("if destroy should remove bind watchers", function(){
+        var container = document.createElement('div');
+        var component = new Regular({
+          template: "{{#if test > 5}}<div>{{test}} {{hello}}</div>{{#else}}<div>{{hello}}</div>{{/if}}",
+          data: { test: 1 }
+        }).inject(container);
+
+        expect(component._watchers.length).to.equal(2)
+
+        component.$update('test', 6);
+
+        expect(component._watchers.length).to.equal(3)
+        component.$update('test', 0);
+
+        expect(component._watchers.length).to.equal(2)
+        destroy(component, container);
+      })
+
+      it("nested if destroy should remove bind watchers", function(){
+        var container = document.createElement('div');
+        var component = new Regular({
+          template: "{{#if test > 5}}{{#if test < 8}}<div>{{test}} {{hello}}</div>{{/if}}{{/if}}",
+          data: { test: 6 }
+        }).inject(container);
+
+        expect(component._watchers.length).to.equal(4);
+
+        component.$update("test", 10);
+        expect(component._watchers.length).to.equal(2);
+        component.$update("test", 6);
+        expect(component._watchers.length).to.equal(4);
+        component.$update("test", 10);
+        expect(component._watchers.length).to.equal(2);
+
+        destroy(component, container)
+      })
+
     })
 
     describe("If combine with attribute", function(){
-      
+      it("other rule expect if should throw error when pass in tag", function(){
+        expect(function(){
+          new Parser("<div {{#list xx as x}}ng-repeat{{/list}}>").parse();
+        }).to.throwError();
+      })
+      it("if should toggle the basic attribute", function(){
+        var container = document.createElement('div');
+        var component = new Regular({
+          template: "<div {{#if username}}class='name' class='noname'{{/if}} >haha</div>",
+          data: { test: 1 }
+        }).inject(container);
+      })
+
+      it("if combine with unassigned attribute should work correctly", function(){
+        
+      })
+
+      it("if combine with assigned attribute should work correctly", function(){
+
+      })
+
+      it("if combine with inteplation attribute should work correctly", function(){
+
+      })
+
+      it("if combine with event should work correctly", function(){
+
+      })
+
+      it("if combine with directive should work correctly", function(){
+
+      })
+
+      it("when switch if state, the watcher should distroy automately", function(){
+
+      })
+
+      it("if else combine with attribute should work as expect", function(){
+
+      })
+
     })
   })
 
@@ -126,3 +208,4 @@ void function(){
     
     
 }();
+
