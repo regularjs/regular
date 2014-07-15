@@ -42,18 +42,18 @@ var combine = module.exports = {
 
   },
 
-  destroy: function(item){
+  destroy: function(item, first){
     if(!item) return;
     if(Array.isArray(item)){
       for(var i = 0, len = item.length; i < len; i++ ){
-        combine.destroy(item[i]);
+        combine.destroy(item[i], first);
       }
     }
     var children = item.children;
-    if(typeof item.destroy === "function") return item.destroy();
-    if(typeof item.nodeType === "number") return dom.remove(item);
+    if(typeof item.destroy === "function") return item.destroy(first);
+    if(typeof item.nodeType === "number" && first)  dom.remove(item);
     if(children && children.length){
-      combine.destroy(item);
+      combine.destroy(children, true);
       item.children = null;
     }
   }

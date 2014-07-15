@@ -174,6 +174,7 @@ dom.attr = function(node, name, value){
   } else if (typeof (value) !== 'undefined') {
     // if in specialAttr;
     if(specialAttr[name]) specialAttr[name](node, value);
+    else if(value === null) node.removeAttribute(name)
     else node.setAttribute(name, value);
   } else if (node.getAttribute) {
     // the extra argument "2" is to get the right thing for a.href in IE, see jQuery code

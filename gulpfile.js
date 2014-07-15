@@ -34,6 +34,7 @@ var karmaCommonConf = {
     'test/karma.js',
     'test/runner/vendor/expect.js',
     'test/runner/vendor/jquery.js',
+    'test/runner/vendor/nes.js',
     'test/runner/vendor/util.js',
     'test/spec/test-*.js',
     'test/spec/browser-*.js'

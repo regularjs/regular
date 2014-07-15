@@ -9,8 +9,8 @@ function Group(list){
 
 
 _.extend(Group.prototype, {
-  destroy: function(){
-    combine.destroy(this.children);
+  destroy: function(first){
+    combine.destroy(this.children, first);
     if(this.ondestroy) this.ondestroy();
     this.children = null;
   },

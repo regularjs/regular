@@ -40,6 +40,23 @@ void function(){
 
 
     })
+
+    it("custom Event handler's context should be component", function(){
+
+        var container = document.createElement('div');
+        var Component = Regular.extend();
+        var context;
+        Component.event('hello', function(elem, fire){
+          context = this;
+        })
+        var component = new Component({
+          template: "<div on-hello={{name=name+1}} class='hello' >haha</div>",
+          data: { test: 0 , name: 'hahah'}
+        }).inject(container);
+
+        expect(context).to.equal(component);
+
+    })
   })
 
 }()

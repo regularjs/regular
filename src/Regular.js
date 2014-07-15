@@ -174,13 +174,13 @@ Regular.implement({
    * @param  {[type]} record
    * @return {[type]}
    */
-  $compile: function(ast, record){
+  $compile: function(ast, options){
     if(typeof ast === 'string'){
       ast = new Parser(ast).parse()
     }
-    var records;
+    var record = options && options.record, records;
     if(record) this._record();
-    var group = this._walk(ast);
+    var group = this._walk(ast, options);
     if(record){
       records = this._release();
       var self = this;
@@ -248,7 +248,7 @@ Regular.implement({
   destroy: function(){
     // destroy event wont propgation;
     this.$emit({type: 'destroy', stop: true });
-    this.group && this.group.destroy();
+    this.group && this.group.destroy(true);
     this.group = null;
     this.element = null;
     this._watchers = null;
@@ -268,7 +268,7 @@ Regular.implement({
     var self = this;
     // basic binding
     if(!component || !(component instanceof Regular)) throw "$bind() should pass Regular component as first argument";
-    if(!expr1) throw "$bind() should as least pass one expression to bind";
+    if(!expr1) throw "$bind() should  pass as least one expression to bind";
     expr1 = Regular.expression(expr1);
 
     if(!expr2) expr2 = expr1;
@@ -293,17 +293,20 @@ Regular.implement({
     // sync the component's state to called's state
     expr2.set(component, expr1.get(this));
   },
-  _walk: function(ast){
+  _walk: function(ast, arg1){
     if(_.typeOf(ast) === 'array'){
       var res = [];
+
       for(var i = 0, len = ast.length; i < len; i++){
-        res.push(this._walk(ast[i]));
+        res.push( this._walk(ast[i], arg1) );
       }
+
       return new Group(res);
     }
     if(typeof ast === 'string') return doc.createTextNode(ast)
-    return walkers[ast.type || "default"].call(this, ast);
+    return walkers[ast.type || "default"].call(this, ast, arg1);
   },
+
   // find filter
   _f: function(name){
     var Component = this.constructor;

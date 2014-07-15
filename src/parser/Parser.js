@@ -50,7 +50,6 @@ op.match = function(type, value){
   }
 }
 
-// @TODO
 op.error = function(msg, pos){
   // console.log(this.ll())
   var msg =  "Parse Error: " + msg +  ':\n' + _.trackErrorPos(this.input, typeof pos === 'number'? pos: this.ll().pos||0);
@@ -159,13 +158,17 @@ op.xentity = function(ll){
 
 // stag     ::=    '<' Name (S attr)* S? '>'  
 // attr    ::=     Name Eq attvalue
-op.attrs = function(){
+op.attrs = function(isAttribute){
 
+  if(!isAttribute){
+    var eat = ["NAME", "OPEN"]
+  }else{
+    eat = ["NAME"]
+  }
 
   var attrs = [], ll;
-
-  while (ll = this.eat(["NAME", "OPEN"])){
-    attrs.push(this.xentity(ll))
+  while (ll = this.eat(eat)){
+    attrs.push(this.xentity( ll ))
   }
   return attrs;
 }
@@ -253,10 +256,10 @@ op["if"] = function(tag){
           alternate.push(this["if"](tag))
           return node['if'](test, consequent, alternate)
         default:
-          container.push(this[statement]())
+          container.push(this[statement](true))
       }
     }else{
-      container.push(this[statement]());
+      container.push(this[statement](true));
     }
   }
   // if statement not matched
@@ -292,7 +295,6 @@ op.list = function(){
 }
 
 
-// @TODO:
 op.expression = function(){
   var ll = this.ll();
   if(this.eat('@(')){ //once bind
@@ -477,7 +479,6 @@ op.unary = function(){
 // member . ident  
 
 op.member = function(base, last, pathes){
-  // @TODO depend must deregular in this step
   var ll, path, value, computed;
   var first = !base;
 

@@ -47,7 +47,7 @@ Regular.directive(/^on-\w+$/, function(elem, value, name){
   
   var handler = Component.event(type);
   if(handler){
-    var destroy = handler(elem, fire);
+    var destroy = handler.call(this, elem, fire);
   }else{
     dom.on( elem, type, fire );
   }

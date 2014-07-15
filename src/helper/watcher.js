@@ -15,7 +15,7 @@ var methods = {
     if(Array.isArray(expr)){
       var tests = [];
       for(var i=0,len = expr.length; i < len; i++){
-          tests.push(Regular.expression(expr[i]).get) 
+          tests.push(parseExpression(expr[i]).get) 
       }
       var prev = [];
       var test = function(context){
