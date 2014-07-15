@@ -12,14 +12,14 @@ function destroy(component, container){
 describe("Directive", function(){
   describe('Process', function(){
     var container = document.createElement('div')
-    Regular.directive('r-html', function(elem, value){
+    Regular.directive('t-html', function(elem, value){
       this.$watch(value, function(nvalue){
         elem.innerHTML = nvalue;
       })
     })
     it('registed directive should works on template', function(){
       var component = new Regular({
-        template: "<div class='m-class' r-html='content'></div>",
+        template: "<div class='m-class' t-html='content'></div>",
         data: {
           content:'hello'
         }
@@ -336,7 +336,7 @@ describe('r-model directive', function(){
 
 
 describe('other buildin directive', function(){
-  var container = document.createElement('form');
+  var container = document.createElement('div');
 
   it('r-hide should force element to "display:none" when the expression is evaluated to true', function(){
     var template = "<div r-hide={{!!user}}>Please Login</div>" 
@@ -427,6 +427,23 @@ describe('other buildin directive', function(){
     }).inject(container);
 
     // TODO
+    destroy(component, container)
+
+  })
+
+  it("r-html should create unescaped inteplation verus {{}} ", function(){
+    var template = "<div r-html='name'>Please Login</div>" 
+    var component = new Regular({
+      template: template,
+      data: {}
+    }).inject(container);
+
+    expect(nes.one('div', container).innerHTML).to.equal("");
+
+    component.$update("name", "<p>a</p>")
+
+    expect(nes.all('div p', container).length).to.equal(1);
+    destroy(component, container)
 
   })
 

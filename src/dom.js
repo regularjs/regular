@@ -227,7 +227,7 @@ dom.text = (function (){
 })();
 
 
-dom.html = function(html){
+dom.html = function(node, html){
   if(typeof html === "undefined"){
     return node.innerHTML;
   }else{

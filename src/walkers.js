@@ -138,11 +138,12 @@ walkers['if'] = function(ast, options){
       }
     }
     this.$watch(ast.test, update, { force: true });
-    return function destroy(){
-      if(consequent) combine.destroy(consequent);
-      else if(alternate) combine.destroy(alternate);
-    } 
-          
+    return {
+      destroy: function(){
+        if(consequent) combine.destroy(consequent);
+        else if(alternate) combine.destroy(alternate);
+      }
+    }
   }
 
 
