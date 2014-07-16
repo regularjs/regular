@@ -1,20 +1,19 @@
-var Regular = require("../Regular.js");
-var _ = require("../util.js");
-var animate = require('../helper/animate.js');
+// var _ = require("../util.js");
+// var animate = require('../helper/animate.js');
 
-/**
- * Timeout Module
- * @param {Component} Component 
- */
+// /**
+//  * Timeout Module
+//  * @param {Component} Component 
+//  */
 
-var cache = _.cache();
-function AnimationPlugin(Component, Regular){
+// var cache = _.cache();
+// function AnimationPlugin(Component, Regular){
 
-  Component.directive('r-animate', function(el, value){
+//   Component.directive('r-animate', function(el, value){
     
-  })
+//   })
 
-}
+// }
 
 
-// Regular.plugin('timeout', TimeoutModule);
+// // Regular.plugin('timeout', TimeoutModule);

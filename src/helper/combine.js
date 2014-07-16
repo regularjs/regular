@@ -7,19 +7,19 @@ var combine = module.exports = {
 
   // get the initial dom in object
   node: function(item){
-    var children;
+    var children,node;
     if(item.element) return item.element;
     if(typeof item.node === "function") return item.node();
     if(typeof item.nodeType === "number") return item;
     if(item.group) return combine.node(item.group)
     if(children = item.children){
-      if(children.length == 1){
-        var node = combine.node(children[0])
-        return node;
+      if(children.length === 1){
+        
+        return combine.node(children[0]);
       }
       var nodes = [];
       for(var i = 0, len = children.length; i < len; i++ ){
-        var node = combine.node(children[i]);
+        node = combine.node(children[i]);
         if(Array.isArray(node)){
           nodes.push.apply(nodes, node)
         }else{

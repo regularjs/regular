@@ -113,6 +113,12 @@ describe("Watcher-System", function(){
 
   })
 
+  it("bind once should also work on template", function(){
+    // @TODO add bindonce and split the testcase    
+  })
+
+
+
 
 })
 

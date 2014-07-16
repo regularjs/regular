@@ -22,7 +22,7 @@ function Parser(input, opts){
 var op = Parser.prototype;
 
 
-op.parse = function(str){
+op.parse = function(){
   this.pos = 0;
   return this.program();
 }
@@ -37,22 +37,22 @@ op.ll =  function(k){
   return this.tokens[pos];
 }
   // lookahead
-op.la = function(k, value){
+op.la = function(k){
   return (this.ll(k) || '').type;
 }
 
 op.match = function(type, value){
+  var ll;
   if(!(ll = this.eat(type, value))){
-    var ll  = this.ll();
+    ll  = this.ll();
     this.error('expect [' + type + (value == null? '':':'+ value) + ']" -> got "[' + ll.type + (value==null? '':':'+ll.value) + ']', ll.pos)
   }else{
-      return ll;
+    return ll;
   }
 }
 
 op.error = function(msg, pos){
-  // console.log(this.ll())
-  var msg =  "Parse Error: " + msg +  ':\n' + _.trackErrorPos(this.input, typeof pos === 'number'? pos: this.ll().pos||0);
+  msg =  "Parse Error: " + msg +  ':\n' + _.trackErrorPos(this.input, typeof pos === 'number'? pos: this.ll().pos||0);
   throw new Error(msg);
 }
 
@@ -64,14 +64,13 @@ op.eat = function(type, value){
   var ll = this.ll();
   if(typeof type !== 'string'){
     for(var len = type.length ; len--;){
-      if(ll.type == type[len]) {
+      if(ll.type === type[len]) {
         this.next();
         return ll;
       }
     }
   }else{
-    if( ll.type == type 
-        && (typeof value == 'undefined' || ll.value == value) ){
+    if( ll.type === type && (typeof value === 'undefined' || ll.value === value) ){
        this.next();
        return ll;
     }
@@ -83,7 +82,7 @@ op.eat = function(type, value){
 //  :EOF
 //  | (statement)* EOF
 op.program = function(){
-  var statements = [], statement, ll = this.ll();
+  var statements = [],  ll = this.ll();
   while(ll.type !== 'EOF' && ll.type !=='TAG_CLOSE'){
     statements.push(this.statement());
     ll = this.ll();
@@ -96,7 +95,7 @@ op.program = function(){
 //  | jst
 //  | text
 op.statement = function(){
-  var ll = this.ll(),la;
+  var ll = this.ll();
   switch(ll.type){
     case 'NAME':
     case 'TEXT':
@@ -159,9 +158,9 @@ op.xentity = function(ll){
 // stag     ::=    '<' Name (S attr)* S? '>'  
 // attr    ::=     Name Eq attvalue
 op.attrs = function(isAttribute){
-
+  var eat
   if(!isAttribute){
-    var eat = ["NAME", "OPEN"]
+    eat = ["NAME", "OPEN"]
   }else{
     eat = ["NAME"]
   }
@@ -187,7 +186,7 @@ op.attvalue = function(){
       if(~value.indexOf('{{')){
         var constant = true;
         var parsed = new Parser(value, { mode: 2 }).parse();
-        if(parsed.length==1 && parsed[0].type==='expression') return parsed[0];
+        if(parsed.length === 1 && parsed[0].type === 'expression') return parsed[0];
         var body = [];
         parsed.forEach(function(item){
           if(!item.constant) constant=false;
@@ -207,9 +206,9 @@ op.attvalue = function(){
 
 // {{#}}
 op.directive = function(){
-  name = this.ll().value;
+  var name = this.ll().value;
   this.next();
-  if(typeof this[name] == 'function'){
+  if(typeof this[name] === 'function'){
     return this[name]()
   }else{
     this.error('Undefined directive['+ name +']');
@@ -218,7 +217,7 @@ op.directive = function(){
 
 // {{}}
 op.interplation = function(){
-  var nowatch = this.match('EXPR_OPEN').nowatch;
+  this.match('EXPR_OPEN');
   var res = this.expression(true);
   this.match('END');
   return res;
@@ -241,22 +240,22 @@ op["if"] = function(tag){
 
   this.match('END');
 
-  var ll, type, close;
+  var ll, close;
   while( ! (close = this.eat('CLOSE')) ){
     ll = this.ll();
-    if(ll.type == 'OPEN'){
-      switch(ll.value){
+    if( ll.type === 'OPEN' ){
+      switch( ll.value ){
         case 'else':
           container = alternate;
           this.next();
-          this.match('END');
+          this.match( 'END' );
           break;
         case 'elseif':
           this.next();
-          alternate.push(this["if"](tag))
-          return node['if'](test, consequent, alternate)
+          alternate.push( this["if"](tag) );
+          return node['if']( test, consequent, alternate );
         default:
-          container.push(this[statement](true))
+          container.push( this[statement](true) );
       }
     }else{
       container.push(this[statement](true));
@@ -272,7 +271,7 @@ op["if"] = function(tag){
 // {{#list}}
 op.list = function(){
   // sequence can be a list or hash
-  var sequence = this.expression(), variable, body, ll;
+  var sequence = this.expression(), variable, ll;
   var consequent = [], alternate=[];
   var container = consequent;
 
@@ -296,18 +295,18 @@ op.list = function(){
 
 
 op.expression = function(){
-  var ll = this.ll();
+  var expression;
   if(this.eat('@(')){ //once bind
     expression = this.expr();
     expression.once = true;
     this.match(')')
   }else{
-    var expression = this.expr();
+    expression = this.expr();
   }
   return expression;
 }
 
-op.expr = function(filter){
+op.expr = function(){
   this.depend = [];
 
   var buffer = this.filter()
@@ -413,7 +412,7 @@ op.equal = function(){
 // relation >= additive
 // relation in additive
 op.relation = function(){
-  var left = this.additive(), la,ll;
+  var left = this.additive(), ll;
   // @perf
   if(ll = (this.eat(['<', '>', '>=', '<=']) || this.eat('IDENT', 'in') )){
     return this.getset(left.get + ll.value + this.relation().get);
@@ -479,8 +478,7 @@ op.unary = function(){
 // member . ident  
 
 op.member = function(base, last, pathes){
-  var ll, path, value, computed;
-  var first = !base;
+  var ll, path;
 
   if(!base){ //first
     path = this.primary();
@@ -545,7 +543,7 @@ op.member = function(base, last, pathes){
  */
 op.arguments = function(end){
   end = end || ')'
-  var args = [], ll;
+  var args = [];
   do{
     if(this.la() !== end){
       args.push(this.assign().get)
@@ -604,12 +602,12 @@ op.primary = function(){
 op.object = function(){
   var code = [this.match('{').type];
 
-  var ll = this.eat(['STRING', 'IDENT', 'NUMBER']);;
+  var ll = this.eat( ['STRING', 'IDENT', 'NUMBER'] );
   while(ll){
     code.push("'" + ll.value + "'" + this.match(':').type);
     var get = this.assign().get;
     code.push(get);
-    ll=null;
+    ll = null;
     if(this.eat(",") && (ll = this.eat(['STRING', 'IDENT', 'NUMBER'])) ) code.push(",");
   }
   code.push(this.match('}').type);

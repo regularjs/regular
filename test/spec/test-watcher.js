@@ -11,7 +11,7 @@ void function(){
       }
     })
 
-    it('it should watch once when have  ', function(){
+    it('it should watch once when have @(str) ', function(){
       var trigger = 0;
       var trigger2 =0;
       watcher.$watch('@(str)', function(){
@@ -29,6 +29,7 @@ void function(){
       expect(trigger2).to.equal(2);
 
     } )
+
     it("beacuse of cache passed same expr should return the same expression", function(){
       var expr = parse.expression("a+b");
       var expr2 = parse.expression("a+b");

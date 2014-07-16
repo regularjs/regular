@@ -36,16 +36,14 @@ var API = {
     },
     // bubble event
     $emit: function(event){
-        var handles = this._handles, calls;
+        var handles = this._handles, calls, args, type;
         if(!event) return;
         if(typeof event === "object"){
-           var type = event.type, 
-            args = event.data || [],
-            stop = event.stop;
+            type = event.type;
+            args = event.data || [];
         }else{
-        var args = slice.call(arguments, 1),
-            type = event,
-            $parent = this.$parent;
+            args = slice.call(arguments, 1);
+            type = event;
         }
         if (!handles || !(calls = handles[type])) return this;
         for (var i = 0, len = calls.length; i < len; i++) {
@@ -55,18 +53,18 @@ var API = {
         return this;
     },
     // capture  event
-    $broadcast: function(event){
+    $broadcast: function(){
         
     }
 }
 // container class
-function Event(handles) {
+function Event() {
   if (arguments.length) this.$on.apply(this, arguments);
-};
+}
 _.extend(Event.prototype, API)
 
 Event.mixTo = function(obj){
-  obj = typeof obj == "function" ? obj.prototype : obj;
+  obj = typeof obj === "function" ? obj.prototype : obj;
   _.extend(obj, API)
 }
 module.exports = Event;

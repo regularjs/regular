@@ -6,6 +6,7 @@ function Watcher(){}
 
 var methods = {
   $watch: function(expr, fn, options){
+    var get, once, test;
     if(!this._watchers) this._watchers = [];
     options = options || {};
     if(options === true){
@@ -14,11 +15,11 @@ var methods = {
     var uid = _.uid('w_');
     if(Array.isArray(expr)){
       var tests = [];
-      for(var i=0,len = expr.length; i < len; i++){
+      for(var i = 0,len = expr.length; i < len; i++){
           tests.push(parseExpression(expr[i]).get) 
       }
       var prev = [];
-      var test = function(context){
+      test = function(context){
         var equal = true;
         for(var i =0, len = tests.length; i < len; i++){
           var splice = tests[i](context);
@@ -30,9 +31,9 @@ var methods = {
         return equal? false: prev;
       }
     }else{
-      var expr = parseExpression(expr);
-      var get = expr.get;
-      var once = expr.once || expr.constant;
+      expr = parseExpression(expr);
+      get = expr.get;
+      once = expr.once || expr.constant;
     }
     this._watchers.push({
       id: uid, 
@@ -54,12 +55,12 @@ var methods = {
         this.$unwatch(uid[i]);
       }
     }else{
-      var watchers = this._watchers, watcher, len;
-      if(!uid || !watchers || !(len = watchers.length)) return;
-      for(;len--;){
-        watcher = watchers[len];
+      var watchers = this._watchers, watcher, wlen;
+      if(!uid || !watchers || !(wlen = watchers.length)) return;
+      for(;wlen--;){
+        watcher = watchers[wlen];
         if(watcher && watcher.id === uid ){
-          watchers.splice(len, 1);
+          watchers.splice(wlen, 1);
         }
       }
     }
@@ -90,14 +91,16 @@ var methods = {
 
     var watchers = this._watchers || (this._watchers = []);
     if(!watchers || !watchers.length) return;
-    var dirty = false, anyupdates;
+    var dirty = false;
     for(var i = 0, len = watchers.length;i < len; i++){
+      var loopDirty = false;
       var watcher = watchers[i];
       if(!watcher) continue;
       if(watcher.test) { //multi 
         var result = watcher.test(this);
         if(result){
           dirty = true;
+          loopDirty = true;
           watcher.fn.apply(this, result)
         }
         continue;
@@ -105,7 +108,7 @@ var methods = {
       var now = watcher.get(this);
       var last = watcher.last;
       var eq = true;
-      if(_.typeOf( now ) == 'object' && watcher.deep){
+      if(_.typeOf( now ) === 'object' && watcher.deep){
         if(!watcher.last){
            eq = false;
          }else{
@@ -116,8 +119,8 @@ var methods = {
             }
           }
           if(eq !== false){
-            for(var j in last){
-              if(last[j] !== now[j]){
+            for(var m in last){
+              if(last[m] !== now[m]){
                 eq = false;
                 break;
               }
@@ -130,6 +133,7 @@ var methods = {
       if(eq === false || watcher.force){
         eq = false;
         watcher.force = null;
+        loopDirty = true;
         watcher.fn.call(this, now, watcher.last);
         if(typeof now !== 'object'|| watcher.deep){
           watcher.last = _.clone(now);
@@ -137,17 +141,16 @@ var methods = {
           watcher.last = now;
         }
       }else{
-        if(_.typeOf(eq)=='array' && eq.length){
+        if( _.typeOf(eq) === 'array' && eq.length ){
           watcher.fn.call(this, now, eq);
+          loopDirty = true;
           watcher.last = _.clone(now);
         }else{
           eq = true;
         }
       }
       if(eq !== true) dirty = true;
-      if(watcher.once){
-         watchers.splice(i, 1);
-      }
+      if(loopDirty && watcher.once) watchers.splice(i, 1);
     }
     if(this.$emit && dirty) this.$emit('update');
     return dirty;
@@ -163,7 +166,6 @@ var methods = {
     if(path != null){
       var type = _.typeOf(path);
       if( type === 'string' || path.type === 'expression' ){
-        var base = this.data;
         path = parseExpression(path);
         path.set(this, value);
       }else if(type === 'function'){
@@ -175,7 +177,7 @@ var methods = {
           }
         }
       }
-    };
+    }
     (this.$context || this).$digest();
   },
   _record: function(){
@@ -188,12 +190,16 @@ var methods = {
   }
 }
 
+function dirtyWatcher(watcher, index, watchers){
+
+}
+
 
 _.extend(Watcher.prototype, methods)
 
 
 Watcher.mixTo = function(obj){
-  obj = typeof obj == "function" ? obj.prototype : obj;
+  obj = typeof obj === "function" ? obj.prototype : obj;
   return _.extend(obj, methods)
 }
 

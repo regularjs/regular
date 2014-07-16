@@ -1,6 +1,6 @@
 /**
 @author	leeluolee
-@version	0.1.2
+@version	0.2.0
 @homepage	http://regularjs.github.io
 */
 ;(function(){
@@ -1198,7 +1198,7 @@ walkers['if'] = function(ast, options){
 
 walkers.expression = function(ast){
   var node = document.createTextNode("");
-  var watchid = this.$watch(ast, function(newval){
+  this.$watch(ast, function(newval){
     dom.text(node, "" + (newval == null? "": String(newval)));
   })
   return node;
@@ -1843,7 +1843,7 @@ function wrapHander(handler){
 function Lexer(input, opts){
   this.input = (input||"").trim();
   this.opts = opts || {};
-  this.map = this.opts.mode != 2?  map1: map2;
+  this.map = this.opts.mode !== 2?  map1: map2;
   this.states = ["INIT"];
   if(this.opts.state) this.states.push( this.opts.state );
 }
@@ -1852,9 +1852,10 @@ var lo = Lexer.prototype
 
 
 lo.lex = function(str){
-  str = (str||this.input).trim();
-  var tokens = [], remain = this.input = str, 
-    TRUNK, split, test,mlen, token, state;
+  str = (str || this.input).trim();
+  var tokens = [], split, test,mlen, token, state;
+  this.input = str, 
+    
   // init the pos index
   this.index=0;
   var i = 0;
@@ -1885,7 +1886,7 @@ lo.error = function(msg){
 
 lo._process = function(args, split,str){
   // console.log(args.join(","), this.state())
-  var links = split.links,marched = false;
+  var links = split.links, marched = false, token;
 
   for(var len = links.length, i=0;i<len ;i++){
     var link = links[i],
@@ -1895,7 +1896,7 @@ lo._process = function(args, split,str){
     if(testSubCapure(args[index])) {
       marched = true;
       if(handler){
-        var token = handler.apply(this, args.slice(index, index + link[1]))
+        token = handler.apply(this, args.slice(index, index + link[1]))
         if(token)  token.pos = this.index;
       }
       break;
@@ -1967,6 +1968,11 @@ function genMap(rules){
 
 function setup(map){
   var split, rules, trunks, handler, reg, retain, rule;
+  function replaceFn(all, one){
+    return typeof macro[one] === 'string'? 
+      _.escapeRegExp(macro[one]) 
+      : String(macro[one]).slice(1,-1);
+  }
 
   for(var i in map){
 
@@ -1980,14 +1986,12 @@ function setup(map){
       reg = rule[0];
       handler = rule[1];
 
-      if(typeof handler == 'string'){
+      if(typeof handler === 'string'){
         handler = wrapHander(handler);
       }
-      if(_.typeOf(reg) == 'regexp') reg = reg.toString().slice(1, -1);
+      if(_.typeOf(reg) === 'regexp') reg = reg.toString().slice(1, -1);
 
-      reg = reg.replace(/\{(\w+)\}/g, function(all, one){
-        return typeof macro[one] == 'string'? _.escapeRegExp(macro[one]): String(macro[one]).slice(1,-1);
-      })
+      reg = reg.replace(/\{(\w+)\}/g, replaceFn)
       retain = _.findSubCapture(reg) + 1; 
       split.links.push([split.curIndex, retain, handler]); 
       split.curIndex += retain;
@@ -2007,13 +2011,13 @@ var rules = {
   // ---------------
 
   // mode1's JST ENTER RULE
-  ENTER_JST: [/[^\x00\<]*?(?={BEGIN})/, function(all,one){
+  ENTER_JST: [/[^\x00<]*?(?={BEGIN})/, function(all){
     this.enter('JST');
     if(all) return {type: 'TEXT', value: all}
   }],
 
   // mode2's JST ENTER RULE
-  ENTER_JST2: [/[^\x00]*?(?={BEGIN})/, function(all,one){
+  ENTER_JST2: [/[^\x00]*?(?={BEGIN})/, function(all){
     this.enter('JST');
     if(all) return {type: 'TEXT', value: all}
   }],
@@ -2039,7 +2043,7 @@ var rules = {
   }, 'TAG'],
 
     // mode2's JST ENTER RULE
-  TAG_ENTER_JST: [/(?={BEGIN})/, function(all,one){
+  TAG_ENTER_JST: [/(?={BEGIN})/, function(){
     this.enter('JST');
   }, 'TAG'],
 
@@ -2055,7 +2059,7 @@ var rules = {
   }, 'TAG'],
 
   TAG_SPACE: [/{SPACE}+/, null, 'TAG'],
-  TAG_COMMENT: [/\<\!--([^\x00]*?)--\>/, null ,'TAG'],
+  TAG_COMMENT: [/<\!--([^\x00]*?)--\>/, null ,'TAG'],
 
   // 3. JST
   // -------------------
@@ -2082,7 +2086,7 @@ var rules = {
     this.leave();
   }, 'JST'],
   JST_EXPR_OPEN: ['{BEGIN}',function(all, one){
-    var escape = one == '=';
+    var escape = one === '=';
     return {
       type: 'EXPR_OPEN',
       escape: escape
@@ -2090,7 +2094,7 @@ var rules = {
   }, 'JST'],
   JST_IDENT: ['{IDENT}', 'IDENT', 'JST'],
   JST_SPACE: [/[ \r\n\f]+/, null, 'JST'],
-  JST_PUNCHOR: [/[=!]?==|[-=><+*\/%\!]?\=|\|\||&&|\@\(|\.\.|[\<\>\[\]\(\)\-\|\{}\+\*\/%?:\.!,]/, function(all){
+  JST_PUNCHOR: [/[=!]?==|[-=><+*\/%\!]?\=|\|\||&&|\@\(|\.\.|[<\>\[\]\(\)\-\|\{}\+\*\/%?:\.!,]/, function(all){
     return { type: all, value: all }
   },'JST'],
 
@@ -2241,7 +2245,7 @@ function Parser(input, opts){
 var op = Parser.prototype;
 
 
-op.parse = function(str){
+op.parse = function(){
   this.pos = 0;
   return this.program();
 }
@@ -2256,22 +2260,22 @@ op.ll =  function(k){
   return this.tokens[pos];
 }
   // lookahead
-op.la = function(k, value){
+op.la = function(k){
   return (this.ll(k) || '').type;
 }
 
 op.match = function(type, value){
+  var ll;
   if(!(ll = this.eat(type, value))){
-    var ll  = this.ll();
+    ll  = this.ll();
     this.error('expect [' + type + (value == null? '':':'+ value) + ']" -> got "[' + ll.type + (value==null? '':':'+ll.value) + ']', ll.pos)
   }else{
-      return ll;
+    return ll;
   }
 }
 
 op.error = function(msg, pos){
-  // console.log(this.ll())
-  var msg =  "Parse Error: " + msg +  ':\n' + _.trackErrorPos(this.input, typeof pos === 'number'? pos: this.ll().pos||0);
+  msg =  "Parse Error: " + msg +  ':\n' + _.trackErrorPos(this.input, typeof pos === 'number'? pos: this.ll().pos||0);
   throw new Error(msg);
 }
 
@@ -2283,14 +2287,13 @@ op.eat = function(type, value){
   var ll = this.ll();
   if(typeof type !== 'string'){
     for(var len = type.length ; len--;){
-      if(ll.type == type[len]) {
+      if(ll.type === type[len]) {
         this.next();
         return ll;
       }
     }
   }else{
-    if( ll.type == type 
-        && (typeof value == 'undefined' || ll.value == value) ){
+    if( ll.type === type && (typeof value === 'undefined' || ll.value === value) ){
        this.next();
        return ll;
     }
@@ -2302,7 +2305,7 @@ op.eat = function(type, value){
 //  :EOF
 //  | (statement)* EOF
 op.program = function(){
-  var statements = [], statement, ll = this.ll();
+  var statements = [],  ll = this.ll();
   while(ll.type !== 'EOF' && ll.type !=='TAG_CLOSE'){
     statements.push(this.statement());
     ll = this.ll();
@@ -2315,7 +2318,7 @@ op.program = function(){
 //  | jst
 //  | text
 op.statement = function(){
-  var ll = this.ll(),la;
+  var ll = this.ll();
   switch(ll.type){
     case 'NAME':
     case 'TEXT':
@@ -2378,9 +2381,9 @@ op.xentity = function(ll){
 // stag     ::=    '<' Name (S attr)* S? '>'  
 // attr    ::=     Name Eq attvalue
 op.attrs = function(isAttribute){
-
+  var eat
   if(!isAttribute){
-    var eat = ["NAME", "OPEN"]
+    eat = ["NAME", "OPEN"]
   }else{
     eat = ["NAME"]
   }
@@ -2406,7 +2409,7 @@ op.attvalue = function(){
       if(~value.indexOf('{{')){
         var constant = true;
         var parsed = new Parser(value, { mode: 2 }).parse();
-        if(parsed.length==1 && parsed[0].type==='expression') return parsed[0];
+        if(parsed.length === 1 && parsed[0].type === 'expression') return parsed[0];
         var body = [];
         parsed.forEach(function(item){
           if(!item.constant) constant=false;
@@ -2426,9 +2429,9 @@ op.attvalue = function(){
 
 // {{#}}
 op.directive = function(){
-  name = this.ll().value;
+  var name = this.ll().value;
   this.next();
-  if(typeof this[name] == 'function'){
+  if(typeof this[name] === 'function'){
     return this[name]()
   }else{
     this.error('Undefined directive['+ name +']');
@@ -2437,7 +2440,7 @@ op.directive = function(){
 
 // {{}}
 op.interplation = function(){
-  var nowatch = this.match('EXPR_OPEN').nowatch;
+  this.match('EXPR_OPEN');
   var res = this.expression(true);
   this.match('END');
   return res;
@@ -2460,22 +2463,22 @@ op["if"] = function(tag){
 
   this.match('END');
 
-  var ll, type, close;
+  var ll, close;
   while( ! (close = this.eat('CLOSE')) ){
     ll = this.ll();
-    if(ll.type == 'OPEN'){
-      switch(ll.value){
+    if( ll.type === 'OPEN' ){
+      switch( ll.value ){
         case 'else':
           container = alternate;
           this.next();
-          this.match('END');
+          this.match( 'END' );
           break;
         case 'elseif':
           this.next();
-          alternate.push(this["if"](tag))
-          return node['if'](test, consequent, alternate)
+          alternate.push( this["if"](tag) );
+          return node['if']( test, consequent, alternate );
         default:
-          container.push(this[statement](true))
+          container.push( this[statement](true) );
       }
     }else{
       container.push(this[statement](true));
@@ -2491,7 +2494,7 @@ op["if"] = function(tag){
 // {{#list}}
 op.list = function(){
   // sequence can be a list or hash
-  var sequence = this.expression(), variable, body, ll;
+  var sequence = this.expression(), variable, ll;
   var consequent = [], alternate=[];
   var container = consequent;
 
@@ -2515,18 +2518,18 @@ op.list = function(){
 
 
 op.expression = function(){
-  var ll = this.ll();
+  var expression;
   if(this.eat('@(')){ //once bind
     expression = this.expr();
     expression.once = true;
     this.match(')')
   }else{
-    var expression = this.expr();
+    expression = this.expr();
   }
   return expression;
 }
 
-op.expr = function(filter){
+op.expr = function(){
   this.depend = [];
 
   var buffer = this.filter()
@@ -2632,7 +2635,7 @@ op.equal = function(){
 // relation >= additive
 // relation in additive
 op.relation = function(){
-  var left = this.additive(), la,ll;
+  var left = this.additive(), ll;
   // @perf
   if(ll = (this.eat(['<', '>', '>=', '<=']) || this.eat('IDENT', 'in') )){
     return this.getset(left.get + ll.value + this.relation().get);
@@ -2698,8 +2701,7 @@ op.unary = function(){
 // member . ident  
 
 op.member = function(base, last, pathes){
-  var ll, path, value, computed;
-  var first = !base;
+  var ll, path;
 
   if(!base){ //first
     path = this.primary();
@@ -2764,7 +2766,7 @@ op.member = function(base, last, pathes){
  */
 op.arguments = function(end){
   end = end || ')'
-  var args = [], ll;
+  var args = [];
   do{
     if(this.la() !== end){
       args.push(this.assign().get)
@@ -2823,12 +2825,12 @@ op.primary = function(){
 op.object = function(){
   var code = [this.match('{').type];
 
-  var ll = this.eat(['STRING', 'IDENT', 'NUMBER']);;
+  var ll = this.eat( ['STRING', 'IDENT', 'NUMBER'] );
   while(ll){
     code.push("'" + ll.value + "'" + this.match(':').type);
     var get = this.assign().get;
     code.push(get);
-    ll=null;
+    ll = null;
     if(this.eat(",") && (ll = this.eat(['STRING', 'IDENT', 'NUMBER'])) ) code.push(",");
   }
   code.push(this.match('}').type);
@@ -2881,7 +2883,7 @@ require.register("regularjs/src/helper/extend.js", function(exports, require, mo
   
 // inspired by backbone's extend and klass
 var _ = require("../util.js"),
-  fnTest = /xy/.test(function(){xy}) ? /\bsupr\b/ : /.*/,
+  fnTest = /xy/.test(function(){"xy";}) ? /\bsupr\b/:/.*/,
   isFn = function(o){return typeof o === "function"};
 
 
@@ -2899,8 +2901,8 @@ function process( what, o, supro ) {
   for ( var k in o ) {
     if (o.hasOwnProperty(k)) {
 
-      what[k] = isFn( o[k] ) && isFn( supro[k] )
-        && fnTest.test( o[k] ) ? wrap(k, o[k], supro) : o[k];
+      what[k] = isFn( o[k] ) && isFn( supro[k] ) && 
+        fnTest.test( o[k] ) ? wrap(k, o[k], supro) : o[k];
     }
   }
 }
@@ -2930,7 +2932,8 @@ module.exports = function extend(o){
 
   if(supr.__after__) supr.__after__.call(fn, supr, o);
 
-  (fn.implement = implement)(o);
+  fn.implement = implement
+  fn.implement(o)
   fn.extend = extend;
   return fn;
 }
@@ -2988,7 +2991,7 @@ extend(Array.prototype, {
 
 // Function proto;
 extend(Function.prototype, {
-  bind: function(context, arg){
+  bind: function(context){
     var fn = this;
     var preArgs = slice.call(arguments, 1);
     return function(){
@@ -3049,6 +3052,7 @@ function Watcher(){}
 
 var methods = {
   $watch: function(expr, fn, options){
+    var get, once, test;
     if(!this._watchers) this._watchers = [];
     options = options || {};
     if(options === true){
@@ -3057,11 +3061,11 @@ var methods = {
     var uid = _.uid('w_');
     if(Array.isArray(expr)){
       var tests = [];
-      for(var i=0,len = expr.length; i < len; i++){
+      for(var i = 0,len = expr.length; i < len; i++){
           tests.push(parseExpression(expr[i]).get) 
       }
       var prev = [];
-      var test = function(context){
+      test = function(context){
         var equal = true;
         for(var i =0, len = tests.length; i < len; i++){
           var splice = tests[i](context);
@@ -3073,9 +3077,9 @@ var methods = {
         return equal? false: prev;
       }
     }else{
-      var expr = parseExpression(expr);
-      var get = expr.get;
-      var once = expr.once || expr.constant;
+      expr = parseExpression(expr);
+      get = expr.get;
+      once = expr.once || expr.constant;
     }
     this._watchers.push({
       id: uid, 
@@ -3097,12 +3101,12 @@ var methods = {
         this.$unwatch(uid[i]);
       }
     }else{
-      var watchers = this._watchers, watcher, len;
-      if(!uid || !watchers || !(len = watchers.length)) return;
-      for(;len--;){
-        watcher = watchers[len];
+      var watchers = this._watchers, watcher, wlen;
+      if(!uid || !watchers || !(wlen = watchers.length)) return;
+      for(;wlen--;){
+        watcher = watchers[wlen];
         if(watcher && watcher.id === uid ){
-          watchers.splice(len, 1);
+          watchers.splice(wlen, 1);
         }
       }
     }
@@ -3133,14 +3137,16 @@ var methods = {
 
     var watchers = this._watchers || (this._watchers = []);
     if(!watchers || !watchers.length) return;
-    var dirty = false, anyupdates;
+    var dirty = false;
     for(var i = 0, len = watchers.length;i < len; i++){
+      var loopDirty = false;
       var watcher = watchers[i];
       if(!watcher) continue;
       if(watcher.test) { //multi 
         var result = watcher.test(this);
         if(result){
           dirty = true;
+          loopDirty = true;
           watcher.fn.apply(this, result)
         }
         continue;
@@ -3148,7 +3154,7 @@ var methods = {
       var now = watcher.get(this);
       var last = watcher.last;
       var eq = true;
-      if(_.typeOf( now ) == 'object' && watcher.deep){
+      if(_.typeOf( now ) === 'object' && watcher.deep){
         if(!watcher.last){
            eq = false;
          }else{
@@ -3159,8 +3165,8 @@ var methods = {
             }
           }
           if(eq !== false){
-            for(var j in last){
-              if(last[j] !== now[j]){
+            for(var m in last){
+              if(last[m] !== now[m]){
                 eq = false;
                 break;
               }
@@ -3173,6 +3179,7 @@ var methods = {
       if(eq === false || watcher.force){
         eq = false;
         watcher.force = null;
+        loopDirty = true;
         watcher.fn.call(this, now, watcher.last);
         if(typeof now !== 'object'|| watcher.deep){
           watcher.last = _.clone(now);
@@ -3180,17 +3187,16 @@ var methods = {
           watcher.last = now;
         }
       }else{
-        if(_.typeOf(eq)=='array' && eq.length){
+        if( _.typeOf(eq) === 'array' && eq.length ){
           watcher.fn.call(this, now, eq);
+          loopDirty = true;
           watcher.last = _.clone(now);
         }else{
           eq = true;
         }
       }
       if(eq !== true) dirty = true;
-      if(watcher.once){
-         watchers.splice(i, 1);
-      }
+      if(loopDirty && watcher.once) watchers.splice(i, 1);
     }
     if(this.$emit && dirty) this.$emit('update');
     return dirty;
@@ -3206,7 +3212,6 @@ var methods = {
     if(path != null){
       var type = _.typeOf(path);
       if( type === 'string' || path.type === 'expression' ){
-        var base = this.data;
         path = parseExpression(path);
         path.set(this, value);
       }else if(type === 'function'){
@@ -3218,7 +3223,7 @@ var methods = {
           }
         }
       }
-    };
+    }
     (this.$context || this).$digest();
   },
   _record: function(){
@@ -3231,12 +3236,16 @@ var methods = {
   }
 }
 
+function dirtyWatcher(watcher, index, watchers){
+
+}
+
 
 _.extend(Watcher.prototype, methods)
 
 
 Watcher.mixTo = function(obj){
-  obj = typeof obj == "function" ? obj.prototype : obj;
+  obj = typeof obj === "function" ? obj.prototype : obj;
   return _.extend(obj, methods)
 }
 
@@ -3281,16 +3290,14 @@ var API = {
     },
     // bubble event
     $emit: function(event){
-        var handles = this._handles, calls;
+        var handles = this._handles, calls, args, type;
         if(!event) return;
         if(typeof event === "object"){
-           var type = event.type, 
-            args = event.data || [],
-            stop = event.stop;
+            type = event.type;
+            args = event.data || [];
         }else{
-        var args = slice.call(arguments, 1),
-            type = event,
-            $parent = this.$parent;
+            args = slice.call(arguments, 1);
+            type = event;
         }
         if (!handles || !(calls = handles[type])) return this;
         for (var i = 0, len = calls.length; i < len; i++) {
@@ -3300,18 +3307,18 @@ var API = {
         return this;
     },
     // capture  event
-    $broadcast: function(event){
+    $broadcast: function(){
         
     }
 }
 // container class
-function Event(handles) {
+function Event() {
   if (arguments.length) this.$on.apply(this, arguments);
-};
+}
 _.extend(Event.prototype, API)
 
 Event.mixTo = function(obj){
-  obj = typeof obj == "function" ? obj.prototype : obj;
+  obj = typeof obj === "function" ? obj.prototype : obj;
   _.extend(obj, API)
 }
 module.exports = Event;
@@ -3323,38 +3330,35 @@ var animate = {};
 var env = require("../env.js");
 
 
-var transitionEnd = 'transitionend', 
+var 
+  transitionEnd = 'transitionend', 
   animationEnd = 'animationend', 
   transitionProperty = 'transition', 
   animationProperty = 'animation';
-if('ontransitionend' in window) {
-  // W3C ignored @TODO
-  // transitionEnd = 
-} else if('onwebkittransitionend' in window) {
-  // Chrome/Saf (+ Mobile Saf)/Android
-  transitionEnd += ' webkitTransitionEnd';
-  transitionProperty = 'webkitTransition'
-} else if('onotransitionend' in dom.tNode || navigator.appName == 'Opera') {
-  // Opera
-  transitionEnd += ' oTransitionEnd';
-  transitionProperty = 'oTransition';
+
+if(!('ontransitionend' in window)){
+  if('onwebkittransitionend' in window) {
+    // Chrome/Saf (+ Mobile Saf)/Android
+    transitionEnd += ' webkitTransitionEnd';
+    transitionProperty = 'webkitTransition'
+  } else if('onotransitionend' in dom.tNode || navigator.appName === 'Opera') {
+    // Opera
+    transitionEnd += ' oTransitionEnd';
+    transitionProperty = 'oTransition';
+  }
 }
+if(!('onanimationend' in window)){
+  if ('onwebkitanimationend' in window){
+    // Chrome/Saf (+ Mobile Saf)/Android
+    animationEnd += ' webkitAnimationEnd';
+    animationProperty = 'webkitAnimation';
 
-if('onanimationend' in window){
-  // W3C ignored @TODO
-  // animationEnd = 'animationend';
-}else if ('onwebkitanimationend' in window){
-  // Chrome/Saf (+ Mobile Saf)/Android
-  animationEnd += ' webkitAnimationEnd';
-  animationProperty = 'webkitAnimation';
-
-}else if ('onoanimationend' in dom.tNode){
-  // Opera
-  animationEnd += ' oAnimationEnd';
-  animationProperty = 'oAnimation';
+  }else if ('onoanimationend' in dom.tNode){
+    // Opera
+    animationEnd += ' oAnimationEnd';
+    animationProperty = 'oAnimation';
+  }
 }
-
-
 
 /**
  * inject node with animation
@@ -3373,23 +3377,24 @@ animate.inject = function(node, refer ,direction, callback){
       fragment.appendChild(node[i]); 
     }
     dom.inject(fragment, refer, direction);
-    for(var i = 0; i < len; i++ ){
+    var enterCallback = function (){
+      count++;
+      if(count===count) callback();
+    }
+    for(i = 0; i < len; i++ ){
       if(node[i].nodeType===1){
         total++;
-        startAnimate(node[i], 'r-enter', function(){
-          count++;
-          if(count===count) callback();
-        })
+        startAnimate(node[i], 'r-enter', enterCallback)
       }
-      if(total == count) callback();
+      if(total === count) callback();
     }
   }else{
     dom.inject(node, refer, direction);
     if(node.nodeType === 1 && callback !== false){
       startAnimate(node, 'r-enter', callback);
-    }else{
-      // ignored
     }
+    // ignored else
+    
   }
 }
 
@@ -3400,8 +3405,7 @@ animate.inject = function(node, refer ,direction, callback){
  * @return {[type]}            [description]
  */
 animate.remove = function(node, callback){
-  callback = callback || _.noop;;
-  var d = +new Date();
+  callback = callback || _.noop;
   startAnimate(node, 'r-leave', function(){
     dom.remove(node);
     callback();
@@ -3411,7 +3415,7 @@ animate.remove = function(node, callback){
 
 function startAnimate(node, className, callback){
   var animtion = dom.attr(node ,'r-animate')
-  if((!animationEnd && !transitionEnd) || env.isRunning || animtion==undefined){
+  if((!animationEnd && !transitionEnd) || env.isRunning || animtion === undefined){
     return callback();
   }
 
@@ -3420,13 +3424,12 @@ function startAnimate(node, className, callback){
   dom.on(node, animationEnd, onAnimateEnd)
   dom.on(node, transitionEnd, onAnimateEnd)
   var timeout = getMaxTimeout(node);
-  var isEnd = false;
   dom.nextReflow(function(){
     dom.addClass(node, activeClassName);
   })
   var tid = setTimeout(onAnimateEnd, timeout);
 
-  function onAnimateEnd(ev){
+  function onAnimateEnd(){
     clearTimeout(tid);
     dom.delClass(node, activeClassName);
     dom.delClass(node, className);
@@ -3436,8 +3439,6 @@ function startAnimate(node, className, callback){
   }
 }
 
-
-"<div r-animation={{left? 'left': 'right'}}></div>"
 
 /**
  * get maxtimeout
@@ -3488,19 +3489,19 @@ var combine = module.exports = {
 
   // get the initial dom in object
   node: function(item){
-    var children;
+    var children,node;
     if(item.element) return item.element;
     if(typeof item.node === "function") return item.node();
     if(typeof item.nodeType === "number") return item;
     if(item.group) return combine.node(item.group)
     if(children = item.children){
-      if(children.length == 1){
-        var node = combine.node(children[0])
-        return node;
+      if(children.length === 1){
+        
+        return combine.node(children[0]);
       }
       var nodes = [];
       for(var i = 0, len = children.length; i < len; i++ ){
-        var node = combine.node(children[i]);
+        node = combine.node(children[i]);
         if(Array.isArray(node)){
           nodes.push.apply(nodes, node)
         }else{
@@ -3643,7 +3644,7 @@ Regular.directive("r-model", function(elem, value){
 
   if( modelHandlers[sign] ) return modelHandlers[sign].call(this, elem, value);
   else if(tag === "input"){
-    return modelHandlers["text"].call(this, elem, value);
+    return modelHandlers.text.call(this, elem, value);
   }
 });
 
@@ -3654,18 +3655,17 @@ Regular.directive("r-model", function(elem, value){
 function initSelect( elem, parsed){
   var self = this;
   var inProgress = false;
-  var value = elem.value;
-  this.$watch(parsed, function(newValue, oldValue){
+  this.$watch(parsed, function(newValue){
     if(inProgress) return;
     var children = _.slice(elem.getElementsByTagName('option'))
     children.forEach(function(node, index){
-      if(node.value == newValue){
+      if(node.value === newValue){
         elem.selectedIndex = index;
       }
     })
   });
 
-  function handler(ev){
+  function handler(){
     parsed.set(self, this.value);
     inProgress = true;
     self.$update();
@@ -3861,26 +3861,25 @@ Regular.directive(/^on-\w+$/, function(elem, value, name){
 
 });
 require.register("regularjs/src/module/animation.js", function(exports, require, module){
-var Regular = require("../Regular.js");
-var _ = require("../util.js");
-var animate = require('../helper/animate.js');
+// var _ = require("../util.js");
+// var animate = require('../helper/animate.js');
 
-/**
- * Timeout Module
- * @param {Component} Component 
- */
+// /**
+//  * Timeout Module
+//  * @param {Component} Component 
+//  */
 
-var cache = _.cache();
-function AnimationPlugin(Component, Regular){
+// var cache = _.cache();
+// function AnimationPlugin(Component, Regular){
 
-  Component.directive('r-animate', function(el, value){
+//   Component.directive('r-animate', function(el, value){
     
-  })
+//   })
 
-}
+// }
 
 
-// Regular.plugin('timeout', TimeoutModule);
+// // Regular.plugin('timeout', TimeoutModule);
 });
 require.register("regularjs/src/module/timeout.js", function(exports, require, module){
 var Regular = require("../Regular.js");

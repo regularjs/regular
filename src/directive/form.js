@@ -26,7 +26,7 @@ Regular.directive("r-model", function(elem, value){
 
   if( modelHandlers[sign] ) return modelHandlers[sign].call(this, elem, value);
   else if(tag === "input"){
-    return modelHandlers["text"].call(this, elem, value);
+    return modelHandlers.text.call(this, elem, value);
   }
 });
 
@@ -37,18 +37,17 @@ Regular.directive("r-model", function(elem, value){
 function initSelect( elem, parsed){
   var self = this;
   var inProgress = false;
-  var value = elem.value;
-  this.$watch(parsed, function(newValue, oldValue){
+  this.$watch(parsed, function(newValue){
     if(inProgress) return;
     var children = _.slice(elem.getElementsByTagName('option'))
     children.forEach(function(node, index){
-      if(node.value == newValue){
+      if(node.value === newValue){
         elem.selectedIndex = index;
       }
     })
   });
 
-  function handler(ev){
+  function handler(){
     parsed.set(self, this.value);
     inProgress = true;
     self.$update();

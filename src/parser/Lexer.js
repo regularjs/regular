@@ -14,7 +14,7 @@ function wrapHander(handler){
 function Lexer(input, opts){
   this.input = (input||"").trim();
   this.opts = opts || {};
-  this.map = this.opts.mode != 2?  map1: map2;
+  this.map = this.opts.mode !== 2?  map1: map2;
   this.states = ["INIT"];
   if(this.opts.state) this.states.push( this.opts.state );
 }
@@ -23,9 +23,10 @@ var lo = Lexer.prototype
 
 
 lo.lex = function(str){
-  str = (str||this.input).trim();
-  var tokens = [], remain = this.input = str, 
-    TRUNK, split, test,mlen, token, state;
+  str = (str || this.input).trim();
+  var tokens = [], split, test,mlen, token, state;
+  this.input = str, 
+    
   // init the pos index
   this.index=0;
   var i = 0;
@@ -56,7 +57,7 @@ lo.error = function(msg){
 
 lo._process = function(args, split,str){
   // console.log(args.join(","), this.state())
-  var links = split.links,marched = false;
+  var links = split.links, marched = false, token;
 
   for(var len = links.length, i=0;i<len ;i++){
     var link = links[i],
@@ -66,7 +67,7 @@ lo._process = function(args, split,str){
     if(testSubCapure(args[index])) {
       marched = true;
       if(handler){
-        var token = handler.apply(this, args.slice(index, index + link[1]))
+        token = handler.apply(this, args.slice(index, index + link[1]))
         if(token)  token.pos = this.index;
       }
       break;
@@ -138,6 +139,11 @@ function genMap(rules){
 
 function setup(map){
   var split, rules, trunks, handler, reg, retain, rule;
+  function replaceFn(all, one){
+    return typeof macro[one] === 'string'? 
+      _.escapeRegExp(macro[one]) 
+      : String(macro[one]).slice(1,-1);
+  }
 
   for(var i in map){
 
@@ -151,14 +157,12 @@ function setup(map){
       reg = rule[0];
       handler = rule[1];
 
-      if(typeof handler == 'string'){
+      if(typeof handler === 'string'){
         handler = wrapHander(handler);
       }
-      if(_.typeOf(reg) == 'regexp') reg = reg.toString().slice(1, -1);
+      if(_.typeOf(reg) === 'regexp') reg = reg.toString().slice(1, -1);
 
-      reg = reg.replace(/\{(\w+)\}/g, function(all, one){
-        return typeof macro[one] == 'string'? _.escapeRegExp(macro[one]): String(macro[one]).slice(1,-1);
-      })
+      reg = reg.replace(/\{(\w+)\}/g, replaceFn)
       retain = _.findSubCapture(reg) + 1; 
       split.links.push([split.curIndex, retain, handler]); 
       split.curIndex += retain;
@@ -178,13 +182,13 @@ var rules = {
   // ---------------
 
   // mode1's JST ENTER RULE
-  ENTER_JST: [/[^\x00\<]*?(?={BEGIN})/, function(all,one){
+  ENTER_JST: [/[^\x00<]*?(?={BEGIN})/, function(all){
     this.enter('JST');
     if(all) return {type: 'TEXT', value: all}
   }],
 
   // mode2's JST ENTER RULE
-  ENTER_JST2: [/[^\x00]*?(?={BEGIN})/, function(all,one){
+  ENTER_JST2: [/[^\x00]*?(?={BEGIN})/, function(all){
     this.enter('JST');
     if(all) return {type: 'TEXT', value: all}
   }],
@@ -210,7 +214,7 @@ var rules = {
   }, 'TAG'],
 
     // mode2's JST ENTER RULE
-  TAG_ENTER_JST: [/(?={BEGIN})/, function(all,one){
+  TAG_ENTER_JST: [/(?={BEGIN})/, function(){
     this.enter('JST');
   }, 'TAG'],
 
@@ -226,7 +230,7 @@ var rules = {
   }, 'TAG'],
 
   TAG_SPACE: [/{SPACE}+/, null, 'TAG'],
-  TAG_COMMENT: [/\<\!--([^\x00]*?)--\>/, null ,'TAG'],
+  TAG_COMMENT: [/<\!--([^\x00]*?)--\>/, null ,'TAG'],
 
   // 3. JST
   // -------------------
@@ -253,7 +257,7 @@ var rules = {
     this.leave();
   }, 'JST'],
   JST_EXPR_OPEN: ['{BEGIN}',function(all, one){
-    var escape = one == '=';
+    var escape = one === '=';
     return {
       type: 'EXPR_OPEN',
       escape: escape
@@ -261,7 +265,7 @@ var rules = {
   }, 'JST'],
   JST_IDENT: ['{IDENT}', 'IDENT', 'JST'],
   JST_SPACE: [/[ \r\n\f]+/, null, 'JST'],
-  JST_PUNCHOR: [/[=!]?==|[-=><+*\/%\!]?\=|\|\||&&|\@\(|\.\.|[\<\>\[\]\(\)\-\|\{}\+\*\/%?:\.!,]/, function(all){
+  JST_PUNCHOR: [/[=!]?==|[-=><+*\/%\!]?\=|\|\||&&|\@\(|\.\.|[<\>\[\]\(\)\-\|\{}\+\*\/%?:\.!,]/, function(all){
     return { type: all, value: all }
   },'JST'],
 

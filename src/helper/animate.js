@@ -4,38 +4,35 @@ var animate = {};
 var env = require("../env.js");
 
 
-var transitionEnd = 'transitionend', 
+var 
+  transitionEnd = 'transitionend', 
   animationEnd = 'animationend', 
   transitionProperty = 'transition', 
   animationProperty = 'animation';
-if('ontransitionend' in window) {
-  // W3C ignored @TODO
-  // transitionEnd = 
-} else if('onwebkittransitionend' in window) {
-  // Chrome/Saf (+ Mobile Saf)/Android
-  transitionEnd += ' webkitTransitionEnd';
-  transitionProperty = 'webkitTransition'
-} else if('onotransitionend' in dom.tNode || navigator.appName == 'Opera') {
-  // Opera
-  transitionEnd += ' oTransitionEnd';
-  transitionProperty = 'oTransition';
+
+if(!('ontransitionend' in window)){
+  if('onwebkittransitionend' in window) {
+    // Chrome/Saf (+ Mobile Saf)/Android
+    transitionEnd += ' webkitTransitionEnd';
+    transitionProperty = 'webkitTransition'
+  } else if('onotransitionend' in dom.tNode || navigator.appName === 'Opera') {
+    // Opera
+    transitionEnd += ' oTransitionEnd';
+    transitionProperty = 'oTransition';
+  }
 }
+if(!('onanimationend' in window)){
+  if ('onwebkitanimationend' in window){
+    // Chrome/Saf (+ Mobile Saf)/Android
+    animationEnd += ' webkitAnimationEnd';
+    animationProperty = 'webkitAnimation';
 
-if('onanimationend' in window){
-  // W3C ignored @TODO
-  // animationEnd = 'animationend';
-}else if ('onwebkitanimationend' in window){
-  // Chrome/Saf (+ Mobile Saf)/Android
-  animationEnd += ' webkitAnimationEnd';
-  animationProperty = 'webkitAnimation';
-
-}else if ('onoanimationend' in dom.tNode){
-  // Opera
-  animationEnd += ' oAnimationEnd';
-  animationProperty = 'oAnimation';
+  }else if ('onoanimationend' in dom.tNode){
+    // Opera
+    animationEnd += ' oAnimationEnd';
+    animationProperty = 'oAnimation';
+  }
 }
-
-
 
 /**
  * inject node with animation
@@ -54,23 +51,24 @@ animate.inject = function(node, refer ,direction, callback){
       fragment.appendChild(node[i]); 
     }
     dom.inject(fragment, refer, direction);
-    for(var i = 0; i < len; i++ ){
+    var enterCallback = function (){
+      count++;
+      if(count===count) callback();
+    }
+    for(i = 0; i < len; i++ ){
       if(node[i].nodeType===1){
         total++;
-        startAnimate(node[i], 'r-enter', function(){
-          count++;
-          if(count===count) callback();
-        })
+        startAnimate(node[i], 'r-enter', enterCallback)
       }
-      if(total == count) callback();
+      if(total === count) callback();
     }
   }else{
     dom.inject(node, refer, direction);
     if(node.nodeType === 1 && callback !== false){
       startAnimate(node, 'r-enter', callback);
-    }else{
-      // ignored
     }
+    // ignored else
+    
   }
 }
 
@@ -81,8 +79,7 @@ animate.inject = function(node, refer ,direction, callback){
  * @return {[type]}            [description]
  */
 animate.remove = function(node, callback){
-  callback = callback || _.noop;;
-  var d = +new Date();
+  callback = callback || _.noop;
   startAnimate(node, 'r-leave', function(){
     dom.remove(node);
     callback();
@@ -92,7 +89,7 @@ animate.remove = function(node, callback){
 
 function startAnimate(node, className, callback){
   var animtion = dom.attr(node ,'r-animate')
-  if((!animationEnd && !transitionEnd) || env.isRunning || animtion==undefined){
+  if((!animationEnd && !transitionEnd) || env.isRunning || animtion === undefined){
     return callback();
   }
 
@@ -101,13 +98,12 @@ function startAnimate(node, className, callback){
   dom.on(node, animationEnd, onAnimateEnd)
   dom.on(node, transitionEnd, onAnimateEnd)
   var timeout = getMaxTimeout(node);
-  var isEnd = false;
   dom.nextReflow(function(){
     dom.addClass(node, activeClassName);
   })
   var tid = setTimeout(onAnimateEnd, timeout);
 
-  function onAnimateEnd(ev){
+  function onAnimateEnd(){
     clearTimeout(tid);
     dom.delClass(node, activeClassName);
     dom.delClass(node, className);
@@ -117,8 +113,6 @@ function startAnimate(node, className, callback){
   }
 }
 
-
-"<div r-animation={{left? 'left': 'right'}}></div>"
 
 /**
  * get maxtimeout

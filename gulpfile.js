@@ -146,7 +146,7 @@ gulp.task('dev-test', function(){
 
 gulp.task('jshint', function(){
       // jshint
-  gulp.src(['src/**/*.js','test/spec/test-*.js'])
+  gulp.src(['src/**/*.js'])
       .pipe(jshint())
       .pipe(jshint.reporter('default'))
 

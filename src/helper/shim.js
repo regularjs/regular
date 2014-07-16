@@ -48,7 +48,7 @@ extend(Array.prototype, {
 
 // Function proto;
 extend(Function.prototype, {
-  bind: function(context, arg){
+  bind: function(context){
     var fn = this;
     var preArgs = slice.call(arguments, 1);
     return function(){

@@ -39,7 +39,7 @@
     "plusplus"      : false,     // Prohibit use of `++` & `--`.
     "regexp"        : true,     // Prohibit `.` and `[^...]` in regular expressions.
     "undef"         : true,     // Require all non-global variables be declared before they are used.
-    "strict"        : true,     // Require `use strict` pragma in every file.
+    "strict"        : false,     // Require `use strict` pragma in every file.
     "trailing"      : true,     // Prohibit trailing whitespaces.
 
     // == Relaxing Options ================================================
@@ -49,7 +49,7 @@
     // doing.
 
     "asi"           : true,    // Tolerate Automatic Semicolon Insertion (no semicolons).
-    "boss"          : false,    // Tolerate assignments inside if, for & while. Usually conditions & loops are for comparison, not assignments.
+    "boss"          : true,    // Tolerate assignments inside if, for & while. Usually conditions & loops are for comparison, not assignments.
     "debug"         : false,    // Allow debugger statements e.g. browser breakpoints.
     "eqnull"        : true,    // Tolerate use of `== null`.
     "es5"           : false,    // Allow EcmaScript 5 syntax.

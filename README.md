@@ -110,8 +110,18 @@ watch and build the source code
 MIT.
 
 
+## New Features
+
+* `0.2.0`: 
+  1. `@(Expression)` to create binding-once Expression 
+  2. lightweight animation support
+  3. svg support
+  4. `{{#if }}` can be used in tag. like `<div {{#if !user }} on-click = {{this.login()}}{{/if}}></div>`
+
 ## TODO
 
 1. interactive tutorial
 2. demo gallery
 3. blog 
+
+

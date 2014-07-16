@@ -9,7 +9,7 @@
   
 // inspired by backbone's extend and klass
 var _ = require("../util.js"),
-  fnTest = /xy/.test(function(){xy}) ? /\bsupr\b/ : /.*/,
+  fnTest = /xy/.test(function(){"xy";}) ? /\bsupr\b/:/.*/,
   isFn = function(o){return typeof o === "function"};
 
 
@@ -27,8 +27,8 @@ function process( what, o, supro ) {
   for ( var k in o ) {
     if (o.hasOwnProperty(k)) {
 
-      what[k] = isFn( o[k] ) && isFn( supro[k] )
-        && fnTest.test( o[k] ) ? wrap(k, o[k], supro) : o[k];
+      what[k] = isFn( o[k] ) && isFn( supro[k] ) && 
+        fnTest.test( o[k] ) ? wrap(k, o[k], supro) : o[k];
     }
   }
 }
@@ -58,7 +58,8 @@ module.exports = function extend(o){
 
   if(supr.__after__) supr.__after__.call(fn, supr, o);
 
-  (fn.implement = implement)(o);
+  fn.implement = implement
+  fn.implement(o)
   fn.extend = extend;
   return fn;
 }

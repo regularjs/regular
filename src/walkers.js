@@ -195,7 +195,7 @@ walkers['if'] = function(ast, options){
 
 walkers.expression = function(ast){
   var node = document.createTextNode("");
-  var watchid = this.$watch(ast, function(newval){
+  this.$watch(ast, function(newval){
     dom.text(node, "" + (newval == null? "": String(newval)));
   })
   return node;
