@@ -22,6 +22,10 @@ var Regular = function(options){
   options.data = options.data || {};
   if(this.data) _.extend(options.data, this.data);
   _.extend(this, options, true);
+  if(this.$parent){
+     this.$parent._append(this);
+  }
+  this._children = [];
 
   template = this.template;
 
@@ -33,18 +37,22 @@ var Regular = function(options){
   this.$context = this.$context || this;
   this.$root = this.$root || this;
   // if have events
-  if(this.events) this.$on(this.events);
+  if(this.events){
+    this.$on(this.events);
+    this.events = null;
+  }
+
   if(template){
     this.group = this.$compile(this.template);
     this.element = combine.node(this);
   }
 
-  this.$update();
+  if(this.$root === this) this.$update();
   this.$ready = true;
   this.$emit({type: 'init', stop: true });
   if( this.init ) this.init(this.data);
 
-  this.$update();
+  if(this.$root === this) this.$update();
   env.isRunning = prevRunning;
 
   // children is not required;
@@ -252,7 +260,17 @@ Regular.implement({
     this.group && this.group.destroy(true);
     this.group = null;
     this.element = null;
+
     this._watchers = null;
+    this._children = [];
+    var parent = this.$parent;
+    if(parent){
+      var index = parent._children.indexOf(this);
+      parent._children.splice(index,1);
+    }
+    this.$parent = null;
+    this.$root = null;
+    this._events = null;
     this.$off();
   },
   inject: function(node, position){
@@ -306,6 +324,11 @@ Regular.implement({
     }
     if(typeof ast === 'string') return doc.createTextNode(ast)
     return walkers[ast.type || "default"].call(this, ast, arg1);
+  },
+  _append: function(component){
+    this._children.push(component);
+    component.$root = this.$root;
+    component.$parent = this;
   },
 
   // find filter

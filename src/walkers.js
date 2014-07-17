@@ -53,12 +53,9 @@ walkers.list = function(ast){
         data[indexName] = o;
         data[variable] = item;
 
-        var section = new Section({data: data });
+        var section = new Section({data: data, $parent: self });
 
-        var update = section.$digest.bind(section);
 
-        self.$on('digest', update);
-        section.$on('destroy', self.$off.bind(self, 'digest', update));
         // autolink
         var insert = o !== 0 && group.children[o-1]? combine.last(group.get(o-1)) : placeholder;
         // animate.inject(combine.node(section),insert,'after')
@@ -76,6 +73,7 @@ walkers.list = function(ast){
         pair.data[indexName] = i;
       }
     }
+
   }
 
 
@@ -230,7 +228,6 @@ walkers.element = function(ast){
       _.touchExpression(value);
       var name = attr.name;
       var etest = name.match(eventReg);
-
       // bind event proxy
       if(etest){
         events = events || {};
@@ -249,12 +246,12 @@ walkers.element = function(ast){
     }
 
     if(ast.children) var $body = this.$compile(ast.children);
-    var component = new Component({data: data, events: events, $body: $body, $root: self.$context || self.$root ||self});
+    var component = new Component({data: data, events: events, $body: $body, $parent: this});
     for(var i = 0, len = attrs.length; i < len; i++){
       var attr = attrs[i];
       var value = attr.value||"";
       if(value.type === 'expression' && attr.name.indexOf('on-')===-1){
-        this.$bind(component, value, attr.name);
+        this.$watch(value, component.$update.bind(component, attr.name))
       }
     }
     return component;

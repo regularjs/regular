@@ -54,8 +54,6 @@ Regular.directive('r-hide', function(elem, value){
 Regular.directive('r-html', function(elem, value){
   this.$watch(value, function(nvalue){
     nvalue = nvalue || "";
-    
-    console.log(nvalue)
     dom.html(elem, nvalue)
   }, {force: true});
 });

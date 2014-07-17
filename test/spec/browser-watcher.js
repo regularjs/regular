@@ -113,8 +113,58 @@ describe("Watcher-System", function(){
 
   })
 
-  it("bind once should also work on template", function(){
-    // @TODO add bindonce and split the testcase    
+  it("bind once should works on interpolation", function(){
+    var container = document.createElement("div");
+    var component = new Component({
+      template: "<div class='name'>{{ @(name) }}</div><div class='age'>{{age}}</div>",
+      data: {
+        name: "leeluolee",
+        age: 10
+      }
+    }).inject(container);
+
+    component.$update("name", "luobo")
+    component.$update("age", "100")
+    expect(nes.one(".name", container).innerHTML).to.equal("leeluolee");
+    expect(nes.one(".age", container).innerHTML).to.equal("100");
+
+    destroy(component, container);
+  })
+  it("bind once should works on list", function(){
+    var container = document.createElement("div");
+    var component = new Component({
+      template: "{{#list @(todos) as todo}}<p>{{todo}}</p>{{/list}}",
+      data: {
+        todos: ["name", "name2"]
+      }
+    }).inject(container);
+
+    expect(nes.all("p", container).length).to.equal(2);
+    expect(nes.all("p", container)[0].innerHTML).to.equal("name");
+
+    component.$update(function(data){
+      data.todos.push("name3");
+    })
+
+    expect(nes.all("p", container).length).to.equal(2);
+
+    destroy(component, container);
+  })
+  it("bind once should works on if", function(){
+    var container = document.createElement("div");
+    var component = new Component({
+      template: "{{#if @(test) }}<p>haha</p>{{#else}}<a></a>{{/if}}",
+      data: {test: true}
+    }).inject(container);
+
+    expect(nes.all("p", container).length).to.equal(1);
+
+    component.$update("test", false);
+
+    expect(nes.all("p", container).length).to.equal(1);
+
+
+    destroy(component, container);
   })
 
 

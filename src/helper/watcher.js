@@ -78,81 +78,88 @@ var methods = {
     this.$phase = 'digest';
     var dirty = false, n =0;
     while(dirty = this._digest()){
+
       if((++n) > 20){ // max loop
         throw 'there may a circular dependencies reaches' 
       }
     }
+    if(n>0 && this.$emit) this.$emit("update");
     this.$phase = null;
   },
   // private digest logic
   _digest: function(){
     // if(this.context) return this.context.$digest();
-    if(this.$emit) this.$emit('digest');
-
-    var watchers = this._watchers || (this._watchers = []);
-    if(!watchers || !watchers.length) return;
+    // if(this.$emit) this.$emit('digest');
+    var watchers = this._watchers;
     var dirty = false;
-    for(var i = 0, len = watchers.length;i < len; i++){
-      var loopDirty = false;
-      var watcher = watchers[i];
-      if(!watcher) continue;
-      if(watcher.test) { //multi 
-        var result = watcher.test(this);
-        if(result){
-          dirty = true;
-          loopDirty = true;
-          watcher.fn.apply(this, result)
-        }
-        continue;
-      }
-      var now = watcher.get(this);
-      var last = watcher.last;
-      var eq = true;
-      if(_.typeOf( now ) === 'object' && watcher.deep){
-        if(!watcher.last){
-           eq = false;
-         }else{
-          for(var j in now){
-            if(watcher.last[j] !== now[j]){
-              eq = false;
-              break;
-            }
+    if(watchers && watchers.length){
+      for(var i = 0, len = watchers.length;i < len; i++){
+        var loopDirty = false;
+        var watcher = watchers[i];
+        if(!watcher) continue;
+        if(watcher.test) { //multi 
+          var result = watcher.test(this);
+          if(result){
+            dirty = true;
+            loopDirty = true;
+            watcher.fn.apply(this, result)
           }
-          if(eq !== false){
-            for(var m in last){
-              if(last[m] !== now[m]){
+          continue;
+        }
+        var now = watcher.get(this);
+        var last = watcher.last;
+        var eq = true;
+        if(_.typeOf( now ) === 'object' && watcher.deep){
+          if(!watcher.last){
+             eq = false;
+           }else{
+            for(var j in now){
+              if(watcher.last[j] !== now[j]){
                 eq = false;
                 break;
               }
             }
+            if(eq !== false){
+              for(var m in last){
+                if(last[m] !== now[m]){
+                  eq = false;
+                  break;
+                }
+              }
+            }
+          }
+        }else{
+          eq = _.equals(now, watcher.last);
+        }
+        if(eq === false || watcher.force){
+          eq = false;
+          watcher.force = null;
+          loopDirty = true;
+          watcher.fn.call(this, now, watcher.last);
+          if(typeof now !== 'object'|| watcher.deep){
+            watcher.last = _.clone(now);
+          }else{
+            watcher.last = now;
+          }
+        }else{
+          if( _.typeOf(eq) === 'array' && eq.length ){
+            watcher.fn.call(this, now, eq);
+            loopDirty = true;
+            watcher.last = _.clone(now);
+          }else{
+            eq = true;
           }
         }
-      }else{
-        eq = _.equals(now, watcher.last);
+        if(eq !== true) dirty = true;
+        if(loopDirty && watcher.once) watchers.splice(i, 1);
       }
-      if(eq === false || watcher.force){
-        eq = false;
-        watcher.force = null;
-        loopDirty = true;
-        watcher.fn.call(this, now, watcher.last);
-        if(typeof now !== 'object'|| watcher.deep){
-          watcher.last = _.clone(now);
-        }else{
-          watcher.last = now;
-        }
-      }else{
-        if( _.typeOf(eq) === 'array' && eq.length ){
-          watcher.fn.call(this, now, eq);
-          loopDirty = true;
-          watcher.last = _.clone(now);
-        }else{
-          eq = true;
-        }
-      }
-      if(eq !== true) dirty = true;
-      if(loopDirty && watcher.once) watchers.splice(i, 1);
     }
-    if(this.$emit && dirty) this.$emit('update');
+    var children = this._children;
+    if(children && children.length){
+      for(var m = 0, mlen = children.length; m < mlen; m++){
+        if(children[m]._digest()) dirty = true;
+      }
+    }
     return dirty;
   },
   /**
@@ -178,7 +185,7 @@ var methods = {
         }
       }
     }
-    (this.$context || this.$root|| this).$digest();
+    if(this.$root) this.$root.$digest()
   },
   _record: function(){
     this._records = [];

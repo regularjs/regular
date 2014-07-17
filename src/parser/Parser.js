@@ -232,7 +232,7 @@ op.include = function(){
 
 // {{#if}}
 op["if"] = function(tag){
-  var test = this.expr();
+  var test = this.expression();
   var consequent = [], alternate=[];
 
   var container = consequent;

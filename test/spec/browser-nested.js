@@ -11,21 +11,90 @@ function destroy(component, container){
 
 
 describe("Nested Component", function(){
+  var NameSpace = Regular.extend();
 
-  it("nested component should accepet the ", function(){
-    var component = new Regular();
+  it("the attribute with plain String will pass to sub_component", function(){
 
     //lazy bind watcher will not trigger in intialize state 
-    component.$watch("name", function(name){
-      this.hello = name;
-    });
+    var container = document.createElement("div");
+    var Component = NameSpace.extend({
+      name: "test1",
+      template: "<p>{{hello}}</p>"
+    })
+    var component = new NameSpace({
+      template: "<test1 hello='leeluolee' />"
+    }).inject(container)
 
-    expect(component.hello).to.equal(undefined);
-
-    component.$update("name", "leeluolee");
-    expect(component.hello).to.equal("leeluolee");
-
+    expect( nes.one("p", container).innerHTML ).to.equal("leeluolee");
     component.destroy();
+  })
+
+  it("it should create one-way binding from parent to nested when pass Expression", function(){
+    var container = document.createElement("div");
+    var Component = NameSpace.extend({
+      name: "test2",
+      template: "<p>{{hello}}</p>"
+    })
+    var component = new NameSpace({
+      template: "<test2 hello={{name}} />",
+      data: {name: "leeluolee"}
+    }).inject(container)
+
+    expect( nes.one("p", container).innerHTML ).to.equal("leeluolee");
+
+    component.$update("name", "luobo")
+
+    expect( nes.one("p", container).innerHTML ).to.equal("luobo");
+    destroy(component, container);
+  })
+
+  it("on-* should be worked as delegate listener", function(){
+    var container = document.createElement("div");
+    var Component = NameSpace.extend({
+      name: "test",
+      template: "<p on-click={{this.$emit('hello')}}></p>"
+    })
+
+    var i =0;
+    var component = new NameSpace({
+      template: "<test on-hello={{this.hello}} />",
+      hello: function(){
+        i++
+      }
+    }).inject(container);
+
+    dispatchMockEvent(nes.one("p", container), "click");
+
+    expect(i).to.equal(1);
+
+    destroy(component, container);
+
+  })
+
+  it("context of transclude-html should point to outer component", function(){
+    var container = document.createElement("div");
+    var Component = NameSpace.extend({
+      name: "test",
+      template: "<p><a>haha</a><r-content></p>"
+    })
+
+    var i = 0;
+    var component = new NameSpace({
+      template: "<test on-hello={{this.hello}}><span on-click={{this.hello()}}>{{name}}</span></test>",
+      data: {name: "leeluolee"},
+      hello: function(){
+        i++
+      }
+    }).inject(container);
+
+    dispatchMockEvent(nes.one("span", container), "click");
+
+    expect(i).to.equal(1);
+
+    expect(nes.one("p span", container).innerHTML).to.equal("leeluolee");
+
+    destroy(component, container);
+
   })
 
 })

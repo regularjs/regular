@@ -233,6 +233,10 @@ var Regular = function(options){
   options.data = options.data || {};
   if(this.data) _.extend(options.data, this.data);
   _.extend(this, options, true);
+  if(this.$parent){
+     this.$parent._append(this);
+  }
+  this._children = [];
 
   template = this.template;
 
@@ -244,18 +248,22 @@ var Regular = function(options){
   this.$context = this.$context || this;
   this.$root = this.$root || this;
   // if have events
-  if(this.events) this.$on(this.events);
+  if(this.events){
+    this.$on(this.events);
+    this.events = null;
+  }
+
   if(template){
     this.group = this.$compile(this.template);
     this.element = combine.node(this);
   }
 
-  this.$update();
+  if(this.$root === this) this.$update();
   this.$ready = true;
   this.$emit({type: 'init', stop: true });
   if( this.init ) this.init(this.data);
 
-  this.$update();
+  if(this.$root === this) this.$update();
   env.isRunning = prevRunning;
 
   // children is not required;
@@ -463,7 +471,17 @@ Regular.implement({
     this.group && this.group.destroy(true);
     this.group = null;
     this.element = null;
+
     this._watchers = null;
+    this._children = [];
+    var parent = this.$parent;
+    if(parent){
+      var index = parent._children.indexOf(this);
+      parent._children.splice(index,1);
+    }
+    this.$parent = null;
+    this.$root = null;
+    this._events = null;
     this.$off();
   },
   inject: function(node, position){
@@ -517,6 +535,11 @@ Regular.implement({
     }
     if(typeof ast === 'string') return doc.createTextNode(ast)
     return walkers[ast.type || "default"].call(this, ast, arg1);
+  },
+  _append: function(component){
+    this._children.push(component);
+    component.$root = this.$root;
+    component.$parent = this;
   },
 
   // find filter
@@ -1057,12 +1080,9 @@ walkers.list = function(ast){
         data[indexName] = o;
         data[variable] = item;
 
-        var section = new Section({data: data });
+        var section = new Section({data: data, $parent: self });
 
-        var update = section.$digest.bind(section);
 
-        self.$on('digest', update);
-        section.$on('destroy', self.$off.bind(self, 'digest', update));
         // autolink
         var insert = o !== 0 && group.children[o-1]? combine.last(group.get(o-1)) : placeholder;
         // animate.inject(combine.node(section),insert,'after')
@@ -1080,6 +1100,7 @@ walkers.list = function(ast){
         pair.data[indexName] = i;
       }
     }
+
   }
 
 
@@ -1234,7 +1255,6 @@ walkers.element = function(ast){
       _.touchExpression(value);
       var name = attr.name;
       var etest = name.match(eventReg);
-
       // bind event proxy
       if(etest){
         events = events || {};
@@ -1253,12 +1273,12 @@ walkers.element = function(ast){
     }
 
     if(ast.children) var $body = this.$compile(ast.children);
-    var component = new Component({data: data, events: events, $body: $body, $root: self.$context || self.$root ||self});
+    var component = new Component({data: data, events: events, $body: $body, $parent: this});
     for(var i = 0, len = attrs.length; i < len; i++){
       var attr = attrs[i];
       var value = attr.value||"";
       if(value.type === 'expression' && attr.name.indexOf('on-')===-1){
-        this.$bind(component, value, attr.name);
+        this.$watch(value, component.$update.bind(component, attr.name))
       }
     }
     return component;
@@ -2459,7 +2479,7 @@ op.include = function(){
 
 // {{#if}}
 op["if"] = function(tag){
-  var test = this.expr();
+  var test = this.expression();
   var consequent = [], alternate=[];
 
   var container = consequent;
@@ -3128,81 +3148,88 @@ var methods = {
     this.$phase = 'digest';
     var dirty = false, n =0;
     while(dirty = this._digest()){
+
       if((++n) > 20){ // max loop
         throw 'there may a circular dependencies reaches' 
       }
     }
+    if(n>0 && this.$emit) this.$emit("update");
     this.$phase = null;
   },
   // private digest logic
   _digest: function(){
     // if(this.context) return this.context.$digest();
-    if(this.$emit) this.$emit('digest');
-
-    var watchers = this._watchers || (this._watchers = []);
-    if(!watchers || !watchers.length) return;
+    // if(this.$emit) this.$emit('digest');
+    var watchers = this._watchers;
     var dirty = false;
-    for(var i = 0, len = watchers.length;i < len; i++){
-      var loopDirty = false;
-      var watcher = watchers[i];
-      if(!watcher) continue;
-      if(watcher.test) { //multi 
-        var result = watcher.test(this);
-        if(result){
-          dirty = true;
-          loopDirty = true;
-          watcher.fn.apply(this, result)
-        }
-        continue;
-      }
-      var now = watcher.get(this);
-      var last = watcher.last;
-      var eq = true;
-      if(_.typeOf( now ) === 'object' && watcher.deep){
-        if(!watcher.last){
-           eq = false;
-         }else{
-          for(var j in now){
-            if(watcher.last[j] !== now[j]){
-              eq = false;
-              break;
-            }
+    if(watchers && watchers.length){
+      for(var i = 0, len = watchers.length;i < len; i++){
+        var loopDirty = false;
+        var watcher = watchers[i];
+        if(!watcher) continue;
+        if(watcher.test) { //multi 
+          var result = watcher.test(this);
+          if(result){
+            dirty = true;
+            loopDirty = true;
+            watcher.fn.apply(this, result)
           }
-          if(eq !== false){
-            for(var m in last){
-              if(last[m] !== now[m]){
+          continue;
+        }
+        var now = watcher.get(this);
+        var last = watcher.last;
+        var eq = true;
+        if(_.typeOf( now ) === 'object' && watcher.deep){
+          if(!watcher.last){
+             eq = false;
+           }else{
+            for(var j in now){
+              if(watcher.last[j] !== now[j]){
                 eq = false;
                 break;
               }
             }
+            if(eq !== false){
+              for(var m in last){
+                if(last[m] !== now[m]){
+                  eq = false;
+                  break;
+                }
+              }
+            }
+          }
+        }else{
+          eq = _.equals(now, watcher.last);
+        }
+        if(eq === false || watcher.force){
+          eq = false;
+          watcher.force = null;
+          loopDirty = true;
+          watcher.fn.call(this, now, watcher.last);
+          if(typeof now !== 'object'|| watcher.deep){
+            watcher.last = _.clone(now);
+          }else{
+            watcher.last = now;
+          }
+        }else{
+          if( _.typeOf(eq) === 'array' && eq.length ){
+            watcher.fn.call(this, now, eq);
+            loopDirty = true;
+            watcher.last = _.clone(now);
+          }else{
+            eq = true;
           }
         }
-      }else{
-        eq = _.equals(now, watcher.last);
+        if(eq !== true) dirty = true;
+        if(loopDirty && watcher.once) watchers.splice(i, 1);
       }
-      if(eq === false || watcher.force){
-        eq = false;
-        watcher.force = null;
-        loopDirty = true;
-        watcher.fn.call(this, now, watcher.last);
-        if(typeof now !== 'object'|| watcher.deep){
-          watcher.last = _.clone(now);
-        }else{
-          watcher.last = now;
-        }
-      }else{
-        if( _.typeOf(eq) === 'array' && eq.length ){
-          watcher.fn.call(this, now, eq);
-          loopDirty = true;
-          watcher.last = _.clone(now);
-        }else{
-          eq = true;
-        }
-      }
-      if(eq !== true) dirty = true;
-      if(loopDirty && watcher.once) watchers.splice(i, 1);
     }
-    if(this.$emit && dirty) this.$emit('update');
+    var children = this._children;
+    if(children && children.length){
+      for(var m = 0, mlen = children.length; m < mlen; m++){
+        if(children[m]._digest()) dirty = true;
+      }
+    }
     return dirty;
   },
   /**
@@ -3228,7 +3255,7 @@ var methods = {
         }
       }
     }
-    (this.$context || this.$root|| this).$digest();
+    if(this.$root) this.$root.$digest()
   },
   _record: function(){
     this._records = [];
@@ -3603,8 +3630,6 @@ Regular.directive('r-hide', function(elem, value){
 Regular.directive('r-html', function(elem, value){
   this.$watch(value, function(nvalue){
     nvalue = nvalue || "";
-    
-    console.log(nvalue)
     dom.html(elem, nvalue)
   }, {force: true});
 });
