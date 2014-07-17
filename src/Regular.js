@@ -39,11 +39,12 @@ var Regular = function(options){
     this.element = combine.node(this);
   }
 
-  this.$emit({type: 'init', stop: true });
-  if(this.$root===this) this.$update();
+  this.$update();
   this.$ready = true;
+  this.$emit({type: 'init', stop: true });
   if( this.init ) this.init(this.data);
 
+  this.$update();
   env.isRunning = prevRunning;
 
   // children is not required;

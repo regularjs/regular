@@ -250,11 +250,12 @@ var Regular = function(options){
     this.element = combine.node(this);
   }
 
-  this.$emit({type: 'init', stop: true });
-  if(this.$root===this) this.$update();
+  this.$update();
   this.$ready = true;
+  this.$emit({type: 'init', stop: true });
   if( this.init ) this.init(this.data);
 
+  this.$update();
   env.isRunning = prevRunning;
 
   // children is not required;
@@ -1654,24 +1655,24 @@ dom.remove = function(node){
 // css Settle & Getter from angular
 // =================================
 // it isnt computed style 
-// dom.css = function(node, name, value){
-//   if (typeof value !== "undefined") {
-//     name = camelCase(name);
-//     if(name) node.style[name] = value;
-//   } else {
-//     var val;
-//     if (dom.msie <= 8) {
-//       // this is some IE specific weirdness that jQuery 1.6.4 does not sure why
-//       val = node.currentStyle && node.currentStyle[name];
-//       if (val === '') val = 'auto';
-//     }
-//     val = val || node.style[name];
-//     if (dom.msie <= 8) {
-//       val = val === '' ? undefined : val;
-//     }
-//     return  val;
-//   }
-// }
+dom.css = function(node, name, value){
+  if (typeof value !== "undefined") {
+    name = camelCase(name);
+    if(name) node.style[name] = value;
+  } else {
+    var val;
+    if (dom.msie <= 8) {
+      // this is some IE specific weirdness that jQuery 1.6.4 does not sure why
+      val = node.currentStyle && node.currentStyle[name];
+      if (val === '') val = 'auto';
+    }
+    val = val || node.style[name];
+    if (dom.msie <= 8) {
+      val = val === '' ? undefined : val;
+    }
+    return  val;
+  }
+}
 
 dom.addClass = function(node, className){
   var current = node.className || "";
@@ -3224,6 +3225,7 @@ var methods = {
         }
       }
     }
+    console.log('update');
     (this.$context || this).$digest();
   },
   _record: function(){
@@ -3787,6 +3789,7 @@ function initRadio(elem, parsed){
     inProgress = false;
   }
   if(parsed.set) dom.on(elem, "change", handler)
+  // beacuse only after compile(init), the dom structrue is exsit. 
   this.$on('init', function(){
     if(parsed.get(self) === undefined){
       if(elem.checked) parsed.set(self, elem.value);

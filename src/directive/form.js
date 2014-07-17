@@ -169,6 +169,7 @@ function initRadio(elem, parsed){
     inProgress = false;
   }
   if(parsed.set) dom.on(elem, "change", handler)
+  // beacuse only after compile(init), the dom structrue is exsit. 
   this.$on('init', function(){
     if(parsed.get(self) === undefined){
       if(elem.checked) parsed.set(self, elem.value);

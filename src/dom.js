@@ -246,24 +246,24 @@ dom.remove = function(node){
 // css Settle & Getter from angular
 // =================================
 // it isnt computed style 
-// dom.css = function(node, name, value){
-//   if (typeof value !== "undefined") {
-//     name = camelCase(name);
-//     if(name) node.style[name] = value;
-//   } else {
-//     var val;
-//     if (dom.msie <= 8) {
-//       // this is some IE specific weirdness that jQuery 1.6.4 does not sure why
-//       val = node.currentStyle && node.currentStyle[name];
-//       if (val === '') val = 'auto';
-//     }
-//     val = val || node.style[name];
-//     if (dom.msie <= 8) {
-//       val = val === '' ? undefined : val;
-//     }
-//     return  val;
-//   }
-// }
+dom.css = function(node, name, value){
+  if (typeof value !== "undefined") {
+    name = camelCase(name);
+    if(name) node.style[name] = value;
+  } else {
+    var val;
+    if (dom.msie <= 8) {
+      // this is some IE specific weirdness that jQuery 1.6.4 does not sure why
+      val = node.currentStyle && node.currentStyle[name];
+      if (val === '') val = 'auto';
+    }
+    val = val || node.style[name];
+    if (dom.msie <= 8) {
+      val = val === '' ? undefined : val;
+    }
+    return  val;
+  }
+}
 
 dom.addClass = function(node, className){
   var current = node.className || "";
