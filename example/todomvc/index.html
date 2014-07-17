@@ -1,10 +1,7 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <title>Regular.js • TodoMVC</title>
-    <link rel="stylesheet" href="todo.css">
-    <script src="../../dist/regular.js"></script>
+
+
+    <link rel="stylesheet" href="http://todomvc.com/vanilla-examples/vanillajs/bower_components/todomvc-common/base.css">
+
     <style>
       #todo-list > li.r-enter{
         transition: all .6s;
@@ -27,7 +24,6 @@
       }
 
     </style>
-
   </head>
   <body>
     <div id="todoapp"></div>
@@ -36,7 +32,17 @@
       <p>Created by @leeluolee</a></p>
       <p>Part of <a href="http://todomvc.com">TodoMVC</a></p>
     </footer>
+<script id="todo" type="template/regular" name="todo">
+  <li r-animate r-class="{'completed': todo.completed, 'editing': todo.editing}">
+    <div class="view">
+      <input class="toggle" type="checkbox" r-model={{ todo.completed }}>
+        <label on-dblclick={{todo.editing = true}}>{{ todo.description }}</label>
+        <button on-click={{ this.$emit('remove', todo) }} class="destroy"></button>
+        </div>
+      <input id="edit" class="edit" on-enter={{ todo.editing = false }} r-model={{todo.description}} autofocus>
+  </li>
 
+</script>
     <script id="application" type="template/regular">
       <div id="div">
         <h1>regulaon-todo</h1>
@@ -49,14 +55,8 @@
           <label for="toggle-all">Mark all as complete</label>
           <ul id="todo-list">
             {{#list this.getList(filter) as i}}
-              <li r-animate='name' r-class="{'completed': i.completed, 'editing': i.editing}">
-                <div class="view">
-                  <input class="toggle" type="checkbox" r-model={{ i.completed }}>
-                  <label on-dblclick={{i.editing = true}}>{{ i.description }}</label>
-                  <button on-click={{ this.remove(i) }} class="destroy"></button>
-                </div>
-                <input id="edit" class="edit" on-enter={{ i.editing = false }} r-model={{i.description}} autofocus>
-              </li>
+            <todo todo={{i}}  on-remove={{this.remove}}/>
+            
             {{/list}}
 
           </ul>
@@ -77,72 +77,77 @@
       {{/if}}
     </script>
 
-    <script>
-    // name can specify in template node,  the dead simplest component example;
-    // var Todo = Regular.extend({template: "todo"});
+
     
-    var TodoApp = Regular.extend({
-      template: '#application', // id | template string | preparsed ast
-      init: function(){
-        // call parent.init function ()
-        // this.supr();
-        var data = this.data;
-        // localStorage
-        if(window.localStorage){
-          this.$on('update', function(){
-            localStorage.setItem('items',JSON.stringify(this.data.items))
-          })
-        }
-      },
-      // get the list;
-      getList: function(filter){
-        if(!filter || filter === 'all') return this.data.items;
-        else return this.data.items.filter(function(item){
-          return filter === 'completed'? item.completed : !item.completed;
-        });
-      },
-      // toggle all todo's completed state
-      toggleAll: function(sign){
-        this.data.items.forEach(function(item){
-          return item.completed = !sign;
-        });
-      },
-      // clear all compleled
-      clearCompleted: function(){
-        this.data.items = this.data.items.filter(function(item){
-          return !item.completed
-        });
-      },
-      // create a new todo
-      newTodo: function(editTodo){
-        var data = this.data;
-        data.items.unshift({description: editTodo});
-        data.editTodo = "";
-      },
-      // remove a todo
-      remove: function(todo){
-        var data = this.data;
-        var index = data.items.indexOf(todo);
-        if(~index) data.items.splice(index,1); 
+
+<script src="../../dist/regular.js"></script>
+
+<script>
+  
+  var Todo = Regular.extend({
+    data: {todo: {}},
+    template: "#todo"
+  });
+  
+
+  var TodoApp = Regular.extend({
+    template: '#application', // id | template string | preparsed ast
+    init: function(){
+      // call parent.init function ()
+      // this.supr();
+      var data = this.data;
+      // localStorage
+      if(window.localStorage){
+        this.$on('update', function(){
+          localStorage.setItem('items',JSON.stringify(this.data.items))
+        })
       }
-    })
-    
-    // // localStorage stuff
-    if(window.localStorage && window.JSON){
-      var items = localStorage && localStorage.getItem('items');
-      items = JSON.parse(items);
+    },
+    // get the list;
+    getList: function(filter){
+      if(!filter || filter === 'all') return this.data.items;
+      else return this.data.items.filter(function(item){
+        return filter === 'completed'? item.completed : !item.completed;
+      });
+    },
+    // toggle all todo's completed state
+    toggleAll: function(sign){
+      this.data.items.forEach(function(item){
+        return item.completed = !sign;
+      });
+    },
+    // clear all compleled
+    clearCompleted: function(){
+      this.data.items = this.data.items.filter(function(item){
+        return !item.completed
+      });
+    },
+    // create a new todo
+    newTodo: function(editTodo){
+      var data = this.data;
+      data.items.unshift({description: editTodo});
+      data.editTodo = "";
+    },
+    // remove a todo
+    remove: function(todo){
+      var data = this.data;
+      var index = data.items.indexOf(todo);
+      if(~index) data.items.splice(index,1); 
     }
+  })
+  
+  // // localStorage stuff
+  if(window.localStorage && window.JSON){
+    var items = localStorage && localStorage.getItem('items');
+    items = JSON.parse(items);
+  }
 
-    
-    var todo = new TodoApp({data: {
-      filter:"all",
-      items: items || []
-    }});
+  
+  var todo = new TodoApp({data: {
+    filter:"all",
+    items: items || []
+  }});
 
 
-    todo.inject('#todoapp')
-
-    </script>
-    
-  </body>
-</html>
+  todo.inject('#todoapp')
+</script>

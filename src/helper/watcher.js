@@ -178,7 +178,7 @@ var methods = {
         }
       }
     }
-    (this.$context || this).$digest();
+    (this.$context || this.$root|| this).$digest();
   },
   _record: function(){
     this._records = [];

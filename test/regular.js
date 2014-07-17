@@ -1238,7 +1238,10 @@ walkers.element = function(ast){
         events = events || {};
         if(typeof value === 'string') value = Regular.expression(value);
         var fn  = value.get(self);
-        events[etest[1]] = fn.bind(this);
+        events[etest[1]] = function(ev){
+          fn.apply(self, arguments)
+          self.$update();
+        }
         continue;
       }
 
@@ -1248,7 +1251,7 @@ walkers.element = function(ast){
     }
 
     if(ast.children) var $body = this.$compile(ast.children);
-    var component = new Component({data: data, events: events, $body: $body, $root: self.$root||self});
+    var component = new Component({data: data, events: events, $body: $body, $root: self.$context || self.$root ||self});
     for(var i = 0, len = attrs.length; i < len; i++){
       var attr = attrs[i];
       var value = attr.value||"";
@@ -3223,7 +3226,7 @@ var methods = {
         }
       }
     }
-    (this.$context || this).$digest();
+    (this.$context || this.$root|| this).$digest();
   },
   _record: function(){
     this._records = [];
