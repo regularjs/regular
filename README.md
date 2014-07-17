@@ -120,8 +120,8 @@ MIT.
 
 ## TODO
 
-1. interactive tutorial
-2. demo gallery
+1. example gallery
+2. interactive tutorial
 3. blog 
 
 
