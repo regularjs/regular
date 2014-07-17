@@ -3223,7 +3223,6 @@ var methods = {
         }
       }
     }
-    console.log('update');
     (this.$context || this).$digest();
   },
   _record: function(){
