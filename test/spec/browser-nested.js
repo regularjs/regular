@@ -29,14 +29,14 @@ describe("Nested Component", function(){
     component.destroy();
   })
 
-  it("it should create one-way binding from parent to nested when pass Expression", function(){
+  it("it should create two-way binding from parent to nested when pass Expression", function(){
     var container = document.createElement("div");
     var Component = NameSpace.extend({
       name: "test2",
-      template: "<p>{{hello}}</p>"
+      template: "<p on-click={{hello='haha'}}>{{hello}}</p>"
     })
     var component = new NameSpace({
-      template: "<test2 hello={{name}} />",
+      template: "<test2 hello={{name}} /><span class='name'>{{name}}</span>",
       data: {name: "leeluolee"}
     }).inject(container)
 
@@ -44,7 +44,31 @@ describe("Nested Component", function(){
 
     component.$update("name", "luobo")
 
+
     expect( nes.one("p", container).innerHTML ).to.equal("luobo");
+    dispatchMockEvent(nes.one("p", container), "click")
+    expect( nes.one("p", container).innerHTML ).to.equal("haha");
+    expect( nes.one(".name", container).innerHTML ).to.equal("haha");
+    destroy(component, container);
+  })
+  it("it should create one-way binding from parent to nested when Expression is not setable", function(){
+    var container = document.createElement("div");
+    var Component = NameSpace.extend({
+      name: "test2",
+      template: "<p on-click={{hello='haha'}}>{{hello}}</p>"
+    })
+    var component = new NameSpace({
+      template: "<test2 hello={{name+'1'}} /><span class='name'>{{name}}</span>",
+      data: {name: "leeluolee"}
+    }).inject(container)
+
+    expect( nes.one("p", container).innerHTML ).to.equal("leeluolee1");
+    expect( nes.one(".name", container).innerHTML ).to.equal("leeluolee");
+
+
+    dispatchMockEvent(nes.one("p", container), "click")
+    expect( nes.one("p", container).innerHTML ).to.equal("haha");
+    expect( nes.one(".name", container).innerHTML ).to.equal("leeluolee");
     destroy(component, container);
   })
 
@@ -96,6 +120,7 @@ describe("Nested Component", function(){
     destroy(component, container);
 
   })
+
 
 })
 

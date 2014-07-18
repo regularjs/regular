@@ -1279,6 +1279,7 @@ walkers.element = function(ast){
       var value = attr.value||"";
       if(value.type === 'expression' && attr.name.indexOf('on-')===-1){
         this.$watch(value, component.$update.bind(component, attr.name))
+        if(value.set) component.$watch(attr.name, self.$update.bind(self, value))
       }
     }
     return component;
