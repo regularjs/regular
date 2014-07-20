@@ -45,6 +45,11 @@ describe("Parse XML", function(){
       // mode 2
       expect(p2(input)).to.eql([node.text(input)]);
     });
+    it("input followed by </div> should throw error", function(){
+      expect(function parseinputFloowDiv(){
+        p('<input type="text"></div>')
+      }).to.throwError();
+    })
   })
 
   describe("attribute", function(){
@@ -115,9 +120,9 @@ describe("Parse XML", function(){
 
   describe("Unclosed tag ", function(){
     it("read unclosed tag should throw error", function(){
-      // expect(function(){
-      //   p("<div>")
-      // }).to.throwError();
+      expect(function(){
+        p("<div>")
+      }).to.throwError();
     })
     it("read unclosed void tag should not throw error", function(){
       expect(p("<input>")).to.eql([
@@ -129,17 +134,12 @@ describe("Parse XML", function(){
     })
 
   })
-  describe("Other feature", function(){
-    it("should join connected text", function(){
-
-    })
-  })
 
   describe("error throw", function(){
     it("read unclosed tag_open should throw error", function(){
-      // expect(function(){
-      //   p("<div")
-      // }).to.throwError();
+      expect(function(){
+        p("<div")
+      }).to.throwError();
     })
 
   });

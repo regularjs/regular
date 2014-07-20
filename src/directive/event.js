@@ -34,16 +34,7 @@ Regular.directive(/^on-\w+$/, function(elem, value, name){
 
   if(!name || !value) return;
   var type = name.split("-")[1];
-  var parsed = Regular.expression(value);
-  var self = this;
-
-  function fire(obj){
-    self.data.$event = obj;
-    var res = parsed.get(self);
-    if(res !== false && obj && obj.preventDefault) obj.preventDefault();
-    delete self.data.$event;
-    self.$update();
-  }
+  var fire = _.handleEvent.call(this, value, type);
   
   var handler = Component.event(type);
   if(handler){

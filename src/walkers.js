@@ -231,12 +231,7 @@ walkers.element = function(ast){
       // bind event proxy
       if(etest){
         events = events || {};
-        if(typeof value === 'string') value = Regular.expression(value);
-        var fn  = value.get(self);
-        events[etest[1]] = function(ev){
-          fn.apply(self, arguments)
-          self.$update();
-        }
+        events[etest[1]] = _.handleEvent.call(this, value, etest[1]);
         continue;
       }
 

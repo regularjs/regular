@@ -24,7 +24,11 @@ var op = Parser.prototype;
 
 op.parse = function(){
   this.pos = 0;
-  return this.program();
+  var res= this.program();
+  if(this.ll().type === 'TAG_CLOSE'){
+    this.error("You may got a unclosed Tag")
+  }
+  return res;
 }
 
 op.ll =  function(k){
@@ -84,9 +88,11 @@ op.eat = function(type, value){
 op.program = function(){
   var statements = [],  ll = this.ll();
   while(ll.type !== 'EOF' && ll.type !=='TAG_CLOSE'){
+
     statements.push(this.statement());
     ll = this.ll();
   }
+  // if(ll.type === 'TAG_CLOSE') this.error("You may have unmatched Tag")
   return statements;
 }
 

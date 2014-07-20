@@ -986,6 +986,7 @@ _.cache = function(max){
   };
 }
 
+// setup the raw Expression
 _.touchExpression = function(expr){
   if(expr.type === 'expression'){
     if(!expr.get){
@@ -1003,6 +1004,32 @@ _.touchExpression = function(expr){
     }
   }
   return expr;
+}
+
+
+// handle the same logic on component's `on-*` and element's `on-*`
+// return the fire object
+_.handleEvent = function(value, type ){
+  var self = this, evaluate;
+  if(value.type === 'expression'){ // if is expression, go evaluated way
+    evaluate = value.get;
+  }
+  if(evaluate){
+    return function fire(obj){
+      self.data.$event = obj;
+      var res = evaluate(self);
+      if(res === false && obj && obj.preventDefault) obj.preventDefault();
+      delete self.data.$event;
+      self.$update();
+    }
+  }else{
+    return function fire(){
+      var args = slice.call(arguments)      
+      args.unshift(value);
+      self.$emit.apply(self.$context, args);
+      self.$update();
+    }
+  }
 }
 
 
@@ -1256,12 +1283,7 @@ walkers.element = function(ast){
       // bind event proxy
       if(etest){
         events = events || {};
-        if(typeof value === 'string') value = Regular.expression(value);
-        var fn  = value.get(self);
-        events[etest[1]] = function(ev){
-          fn.apply(self, arguments)
-          self.$update();
-        }
+        events[etest[1]] = _.handleEvent.call(this, value, etest[1]);
         continue;
       }
 
@@ -2270,7 +2292,11 @@ var op = Parser.prototype;
 
 op.parse = function(){
   this.pos = 0;
-  return this.program();
+  var res= this.program();
+  if(this.ll().type === 'TAG_CLOSE'){
+    this.error("You may got a unclosed Tag")
+  }
+  return res;
 }
 
 op.ll =  function(k){
@@ -2330,9 +2356,11 @@ op.eat = function(type, value){
 op.program = function(){
   var statements = [],  ll = this.ll();
   while(ll.type !== 'EOF' && ll.type !=='TAG_CLOSE'){
+
     statements.push(this.statement());
     ll = this.ll();
   }
+  // if(ll.type === 'TAG_CLOSE') this.error("You may have unmatched Tag")
   return statements;
 }
 
@@ -3865,16 +3893,7 @@ Regular.directive(/^on-\w+$/, function(elem, value, name){
 
   if(!name || !value) return;
   var type = name.split("-")[1];
-  var parsed = Regular.expression(value);
-  var self = this;
-
-  function fire(obj){
-    self.data.$event = obj;
-    var res = parsed.get(self);
-    if(res !== false && obj && obj.preventDefault) obj.preventDefault();
-    delete self.data.$event;
-    self.$update();
-  }
+  var fire = _.handleEvent.call(this, value, type);
   
   var handler = Component.event(type);
   if(handler){

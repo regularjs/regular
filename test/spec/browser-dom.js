@@ -1,3 +1,4 @@
+// contains basic dom && event specs
 var dom = require_lib('dom.js');
 var Regular = require_lib("index.js");
 
@@ -36,9 +37,6 @@ void function(){
       expect(component.data.name).to.equal(1);
 
       destroy(component, container);
-
-
-
     })
 
     it("custom Event handler's context should be component", function(){
@@ -57,6 +55,86 @@ void function(){
         expect(context).to.equal(component);
 
     })
+
+    it("event should go proxy way when pass Non-Expreesion as attribute_value", function(){
+      var container = document.createElement('div');
+      var i = 0;
+      var Component = Regular.extend({
+        init: function(){
+          this.$on("hello2", function(){
+            i = 1;
+          })
+        },
+        hello2: function(){
+          i = 2; 
+        }
+
+      });
+
+      var component = new Component({
+        template: "<div on-click=hello2 class='hello' >haha</div>",
+        data: { test: 0 , name: 'hahah'}
+      }).inject(container);
+
+      dispatchMockEvent(nes.one('div', container), "click");
+
+      expect(i).to.equal(1);
+
+
+      destroy(component, container);
+
+
+    });  
+
+    it("when go proxy way the fire's context should point to outer component", function(){
+      var container = document.createElement('div');
+      var i = 0, j=0;
+      var Component = Regular.extend({
+        template: "{{#list 1..1 as item}}{{#list 1..1 as todo}}<div on-click='hello2'></div>{{/list}}{{/list}}",
+        init: function(){
+          this.$on("hello2", function(){
+            i = 1;
+          })
+        }
+      });
+      var component = new Component;
+      component.inject(container);
+      dispatchMockEvent(nes.one('div', container), "click");
+      expect(i).to.equal(1);
+
+      destroy(component, container)
+    })
+
+    it("you can binding one event with same eventType on one node", function(){
+      var container = document.createElement('div');
+      var i = 0, j = 0;
+      var Component = Regular.extend({
+        init: function(){
+          this.$on("hello2", function(){
+            i = 1;
+          })
+        },
+        hello2: function(){
+          j = 1; 
+        }
+
+      });
+
+      var component = new Component({
+        template: "<div on-click=hello2 on-click={{this.hello2()}} >haha</div>",
+        data: { test: 0 , name: 'hahah'}
+      }).inject(container);
+
+      dispatchMockEvent(nes.one('div', container), "click");
+
+      expect(i).to.equal(1);
+      expect(j).to.equal(1);
+
+      destroy(component, container);
+
+
+    })
+
   })
 
 }()

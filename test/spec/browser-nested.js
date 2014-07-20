@@ -72,29 +72,6 @@ describe("Nested Component", function(){
     destroy(component, container);
   })
 
-  it("on-* should be worked as delegate listener", function(){
-    var container = document.createElement("div");
-    var Component = NameSpace.extend({
-      name: "test",
-      template: "<p on-click={{this.$emit('hello')}}></p>"
-    })
-
-    var i =0;
-    var component = new NameSpace({
-      template: "<test on-hello={{this.hello}} />",
-      hello: function(){
-        i++
-      }
-    }).inject(container);
-
-    dispatchMockEvent(nes.one("p", container), "click");
-
-    expect(i).to.equal(1);
-
-    destroy(component, container);
-
-  })
-
   it("context of transclude-html should point to outer component", function(){
     var container = document.createElement("div");
     var Component = NameSpace.extend({
@@ -121,6 +98,78 @@ describe("Nested Component", function(){
 
   })
 
+  it("nested component should get the outer component's data before create the binding", function(){
+
+    var container = document.createElement("div");
+    var Component = NameSpace.extend({
+      name: "test",
+      template: "<p>{{user.name.first}}</p>"
+    })
+
+    var component = new NameSpace({
+      template: "<test user={{user}}></test>",
+      data: {user: {name: {first: "Zheng"}}}
+    }).inject(container);
+
+    expect(nes.one("p", container).innerHTML).to.equal("Zheng");
+
+    destroy(component, container);
+
+  })
+
+  describe("nested Component with Event", function(){
+
+    it("on-* should evaluate the Expression when the listener is called", function(){
+      var container = document.createElement("div");
+      var Component = NameSpace.extend({
+        name: "test",
+        template: "<p on-click={{this.$emit('hello')}}></p>"
+      })
+
+      var i =0;
+      var component = new NameSpace({
+        template: "<test on-hello={{this.hello()}} />",
+        hello: function(){
+          i++
+        }
+      }).inject(container);
+
+      dispatchMockEvent(nes.one("p", container), "click");
+
+      expect(i).to.equal(1);
+
+      destroy(component, container);
+
+    })
+    it("on-*='String' should proxy the listener to outer component", function(){
+      var container = document.createElement("div");
+      var Component = NameSpace.extend({
+        name: "test",
+        template: "<p on-click={{this.$emit('hello', $event)}}></p>"
+      })
+
+      var i =0;
+      var type=null;
+      var component = new NameSpace({
+        template: "<test on-hello='hello' />",
+        init: function(){
+          this.$on('hello', function(ev){
+            type = ev.type;
+            i++;
+          })
+        }
+      }).inject(container);
+
+      dispatchMockEvent(nes.one("p", container), "click");
+
+      expect(i).to.equal(1);
+      expect(type).to.equal("click");
+
+      destroy(component, container);
+
+    })
+
+  })
 
 })
 

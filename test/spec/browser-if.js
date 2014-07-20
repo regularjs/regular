@@ -236,7 +236,6 @@ void function(){
         Component.event('hello', function(elem, fire){
           i = 1
           dom.on(elem, 'click', fire)
-          // @TODO
           return function(){
             i = 0;
             dom.off(elem, 'click', fire)

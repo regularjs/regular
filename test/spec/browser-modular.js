@@ -7,6 +7,9 @@ void function(){
   }
 
   describe("test Regular's modular mechanism", function(){
+
+
+
     describe('fitler, directive, event isolation ', function(){
       var Root = Regular;
       var Parent = Regular.extend();
@@ -29,6 +32,7 @@ void function(){
         expect(Children.event('foo')).to.equal(foo)
         expect(Root.event('foo')).to.equal(undefined)
       });
+
     })
 
 
@@ -81,50 +85,54 @@ void function(){
       })
     })
 
-    describe("some buildin plugin", function(){
-      var Component = Regular.extend({
-        template: "<div>{{this.name}}</div>"
-      }).use("timeout");
-      it("timeout's $timeout should update when time is out", function(done){
-        var container = document.createElement("div");
-        var component = new Component().inject(container); 
-        component.$timeout(function(){
-          this.name = "leeluolee";
-          setTimeout(function(){
-            expect(component.name).to.equal("leeluolee")
-            expect($("div", container).html()).to.equal("leeluolee");
-            component.destroy();
-            expect(container.innerHTML).to.equal("");
-            done();
-          },0)
-
-        },0)
-      })
-      it("timeout's $interval should update after callback is act", function(done){
-        var container = document.createElement("div");
-        var component = new Component().inject(container); 
-        var run = 0;
-        var tid = component.$interval(function(){
-          this.name = "leeluolee";
-          run++;
-          setTimeout(function(){
-            expect(run).to.equal(1);
-            expect(component.name).to.equal("leeluolee")
-            expect($("div", container).html()).to.equal("leeluolee");
-            component.destroy();
-            expect(container.innerHTML).to.equal("");
-            clearInterval(tid);
-            done();
-          },0)
-
-        },100)
-
-      })
-    })
   });
 
 
+describe("Some buildin plugin", function(){
+  var Component = Regular.extend({
+    template: "<div>{{this.name}}</div>"
+  }).use("timeout");
 
-}()
+  it("timeout's $timeout should update when time is out", function(done){
+    var container = document.createElement("div");
+    var component = new Component().inject(container); 
+    component.$timeout(function(){
+      this.name = "leeluolee";
+      setTimeout(function(){
+        expect(component.name).to.equal("leeluolee")
+        expect($("div", container).html()).to.equal("leeluolee");
+        component.destroy();
+        expect(container.innerHTML).to.equal("");
+        done();
+      },0)
+
+    },0)
+  })
+
+  it("timeout's $interval should update after callback is act", function(done){
+    var container = document.createElement("div");
+    var component = new Component().inject(container); 
+    var run = 0;
+    var tid = component.$interval(function(){
+      this.name = "leeluolee";
+      run++;
+      setTimeout(function(){
+        expect(run).to.equal(1);
+        expect(component.name).to.equal("leeluolee")
+        expect($("div", container).html()).to.equal("leeluolee");
+        component.destroy();
+        expect(container.innerHTML).to.equal("");
+        clearInterval(tid);
+        done();
+      },0)
+
+    },100)
+
+  })
+
+})
+
+}();
+
 
 

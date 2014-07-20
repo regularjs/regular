@@ -1,51 +1,23 @@
-
-
-    <link rel="stylesheet" href="http://todomvc.com/vanilla-examples/vanillajs/bower_components/todomvc-common/base.css">
-
-    <style>
-      #todo-list > li.r-enter{
-        transition: all .6s;
-        opacity: 0;
-        max-height: 0;
-      }
-      #todo-list > li.r-leave{
-        transition: all .6s;
-        max-height: 100px;
-        opacity: 1;
-      }
-      #todo-list > li.r-enter-active{
-        opacity: 1;
-        color: #111;
-        max-height: 100px;
-      }
-      #todo-list > li.r-leave-active{
-        opacity: 0;
-        max-height: 0;
-      }
-
-    </style>
-  </head>
-  <body>
-    <div id="todoapp"></div>
-    <footer id="info">
+ <link rel="stylesheet" href="http://todomvc.com/vanilla-examples/vanillajs/bower_components/todomvc-common/base.css">
+<div id="todoapp"></div>
+<footer id="info">
       <p>Double-click to edit a todo</p>
       <p>Created by @leeluolee</a></p>
       <p>Part of <a href="http://todomvc.com">TodoMVC</a></p>
-    </footer>
+</footer>
 <script id="todo" type="template/regular" name="todo">
-  <li r-animate r-class="{'completed': todo.completed, 'editing': todo.editing}">
+  <li  r-class="{'completed': todo.completed, 'editing': todo.editing}">
     <div class="view">
       <input class="toggle" type="checkbox" r-model={{ todo.completed }}>
         <label on-dblclick={{todo.editing = true}}>{{ todo.description }}</label>
-        <button on-click={{ this.$emit('remove', todo) }} class="destroy"></button>
+        <button on-click={{ this.$emit('remove', todo_index) }} class="destroy"></button>
         </div>
       <input id="edit" class="edit" on-enter={{ todo.editing = false }} r-model={{todo.description}} autofocus>
   </li>
-
 </script>
-    <script id="application" type="template/regular">
-      <div id="div">
-        <h1>regulaon-todo</h1>
+ <script id="application" type="template/regular">
+      <div>
+        <h1>regular-todo</h1>
         <input id="new-todo" on-enter={{ this.newTodo(editTodo) }} placeholder="What needs to be done?" r-model={{ editTodo }}>
       </div>
       {{#if !!items.length}}
@@ -55,10 +27,8 @@
           <label for="toggle-all">Mark all as complete</label>
           <ul id="todo-list">
             {{#list this.getList(filter) as i}}
-            <todo todo={{i}}  on-remove={{this.remove}}/>
-            
+            <todo todo={{i}} on-remove={{this.remove(index)}} />
             {{/list}}
-
           </ul>
         </section>
         <footer id="footer">
@@ -77,7 +47,12 @@
       {{/if}}
     </script>
 
+<script src="https://rawgit.com/regularjs/regular/master/dist/regular.js"></script>
 
+<script>
+  
+
+</script>
     
 
 <script src="../../dist/regular.js"></script>
@@ -86,7 +61,8 @@
   
   var Todo = Regular.extend({
     data: {todo: {}},
-    template: "#todo"
+    template: "#todo",
+    init: function(){}
   });
   
 
@@ -129,10 +105,10 @@
       data.editTodo = "";
     },
     // remove a todo
-    remove: function(todo){
+    remove: function(index){
       var data = this.data;
       var index = data.items.indexOf(todo);
-      if(~index) data.items.splice(index,1); 
+      this.data.items.splice(index,1); 
     }
   })
   

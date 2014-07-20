@@ -431,6 +431,7 @@ _.cache = function(max){
   };
 }
 
+// setup the raw Expression
 _.touchExpression = function(expr){
   if(expr.type === 'expression'){
     if(!expr.get){
@@ -448,6 +449,32 @@ _.touchExpression = function(expr){
     }
   }
   return expr;
+}
+
+
+// handle the same logic on component's `on-*` and element's `on-*`
+// return the fire object
+_.handleEvent = function(value, type ){
+  var self = this, evaluate;
+  if(value.type === 'expression'){ // if is expression, go evaluated way
+    evaluate = value.get;
+  }
+  if(evaluate){
+    return function fire(obj){
+      self.data.$event = obj;
+      var res = evaluate(self);
+      if(res === false && obj && obj.preventDefault) obj.preventDefault();
+      delete self.data.$event;
+      self.$update();
+    }
+  }else{
+    return function fire(){
+      var args = slice.call(arguments)      
+      args.unshift(value);
+      self.$emit.apply(self.$context, args);
+      self.$update();
+    }
+  }
 }
 
 
