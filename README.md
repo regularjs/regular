@@ -53,7 +53,15 @@ new NoteApp({ data: {notes:[] }}).inject(document.body);
 
 regularjs can be installed via `component` and `bower` . you can also directly download the [latest package](https://github.com/regularjs/regular/archive/master.zip)
 
-now you can find `regular.js` and `regular.min.js` in `dist` folder;
+then you can find `regular.js` and `regular.min.js` in `dist` folder;
+
+or....
+
+```html
+<script src="https://rawgit.com/regularjs/regular/master/dist/regular.min.js"></script>
+```
+
+
 
 
 ## Resource
