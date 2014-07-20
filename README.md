@@ -1,46 +1,44 @@
+![logo](http://regularjs.github.io//asserts/image/regular-icon-100.png) 
+
 # regular = react(ractive) + angular.
 
 [![Build Status](https://travis-ci.org/regularjs/regular.svg?branch=master)](https://travis-ci.org/regularjs/regular)
 
-regular is a live template engine helping us to create interactive component 
+regularjs is a live template engine helping us to create interactive component.
 
 __features__
 
-1. __data-binding__
+1. __data-binding__ based on dirty-check
 2. __string-based template__ 
-3. __independent lifecycle__ can be integrated with whatever framework you already used.
+3. __independent lifecycle__ —— can be integrated with whatever framework you already used.
 4. __nested component__
-5. The definition of Business logic based on Class, just like [angular-classy](http://davej.github.io/angular-classy/) do for angular
+5. class-based component. just like [angular-classy](http://davej.github.io/angular-classy/) do for angular
 6. __directive, filter, event__ is supported, and extend easily.
 7. The template's rule is extensiable(need Parser packaged).
 
-##example
+## Take a glance at regularjs
 
-with less than 20 line code then you already have a simple note component, you can also see it in [jsfiddle](http://jsfiddle.net/leeluolee/e6yD3/)
+with the code that less than 20 line , a simple noteapp is done. check the result on [jsfiddle](http://jsfiddle.net/leeluolee/e6yD3/)
 
-template
+__template__
+
 ```html
-"{{#list notes as c}}\
-        <p>\
-          {{c.content}}<a href='#' on-click={{this.remove(c)}}>remove</a>\
-        </p>\
-     {{/list}}\
-     <textarea r-model={{draftComment}}></textarea><button on-click={{this.add()}}>new Note</button>
+{{#list notes as c}}
+  <p>{{c.content}}<a href='#' on-click={{this.remove(c)}}>remove</a></p>
+{{/list}}
+<textarea r-model={{draftComment}}></textarea><button on-click={{this.add()}}>new Note</button>
 ```
+
 __javascript__
 ```javascript
 var NoteApp = Regular.extend({
-  template: "todos",
-
-  remove: function(c){
-    var notes = this.data.notes;
-    var index = notes.indexOf(c);
-    if(~index) notes.splice(index,1);
+  template: "#todos",
+  remove: function(index){
+    this.data.notes.splice(index,1);
   },
-
   add: function(){
     var data = this.data;
-    data.notes.push({content: data.draftComment})
+    data.notes.push({ content: data.draftComment})
     data.draftComment = "";
   }
 });
@@ -50,33 +48,21 @@ new NoteApp({ data: {notes:[] }}).inject(document.body);
 
 
 
-__There also a  [todomvc demo](http://jsfiddle.net/leeluolee/5Err9/) rewirte by regularjs__
+
+## Installation
+
+regularjs can be installed via `component` and `bower` . you can also directly download the [latest package](https://github.com/regularjs/regular/archive/master.zip)
+
+now you can find `regular.js` and `regular.min.js` in `dist` folder;
 
 
-## Browser Compatibility
-
-regularjs's target browser contains __ie6/7/8/9__, and other mordern browser;
-
-
-## Download
-
-1. install with bower 
-  * confirm you installed [bower](https://github.com/bower/bower) or just type `npm install -g bower`
-  * `bower install regularjs` or add regularjs dependency in you `bower.json`
-
-2. clone this repo, or download the [latest package]
-
-3. now you can find `regular.js` and `regular.min.js` in `dist` folder;
-
-
-
-## Guide && Docs
+## Resource
 
 * __[regular's Offcial Guide](http://leeluolee.gitbooks.io/regular-guide/)__(use gitbook)
+* __[Offcial Site ](http://regularjs.github.io)__
 
 
 ## Community
-
 
 * If you find bugs or have suggestion, please feel free to open [an issue](https://github.com/regularjs/regular/issues)
 
@@ -87,7 +73,6 @@ regularjs's target browser contains __ie6/7/8/9__, and other mordern browser;
   2. weibo: chinese friends can also follow author's weibo[@拴萝卜的棍子](http://weibo.com/luobolee)
 
 ## Contribute
-
 
 __regularjs is still in heavily development__, helping us with pull request and  feedback. there is some recommend to contributor.
 
@@ -109,8 +94,13 @@ watch and build the source code
 
 MIT.
 
+## Browser Compatibility
+
+IE7+ and other modern browser. 
 
 ## New Features
+
+* `0.2.1`: now you can proxy event(node's ui-event or component's listener ) to specified event listener by passing String to `on-xx`
 
 * `0.2.0`: 
   1. `@(Expression)` to create binding-once Expression 
@@ -118,10 +108,9 @@ MIT.
   3. svg support
   4. `{{#if }}` can be used in tag. like `<div {{#if !user }} on-click = {{this.login()}}{{/if}}></div>`
 
+
 ## TODO
 
-1. example gallery
+1. example gallery   50%
 2. interactive tutorial
-3. blog 
-
-
+3. blog
