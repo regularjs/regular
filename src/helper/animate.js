@@ -87,12 +87,12 @@ animate.remove = function(node, callback){
 }
 
 
-function startAnimate(node, className, callback){
+
+animtion.startAnimation = function startAnimate(node, className, callback){
   var animtion = dom.attr(node ,'r-animate')
   if((!animationEnd && !transitionEnd) || env.isRunning || animtion === undefined){
     return callback();
   }
-
   var activeClassName = className + '-active';
   dom.addClass(node, className);
   dom.on(node, animationEnd, onAnimateEnd)
