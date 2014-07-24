@@ -119,6 +119,8 @@ IE7+ and other modern browser.
 
 ## TODO
 
-1. example gallery   50%
+1. example gallery   `progressing`
 2. interactive tutorial
 3. blog
+4. declaration animation  `progressing`
+

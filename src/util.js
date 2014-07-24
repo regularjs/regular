@@ -477,6 +477,14 @@ _.handleEvent = function(value, type ){
   }
 }
 
+// only call once
+_.once = function(fn){
+  var time = 0;
+  return function(){
+    if( time++ === 0) fn.apply(this, arguments);
+  }
+}
+
 
 //http://www.w3.org/html/wg/drafts/html/master/single-page.html#void-elements
 _.isVoidTag = _.makePredicate("area base br col embed hr img input keygen link menuitem meta param source track wbr r-content");

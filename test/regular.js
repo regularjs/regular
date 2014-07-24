@@ -1,6 +1,6 @@
 /**
 @author	leeluolee
-@version	0.2.0
+@version	0.2.1
 @homepage	http://regularjs.github.io
 */
 
@@ -1018,7 +1018,7 @@ _.handleEvent = function(value, type ){
     return function fire(obj){
       self.data.$event = obj;
       var res = evaluate(self);
-      if(res === false && obj && obj.preventDefault) obj.preventDefault();
+      if(res !== true && obj && obj.preventDefault) obj.preventDefault();
       delete self.data.$event;
       self.$update();
     }
@@ -1029,6 +1029,14 @@ _.handleEvent = function(value, type ){
       self.$emit.apply(self.$context, args);
       self.$update();
     }
+  }
+}
+
+// only call once
+_.once = function(fn){
+  var time = 0;
+  return function(){
+    if( time++ === 0) fn.apply(this, arguments);
   }
 }
 
@@ -1447,6 +1455,7 @@ require("./module/timeout.js");
 require("./module/animation.js");
 module.exports.dom = require("./dom.js");
 module.exports.util = require("./util.js");
+module.exports.animate = require("./helper/animate.js");
 
 
 });
@@ -1835,6 +1844,8 @@ dom.nextReflow = function(callback){
     callback();
   })
 }
+
+
 
 
 });
@@ -3396,10 +3407,12 @@ var
 
 if(!('ontransitionend' in window)){
   if('onwebkittransitionend' in window) {
+    
     // Chrome/Saf (+ Mobile Saf)/Android
     transitionEnd += ' webkitTransitionEnd';
     transitionProperty = 'webkitTransition'
   } else if('onotransitionend' in dom.tNode || navigator.appName === 'Opera') {
+
     // Opera
     transitionEnd += ' oTransitionEnd';
     transitionProperty = 'oTransition';
@@ -3425,31 +3438,35 @@ if(!('onanimationend' in window)){
  * @param  {[type]} direction [description]
  * @return {[type]}           [description]
  */
-animate.inject = function(node, refer ,direction, callback){
+animate.inject = function( node, refer ,direction, callback ){
 
-  callback = callback|| _.noop;
-  if(Array.isArray(node)){
+  callback = callback || _.noop;
+  if( Array.isArray(node) ){
     var fragment = dom.fragment();
     var total = 0, count=0;
+
     for(var i = 0,len = node.length;i < len; i++ ){
       fragment.appendChild(node[i]); 
     }
     dom.inject(fragment, refer, direction);
+
     var enterCallback = function (){
       count++;
-      if(count===count) callback();
+      if( count === count ) callback();
     }
-    for(i = 0; i < len; i++ ){
-      if(node[i].nodeType===1){
+    for( i = 0; i < len; i++ ){
+
+      if( node[i].nodeType === 1){
         total++;
-        startAnimate(node[i], 'r-enter', enterCallback)
+        startClassAnimate( node[i], 'r-enter', enterCallback , 1)
       }
+
       if(total === count) callback();
     }
   }else{
-    dom.inject(node, refer, direction);
-    if(node.nodeType === 1 && callback !== false){
-      startAnimate(node, 'r-enter', callback);
+    dom.inject( node, refer, direction );
+    if( node.nodeType === 1 && callback !== false ){
+      return startClassAnimate( node, 'r-enter', callback , 1);
     }
     // ignored else
     
@@ -3464,37 +3481,59 @@ animate.inject = function(node, refer ,direction, callback){
  */
 animate.remove = function(node, callback){
   callback = callback || _.noop;
-  startAnimate(node, 'r-leave', function(){
-    dom.remove(node);
+  return startClassAnimate( node, 'r-leave', function(){
+    dom.remove( node );
     callback();
-  })
+  }, 1)
 }
 
 
-function startAnimate(node, className, callback){
-  var animtion = dom.attr(node ,'r-animate')
-  if((!animationEnd && !transitionEnd) || env.isRunning || animtion === undefined){
+
+var startClassAnimate = animate.startClassAnimate = function ( node, className,  callback, mode ){
+  var animtion = dom.attr( node, 'r-animate' ), 
+    activeClassName, timeout, tid, onceAnim;
+  if((!animationEnd && !transitionEnd) || env.isRunning ){
     return callback();
   }
 
-  var activeClassName = className + '-active';
-  dom.addClass(node, className);
-  dom.on(node, animationEnd, onAnimateEnd)
-  dom.on(node, transitionEnd, onAnimateEnd)
-  var timeout = getMaxTimeout(node);
-  dom.nextReflow(function(){
-    dom.addClass(node, activeClassName);
-  })
-  var tid = setTimeout(onAnimateEnd, timeout);
 
-  function onAnimateEnd(){
-    clearTimeout(tid);
-    dom.delClass(node, activeClassName);
+  onceAnim = _.once(function onAnimateEnd(){
+    if(tid) clearTimeout(tid);
+    console.log("END")
+
+    if(mode === 1) {
+      dom.delClass(node, activeClassName);
+    }
     dom.delClass(node, className);
-    dom.off(node, animationEnd, onAnimateEnd)
-    dom.off(node, transitionEnd, onAnimateEnd)
+    dom.off(node, animationEnd, onceAnim)
+    dom.off(node, transitionEnd, onceAnim)
+
     callback();
+
+  });
+  if(mode == 1){ // auto removed
+    dom.addClass( node, className );
+    activeClassName = className.split(/\s+/).map(function(name){
+       return name + '-active';
+    }).join(" ");
+    dom.nextReflow(function(){
+      dom.addClass( node, activeClassName );
+      timeout = getMaxTimeout( node );
+      tid = setTimeout( onceAnim, timeout );
+    })
+  }else{
+    dom.nextReflow(function(){
+      dom.addClass( node, className );
+      timeout = getMaxTimeout( node );
+      tid = setTimeout( onceAnim, timeout );
+    })
   }
+
+
+
+  dom.on( node, animationEnd, onceAnim )
+  dom.on( node, transitionEnd, onceAnim )
+  return onceAnim;
 }
 
 
@@ -3520,16 +3559,22 @@ function getMaxTimeout(node){
     aDuration = getMaxTime( styles[animationProperty + 'Duration']) || aDuration;
     aDelay = getMaxTime( styles[animationProperty + 'Delay']) || aDelay;
     timeout = Math.max( tDuration+tDelay, aDuration + aDelay );
+
   }
   return timeout * 1000 * ratio;
 }
 
 function getMaxTime(str){
+
   var maxTimeout = 0, time;
+
   if(!str) return 0;
+
   str.split(",").forEach(function(str){
+
     time = parseFloat(str);
     if( time > maxTimeout ) maxTimeout = time;
+
   });
 
   return maxTimeout;
@@ -3604,6 +3649,7 @@ require.register("regularjs/src/directive/base.js", function(exports, require, m
 // Regular
 var _ = require("../util.js");
 var dom = require("../dom.js");
+var animate = require("../helper/animate.js");
 var Regular = require("../Regular.js");
 
 
@@ -3909,25 +3955,147 @@ Regular.directive(/^on-\w+$/, function(elem, value, name){
 
 });
 require.register("regularjs/src/module/animation.js", function(exports, require, module){
-// var _ = require("../util.js");
-// var animate = require('../helper/animate.js');
-
-// /**
-//  * Timeout Module
-//  * @param {Component} Component 
-//  */
-
-// var cache = _.cache();
-// function AnimationPlugin(Component, Regular){
-
-//   Component.directive('r-animate', function(el, value){
-    
-//   })
-
-// }
+var // packages
+  _ = require("../util.js"),
+ animate = require("../helper/animate.js"),
+ parse = require("../helper/parse.js"),
+ Regular = require("../Regular.js");
 
 
-// // Regular.plugin('timeout', TimeoutModule);
+var // variables
+  rClassName = /^[-\w]+(\s[-\w]+)*$/,
+  rCommaSep = /[\r\n\f ]*,[\r\n\f ]*(?=\w+\:)/, //  dont split comma in  Expression
+  CONDITION_COMMAND = "when",
+  EVENT_COMMAND = "when",
+  THEN_COMMAND = "then";
+
+/**
+ * Animation Plugin
+ * @param {Component} Component 
+ */
+
+var _animates = 
+function AnimationPlugin( Component, Regular ){
+
+  Component.directive( "r-animate", processAnimate)
+  if( typeof Regular.animate !== "function" ){
+    Regular._animates = {}
+    Regular.animate = function(name, config){
+      Regular._animates[name] = config;
+    }
+  }
+
+}
+
+// hancdle the r-animate directive
+// el : the element to process
+// value: the directive value
+function processAnimate( el, value){
+  value = value.trim();
+  var sentences = value.split( ";" ), sentence;
+  var context = this;
+  sentences.map( function( sentence ){
+    sentence = sentence.trim();
+    if(!sentence) return;
+    return processSentence( sentence, context, el );
+
+  }).filter(function( id ){
+
+    return typeof id === "number";
+
+  })
+
+
+}
+
+// process each sentence
+// - setence
+// - context : the component
+// - el:  the bound element
+function processSentence( sentence, context, el ){
+  var composites = sentence.split( rCommaSep ), 
+    parsed = {chains: []}, chains = parsed.chains,
+    composite, command, action, len, current = 0, tmp, animator;
+
+
+  for( var i = 0, len = composites.length; i < len; i++ ){
+
+    composite = composites[i];
+    tmp = composite.split(":");
+    command = tmp[0] && tmp[0].trim();
+    action = tmp[1] && tmp[1].trim();
+
+    if( !command ) throw "need command name in composite of animation(e.g. then)";
+    if( i === 0 && command !== CONDITION_COMMAND ) throw "the first composite in sentence must be " + CONDITION_COMMAND + " or" + EVENT_COMMAND;
+
+    if( command === CONDITION_COMMAND ){
+      // convert to Expression
+    }
+
+    if( command === EVENT_COMMAND){
+      continue
+    }
+    switch(command){
+      case CONDITION_COMMAND: 
+        parsed.condition = parse.expression( action );
+        break;
+      case EVENT_COMMAND:
+        parsed.condition = parse.expression( action );
+        break;
+      case THEN_COMMAND:
+        animator = Regular.animate(action);
+        if( animator ) chains.push( animator.call( context, el ) );
+        
+        if( rClassName.test( action ) ){  // if action is ClassName
+
+          chains.push( bindClassName( action, context, el ) );
+
+        }
+
+        if( action ){
+
+          var parsed = parse.expression(action);
+
+        }
+    }
+
+
+    if( command === THEN_COMMAND ){
+    }
+
+  }
+
+  len  = chains.length;
+
+  function done(){
+    if( ++current < len )  next();
+    // else compelete
+  }
+  function next(){
+    chains[current](done);
+  }
+  return context.$watch(parsed.condition, function(value){
+    if(!!value){
+      current = 0;
+      next();
+    } 
+  })
+}
+
+
+function bindClassName(className, context, elem){
+  return function(done){
+    animate.startClassAnimate(elem, className, done);
+  }
+}
+
+
+
+
+
+
+
+Regular.plugin( "animate", AnimationPlugin );
 });
 require.register("regularjs/src/module/timeout.js", function(exports, require, module){
 var Regular = require("../Regular.js");
