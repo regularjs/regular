@@ -485,6 +485,10 @@ _.once = function(fn){
   }
 }
 
+_.log = function(msg){
+  if(window.console)  window.console.log(msg);
+}
+
 
 //http://www.w3.org/html/wg/drafts/html/master/single-page.html#void-elements
 _.isVoidTag = _.makePredicate("area base br col embed hr img input keygen link menuitem meta param source track wbr r-content");

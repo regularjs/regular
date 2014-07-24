@@ -344,7 +344,7 @@ Regular.implement({
   },
   _handleEvent: function(elem, type, value){
     var Component = this.constructor,
-      fire = _.handleEvent.call( this, value, type ),
+      fire = typeof value !== "function"? _.handleEvent.call( this, value, type ) : value,
       handler = Component.event(type), destroy;
 
     if ( handler ) {

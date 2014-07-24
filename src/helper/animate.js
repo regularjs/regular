@@ -44,11 +44,10 @@ if(!('onanimationend' in window)){
  * @return {[type]}           [description]
  */
 animate.inject = function( node, refer ,direction, callback ){
-
   callback = callback || _.noop;
   if( Array.isArray(node) ){
     var fragment = dom.fragment();
-    var total = 0, count=0;
+    var count=0;
 
     for(var i = 0,len = node.length;i < len; i++ ){
       fragment.appendChild(node[i]); 
@@ -57,22 +56,26 @@ animate.inject = function( node, refer ,direction, callback ){
 
     var enterCallback = function (){
       count++;
-      if( count === count ) callback();
+      if( count === len ) callback();
     }
+    if(len === count) callback();
     for( i = 0; i < len; i++ ){
-
-      if( node[i].nodeType === 1){
-        total++;
-        startClassAnimate( node[i], 'r-enter', enterCallback , 1)
+      if(node[i].onenter){
+        node[i].onenter(enterCallback);
+      }else{
+        enterCallback();
       }
-
-      if(total === count) callback();
     }
   }else{
     dom.inject( node, refer, direction );
-    if( node.nodeType === 1 && callback !== false ){
-      return startClassAnimate( node, 'r-enter', callback , 1);
+    if(node.onenter){
+      node.onenter(callback)
+    }else{
+      callback();
     }
+    // if( node.nodeType === 1 && callback !== false ){
+    //   return startClassAnimate( node, 'r-enter', callback , 2);
+    // }
     // ignored else
     
   }
@@ -86,37 +89,41 @@ animate.inject = function( node, refer ,direction, callback ){
  */
 animate.remove = function(node, callback){
   callback = callback || _.noop;
-  return startClassAnimate( node, 'r-leave', function(){
-    dom.remove( node );
-    callback();
-  }, 1)
+  if(node.onleave){
+    node.onleave(function(){
+      dom.remove(node);
+    })
+  }else{
+    dom.remove(node) 
+    callback && callback();
+  }
 }
 
 
 
 var startClassAnimate = animate.startClassAnimate = function ( node, className,  callback, mode ){
-  var animtion = dom.attr( node, 'r-animate' ), 
-    activeClassName, timeout, tid, onceAnim;
-  if((!animationEnd && !transitionEnd) || env.isRunning ){
+  var activeClassName, timeout, tid, onceAnim;
+  if( (!animationEnd && !transitionEnd) || env.isRunning ){
     return callback();
   }
 
 
   onceAnim = _.once(function onAnimateEnd(){
     if(tid) clearTimeout(tid);
-    console.log("END")
 
-    if(mode === 1) {
+    if(mode === 2) {
       dom.delClass(node, activeClassName);
     }
-    dom.delClass(node, className);
+    if(mode !== 3){ // mode hold the class
+      dom.delClass(node, className);
+    }
     dom.off(node, animationEnd, onceAnim)
     dom.off(node, transitionEnd, onceAnim)
 
     callback();
 
   });
-  if(mode == 1){ // auto removed
+  if(mode == 2){ // auto removed
     dom.addClass( node, className );
     activeClassName = className.split(/\s+/).map(function(name){
        return name + '-active';
@@ -139,6 +146,11 @@ var startClassAnimate = animate.startClassAnimate = function ( node, className, 
   dom.on( node, animationEnd, onceAnim )
   dom.on( node, transitionEnd, onceAnim )
   return onceAnim;
+}
+
+
+animate.startStyleAnimate = function(){
+
 }
 
 

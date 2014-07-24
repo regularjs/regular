@@ -117,12 +117,12 @@ describe("Some buildin plugin", function(){
       this.name = "leeluolee";
       run++;
       setTimeout(function(){
+        clearInterval(tid);
         expect(run).to.equal(1);
         expect(component.name).to.equal("leeluolee")
         expect($("div", container).html()).to.equal("leeluolee");
         component.destroy();
         expect(container.innerHTML).to.equal("");
-        clearInterval(tid);
         done();
       },0)
 

@@ -279,10 +279,13 @@ walkers.element = function(ast){
       return element;
     },
     destroy: function(first){
-      if(destroies.length) {
-        destroies.forEach(function(destroy){
-          if(destroy){
-            if(typeof destroy.destroy === 'function'){
+      if( first ){
+        animate.remove( element, group? group.destroy.bind( group ): _.noop );
+      }
+      if( destroies.length ) {
+        destroies.forEach(function( destroy ){
+          if( destroy ){
+            if( typeof destroy.destroy === 'function' ){
               destroy.destroy()
             }else{
               destroy();
@@ -290,10 +293,6 @@ walkers.element = function(ast){
           }
         })
       }
-      if(first){
-        animate.remove(element, group? group.destroy.bind(group): _.noop);
-      }
-      
     }
   }
 }

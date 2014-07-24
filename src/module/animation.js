@@ -1,7 +1,7 @@
 var // packages
   _ = require("../util.js"),
  animate = require("../helper/animate.js"),
- animate = require("../dom.js"),
+ dom = require("../dom.js"),
  parse = require("../helper/parse.js"),
  Regular = require("../Regular.js");
 
@@ -19,72 +19,109 @@ var // variables
  */
 
 
+function createSeed(type){
 
-Regular._animates = {
-  "on": function(seed){
-    seed.reset();
-    return function destroy(){
+  var steps = [], current = 0, callback = _.noop;
 
+  var out = {
+    type: type,
+    start: function(cb){
+      if(typeof cb === "function") callback = cb;
+      if(current> 0 ){
+        current = 0 ;
+      }else{
+        out.step();
+      }
+    },
+    step: function(){
+      if(steps[current]) steps[current ]( out.done );
+    },
+    done: function(){
+      if( current < steps.length - 1 ) {
+        current++;
+        out.step();
+      }else{
+        current = 0;
+        callback && callback();
+        callback = _.noop;
+      }
+    },
+    push: function(step){
+      steps.push(step)
     }
-  },
-  "when": function(seed){
-    seed.reset();
+  }
 
+  return out;
+}
+
+Regular.animation = function(name, config){
+  if(typeof config === "undefined") return Regular._animations[name];
+  Regular._animations[name] = config;
+}
+
+
+
+Regular._animations = {
+  "wait": function( step ){
+    var timeout = parseInt( step.param ) || 0
     return function(done){
 
-    }
-  },
-  "wait": function( seed ){
-    var timeout = parseInt( seed.param ) || 0, element = seed.element;
-    return function(done){
+      _.log("delay " + timeout)
       setTimeout( done, timeout );
     }
     
   },
-  "class": function(seed){
-
-    var tmp = seed.param.split(",");
+  "class": function(step){
+    var tmp = step.param.split(","),
       className = tmp[0] || "",
       mode = parseInt(tmp[1]) || 1;
 
-    animate.startClassAnimate( seed.element, className , seed.done, mode );
-
+    return function(done){
+      _.log(className)
+      animate.startClassAnimate( step.element, className , done, mode );
+    }
   },
-  "call": function(){
-    this.$get( seed.param );
-
+  "call": function(step){
+    var fn = parse.expression(step.param).get, self = this;
+    return function(done){
+      _.log(step.param, 'call')
+      fn(self);
+      self.$update();
+      done()
+    }
   },
-  "emit": function(){
-    this.$emit( seed, seed)
-  },
-  "style": function(){
-
-  },
-  "remove": function(){
-
+  "emit": function(step){
+    var param = step.param;
+    var self = this;
+    return function(done){
+      this.$emit(param, step)
+    }
   }
+
 }
 
 
 
-Regular.animate = function(name, config){
-  if(typeof config === "undefined") return Regular._animates[name];
-  Regular._animates[name] = config;
-}
 
 
 function AnimationPlugin( Component, Regular ){
-  Component.directive( "r-animate", processAnimate)
+  Component.directive( "r-animation", processAnimate)
 }
 
-// hancdle the r-animate directive
+// hancdle the r-animation directive
 // el : the element to process
 // value: the directive value
-function processAnimate( el, value ){
+function processAnimate( element, value ){
   value = value.trim();
+
   var composites = value.split(";"), 
-    composite, context = this, parsed = {chains: []},
-    command, param, len, current = 0, tmp, animator;
+    composite, context = this, seeds = [], seed, destroies = [], destroy,
+    command, param , current = 0, tmp, animator, self = this;
+
+  function reset( type ){
+    seed && seeds.push( seed )
+    seed = createSeed( type );
+  }
 
   for( var i = 0, len = composites.length; i < len; i++ ){
 
@@ -93,82 +130,60 @@ function processAnimate( el, value ){
     command = tmp[0] && tmp[0].trim();
     param = tmp[1] && tmp[1].trim();
 
-    if( !command ) throw "need command name in composite of animation(e.g. when)";
+    if( !command ) continue;
 
     if( command === WHEN_COMMAND ){
-      // convert to Expression
+      reset("when");
+      this.$watch(param, function(start, value){
+        // confirm is not in this animation
+        if(!!value) start()
+      }.bind(this, seed.start));
+      continue;
     }
 
     if( command === EVENT_COMMAND){
+      reset(param);
+      if(param === "leave"){
+        element.onleave = seed.start;
+      }else if(param === "enter"){
+        element.onenter = seed.start;
+      }else{
+        destroy = this._handleEvent(element, param, seed.start)
+      }
+
+      destroies.push(destroy? destroy : function (){
+          element.onenter = undefined;
+          element.onleave = undefined;
+      })
+      destroy = null;
       continue
     }
 
-    switch(command){
-      case WHEN_COMMAND: 
-        parsed.condition = parse.expression( param );
-        break;
-      case EVENT_COMMAND:
-        parsed.condition = parse.expression( param );
-        break;
-      case THEN_COMMAND:
-        animator = Regular.animate(param);
-        if( animator ) chains.push( animator.call( context, el ) );
-        
-        if( rClassName.test( param ) ){  // if param is ClassName
-
-          chains.push( bindClassName( param, context, el ) );
-
-        }
-
-        if( param ){
-
-          var parsed = parse.expression(param);
-
-        }
+    var animator =  Regular.animation(command) 
+    if(!animator){
+      _.log("animation " + command + "is not register. ignored");
+    }else if( seed ){
+      seed.push(
+        animator.call(this,{
+          element: element,
+          done: seed.done,
+          param: param 
+        })
+      )
+    }else{
+      throw "you need start with `on` or `event` in r-animation";
     }
   }
 
-
-}
-
-// process each sentence
-// - setence
-// - context : the component
-// - el:  the bound element
-function processSentence( sentence, context, el ){
-  // var composites = sentence.split( rCommaSep )
-
-
-
-
-  // len  = chains.length;
-
-  // function done(){
-  //   if( ++current < len )  next();
-  //   // else compelete
-  // }
-  // function next(){
-  //   chains[current](done);
-  // }
-  // return context.$watch(parsed.condition, function(value){
-  //   if(!!value){
-  //     current = 0;
-  //     next();
-  //   } 
-  // })
+  if(destroies.length){
+    return function(){
+      destroies.forEach(function(destroy){
+        destroy();
+      })
+    }
+  }
 }
 
 
 
-
-
-function bindClassName(className, context, elem){
-    animate.startClassAnimate(elem, className, done);
-}
-
-
-
-
-
-
-Regular.plugin( "animate", AnimationPlugin );
+Regular.plugin( "animation", AnimationPlugin );
