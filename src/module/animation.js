@@ -1,6 +1,7 @@
 var // packages
   _ = require("../util.js"),
  animate = require("../helper/animate.js"),
+ animate = require("../dom.js"),
  parse = require("../helper/parse.js"),
  Regular = require("../Regular.js");
 
@@ -8,8 +9,8 @@ var // packages
 var // variables
   rClassName = /^[-\w]+(\s[-\w]+)*$/,
   rCommaSep = /[\r\n\f ]*,[\r\n\f ]*(?=\w+\:)/, //  dont split comma in  Expression
-  CONDITION_COMMAND = "when",
-  EVENT_COMMAND = "when",
+  WHEN_COMMAND = "when",
+  EVENT_COMMAND = "on",
   THEN_COMMAND = "then";
 
 /**
@@ -17,36 +18,115 @@ var // variables
  * @param {Component} Component 
  */
 
-var _animates = 
-function AnimationPlugin( Component, Regular ){
 
-  Component.directive( "r-animate", processAnimate)
-  if( typeof Regular.animate !== "function" ){
-    Regular._animates = {}
-    Regular.animate = function(name, config){
-      Regular._animates[name] = config;
+
+Regular._animates = {
+  "on": function(seed){
+    seed.reset();
+    return function destroy(){
+
     }
-  }
+  },
+  "when": function(seed){
+    seed.reset();
 
+    return function(done){
+
+    }
+  },
+  "wait": function( seed ){
+    var timeout = parseInt( seed.param ) || 0, element = seed.element;
+    return function(done){
+      setTimeout( done, timeout );
+    }
+    
+  },
+  "class": function(seed){
+
+    var tmp = seed.param.split(",");
+      className = tmp[0] || "",
+      mode = parseInt(tmp[1]) || 1;
+
+    animate.startClassAnimate( seed.element, className , seed.done, mode );
+
+  },
+  "call": function(){
+    this.$get( seed.param );
+
+  },
+  "emit": function(){
+    this.$emit( seed, seed)
+  },
+  "style": function(){
+
+  },
+  "remove": function(){
+
+  }
+}
+
+
+
+Regular.animate = function(name, config){
+  if(typeof config === "undefined") return Regular._animates[name];
+  Regular._animates[name] = config;
+}
+
+
+function AnimationPlugin( Component, Regular ){
+  Component.directive( "r-animate", processAnimate)
 }
 
 // hancdle the r-animate directive
 // el : the element to process
 // value: the directive value
-function processAnimate( el, value){
+function processAnimate( el, value ){
   value = value.trim();
-  var sentences = value.split( ";" ), sentence;
-  var context = this;
-  sentences.map( function( sentence ){
-    sentence = sentence.trim();
-    if(!sentence) return;
-    return processSentence( sentence, context, el );
+  var composites = value.split(";"), 
+    composite, context = this, parsed = {chains: []},
+    command, param, len, current = 0, tmp, animator;
 
-  }).filter(function( id ){
+  for( var i = 0, len = composites.length; i < len; i++ ){
 
-    return typeof id === "number";
+    composite = composites[i];
+    tmp = composite.split(":");
+    command = tmp[0] && tmp[0].trim();
+    param = tmp[1] && tmp[1].trim();
 
-  })
+    if( !command ) throw "need command name in composite of animation(e.g. when)";
+
+    if( command === WHEN_COMMAND ){
+      // convert to Expression
+    }
+
+    if( command === EVENT_COMMAND){
+      continue
+    }
+
+    switch(command){
+      case WHEN_COMMAND: 
+        parsed.condition = parse.expression( param );
+        break;
+      case EVENT_COMMAND:
+        parsed.condition = parse.expression( param );
+        break;
+      case THEN_COMMAND:
+        animator = Regular.animate(param);
+        if( animator ) chains.push( animator.call( context, el ) );
+        
+        if( rClassName.test( param ) ){  // if param is ClassName
+
+          chains.push( bindClassName( param, context, el ) );
+
+        }
+
+        if( param ){
+
+          var parsed = parse.expression(param);
+
+        }
+    }
+  }
 
 
 }
@@ -56,82 +136,35 @@ function processAnimate( el, value){
 // - context : the component
 // - el:  the bound element
 function processSentence( sentence, context, el ){
-  var composites = sentence.split( rCommaSep ), 
-    parsed = {chains: []}, chains = parsed.chains,
-    composite, command, action, len, current = 0, tmp, animator;
+  // var composites = sentence.split( rCommaSep )
 
 
-  for( var i = 0, len = composites.length; i < len; i++ ){
-
-    composite = composites[i];
-    tmp = composite.split(":");
-    command = tmp[0] && tmp[0].trim();
-    action = tmp[1] && tmp[1].trim();
-
-    if( !command ) throw "need command name in composite of animation(e.g. then)";
-    if( i === 0 && command !== CONDITION_COMMAND ) throw "the first composite in sentence must be " + CONDITION_COMMAND + " or" + EVENT_COMMAND;
-
-    if( command === CONDITION_COMMAND ){
-      // convert to Expression
-    }
-
-    if( command === EVENT_COMMAND){
-      continue
-    }
-    switch(command){
-      case CONDITION_COMMAND: 
-        parsed.condition = parse.expression( action );
-        break;
-      case EVENT_COMMAND:
-        parsed.condition = parse.expression( action );
-        break;
-      case THEN_COMMAND:
-        animator = Regular.animate(action);
-        if( animator ) chains.push( animator.call( context, el ) );
-        
-        if( rClassName.test( action ) ){  // if action is ClassName
-
-          chains.push( bindClassName( action, context, el ) );
-
-        }
-
-        if( action ){
-
-          var parsed = parse.expression(action);
-
-        }
-    }
 
 
-    if( command === THEN_COMMAND ){
-    }
+  // len  = chains.length;
 
-  }
-
-  len  = chains.length;
-
-  function done(){
-    if( ++current < len )  next();
-    // else compelete
-  }
-  function next(){
-    chains[current](done);
-  }
-  return context.$watch(parsed.condition, function(value){
-    if(!!value){
-      current = 0;
-      next();
-    } 
-  })
+  // function done(){
+  //   if( ++current < len )  next();
+  //   // else compelete
+  // }
+  // function next(){
+  //   chains[current](done);
+  // }
+  // return context.$watch(parsed.condition, function(value){
+  //   if(!!value){
+  //     current = 0;
+  //     next();
+  //   } 
+  // })
 }
+
+
+
 
 
 function bindClassName(className, context, elem){
-  return function(done){
     animate.startClassAnimate(elem, className, done);
-  }
 }
-
 
 
 

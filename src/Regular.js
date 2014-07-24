@@ -176,6 +176,7 @@ Watcher.mixTo(Regular);
 
 Regular.implement({
 
+
   init: function(){},
   /**
    * compile a block ast ; return a group;
@@ -254,6 +255,9 @@ Regular.implement({
   $unbind: function(component){
     // todo
   },
+  $get: function(expr){
+    return Regular.expression(expr).get(this);
+  },
   destroy: function(){
     // destroy event wont propgation;
     this.$emit({type: 'destroy', stop: true });
@@ -313,7 +317,7 @@ Regular.implement({
     expr2.set(component, expr1.get(this));
   },
   _walk: function(ast, arg1){
-    if(_.typeOf(ast) === 'array'){
+    if( _.typeOf(ast) === 'array' ){
       var res = [];
 
       for(var i = 0, len = ast.length; i < len; i++){
@@ -337,6 +341,20 @@ Regular.implement({
     var filter = Component.filter(name);
     if(typeof filter !== 'function') throw 'filter ' + name + 'is undefined';
     return filter;
+  },
+  _handleEvent: function(elem, type, value){
+    var Component = this.constructor,
+      fire = _.handleEvent.call( this, value, type ),
+      handler = Component.event(type), destroy;
+
+    if ( handler ) {
+      destroy = handler.call(this, elem, fire);
+    } else {
+      dom.on(elem, type, fire);
+    }
+    return handler ? destroy : function() {
+      dom.off(elem, type, fire);
+    }
   }
 });
 
