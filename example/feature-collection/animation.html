@@ -22,7 +22,9 @@
 <div id="app"></div>
 <!-- Templates -->
 <script id="example" type="text/regular">
-<a href="#" on-click='username=username?"":"leeluolee" '>login</a>
+
+<a href="#" on-click={{username=username? "":"leeluolee"}}>login</a>
+
 {{#if username}}
   <h2 r-animate='#'>My Name is {{username}}</h2>
 {{#else}}
