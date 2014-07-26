@@ -56,15 +56,11 @@ function createSeed(type){
   return out;
 }
 
-Regular.animation = function(name, config){
-  if(typeof config === "undefined") return this._animations[name];
-  this._animations[name] = config;
-  return this;
-}
+Regular._addProtoInheritCache("animation")
 
 
-
-Regular._animations = {
+// builtin animation
+Regular.animation({
   "wait": function( step ){
     var timeout = parseInt( step.param ) || 0
     return function(done){
@@ -125,16 +121,9 @@ Regular._animations = {
       }
     }
   }
-
-}
-
+})
 
 
-
-
-function AnimationPlugin( Component, Regular ){
-  Component.directive( "r-animation", processAnimate)
-}
 
 // hancdle the r-animation directive
 // el : the element to process

@@ -250,7 +250,6 @@ dom.css = function(node, name, value){
   if( _.typeOf(name) === "object" ){
     for(var i in name){
       if( name.hasOwnProperty(i) ){
-        console.log(i, name[i])
         dom.css( node, i, name[i] );
       }
     }

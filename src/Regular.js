@@ -67,16 +67,11 @@ var Regular = function(options){
 _.extend(Regular, {
   // private data stuff
   _directives: { __regexp__:[] },
-  _components: {},
-  _filters: {},
-  _events: {},
   _plugins: {},
-
   _exprCache:{},
   _running: false,
-
+  _protoInheritCache: ['use', 'directive'] ,
   __after__: function(supr, o) {
-
 
 
     var template;
@@ -104,6 +99,13 @@ _.extend(Regular, {
    * @return {[type]}      [description]
    */
   directive: function(name, cfg){
+
+    if(_.typeOf(name) === "object"){
+      for(var i in name){
+        if(name.hasOwnProperty(i)) this.directive(i, name[i]);
+      }
+      return this;
+    }
     var type = _.typeOf(name);
     var directives = this._directives, directive;
     if(cfg == null){
@@ -126,17 +128,6 @@ _.extend(Regular, {
     }
     return this
   },
-  filter: function(name, fn){
-    var filters = this._filters;
-    if(fn == null) return filters[name];
-    filters[name] = fn;
-    return this;
-  },
-  component: function(name, Component){
-    if(!Component) return this._components[name];
-    this._components[name] = Component;
-    return this;
-  },
   plugin: function(name, fn){
     var plugins = this._plugins;
     if(fn == null) return plugins[name];
@@ -155,15 +146,35 @@ _.extend(Regular, {
   Parser: Parser,
   Lexer: Lexer,
 
+  _addProtoInheritCache: function(name){
+    if( Array.isArray( name ) ){
+      return name.forEach(Regular._addProtoInheritCache);
+    }
+    var cacheKey = "_" + name + "s"
+    Regular._protoInheritCache.push(name)
+    Regular[cacheKey] = {};
+    Regular[name] = function(key, cfg){
+      var cache = this[cacheKey];
+
+      if(typeof key === "object"){
+        for(var i in key){
+          if(key.hasOwnProperty(i)) this[name](i, key[i]);
+        }
+        return this;
+      }
+      if(cfg == null) return cache[key];
+      cache[key] = cfg;
+      return this;
+    }
+  },
   _inheritConfig: function(self, supr){
 
     // prototype inherit some Regular property
     // so every Component will have own container to serve directive, filter etc..
-    var defs =['use', 'directive', 'event', 'filter', 'component', "animation"] 
+    var defs = Regular._protoInheritCache;
     var keys = _.slice(defs);
     keys.forEach(function(key){
       self[key] = supr[key];
-
       var cacheKey = '_' + key + 's';
       if(supr[cacheKey]) self[cacheKey] = _.createObject(supr[cacheKey]);
     })
@@ -172,6 +183,10 @@ _.extend(Regular, {
 });
 
 extend(Regular);
+
+Regular._addProtoInheritCache(["filter", "component"])
+
+
 Event.mixTo(Regular);
 Watcher.mixTo(Regular);
 

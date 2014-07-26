@@ -13,13 +13,23 @@ void function(){
       var Parent = Regular.extend();
       var Children = Parent.extend();
       function foo(){}
-      it("you can extend filter, directive, event multiply with the[Object] param", function(){
-        Parent.filter({
+      it("you can extend filter, event multiply with the[Object] param", function(){
+        Parent.animation({
           "a1": function(){},
           "a2": function(){}
         });
-        expect(Children.filter("a1")).to.an("function")
-        expect(Children.filter("a2")).to.an("function")
+        expect(Children.animation("a1")).to.an("function")
+        expect(Children.animation("a2")).to.an("function")
+
+      })
+      it("you can extend directives multiply with the[Object] param", function(){
+        Parent.directive({
+          "a1": function(){},
+          "a2": function(){}
+        });
+        expect(Children.directive("a1")).to.an("object")
+        expect(Children.directive("a2")).to.an("object")
+
       })
 
       it('filter should ioslated to Parent', function(){
