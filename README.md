@@ -106,9 +106,9 @@ MIT.
 
 IE7+ and other modern browser. 
 
-## New Features
+## Changelog
 
-* `0.2.1`: now you can proxy event(node's ui-event or component's listener ) to specified event listener by passing String to `on-xx`
+* `0.2.1`: now pass `Non-Expression` to `on-*` attribute will proxy the event to specified event.
 
 * `0.2.0`: 
   1. `@(Expression)` to create binding-once Expression 
