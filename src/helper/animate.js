@@ -125,22 +125,26 @@ var startClassAnimate = animate.startClassAnimate = function ( node, className, 
   });
   if(mode == 2){ // auto removed
     dom.addClass( node, className );
+
     activeClassName = className.split(/\s+/).map(function(name){
        return name + '-active';
     }).join(" ");
+
     dom.nextReflow(function(){
       dom.addClass( node, activeClassName );
       timeout = getMaxTimeout( node );
       tid = setTimeout( onceAnim, timeout );
-    })
+    });
+
   }else{
+
     dom.nextReflow(function(){
       dom.addClass( node, className );
       timeout = getMaxTimeout( node );
       tid = setTimeout( onceAnim, timeout );
-    })
-  }
+    });
 
+  }
 
 
   dom.on( node, animationEnd, onceAnim )
@@ -149,8 +153,30 @@ var startClassAnimate = animate.startClassAnimate = function ( node, className, 
 }
 
 
-animate.startStyleAnimate = function(){
+animate.startStyleAnimate = function(node, styles, callback){
+  var timeout, onceAnim, tid;
 
+  dom.nextReflow(function(){
+    dom.css( node, styles );
+    timeout = getMaxTimeout( node );
+    tid = setTimeout( onceAnim, timeout );
+  });
+
+
+  onceAnim = _.once(function onAnimateEnd(){
+    if(tid) clearTimeout(tid);
+
+    dom.off(node, animationEnd, onceAnim)
+    dom.off(node, transitionEnd, onceAnim)
+
+    callback();
+
+  });
+
+  dom.on( node, animationEnd, onceAnim )
+  dom.on( node, transitionEnd, onceAnim )
+
+  return onceAnim;
 }
 
 

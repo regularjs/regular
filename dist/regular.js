@@ -370,10 +370,11 @@ _.extend(Regular, {
 
     // prototype inherit some Regular property
     // so every Component will have own container to serve directive, filter etc..
-    var defs =['use', 'directive', 'event', 'filter', 'component'] 
+    var defs =['use', 'directive', 'event', 'filter', 'component', "animation"] 
     var keys = _.slice(defs);
     keys.forEach(function(key){
       self[key] = supr[key];
+
       var cacheKey = '_' + key + 's';
       if(supr[cacheKey]) self[cacheKey] = _.createObject(supr[cacheKey]);
     })
@@ -1473,12 +1474,13 @@ exports.isRunning = false;
 });
 require.register("regularjs/src/index.js", function(exports, require, module){
 module.exports = require("./Regular.js");
+
 require("./directive/base.js");
+require("./directive/animation.js");
 require("./module/timeout.js");
-require("./module/animation.js");
+
 module.exports.dom = require("./dom.js");
 module.exports.util = require("./util.js");
-// module.exports.animate = require("./helper/animate.js");
 
 
 });
@@ -1712,7 +1714,7 @@ dom.text = (function (){
 })();
 
 
-dom.html = function(node, html){
+dom.html = function( node, html ){
   if(typeof html === "undefined"){
     return node.innerHTML;
   }else{
@@ -1732,10 +1734,22 @@ dom.remove = function(node){
 // =================================
 // it isnt computed style 
 dom.css = function(node, name, value){
-  if (typeof value !== "undefined") {
+  if( _.typeOf(name) === "object" ){
+    for(var i in name){
+      if( name.hasOwnProperty(i) ){
+        console.log(i, name[i])
+        dom.css( node, i, name[i] );
+      }
+    }
+    return;
+  }
+  if ( typeof value !== "undefined" ) {
+
     name = camelCase(name);
     if(name) node.style[name] = value;
+
   } else {
+
     var val;
     if (dom.msie <= 8) {
       // this is some IE specific weirdness that jQuery 1.6.4 does not sure why
@@ -1753,7 +1767,7 @@ dom.css = function(node, name, value){
 dom.addClass = function(node, className){
   var current = node.className || "";
   if ((" " + current + " ").indexOf(" " + className + " ") === -1) {
-    node.className = current + " " + className;
+    node.className = current? ( current + " " + className ) : className;
   }
 }
 
@@ -3543,22 +3557,26 @@ var startClassAnimate = animate.startClassAnimate = function ( node, className, 
   });
   if(mode == 2){ // auto removed
     dom.addClass( node, className );
+
     activeClassName = className.split(/\s+/).map(function(name){
        return name + '-active';
     }).join(" ");
+
     dom.nextReflow(function(){
       dom.addClass( node, activeClassName );
       timeout = getMaxTimeout( node );
       tid = setTimeout( onceAnim, timeout );
-    })
+    });
+
   }else{
+
     dom.nextReflow(function(){
       dom.addClass( node, className );
       timeout = getMaxTimeout( node );
       tid = setTimeout( onceAnim, timeout );
-    })
-  }
+    });
 
+  }
 
 
   dom.on( node, animationEnd, onceAnim )
@@ -3567,8 +3585,30 @@ var startClassAnimate = animate.startClassAnimate = function ( node, className, 
 }
 
 
-animate.startStyleAnimate = function(){
+animate.startStyleAnimate = function(node, styles, callback){
+  var timeout, onceAnim, tid;
 
+  dom.nextReflow(function(){
+    dom.css( node, styles );
+    timeout = getMaxTimeout( node );
+    tid = setTimeout( onceAnim, timeout );
+  });
+
+
+  onceAnim = _.once(function onAnimateEnd(){
+    if(tid) clearTimeout(tid);
+
+    dom.off(node, animationEnd, onceAnim)
+    dom.off(node, transitionEnd, onceAnim)
+
+    callback();
+
+  });
+
+  dom.on( node, animationEnd, onceAnim )
+  dom.on( node, transitionEnd, onceAnim )
+
+  return onceAnim;
 }
 
 
@@ -3937,45 +3977,7 @@ function initRadio(elem, parsed){
 }
 
 });
-require.register("regularjs/src/directive/event.js", function(exports, require, module){
-/**
- * event directive  bundle
- *
- */
-var _ = require("../util.js");
-var dom = require("../dom.js");
-var Regular = require("../Regular.js");
-
-Regular._events = {
-  enter: function(elem, fire) {
-    function update(ev) {
-      if (ev.which == 13) {
-        ev.preventDefault();
-        fire(ev);
-      }
-    }
-    dom.on(elem, "keypress", update);
-    return function() {
-      dom.off(elem, "keypress", update);
-    }
-  }
-}
-
-Regular.event = function(name, handler) {
-  if (!handler) return this._events[name];
-  this._events[name] = handler;
-  return this;
-}
-
-
-Regular.directive(/^on-\w+$/, function(elem, value, name) {
-
-  if (!name || !value) return;
-  var type = name.split("-")[1];
-  return this._handleEvent(elem, type, value);
-});
-});
-require.register("regularjs/src/module/animation.js", function(exports, require, module){
+require.register("regularjs/src/directive/animation.js", function(exports, require, module){
 var // packages
   _ = require("../util.js"),
  animate = require("../helper/animate.js"),
@@ -3987,6 +3989,8 @@ var // packages
 var // variables
   rClassName = /^[-\w]+(\s[-\w]+)*$/,
   rCommaSep = /[\r\n\f ]*,[\r\n\f ]*(?=\w+\:)/, //  dont split comma in  Expression
+  rStyles = /^\{.*\}$/, //  for Simpilfy
+  rSpace = /\s+/, //  for Simpilfy
   WHEN_COMMAND = "when",
   EVENT_COMMAND = "on",
   THEN_COMMAND = "then";
@@ -4033,8 +4037,9 @@ function createSeed(type){
 }
 
 Regular.animation = function(name, config){
-  if(typeof config === "undefined") return Regular._animations[name];
-  Regular._animations[name] = config;
+  if(typeof config === "undefined") return this._animations[name];
+  this._animations[name] = config;
+  return this;
 }
 
 
@@ -4043,11 +4048,9 @@ Regular._animations = {
   "wait": function( step ){
     var timeout = parseInt( step.param ) || 0
     return function(done){
-
-      _.log("delay " + timeout)
+      // _.log("delay " + timeout)
       setTimeout( done, timeout );
     }
-    
   },
   "class": function(step){
     var tmp = step.param.split(","),
@@ -4055,14 +4058,14 @@ Regular._animations = {
       mode = parseInt(tmp[1]) || 1;
 
     return function(done){
-      _.log(className)
+      // _.log(className)
       animate.startClassAnimate( step.element, className , done, mode );
     }
   },
   "call": function(step){
     var fn = parse.expression(step.param).get, self = this;
     return function(done){
-      _.log(step.param, 'call')
+      // _.log(step.param, 'call')
       fn(self);
       self.$update();
       done()
@@ -4072,7 +4075,34 @@ Regular._animations = {
     var param = step.param;
     var self = this;
     return function(done){
-      this.$emit(param, step)
+      self.$emit(param, step);
+      done();
+    }
+  },
+  // style: left {{10}}pxkk,
+  style: function(step){
+    var styles = {}, 
+      param = step.param,
+      pairs = param.split(","), valid;
+    pairs.forEach(function(pair){
+      pair = pair.trim();
+      if(pair){
+        var tmp = pair.split( rSpace ),
+          name = tmp.shift(),
+          value = tmp.join(" ");
+
+        if( !name || !value ) throw "invalid style in command: style";
+        styles[name] = value;
+        valid = true;
+      }
+    })
+
+    return function(done){
+      if(valid){
+        animate.startStyleAnimate(step.element, styles, done);
+      }else{
+        done();
+      }
     }
   }
 
@@ -4114,8 +4144,8 @@ function processAnimate( element, value ){
       reset("when");
       this.$watch(param, function(start, value){
         // confirm is not in this animation
-        if(!!value) start()
-      }.bind(this, seed.start));
+        if( !!value ) start()
+      }.bind( this, seed.start ) );
       continue;
     }
 
@@ -4126,20 +4156,20 @@ function processAnimate( element, value ){
       }else if(param === "enter"){
         element.onenter = seed.start;
       }else{
-        destroy = this._handleEvent(element, param, seed.start)
+        destroy = this._handleEvent( element, param, seed.start );
       }
 
-      destroies.push(destroy? destroy : function (){
+      destroies.push( destroy? destroy : function (){
           element.onenter = undefined;
           element.onleave = undefined;
-      })
+      });
       destroy = null;
       continue
     }
 
     var animator =  Regular.animation(command) 
     if(!animator){
-      _.log("animation " + command + "is not register. ignored");
+      // _.log("animation " + command + "is not register. ignored");
     }else if( seed ){
       seed.push(
         animator.call(this,{
@@ -4163,8 +4193,48 @@ function processAnimate( element, value ){
 }
 
 
+Regular.directive( "r-animation", processAnimate)
 
-Regular.plugin( "animation", AnimationPlugin );
+
+
+});
+require.register("regularjs/src/directive/event.js", function(exports, require, module){
+/**
+ * event directive  bundle
+ *
+ */
+var _ = require("../util.js");
+var dom = require("../dom.js");
+var Regular = require("../Regular.js");
+
+Regular._events = {
+  enter: function(elem, fire) {
+    function update(ev) {
+      if (ev.which == 13) {
+        ev.preventDefault();
+        fire(ev);
+      }
+    }
+    dom.on(elem, "keypress", update);
+    return function() {
+      dom.off(elem, "keypress", update);
+    }
+  }
+}
+
+Regular.event = function(name, handler) {
+  if (!handler) return this._events[name];
+  this._events[name] = handler;
+  return this;
+}
+
+
+Regular.directive(/^on-\w+$/, function(elem, value, name) {
+
+  if (!name || !value) return;
+  var type = name.split("-")[1];
+  return this._handleEvent(elem, type, value);
+});
 });
 require.register("regularjs/src/module/timeout.js", function(exports, require, module){
 var Regular = require("../Regular.js");

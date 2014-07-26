@@ -12,12 +12,26 @@ void function(){
   describe("Dom", function(){
 
     describe("[Regular.dom] api", function(){
+      var div = dom.create("div");
+      
       it("class relative api", function(){
-        var div = dom.create("div");
         dom.addClass(div, "name");
         expect(dom.hasClass(div, "name")).to.equal(true);
         dom.delClass(div, "name");
         expect(dom.hasClass(div, "name")).to.equal(false);
+        div.className = "";
+      })
+
+      it("addClass should work as expect", function(){
+        dom.addClass(div, "name");
+        expect(div.className).to.equal("name");
+      })
+
+      it("delClass should work as expect", function(){
+        div.className = "name";
+        dom.delClass(div, "name");
+        expect(div.className).to.equal("");
+
       })
     })
 

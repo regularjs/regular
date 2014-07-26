@@ -159,10 +159,11 @@ _.extend(Regular, {
 
     // prototype inherit some Regular property
     // so every Component will have own container to serve directive, filter etc..
-    var defs =['use', 'directive', 'event', 'filter', 'component'] 
+    var defs =['use', 'directive', 'event', 'filter', 'component', "animation"] 
     var keys = _.slice(defs);
     keys.forEach(function(key){
       self[key] = supr[key];
+
       var cacheKey = '_' + key + 's';
       if(supr[cacheKey]) self[cacheKey] = _.createObject(supr[cacheKey]);
     })

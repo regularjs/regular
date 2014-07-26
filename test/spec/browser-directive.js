@@ -17,6 +17,7 @@ describe("Directive", function(){
         elem.innerHTML = nvalue;
       })
     })
+    
     it('registed directive should works on template', function(){
       var component = new Regular({
         template: "<div class='m-class' t-html='content'></div>",
@@ -345,6 +346,8 @@ describe('other buildin directive', function(){
       template: template,
       data: {user: 'hello'}
     }).inject(container);
+
+    
 
     expect($('div', container).css('display')).to.equal('none');
 

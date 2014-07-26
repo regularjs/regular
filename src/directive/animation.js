@@ -9,6 +9,8 @@ var // packages
 var // variables
   rClassName = /^[-\w]+(\s[-\w]+)*$/,
   rCommaSep = /[\r\n\f ]*,[\r\n\f ]*(?=\w+\:)/, //  dont split comma in  Expression
+  rStyles = /^\{.*\}$/, //  for Simpilfy
+  rSpace = /\s+/, //  for Simpilfy
   WHEN_COMMAND = "when",
   EVENT_COMMAND = "on",
   THEN_COMMAND = "then";
@@ -55,8 +57,9 @@ function createSeed(type){
 }
 
 Regular.animation = function(name, config){
-  if(typeof config === "undefined") return Regular._animations[name];
-  Regular._animations[name] = config;
+  if(typeof config === "undefined") return this._animations[name];
+  this._animations[name] = config;
+  return this;
 }
 
 
@@ -65,11 +68,9 @@ Regular._animations = {
   "wait": function( step ){
     var timeout = parseInt( step.param ) || 0
     return function(done){
-
-      _.log("delay " + timeout)
+      // _.log("delay " + timeout)
       setTimeout( done, timeout );
     }
-    
   },
   "class": function(step){
     var tmp = step.param.split(","),
@@ -77,14 +78,14 @@ Regular._animations = {
       mode = parseInt(tmp[1]) || 1;
 
     return function(done){
-      _.log(className)
+      // _.log(className)
       animate.startClassAnimate( step.element, className , done, mode );
     }
   },
   "call": function(step){
     var fn = parse.expression(step.param).get, self = this;
     return function(done){
-      _.log(step.param, 'call')
+      // _.log(step.param, 'call')
       fn(self);
       self.$update();
       done()
@@ -94,7 +95,34 @@ Regular._animations = {
     var param = step.param;
     var self = this;
     return function(done){
-      this.$emit(param, step)
+      self.$emit(param, step);
+      done();
+    }
+  },
+  // style: left {{10}}pxkk,
+  style: function(step){
+    var styles = {}, 
+      param = step.param,
+      pairs = param.split(","), valid;
+    pairs.forEach(function(pair){
+      pair = pair.trim();
+      if(pair){
+        var tmp = pair.split( rSpace ),
+          name = tmp.shift(),
+          value = tmp.join(" ");
+
+        if( !name || !value ) throw "invalid style in command: style";
+        styles[name] = value;
+        valid = true;
+      }
+    })
+
+    return function(done){
+      if(valid){
+        animate.startStyleAnimate(step.element, styles, done);
+      }else{
+        done();
+      }
     }
   }
 
@@ -136,8 +164,8 @@ function processAnimate( element, value ){
       reset("when");
       this.$watch(param, function(start, value){
         // confirm is not in this animation
-        if(!!value) start()
-      }.bind(this, seed.start));
+        if( !!value ) start()
+      }.bind( this, seed.start ) );
       continue;
     }
 
@@ -148,20 +176,20 @@ function processAnimate( element, value ){
       }else if(param === "enter"){
         element.onenter = seed.start;
       }else{
-        destroy = this._handleEvent(element, param, seed.start)
+        destroy = this._handleEvent( element, param, seed.start );
       }
 
-      destroies.push(destroy? destroy : function (){
+      destroies.push( destroy? destroy : function (){
           element.onenter = undefined;
           element.onleave = undefined;
-      })
+      });
       destroy = null;
       continue
     }
 
     var animator =  Regular.animation(command) 
     if(!animator){
-      _.log("animation " + command + "is not register. ignored");
+      // _.log("animation " + command + "is not register. ignored");
     }else if( seed ){
       seed.push(
         animator.call(this,{
@@ -185,5 +213,6 @@ function processAnimate( element, value ){
 }
 
 
+Regular.directive( "r-animation", processAnimate)
 
-Regular.plugin( "animation", AnimationPlugin );
+

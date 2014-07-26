@@ -8,13 +8,20 @@ void function(){
 
   describe("test Regular's modular mechanism", function(){
 
-
-
     describe('fitler, directive, event isolation ', function(){
       var Root = Regular;
       var Parent = Regular.extend();
       var Children = Parent.extend();
       function foo(){}
+      it("you can extend filter, directive, event multiply with the[Object] param", function(){
+        Parent.filter({
+          "a1": function(){},
+          "a2": function(){}
+        });
+        expect(Children.filter("a1")).to.an("function")
+        expect(Children.filter("a2")).to.an("function")
+      })
+
       it('filter should ioslated to Parent', function(){
         Parent.filter('foo', foo);
         expect(Children.filter('foo')).to.equal(foo)

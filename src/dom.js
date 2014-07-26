@@ -227,7 +227,7 @@ dom.text = (function (){
 })();
 
 
-dom.html = function(node, html){
+dom.html = function( node, html ){
   if(typeof html === "undefined"){
     return node.innerHTML;
   }else{
@@ -247,10 +247,22 @@ dom.remove = function(node){
 // =================================
 // it isnt computed style 
 dom.css = function(node, name, value){
-  if (typeof value !== "undefined") {
+  if( _.typeOf(name) === "object" ){
+    for(var i in name){
+      if( name.hasOwnProperty(i) ){
+        console.log(i, name[i])
+        dom.css( node, i, name[i] );
+      }
+    }
+    return;
+  }
+  if ( typeof value !== "undefined" ) {
+
     name = camelCase(name);
     if(name) node.style[name] = value;
+
   } else {
+
     var val;
     if (dom.msie <= 8) {
       // this is some IE specific weirdness that jQuery 1.6.4 does not sure why
@@ -268,7 +280,7 @@ dom.css = function(node, name, value){
 dom.addClass = function(node, className){
   var current = node.className || "";
   if ((" " + current + " ").indexOf(" " + className + " ") === -1) {
-    node.className = current + " " + className;
+    node.className = current? ( current + " " + className ) : className;
   }
 }
 

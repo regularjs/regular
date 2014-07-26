@@ -7,6 +7,7 @@
 </head>
 <body>
   <div id="mocha"></div>
+  <div id="test"></div>
   <script src="../regular.js"></script>
   <script src="vendor/jquery.js"></script>
   <script src="vendor/nes.js"></script>
@@ -18,6 +19,7 @@
 
   mocha.setup('bdd'); 
   </script>
+  <script src="../spec/browser-animate.js"></script>
   <script src="../spec/browser-dom.js"></script>
   <script src="../spec/browser-modular.js"></script>
   <script src="../spec/browser-list.js"></script>
@@ -38,6 +40,7 @@
     mocha.globals(['terminator']);
     mocha.run();
   </script>
+
 </body>
 </html>
 
