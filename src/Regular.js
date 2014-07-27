@@ -1,3 +1,11 @@
+/**
+ * Provides more features for the widget module...
+ *
+ * @module widget
+ * @submodule widget-foo
+ * @main widget
+ */
+
 var Lexer = require("./parser/Lexer.js");
 var Parser = require("./parser/Parser.js");
 var node = require("./parser/node.js");
@@ -12,6 +20,15 @@ var parse = require('./helper/parse.js');
 var walkers = require('./walkers.js');
 var doc = typeof document==='undefined'? {} : document;
 var env = require('./env.js');
+
+
+/**
+* This is the description for my class.
+* > dadada
+*
+* @class MyClass
+* @constructor
+*/
 
 var Regular = function(options){
   var prevRunning = env.isRunning;
