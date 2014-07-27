@@ -16,7 +16,7 @@ void function(){
         var component = new Regular({
           template: "{{#if test}}<div>test</div>{{/if}}",
           data: {test: true}
-        }).inject(container);
+        }).$inject(container);
 
 
         expect($("div",container).length).to.equal(1);
@@ -32,7 +32,7 @@ void function(){
         var component = new Regular({
           template: "{{#if test}}<div>test</div>{{/if}}",
           data: {test: 0}
-        }).inject(container);
+        }).$inject(container);
 
         expect($("div",container).length).to.equal(0);
         component.$update("test", 1);
@@ -48,7 +48,7 @@ void function(){
         var container = document.createElement('div');
         var component = new Regular({
           template: "{{#if test}}<div>test</div>{{#else}}<div>altname</div>{{/if}}"
-        }).inject(container);
+        }).$inject(container);
 
         expect($("div",container).length).to.equal(1);
         expect($("div",container).html()).to.equal("altname");
@@ -66,7 +66,7 @@ void function(){
         var component = new Regular({
           template: "{{#if test > 5}}<div>test</div>{{#elseif test<2}}<div>altname</div>{{/if}}",
           data: {test: 1}
-        }).inject(container);
+        }).$inject(container);
 
 
         expect($("div",container).length).to.equal(1);
@@ -85,7 +85,7 @@ void function(){
         var component = new Regular({
           template: "{{#if test > 5}}<div>test</div>{{#elseif test<2}}<div>altname</div>{{#else}}<div>altname2</div>{{/if}}",
           data: {test: 1}
-        }).inject(container);
+        }).$inject(container);
 
         expect($("div",container).length).to.equal(1);
         expect($("div",container).html()).to.equal("altname");
@@ -105,7 +105,7 @@ void function(){
         var component = new Regular({
           template: "{{#if test > 5}}<div>test</div>{{#else}}{{#if test<2}}<div>altname</div>{{#else}}<div>altname2</div>{{/if}}{{/if}}",
           data: {test: 1}
-        }).inject(container);
+        }).$inject(container);
 
         expect($("div",container).length).to.equal(1);
         expect($("div",container).html()).to.equal("altname");
@@ -123,7 +123,7 @@ void function(){
         var component = new Regular({
           template: "{{#if test > 5}}<div>{{test}} {{hello}}</div>{{#else}}<div>{{hello}}</div>{{/if}}",
           data: { test: 1 }
-        }).inject(container);
+        }).$inject(container);
 
         expect(component._watchers.length).to.equal(2)
 
@@ -141,7 +141,7 @@ void function(){
         var component = new Regular({
           template: "{{#if test > 5}}{{#if test < 8}}<div>{{test}} {{hello}}</div>{{/if}}{{/if}}",
           data: { test: 6 }
-        }).inject(container);
+        }).$inject(container);
 
         expect(component._watchers.length).to.equal(4);
 
@@ -168,7 +168,7 @@ void function(){
         var component = new Regular({
           template: "<div {{#if test}}class='name' title='noname'{{/if}} data-haha=name >haha</div>",
           data: { test: 0 }
-        }).inject(container);
+        }).$inject(container);
 
         var $node = $("div[data-haha]",container)
         expect($node.length).to.equal(1);
@@ -189,7 +189,7 @@ void function(){
         var component = new Regular({
           template: "<div {{#if test}}ng-repeat{{/if}} class='hello' >haha</div>",
           data: { test: 0 }
-        }).inject(container);
+        }).$inject(container);
 
         var $node = $("div.hello",container)
         expect($node.length).to.equal(1);
@@ -207,7 +207,7 @@ void function(){
         var component = new Regular({
           template: "<div {{#if test}}ng-repeat={{name}}{{/if}} class='hello' >haha</div>",
           data: { test: 0 , name: 'hahah'}
-        }).inject(container);
+        }).$inject(container);
 
         var $node = $("div.hello",container)
         expect($node.length).to.equal(1);
@@ -227,7 +227,7 @@ void function(){
         var component = new Regular({
           template: "<div {{#if test}}ng-repeat={{name}}{{/if}} class='hello' >haha</div>",
           data: { test: 0 , name: 'hahah'}
-        }).inject(container);
+        }).$inject(container);
       })
       it("if combine with custom event should work correctly", function(){
         var container = document.createElement('div');
@@ -244,7 +244,7 @@ void function(){
         var component = new Component({
           template: "<div {{#if test}}on-hello={{name=name+1}}{{/if}} class='hello' >haha</div>",
           data: { test: 0 , name: 'hahah'}
-        }).inject(container);
+        }).$inject(container);
         var node = nes.one("div", container);
         expect(i).to.equal(0);
         component.$update("test", 10);
@@ -273,7 +273,7 @@ void function(){
         var component = new Component({
           template: "<div {{#if test}}on-hello={{name=name+1}}{{/if}} class='hello' >haha</div>",
           data: { test: 0 , name: 'hahah'}
-        }).inject(container);
+        }).$inject(container);
 
         expect(component._watchers.length).to.equal(1)
         component.$update("test", 10);
@@ -294,7 +294,7 @@ void function(){
         var component = new Component({
           template: "<div {{#if test}} t-hello='haha'{{/if}} class='hello' >haha</div>",
           data: { test: 0 , name: 'hahah'}
-        }).inject(container);
+        }).$inject(container);
 
         expect(i).to.equal(0);
         component.$update("test", 10);
@@ -316,7 +316,7 @@ void function(){
         var component = new Component({
           template: "<div {{#if test}} t-hello='haha'{{/if}} class='hello' >haha</div>",
           data: { test: 0 , name: 'hahah'}
-        }).inject(container);
+        }).$inject(container);
         expect(component._watchers.length).to.equal(1)
         component.$update("test", 10);
         expect(component._watchers.length).to.equal(2)
@@ -332,7 +332,7 @@ void function(){
         var component = new Regular({
           template: "<div {{#if test}} title='haha' {{#else}} title2='haha2' {{/if}} class='hello' >haha</div>",
           data: { test: 1 , name: 'hahah'}
-        }).inject(container);
+        }).$inject(container);
         var $node = $("div.hello",container)
         expect($node.attr("title")).to.equal("haha");
         expect($node.attr("title2")).to.equal(undefined);
@@ -347,7 +347,7 @@ void function(){
         var component = new Regular({
           template: "<div {{#if test}} title='haha' {{#elseif name}} title2='haha2' {{/if}} class='hello' >haha</div>",
           data: { test: 0 , name: 'hahah'}
-        }).inject(container);
+        }).$inject(container);
 
         var $node = $("div.hello",container)
         expect($node.attr("title")).to.equal(undefined);
@@ -366,7 +366,7 @@ void function(){
       //   var component = new Regular({
       //     template: "<div {{#if test}} title='haha' {{#if name}} title2='haha2' {{/if}} {{/if}} class='hello' >haha</div>",
       //     data: { test: 1 , name: ''}
-      //   }).inject(container);
+      //   }).$inject(container);
       //   var $node = $("div.hello",container)
       //   expect($node.attr("title")).to.equal("haha");
       //   expect($node.attr("title2")).to.equal(undefined);
@@ -382,7 +382,7 @@ void function(){
         var component = new Regular({
           template: "<div {{#if test}} title='haha' {{#elseif name}} title2='haha2' {{#else}} title3='haha3' {{/if}} class='hello' >haha</div>",
           data: { test: 1 , name: ''}
-        }).inject(container);
+        }).$inject(container);
         var $node = $("div.hello",container)
 
         expect($node.attr("title")).to.equal("haha");

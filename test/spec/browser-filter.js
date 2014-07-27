@@ -19,7 +19,7 @@ describe("Filter", function(){
     var component = new Component({
       template: "<div>{{test|lowercase}}</div>",
       data: {test: "ABcD"}
-    }).inject(container);
+    }).$inject(container);
 
 
     expect($("div",container).html()).to.equal('abcd');

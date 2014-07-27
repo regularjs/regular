@@ -40,7 +40,7 @@ void function(){
       var component = new Regular({
         template: "<div on-click={{name=1}}>test</div>",
         data: {test: 0}
-      }).inject(container);
+      }).$inject(container);
 
       var $node = $('div', container);
 
@@ -64,7 +64,7 @@ void function(){
         var component = new Component({
           template: "<div on-hello={{name=name+1}} class='hello' >haha</div>",
           data: { test: 0 , name: 'hahah'}
-        }).inject(container);
+        }).$inject(container);
 
         expect(context).to.equal(component);
 
@@ -88,7 +88,7 @@ void function(){
       var component = new Component({
         template: "<div on-click=hello2 class='hello' >haha</div>",
         data: { test: 0 , name: 'hahah'}
-      }).inject(container);
+      }).$inject(container);
 
       dispatchMockEvent(nes.one('div', container), "click");
 
@@ -112,7 +112,7 @@ void function(){
         }
       });
       var component = new Component;
-      component.inject(container);
+      component.$inject(container);
       dispatchMockEvent(nes.one('div', container), "click");
       expect(i).to.equal(1);
 
@@ -137,7 +137,7 @@ void function(){
       var component = new Component({
         template: "<div on-click=hello2 on-click={{this.hello2()}} >haha</div>",
         data: { test: 0 , name: 'hahah'}
-      }).inject(container);
+      }).$inject(container);
 
       dispatchMockEvent(nes.one('div', container), "click");
 

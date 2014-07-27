@@ -80,11 +80,11 @@ describe("Watcher-System", function(){
         name: "leeluolee",
         age: 10
       }
-    }).inject(container);
+    }).$inject(container);
     var component2 = new Component({
       template: "<div class='user-name'>{{user.name}}</div><div class='user-age'>{{user.age}}</div>",
       data: {user: {}}
-    }).inject(container);
+    }).$inject(container);
 
     expect( $('div', container).length ).to.equal(4);
     expect( $('div', container).length ).to.equal(4);
@@ -121,7 +121,7 @@ describe("Watcher-System", function(){
         name: "leeluolee",
         age: 10
       }
-    }).inject(container);
+    }).$inject(container);
 
     component.$update("name", "luobo")
     component.$update("age", "100")
@@ -137,7 +137,7 @@ describe("Watcher-System", function(){
       data: {
         todos: ["name", "name2"]
       }
-    }).inject(container);
+    }).$inject(container);
 
     expect(nes.all("p", container).length).to.equal(2);
     expect(nes.all("p", container)[0].innerHTML).to.equal("name");
@@ -155,7 +155,7 @@ describe("Watcher-System", function(){
     var component = new Component({
       template: "{{#if @(test) }}<p>haha</p>{{#else}}<a></a>{{/if}}",
       data: {test: true}
-    }).inject(container);
+    }).$inject(container);
 
     expect(nes.all("p", container).length).to.equal(1);
 

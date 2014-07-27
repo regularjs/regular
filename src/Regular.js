@@ -61,7 +61,7 @@ var Regular = function(options){
 
   if(template){
     this.group = this.$compile(this.template);
-    this.element = combine.node(this);
+    combine.node(this);
   }
 
   if(this.$root === this) this.$update();
@@ -310,7 +310,7 @@ Regular.implement({
     this._events = null;
     this.$off();
   },
-  inject: function(node, position){
+  $inject: function(node, position){
     var fragment = this.element || combine.node(this);
     if(typeof node === 'string') node = dom.find(node);
     if(!node) throw 'injected node is not found'
@@ -390,5 +390,7 @@ Regular.implement({
     }
   }
 });
+
+Regular.prototype.inject = Regular.prototype.$inject;
 
 module.exports = Regular;

@@ -40,7 +40,7 @@ void function(){
       it("animation can triggered by event", function(done){
         var component = new Regular({
           template: "<div r-animation='on:click; class: animated;'></div>"
-        }).inject(container);
+        }).$inject(container);
 
 
         var node =  nes.one('div', container)
@@ -77,7 +77,7 @@ void function(){
 
         var component = new Component({
           template: "<div r-animation='on: tap; class: animated;'></div>"
-        }).inject(container);
+        }).$inject(container);
 
         dispatchMockEvent(nes.one('div', container), 'click');
 
@@ -110,7 +110,7 @@ void function(){
       it("class should add then remove in next frame.", function(done){
         var component = new Regular({
           template: "<div r-animation='when:test; class: animated;'></div>"
-        }).inject(container);
+        }).$inject(container);
 
         component.$update("test", true);
         Regular.dom.nextReflow(function(){
@@ -137,7 +137,7 @@ void function(){
 
         var component = new Regular({
           template: "<div r-animation='when:test; style: left 10px;'></div>"
-        }).inject(container);
+        }).$inject(container);
 
         component.$update("test", true);
         expect(nes.one("div", container).style.left).to.equal("");
@@ -151,7 +151,7 @@ void function(){
       it("style can add mulity style in nextFrame", function(done){
         var component = new Regular({
           template: "<div r-animation='when:test; style: left 10px;'></div>"
-        }).inject(container);
+        }).$inject(container);
 
         var node = nes.one("div", container);
         component.$update("test", true);

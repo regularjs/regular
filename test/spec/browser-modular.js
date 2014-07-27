@@ -112,7 +112,7 @@ describe("Some buildin plugin", function(){
 
   it("timeout's $timeout should update when time is out", function(done){
     var container = document.createElement("div");
-    var component = new Component().inject(container); 
+    var component = new Component().$inject(container); 
     component.$timeout(function(){
       this.name = "leeluolee";
       setTimeout(function(){
@@ -128,7 +128,7 @@ describe("Some buildin plugin", function(){
 
   it("timeout's $interval should update after callback is act", function(done){
     var container = document.createElement("div");
-    var component = new Component().inject(container); 
+    var component = new Component().$inject(container); 
     var run = 0;
     var tid = component.$interval(function(){
       this.name = "leeluolee";

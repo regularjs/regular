@@ -1,4 +1,4 @@
- <link rel="stylesheet" href="http://todomvc.com/vanilla-examples/vanillajs/bower_components/todomvc-common/base.css">
+ <link rel="stylesheet" href="https://rawgit.com/tastejs/todomvc/gh-pages/architecture-examples/angularjs/bower_components/todomvc-common/base.css">
 <div id="todoapp"></div>
 <footer id="info">
       <p>Double-click to edit a todo</p>
@@ -27,7 +27,7 @@
           <label for="toggle-all">Mark all as complete</label>
           <ul id="todo-list">
             {{#list this.getList(filter) as i}}
-            <todo todo={{i}} on-remove={{this.remove(index)}} />
+            <todo todo={{i}} on-remove={{this.remove(i_index)}} />
             {{/list}}
           </ul>
         </section>
@@ -106,8 +106,6 @@
     },
     // remove a todo
     remove: function(index){
-      var data = this.data;
-      var index = data.items.indexOf(todo);
       this.data.items.splice(index,1); 
     }
   })

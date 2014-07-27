@@ -209,6 +209,14 @@ require.relative = function(parent) {
   return localRequire;
 };
 require.register("regularjs/src/Regular.js", function(exports, require, module){
+/**
+ * Provides more features for the widget module...
+ *
+ * @module widget
+ * @submodule widget-foo
+ * @main widget
+ */
+
 var Lexer = require("./parser/Lexer.js");
 var Parser = require("./parser/Parser.js");
 var node = require("./parser/node.js");
@@ -223,6 +231,15 @@ var parse = require('./helper/parse.js');
 var walkers = require('./walkers.js');
 var doc = typeof document==='undefined'? {} : document;
 var env = require('./env.js');
+
+
+/**
+* This is the description for my class.
+* > dadada
+*
+* @class MyClass
+* @constructor
+*/
 
 var Regular = function(options){
   var prevRunning = env.isRunning;
@@ -255,7 +272,7 @@ var Regular = function(options){
 
   if(template){
     this.group = this.$compile(this.template);
-    this.element = combine.node(this);
+    combine.node(this);
   }
 
   if(this.$root === this) this.$update();
@@ -504,7 +521,7 @@ Regular.implement({
     this._events = null;
     this.$off();
   },
-  inject: function(node, position){
+  $inject: function(node, position){
     var fragment = this.element || combine.node(this);
     if(typeof node === 'string') node = dom.find(node);
     if(!node) throw 'injected node is not found'
@@ -584,6 +601,8 @@ Regular.implement({
     }
   }
 });
+
+Regular.prototype.inject = Regular.prototype.$inject;
 
 module.exports = Regular;
 
@@ -1116,10 +1135,11 @@ walkers.list = function(ast){
   });
   Regular._inheritConfig(Section, this.constructor);
 
-  var fragment = dom.fragment();
-  fragment.appendChild(placeholder);
+  // var fragment = dom.fragment();
+  // fragment.appendChild(placeholder);
   var self = this;
   var group = new Group();
+  group.push(placeholder);
   var indexName = ast.variable + '_index';
   var variable = ast.variable;
   // group.push(placeholder);
@@ -1128,25 +1148,23 @@ walkers.list = function(ast){
   function update(newValue, splices){
     if(!splices || !splices.length) return;
     var cur = placeholder;
-    var m = 0, len=newValue.length,
+    var m = 0, len = newValue.length,
       mIndex = splices[0].index;
 
-    for(var i=0; i < splices.length; i++){ //init
+    for(var i = 0; i < splices.length; i++){ //init
       var splice = splices[i];
-      var index = splice.index;
+      var index = splice.index; // beacuse we use a comment for placeholder
 
       for(var k = m; k < index; k++){ // no change
-        var sect = group.get(k);
+        var sect = group.get( k + 1 );
         sect.data[indexName] = k;
       }
-      for(var j = 0,jlen = splice.removed.length; j< jlen; j++){ //removed
-        var removed = group.children.splice( index, 1)[0];
-        // var removed = group.children.splice(j,1)[0];
-        var parent = removed.$parent
-        removed.destroy();
+      for(var j = 0, jlen = splice.removed.length; j< jlen; j++){ //removed
+        var removed = group.children.splice( index + 1, 1)[0];
+        removed.destroy(true);
       }
 
-      for(var o=index; o < index + splice.add; o++){ //add
+      for(var o = index; o < index + splice.add; o++){ //add
         // prototype inherit
         var item = newValue[o];
         var data = _.createObject(self.data);
@@ -1157,11 +1175,13 @@ walkers.list = function(ast){
 
 
         // autolink
-        var insert = o !== 0 && group.children[o-1]? combine.last(group.get(o-1)) : placeholder;
+        var insert =  combine.last(group.get(o));
         // animate.inject(combine.node(section),insert,'after')
-        animate.inject(combine.node(section),insert,'after');
+        if(insert.parentNode){
+          animate.inject(combine.node(section),insert, 'after');
+        }
         // insert.parentNode.insertBefore(combine.node(section), insert.nextSibling);
-        group.children.splice(o , 0, section);
+        group.children.splice( o + 1 , 0, section);
       }
       m = index + splice.add - splice.removed.length;
       m  = m < 0? 0 : m;
@@ -1169,26 +1189,14 @@ walkers.list = function(ast){
     }
     if(m < len){
       for(var i = m; i < len; i++){
-        var pair = group.get(i);
+        var pair = group.get(i + 1);
         pair.data[indexName] = i;
       }
     }
-
   }
-
 
   var watchid = this.$watch(ast.sequence, update);
-
-  return {
-    node: function(){
-      return fragment;
-    },
-    group: group,
-    destroy: function(){
-      group.destroy();
-      dom.remove(placeholder);
-    }
-  }
+  return group;
 }
 
 walkers.template = function(ast){
@@ -1197,27 +1205,21 @@ walkers.template = function(ast){
   var compiled;
   // var fragment = dom.fragment();
   // fragment.appendChild(placeholder);
+  var group = new Group();
+  group.push(placeholder);
   if(content){
     var self = this;
-
     this.$watch(content, function(value){
-      if(compiled) compiled.destroy(true);
-      compiled = self.$compile(value, {record: true}); 
-      node = combine.node(compiled);
-      animate.inject(node, placeholder, 'before')
+      if( compiled = group.get(1)){
+        compiled.destroy(true); 
+        group.children.pop();
+      }
+      
+      group.push( compiled =  self.$compile(value, {record: true}) ); 
+      if(placeholder.parentNode) animate.inject(combine.node(compiled), placeholder, 'before')
     });
   }
-  return {
-    node: function(){
-      return placeholder;
-    },
-    last: function(){
-      return compiled.last();
-    },
-    destroy: function(first){
-      compiled && compiled.destroy(first);
-    }
-  }
+  return group;
 };
 
 
@@ -1247,47 +1249,41 @@ walkers['if'] = function(ast, options){
 
   var test, consequent, alternate, node;
   var placeholder = document.createComment("Regular if" + ii++);
-  var fragment = dom.fragment();
-  fragment.appendChild(placeholder);
+  var group = new Group();
+  group.push(placeholder);
+  var preValue = null;
+
 
   var update = function (nvalue, old){
-    if(!!nvalue){ //true
-      if(consequent) return;
-      if(alternate){ alternate.destroy(true) };
+    var value = !!nvalue;
+    if(value === preValue) return;
+    preValue = value;
+    if(group.children[1]){
+      group.children[1].destroy(true);
+      group.children.pop();
+    }
+    if(value){ //true
       if(ast.consequent && ast.consequent.length){
         consequent = self.$compile( ast.consequent , {record:true})
-        node = combine.node(consequent); //return group
-        alternate = null;
         // placeholder.parentNode && placeholder.parentNode.insertBefore( node, placeholder );
-        animate.inject(node, placeholder, 'before');
+        group.push(consequent);
+        if(placeholder.parentNode){
+          animate.inject(combine.node(consequent), placeholder, 'before');
+        }
       }
     }else{ //false
-      if(alternate) return;
-      if(consequent){ consequent.destroy(true); }
-      consequent = null;
       if(ast.alternate && ast.alternate.length){
-         alternate = self.$compile(ast.alternate, {record:true});
-        node = combine.node(alternate);
-        animate.inject(node, placeholder, 'before');
+        alternate = self.$compile(ast.alternate, {record:true});
+        group.push(alternate);
+        if(placeholder.parentNode){
+          animate.inject(combine.node(alternate), placeholder, 'before');
+        }
       }
     }
   }
   this.$watch(ast.test, update, {force: true});
 
-  return {
-    node: function(){
-      return fragment;
-    },
-    last: function(){
-      var group = consequent || alternate;
-      return group && group.last();
-    },
-    destroy: function destroy(first){
-      if(alternate) alternate.destroy(first);
-      if(consequent) consequent.destroy(first);
-      dom.remove(placeholder);
-    }
-  }
+  return group;
 }
 
 
@@ -1367,11 +1363,13 @@ walkers.element = function(ast){
   if(ast.tag === 'svg') this._ns_ = null;
 
 
-
-  return {
+  var res  = {
+    type: "element",
+    group: group,
     node: function(){
-      if(group && !_.isVoidTag(ast.tag)){
-        animate.inject(combine.node(group),element)
+      if(!res.init && group && !_.isVoidTag(ast.tag)){
+        animate.inject( combine.node(group) , element)
+        res.init = true;
       }
       return element;
     },
@@ -1395,6 +1393,7 @@ walkers.element = function(ast){
       }
     }
   }
+  return res;
 }
 
 function walkAttributes(attrs, element){

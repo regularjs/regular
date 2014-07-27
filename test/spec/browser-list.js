@@ -16,7 +16,7 @@ void function(){
           template: list
         })
 
-        var component = new BaseComponent().inject(container);
+        var component = new BaseComponent().$inject(container);
         expect($("div",container).length).to.equal(4);
         expect($(".a-1",container)[0].innerHTML).to.equal("1");
         expect($(".a-2",container)[0].innerHTML).to.equal("2");
@@ -28,7 +28,7 @@ void function(){
         var list = "{{#list 1..3 as num}}{{num}}{{/list}}"
         var component = new Regular({
           template: list
-        }).inject(container);
+        }).$inject(container);
         expect(container.innerHTML.slice(-3)).to.equal("123")
         destroy(component, container);
       })
@@ -41,7 +41,7 @@ void function(){
         var component = new Regular({
           data: {todos: [{content: "hello"}, {content: "hello2"}]},
           template: list
-        }).inject(container);
+        }).$inject(container);
         // expect($("div",container).length).to.equal(2);
         // expect($(".a-0",container)[0].innerHTML).to.equal("hello");
         // expect($(".a-1",container)[0].innerHTML).to.equal("hello2");
@@ -67,11 +67,32 @@ void function(){
         var component = new Regular({
           data: {todos: [{content: "hello"}, {content: "hello2"}]},
           template: list
-        }).inject(container);
+        }).$inject(container);
 
         expect($('a', container).length).to.equal(1);
         expect($("div",container).length).to.equal(2);
         expect(container.innerHTML.slice(-3)).to.equal('xxx');
+        destroy(component, container);
+
+      })
+      it("delete first element should sync with dom", function(){
+        var todos = [{content: "hello"}, {content: "hello2"}]
+        var list =
+          "{{#list todos as todo}}" + 
+            "<div >{{todo_index}}{{todo.content}}</div>" + 
+          "{{/list}}";
+        var component = new Regular({
+          data: {todos: todos},
+          template: list
+        }).$inject(container);
+
+        expect($("div",container).length).to.equal(2);
+        expect(nes.one("div", container).innerHTML).to.equal("0hello");
+
+        todos.shift();
+        component.$update()
+        expect(nes("div", container).length).to.equal(1);
+        expect(nes.one("div", container).innerHTML).to.equal("0hello2");
         destroy(component, container);
 
       })
@@ -84,12 +105,13 @@ void function(){
         var component = new Regular({
           data: {todos: [{content: "hello"}, {content: "hello2"}]},
           template: list
-        }).inject(container);
+        }).$inject(container);
 
         expect($("div",container).length).to.equal(4);
-        expect($(".a-1",container)[0].innerHTML).to.equal("0");
-        expect($(".a-2",container)[0].innerHTML).to.equal("1");
-        expect($(".a-3",container)[0].innerHTML).to.equal("2");
+        expect($("div",container)[0].innerHTML).to.equal("0");
+        expect($("div",container)[1].innerHTML).to.equal("1");
+        expect($("div",container)[2].innerHTML).to.equal("2");
+
 
         destroy(component, container);
 
@@ -108,7 +130,7 @@ void function(){
             return data.todos.slice(0, data.len);
           }
         });
-        var component = new List().inject(container);
+        var component = new List().$inject(container);
 
         expect($("div",container).length).to.equal(1);
 
@@ -135,7 +157,7 @@ void function(){
           "{{#list todos as todo}}\
             <todo content={{todo.content}}/>\
            {{/list}}"
-      }).inject(container);
+      }).$inject(container);
 
       expect($("div",container).length).to.equal(2);
       expect($("div", container)[0].innerHTML).to.equal("hello");
@@ -165,7 +187,7 @@ void function(){
         });
         var component = new List({
           data: {todos: [{content: "hello"}, {content: "hello2"}]}
-        }).inject(container);
+        }).$inject(container);
 
         expect($("div",container).length).to.equal(6);
         expect($(".sub:nth-child(10n+1)",container).attr("data-value")).to.equal("hello");
@@ -199,7 +221,7 @@ void function(){
         });
         var component = new List({
           data: {todos: [{content: "hello"}, {content: "hello2"}]}
-        }).inject(container);
+        }).$inject(container);
 
         expect($("td",container).length).to.equal(4);
 
@@ -224,7 +246,7 @@ void function(){
           })
         var component = new Component({
           template: "{{#list 1..2 as num}}<div r-name='name'>haha</div>{{/list}}"
-        }).inject(container)
+        }).$inject(container)
 
         expect(num).to.equal(2);
 
@@ -245,7 +267,7 @@ void function(){
         var component = new Regular({
           data: {items: ["item1", "item2"]} ,
           template: "{{#list items as item}}<item item={{item}} />{{/list}}"
-        }).inject(container)
+        }).$inject(container)
 
         expect($("p",container).length).to.equal(2);
         expect($("p", container)[0].innerHTML).to.equal("item1");

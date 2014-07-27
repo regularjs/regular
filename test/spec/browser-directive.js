@@ -24,7 +24,7 @@ describe("Directive", function(){
         data: {
           content:'hello'
         }
-      }).inject(container)
+      }).$inject(container)
 
 
       expect($('.m-class', container).html()).to.equal(component.data.content)
@@ -42,7 +42,7 @@ describe("Directive", function(){
         data: {
           content:'hello'
         }
-      }).inject(container)
+      }).$inject(container)
 
 
       expect($('.m-class', container).attr('t-invalid')).to.equal(component.data.content)
@@ -65,7 +65,7 @@ describe("Directive", function(){
         data: {
           content:'hello'
         }
-      }).inject(container)
+      }).$inject(container)
     })
 
   })
@@ -84,7 +84,7 @@ describe('r-model directive', function(){
       var template = '<input type="email" value="87399126@163.com" r-model={{email}}><div>{{email}}</div>';
       var component = new Regular({
         template: template
-      }).inject(container)
+      }).$inject(container)
 
 
       expect($('input', container).length).to.equal(1);
@@ -107,7 +107,7 @@ describe('r-model directive', function(){
         '<input type="text" r-model={{text}}>'
       var component = new Regular({
         template: template
-      }).inject(container)
+      }).$inject(container)
 
       expect($('input', container).length).to.equal(2)
       expect($('input:nth-child(10n+1)', container).val()).to.equal("123456");
@@ -127,7 +127,7 @@ describe('r-model directive', function(){
       var template = "<input r-model={{nontype}}>";
       var component = new Regular({
         template: template
-      }).inject(container);
+      }).$inject(container);
 
       expect($('input', container).length).to.equal(1)
       expect($('input', container).val()).to.equal('')
@@ -146,7 +146,7 @@ describe('r-model directive', function(){
         var component = new Regular({
           template: template,
           data: {textarea: '100'}
-        }).inject(container);
+        }).$inject(container);
 
         expect($('textarea', container).length).to.equal(2);
         expect($('textarea', container).val()).to.equal("100");
@@ -165,7 +165,7 @@ describe('r-model directive', function(){
         "<input type='checkbox' r-model={{nontype2}} checked=checked>";
       var component = new Regular({
         template: template
-      }).inject(container);
+      }).$inject(container);
 
 
 
@@ -186,7 +186,7 @@ describe('r-model directive', function(){
       var template = "<input type='checkbox' r-model={{checked}}>";
       var component = new Regular({
         template: template
-      }).inject(container);
+      }).$inject(container);
 
       expect($('input', container).length).to.equal(1)
       expect(component.data.checked).to.equal(false);
@@ -224,7 +224,7 @@ describe('r-model directive', function(){
 
         template: template1 + template2 + template3
 
-      }).inject(container);
+      }).$inject(container);
 
       expect($('select', container).length).to.equal(3)
 
@@ -250,7 +250,7 @@ describe('r-model directive', function(){
 
         template: template1
 
-      }).inject(container);
+      }).$inject(container);
 
 
       expect($('select', container).val()).to.equal("3");
@@ -283,7 +283,7 @@ describe('r-model directive', function(){
           selected: "10"
         }
 
-      }).inject(container);
+      }).$inject(container);
 
 
       // expect($('select option', container).length).to.equal(3)
@@ -305,7 +305,7 @@ describe('r-model directive', function(){
         "<input type='radio' r-model={{radio}} checked value='radio2'>"
       var component = new Regular({
         template: template
-      }).inject(container);
+      }).$inject(container);
 
       expect($('input', container).length).to.equal(2);
       expect(component.data.radio).to.equal('radio2');
@@ -318,7 +318,7 @@ describe('r-model directive', function(){
         "<input type='radio' r-model={{radio}} value='radio2'>"
       var component = new Regular({
         template: template
-      }).inject(container);
+      }).$inject(container);
 
       expect($('input', container).length).to.equal(2);
       expect(component.data.radio).to.equal(undefined);
@@ -345,7 +345,7 @@ describe('other buildin directive', function(){
     var component = new Regular({
       template: template,
       data: {user: 'hello'}
-    }).inject(container);
+    }).$inject(container);
 
     
 
@@ -365,7 +365,7 @@ describe('other buildin directive', function(){
     var component = new Regular({
       template: template,
       data: {num: 4}
-    }).inject(container);
+    }).$inject(container);
 
     expect($('div', container).hasClass('z-show')).to.equal(true);
     expect($('div', container).hasClass('z-active')).to.equal(true);
@@ -387,7 +387,7 @@ describe('other buildin directive', function(){
     var component = new Regular({
       template: template,
       data: {num: 4}
-    }).inject(container);
+    }).$inject(container);
 
     expect($('div', container).hasClass('rawClass')).to.equal(true);
     expect($('div', container).hasClass('z-active')).to.equal(true);
@@ -407,7 +407,7 @@ describe('other buildin directive', function(){
     var component = new Regular({
       template: template,
       data: {num: 4}
-    }).inject(container);
+    }).$inject(container);
 
     expect($('div', container).hasClass('z-active')).to.equal(true);
     expect($('div', container).hasClass('z-show')).to.equal(true);
@@ -427,7 +427,7 @@ describe('other buildin directive', function(){
     var component = new Regular({
       template: template,
       data: {num: 2}
-    }).inject(container);
+    }).$inject(container);
 
     // TODO
     destroy(component, container)
@@ -439,7 +439,7 @@ describe('other buildin directive', function(){
     var component = new Regular({
       template: template,
       data: {}
-    }).inject(container);
+    }).$inject(container);
 
     expect(nes.one('div', container).innerHTML).to.equal("");
 
@@ -456,15 +456,15 @@ describe('other buildin directive', function(){
 
 
 describe('the atrributeValue with the string type is valid in most buildin directive', function(){
-  var container = document.createElement('div');
-  var template = "da"
-  var component = new Regular({
-    template: template,
-    data: {num: 2}
-  }).inject(container);
+  // var container = document.createElement('div');
+  // var template = "da"
+  // var component = new Regular({
+  //   template: template,
+  //   data: {num: 2}
+  // }).$inject(container);
 
 
-  destroy(component, container);
+  // destroy(component, container);
 })
 
 

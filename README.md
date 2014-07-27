@@ -122,5 +122,5 @@ IE7+ and other modern browser.
 1. example gallery   `progressing`
 2. interactive tutorial
 3. blog
-4. declaration animation  `progressing`
+5. Hexo-renderer-mcss
 

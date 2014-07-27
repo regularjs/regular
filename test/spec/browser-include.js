@@ -13,7 +13,7 @@ void function(){
       var component = new Regular({
         template: "<div>{{#include content}}</div>",
         data: {content: "<div>{{name}}</div>", name: "hello"}
-      }).inject(container);
+      }).$inject(container);
 
       var $node = $("div", container);
       expect($("div", container).length).to.equal(2);
@@ -28,7 +28,7 @@ void function(){
       var component = new Regular({
         template: "<div>{{#include content}}</div>",
         data: {content: "<div>{{name}}</div>", name: "hello"}
-      }).inject(container);
+      }).$inject(container);
 
       var $node = $("div", container);
       expect($("div", container).length).to.equal(2);

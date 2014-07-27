@@ -23,7 +23,7 @@ describe("Nested Component", function(){
     })
     var component = new NameSpace({
       template: "<test1 hello='leeluolee' />"
-    }).inject(container)
+    }).$inject(container)
 
     expect( nes.one("p", container).innerHTML ).to.equal("leeluolee");
     component.destroy();
@@ -38,7 +38,7 @@ describe("Nested Component", function(){
     var component = new NameSpace({
       template: "<test2 hello={{name}} /><span class='name'>{{name}}</span>",
       data: {name: "leeluolee"}
-    }).inject(container)
+    }).$inject(container)
 
     expect( nes.one("p", container).innerHTML ).to.equal("leeluolee");
 
@@ -60,7 +60,7 @@ describe("Nested Component", function(){
     var component = new NameSpace({
       template: "<test2 hello={{name+'1'}} /><span class='name'>{{name}}</span>",
       data: {name: "leeluolee"}
-    }).inject(container)
+    }).$inject(container)
 
     expect( nes.one("p", container).innerHTML ).to.equal("leeluolee1");
     expect( nes.one(".name", container).innerHTML ).to.equal("leeluolee");
@@ -86,7 +86,7 @@ describe("Nested Component", function(){
       hello: function(){
         i++
       }
-    }).inject(container);
+    }).$inject(container);
 
     dispatchMockEvent(nes.one("span", container), "click");
 
@@ -109,7 +109,7 @@ describe("Nested Component", function(){
     var component = new NameSpace({
       template: "<test user={{user}}></test>",
       data: {user: {name: {first: "Zheng"}}}
-    }).inject(container);
+    }).$inject(container);
 
     expect(nes.one("p", container).innerHTML).to.equal("Zheng");
 
@@ -132,7 +132,7 @@ describe("Nested Component", function(){
         hello: function(){
           i++
         }
-      }).inject(container);
+      }).$inject(container);
 
       dispatchMockEvent(nes.one("p", container), "click");
 
@@ -158,7 +158,7 @@ describe("Nested Component", function(){
             i++;
           })
         }
-      }).inject(container);
+      }).$inject(container);
 
       dispatchMockEvent(nes.one("p", container), "click");
 
