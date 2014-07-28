@@ -108,6 +108,7 @@ IE7+ and other modern browser.
 
 ## Changelog
 
+* `0.2.2`: now pass `Non-Expression` to `on-*` attribute will proxy the event to specified event.
 * `0.2.1`: now pass `Non-Expression` to `on-*` attribute will proxy the event to specified event.
 
 * `0.2.0`: 

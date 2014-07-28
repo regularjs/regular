@@ -15,7 +15,9 @@ var _ = require("./util");
 var tNode = document.createElement('div')
 var addEvent, removeEvent, isFixEvent;
 var noop = function(){}
-var body = document.body;
+var body = dom.body = document.body;
+
+dom.doc = document;
 
 // camelCase
 function camelCase(str){
@@ -313,9 +315,11 @@ function Event(ev){
   ev = ev || window.event;
   if(ev._fixed) return ev;
   this.event = ev;
+  this.target = ev.target || ev.srcElement;
 
   var type = this.type = ev.type;
   var button = this.button = ev.button;
+
   // if is mouse event patch pageX
   if(rMouseEvent.test(type)){ //fix pageX
     this.pageX = (ev.pageX != null) ? ev.pageX : ev.clientX + doc.scrollLeft;

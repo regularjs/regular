@@ -296,8 +296,7 @@ Regular.implement({
     this.$emit({type: 'destroy', stop: true });
     this.group && this.group.destroy(true);
     this.group = null;
-    this.element = null;
-
+    this.parentNode = null;
     this._watchers = null;
     this._children = [];
     var parent = this.$parent;
@@ -311,11 +310,13 @@ Regular.implement({
     this.$off();
   },
   $inject: function(node, position){
-    var fragment = this.element || combine.node(this);
+    var fragment = combine.node(this);
     if(typeof node === 'string') node = dom.find(node);
     if(!node) throw 'injected node is not found'
     if(!fragment) return;
     dom.inject(fragment, node, position);
+    this.$emit("inject", node);
+    this.parentNode = node;
     return this;
   },
   // private bind logic

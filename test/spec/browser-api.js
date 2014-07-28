@@ -18,7 +18,9 @@ void function(){
       var component = new Regular({
         template:"{{hello}}<div>hello</div><p>name</p>"
       }).$inject(container);
-      expect(container.innerHTML).to.equal("<div>hello</div><p>name</p>");
+      expect(nes.all("p,div",container).length).to.equal(2);
+
+
 
       component.$inject(container2);
 
@@ -26,7 +28,6 @@ void function(){
       expect(nes("div", container2).length).to.equal(1);
 
       destroy(component, container2)
-
     })
 
     it("component.$inject works on list when use twice", function(){

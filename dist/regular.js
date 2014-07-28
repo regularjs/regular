@@ -507,8 +507,7 @@ Regular.implement({
     this.$emit({type: 'destroy', stop: true });
     this.group && this.group.destroy(true);
     this.group = null;
-    this.element = null;
-
+    this.parentNode = null;
     this._watchers = null;
     this._children = [];
     var parent = this.$parent;
@@ -522,11 +521,13 @@ Regular.implement({
     this.$off();
   },
   $inject: function(node, position){
-    var fragment = this.element || combine.node(this);
+    var fragment = combine.node(this);
     if(typeof node === 'string') node = dom.find(node);
     if(!node) throw 'injected node is not found'
     if(!fragment) return;
     dom.inject(fragment, node, position);
+    this.$emit("inject", node);
+    this.parentNode = node;
     return this;
   },
   // private bind logic
@@ -1516,7 +1517,9 @@ var _ = require("./util");
 var tNode = document.createElement('div')
 var addEvent, removeEvent, isFixEvent;
 var noop = function(){}
-var body = document.body;
+var body = dom.body = document.body;
+
+dom.doc = document;
 
 // camelCase
 function camelCase(str){
@@ -1814,9 +1817,11 @@ function Event(ev){
   ev = ev || window.event;
   if(ev._fixed) return ev;
   this.event = ev;
+  this.target = ev.target || ev.srcElement;
 
   var type = this.type = ev.type;
   var button = this.button = ev.button;
+
   // if is mouse event patch pageX
   if(rMouseEvent.test(type)){ //fix pageX
     this.pageX = (ev.pageX != null) ? ev.pageX : ev.clientX + doc.scrollLeft;
@@ -4209,27 +4214,85 @@ var _ = require("../util.js");
 var dom = require("../dom.js");
 var Regular = require("../Regular.js");
 
-Regular._addProtoInheritCache("event")
+Regular._addProtoInheritCache("event");
 
 Regular.event( "enter" , function(elem, fire) {
-  function update(ev) {
-    if (ev.which == 13) {
+  function update( ev ) {
+    if ( ev.which === 13 ) {
       ev.preventDefault();
       fire(ev);
     }
   }
-  dom.on(elem, "keypress", update);
+  dom.on( elem, "keypress", update );
+
   return function() {
-    dom.off(elem, "keypress", update);
+    dom.off( elem, "keypress", update );
   }
 })
 
 
-Regular.directive(/^on-\w+$/, function(elem, value, name) {
-  if (!name || !value) return;
+Regular.directive( /^on-\w+$/, function( elem, value, name ) {
+  if ( !name || !value ) return;
   var type = name.split("-")[1];
-  return this._handleEvent(elem, type, value);
+  return this._handleEvent( elem, type, value );
 });
+// TODO.
+/**
+- $('dx').delegate()
+*/
+Regular.directive( /^delegate-\w+$/, function( elem, value, name ) {
+  var root = this.$root;
+  var _delegates = root._delegates || ( root._delegates = {} );
+  if ( !name || !value ) return;
+  var type = name.split("-")[1];
+  var fire = _.handleEvent.call(this, value, type);
+
+  if( !_delegates[type] ){
+    _delegates[type] = [];
+
+    function delegateEvent(ev){
+      matchParent(ev, _delegates[type]);
+    }
+    root.$on( "inject", function( newParent ){
+      var preParent = this.parentNode;
+      if( preParent ){
+        dom.off(preParent,type, delegateEvent);
+      }
+      dom.on(newParent, type, delegateEvent);
+    })
+    root.$on("destroy", function(){
+      if(root.parentNode) dom.off(root.parentNode, type, delegateEvent)
+      root._delegates[type] = null;
+    })
+  }
+  var delegate = {
+    element: elem,
+    fire: fire
+  }
+  _delegates[type].push( delegate );
+
+  return function(){
+    var delegates = _delegates[type];
+    if(!delegates || !delegates.length) return;
+    for( var i = 0, len = delegates.length; i < len; i++ ){
+      if( delegates[i] === delegate ) delegates.splice(i, 1);
+    }
+  }
+
+});
+
+
+function matchParent(ev , delegates){
+  var target = ev.target;
+  while(target && target !== dom.doc){
+    for( var i = 0, len = delegates.length; i < len; i++ ){
+      if(delegates[i]["element"] === target){
+        delegates[i].fire(ev);
+      }
+    }
+    target = target.parentNode;
+  }
+}
 });
 require.register("regularjs/src/module/timeout.js", function(exports, require, module){
 var Regular = require("../Regular.js");
