@@ -2,6 +2,8 @@
 
 void function(){
 
+  var dom = require_lib("dom.js");
+
   var container = document.createElement('div');
   function destroy(component, container){
     component.destroy();

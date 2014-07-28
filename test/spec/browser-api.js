@@ -20,8 +20,6 @@ void function(){
       }).$inject(container);
       expect(nes.all("p,div",container).length).to.equal(2);
 
-
-
       component.$inject(container2);
 
       expect(container.innerHTML).to.equal("");
@@ -77,8 +75,11 @@ void function(){
 
     it("component.$inject works on include when use twice", function(){
       var component = new Regular({
+
         template:"{{#include template}}",
-        data: {template: "<div></div>"}
+
+        data: { template: "<div></div>" }
+
       }).$inject(container);
 
       component.$inject(container2)

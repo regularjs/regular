@@ -147,8 +147,8 @@ gulp.task('dev-test', function(){
 gulp.task('jshint', function(){
       // jshint
   gulp.src(['src/**/*.js'])
-      .pipe(jshint())
-      .pipe(jshint.reporter('default'))
+    .pipe(jshint())
+    .pipe(jshint.reporter('default'))
 
 })
 
@@ -164,25 +164,24 @@ gulp.task('cover', function(cb){
     });
 })
 
-gulp.task('test', ['mocha', 'casper', 'karma'])
+gulp.task('test', ['mocha', 'karma'])
 
 // for travis
-gulp.task('travis', ['build', 'mocha', 'casper', 'karma']);
+gulp.task('travis', ['build', 'mocha',  'karma']);
 
 gulp.task('mocha', function() {
 
   before_mocha.dirty();
 
   return gulp.src(['test/spec/test-*.js'])
-      .pipe(mocha({reporter: 'spec' }) )
-      .on('error', function(){
-        gutil.log.apply(this, arguments);
-        console.log('\u0007');
-      })
-      .on('end', function(){
-        before_mocha.clean();
-      });
-
+    .pipe(mocha({reporter: 'spec' }) )
+    .on('error', function(){
+      gutil.log.apply(this, arguments);
+      console.log('\u0007');
+    })
+    .on('end', function(){
+      before_mocha.clean();
+    });
 });
 
 
@@ -214,7 +213,7 @@ function signatrue(file, enc, cb){
   var sign = '/**\n'+ '@author\t'+ pkg.author.name + '\n'+ '@version\t'+ pkg.version +
     '\n'+ '@homepage\t'+ pkg.homepage + '\n*/\n';
   file.contents =  Buffer.concat([new Buffer(sign), file.contents]);
- cb(null, file);
+  cb(null, file);
 }
 
 function mini(file, enc, cb){

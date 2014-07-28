@@ -192,7 +192,7 @@ void function(){
         var i = 0, j=0;
         var component = new Component({
           template: "<div {{#if test}} delegate-click=proxy {{#else}} delegate-click=proxy2 {{/if}} >haha</div>",
-          data: { test: true , name: 'hahah'},
+          data: { test: true , name: 'hahah'}
         }).$inject(container);
 
         component.$on("proxy", function(){i++})
@@ -229,7 +229,7 @@ void function(){
 
         var component = new Component({
           template: "<div delegate-click={{i = i+1}}  >haha</div>",
-          data: { i: 1 },
+          data: { i: 1 }
         }).$inject( container );
 
         component.$inject( container2 );
@@ -252,7 +252,7 @@ void function(){
         })
         var component = new Component({
           template: "<nest></nest>",
-          data: { i: 1 },
+          data: { i: 1 }
         }).$inject( container );
 
 
