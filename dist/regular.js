@@ -3781,18 +3781,23 @@ Regular.directive('r-style', function(elem, value){
 // Example: <div r-hide={{items.length > 0}}></div>
 
 Regular.directive('r-hide', function(elem, value){
-
+  var preBool = null, compelete;
   this.$watch(value, function(nvalue){
-    if(!!nvalue){
+    var bool = !!nvalue;
+    if(bool==preBool) return; 
+    preBool = bool;
+    if(bool){
       if(elem.onleave){
-        elem.onleave(function(){
+        compelete = elem.onleave(function(){
           elem.style.display = "none"
+          compelete = null;
         })
       }else{
         elem.style.display = "none"
       }
       
     }else{
+      if(compelete) compelete();
       elem.style.display = "";
       if(elem.onenter){
         elem.onenter();
@@ -4032,28 +4037,36 @@ var // variables
 function createSeed(type){
 
   var steps = [], current = 0, callback = _.noop;
+  var key;
 
   var out = {
     type: type,
     start: function(cb){
+      key = _.uid();
       if(typeof cb === "function") callback = cb;
       if(current> 0 ){
         current = 0 ;
       }else{
         out.step();
       }
+      return out.compelete;
+    },
+    compelete: function(){
+      key = null;
+      callback && callback();
+      callback = _.noop;
+      current = 0;
     },
     step: function(){
-      if(steps[current]) steps[current ]( out.done );
+      if(steps[current]) steps[current ]( out.done.bind(out, key) );
     },
-    done: function(){
+    done: function(pkey){
+      if(pkey !== key) return; // means the loop is down
       if( current < steps.length - 1 ) {
         current++;
         out.step();
       }else{
-        current = 0;
-        callback && callback();
-        callback = _.noop;
+        out.compelete();
       }
     },
     push: function(step){

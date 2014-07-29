@@ -24,28 +24,36 @@ var // variables
 function createSeed(type){
 
   var steps = [], current = 0, callback = _.noop;
+  var key;
 
   var out = {
     type: type,
     start: function(cb){
+      key = _.uid();
       if(typeof cb === "function") callback = cb;
       if(current> 0 ){
         current = 0 ;
       }else{
         out.step();
       }
+      return out.compelete;
+    },
+    compelete: function(){
+      key = null;
+      callback && callback();
+      callback = _.noop;
+      current = 0;
     },
     step: function(){
-      if(steps[current]) steps[current ]( out.done );
+      if(steps[current]) steps[current ]( out.done.bind(out, key) );
     },
-    done: function(){
+    done: function(pkey){
+      if(pkey !== key) return; // means the loop is down
       if( current < steps.length - 1 ) {
         current++;
         out.step();
       }else{
-        current = 0;
-        callback && callback();
-        callback = _.noop;
+        out.compelete();
       }
     },
     push: function(step){

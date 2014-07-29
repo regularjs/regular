@@ -40,18 +40,23 @@ Regular.directive('r-style', function(elem, value){
 // Example: <div r-hide={{items.length > 0}}></div>
 
 Regular.directive('r-hide', function(elem, value){
-
+  var preBool = null, compelete;
   this.$watch(value, function(nvalue){
-    if(!!nvalue){
+    var bool = !!nvalue;
+    if(bool==preBool) return; 
+    preBool = bool;
+    if(bool){
       if(elem.onleave){
-        elem.onleave(function(){
+        compelete = elem.onleave(function(){
           elem.style.display = "none"
+          compelete = null;
         })
       }else{
         elem.style.display = "none"
       }
       
     }else{
+      if(compelete) compelete();
       elem.style.display = "";
       if(elem.onenter){
         elem.onenter();
