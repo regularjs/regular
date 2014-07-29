@@ -37,64 +37,64 @@ void function(){
 
       })
 
-      it("animation can triggered by event", function(done){
-        var component = new Regular({
-          template: "<div r-animation='on:click; class: animated;'></div>"
-        }).$inject(container);
+      // it("animation can triggered by event", function(done){
+      //   var component = new Regular({
+      //     template: "<div r-animation='on:click; class: animated;'></div>"
+      //   }).$inject(container);
 
 
-        var node =  nes.one('div', container)
+      //   var node =  nes.one('div', container)
 
-        dispatchMockEvent(nes.one('div', container), 'click');
+      //   dispatchMockEvent(nes.one('div', container), 'click');
 
-        Regular.dom.nextReflow(function(){
+      //   Regular.dom.nextReflow(function(){
 
-          expect(node.className ).to.equal("animated");
+      //     expect(node.className ).to.equal("animated");
 
-          Regular.dom.nextReflow(function(){
+      //     Regular.dom.nextReflow(function(){
 
-            expect(node.className ).to.equal("");
+      //       expect(node.className ).to.equal("");
 
-            destroy(component, container);
-            done();
-          })
-        })
-
-
+      //       destroy(component, container);
+      //       done();
+      //     })
+      //   })
 
 
-      })
 
-      it("animation can be triggered by custom event", function(done){
 
-        var Component = Regular.extend()
-          .event("tap", function(elem, fire){
-            Regular.dom.on(elem, "click", fire)
-            return function(){
-              Regular.dom.off(elem, "click", fire);
-            }
-          })
+      // })
 
-        var component = new Component({
-          template: "<div r-animation='on: tap; class: animated;'></div>"
-        }).$inject(container);
+      // it("animation can be triggered by custom event", function(done){
 
-        dispatchMockEvent(nes.one('div', container), 'click');
+      //   var Component = Regular.extend()
+      //     .event("tap", function(elem, fire){
+      //       Regular.dom.on(elem, "click", fire)
+      //       return function(){
+      //         Regular.dom.off(elem, "click", fire);
+      //       }
+      //     })
 
-        Regular.dom.nextReflow(function(){
+      //   var component = new Component({
+      //     template: "<div r-animation='on: tap; class: animated;'></div>"
+      //   }).$inject(container);
 
-          expect(nes.one("div", container).className ).to.equal("animated");
+      //   dispatchMockEvent(nes.one('div', container), 'click');
 
-          Regular.dom.nextReflow(function(){
+      //   Regular.dom.nextReflow(function(){
 
-            expect(nes.one("div", container).className ).to.equal("");
+      //     expect(nes.one("div", container).className ).to.equal("animated");
 
-            destroy(component, container);
-            done();
-          })
-        })
+      //     Regular.dom.nextReflow(function(){
 
-      })
+      //       expect(nes.one("div", container).className ).to.equal("");
+
+      //       destroy(component, container);
+      //       done();
+      //     })
+      //   })
+
+      // })
     });
 
     describe("Class", function(){

@@ -104,11 +104,11 @@ MIT.
 
 ## Browser Compatibility
 
-IE7+ and other modern browser. 
+IE7+ and other modern browser. __In fact, most of our products need to support IE6, so ie6 is still under testing currently__
 
 ## Changelog
 
-* `0.2.2`: now pass `Non-Expression` to `on-*` attribute will proxy the event to specified event.
+* `0.2.2`: you can use `delegate-[event]` to delegate the event from element to containerElement.
 * `0.2.1`: now pass `Non-Expression` to `on-*` attribute will proxy the event to specified event.
 
 * `0.2.0`: 
