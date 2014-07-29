@@ -1,6 +1,6 @@
 /**
 @author	leeluolee
-@version	0.2.1
+@version	0.2.2
 @homepage	http://regularjs.github.io
 */
 ;(function(){
@@ -3784,9 +3784,19 @@ Regular.directive('r-hide', function(elem, value){
 
   this.$watch(value, function(nvalue){
     if(!!nvalue){
-      elem.style.display = "none";
+      if(elem.onleave){
+        elem.onleave(function(){
+          elem.style.display = "none"
+        })
+      }else{
+        elem.style.display = "none"
+      }
+      
     }else{
-      elem.style.display = ""
+      elem.style.display = "";
+      if(elem.onenter){
+        elem.onenter();
+      }
     }
   });
 
