@@ -13,8 +13,8 @@ __features__
 3. __independent lifecycle__ —— can be integrated with whatever framework you already used.
 4. __nested component__
 5. class-based component. just like [angular-classy](http://davej.github.io/angular-classy/) do for angular
-6. __directive, filter, event__ is supported, and extend easily.
-7. The template's rule is extensiable(need Parser packaged).
+6. powerfull animation supported ([blog](http://regularjs.github.io/blog/2014/07/26/2014-7-26-animation-rethink/))
+7. __directive, filter, event__ is supported, and extend easily.
 
 ## Take a glance at regularjs
 
@@ -26,7 +26,8 @@ __template__
 {{#list notes as c}}
   <p>{{c.content}}<a href='#' on-click={{this.remove(c)}}>remove</a></p>
 {{/list}}
-<textarea r-model={{draftComment}}></textarea><button on-click={{this.add()}}>new Note</button>
+<textarea r-model={{draftComment}}></textarea>
+<button on-click={{this.add()}}>new Note</button>
 ```
 
 __javascript__
@@ -108,6 +109,7 @@ IE7+ and other modern browser. __In fact, most of our products need to support I
 
 ## Changelog
 
+* `0.2.3`: pure declarative animation `r-animated` is supported
 * `0.2.2`: you can use `delegate-[event]` to delegate the event from element to containerElement.
 * `0.2.1`: now pass `Non-Expression` to `on-*` attribute will proxy the event to specified event.
 
@@ -123,5 +125,4 @@ IE7+ and other modern browser. __In fact, most of our products need to support I
 1. example gallery   `progressing`
 2. interactive tutorial
 3. blog
-5. Hexo-renderer-mcss
 

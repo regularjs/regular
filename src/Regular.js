@@ -1,10 +1,3 @@
-/**
- * Provides more features for the widget module...
- *
- * @module widget
- * @submodule widget-foo
- * @main widget
- */
 
 var Lexer = require("./parser/Lexer.js");
 var Parser = require("./parser/Parser.js");
@@ -23,13 +16,13 @@ var env = require('./env.js');
 
 
 /**
-* This is the description for my class.
-* > dadada
-*
-* @class MyClass
+* `Regular` is regularjs's NameSpace and BaseClass. Every Component is inherited from it
+* 
+* @class Regular
+* @module Regular
 * @constructor
+* @param {Object} options specification of the component
 */
-
 var Regular = function(options){
   var prevRunning = env.isRunning;
   env.isRunning = true;
@@ -110,11 +103,11 @@ _.extend(Regular, {
 
   },
   /**
-   * directive's setter and getter
-   * @param  {String|RegExp} name  
-   * @param  {[type]} cfg  [description]
-   * @return {[type]}      [description]
-   */
+   * Define a directive
+   *
+   * @method directive
+   * @return {Object} Copy of ...
+   */  
   directive: function(name, cfg){
 
     if(_.typeOf(name) === "object"){
