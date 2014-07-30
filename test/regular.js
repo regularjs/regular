@@ -525,7 +525,7 @@ Regular.implement({
     if(!fragment) return;
     dom.inject(fragment, node, position);
     this.$emit("inject", node);
-    this.parentNode = node;
+    this.parentNode = Array.isArray(fragment)? fragment[0].parentNode: fragment.parentNode;
     return this;
   },
   // private bind logic

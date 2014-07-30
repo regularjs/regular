@@ -89,6 +89,40 @@ void function(){
       expect(nes.all("div", container2).length).to.equal(1);
       destroy(component, container2)
     })
+
+    it("component.$inject will repoint the `parentNode` ", function(){
+      var node = document.createElement("div");
+      container.appendChild(node);
+      var component = new Regular({
+        template:"<div>hello</div><p>name</p>"
+      }).$inject(node, "after");
+
+      expect(node.nextSibling.innerHTML).to.equal("hello")
+      expect(component.parentNode).to.equal(container)
+
+      component.$inject(node, "before");
+
+
+      expect(node.previousSibling.innerHTML).to.equal("name")
+      expect(component.parentNode).to.equal(container)
+
+      component.$inject(node, "bottom");
+
+      expect(node.lastChild.innerHTML).to.equal("name")
+      expect(component.parentNode).to.equal(node)
+
+      component.$inject(node, "top");
+
+      expect(node.firstChild.innerHTML).to.equal("hello")
+      expect(component.parentNode).to.equal(node)
+
+      component.destroy();
+
+      expect(nes.all("div", container).length).to.equal(1);
+      expect(nes.one("div", container)).to.equal(node);
+      container.innerHTML = "";
+
+    })
   })
 
 }()
