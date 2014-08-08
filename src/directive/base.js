@@ -17,7 +17,7 @@ Regular.directive('r-class', function(elem, value){
     var className = ' '+ elem.className.replace(/\s+/g, ' ') +' ';
     for(var i in nvalue) if(nvalue.hasOwnProperty(i)){
       className = className.replace(' ' + i + ' ',' ');
-      if(nvalue[i] == true){
+      if(nvalue[i] === true){
         className += i+' ';
       }
     }
@@ -43,7 +43,7 @@ Regular.directive('r-hide', function(elem, value){
   var preBool = null, compelete;
   this.$watch(value, function(nvalue){
     var bool = !!nvalue;
-    if(bool==preBool) return; 
+    if(bool === preBool) return; 
     preBool = bool;
     if(bool){
       if(elem.onleave){

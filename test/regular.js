@@ -210,7 +210,6 @@ require.register("regularjs/src/Regular.js", function(exports, require, module){
 
 var Lexer = require("./parser/Lexer.js");
 var Parser = require("./parser/Parser.js");
-var node = require("./parser/node.js");
 var dom = require("./dom.js");
 var Group = require('./group.js');
 var _ = require('./util');
@@ -219,7 +218,6 @@ var Event = require('./helper/event.js');
 var combine = require('./helper/combine.js');
 var Watcher = require('./helper/watcher.js');
 var parse = require('./helper/parse.js');
-var walkers = require('./walkers.js');
 var doc = typeof document==='undefined'? {} : document;
 var env = require('./env.js');
 
@@ -235,7 +233,7 @@ var env = require('./env.js');
 var Regular = function(options){
   var prevRunning = env.isRunning;
   env.isRunning = true;
-  var node, template, name;
+  var node, template;
 
   options = options || {};
   options.data = options.data || {};
@@ -278,6 +276,8 @@ var Regular = function(options){
 }
 
 
+var walkers = require('./walkers.js');
+walkers.Regular = Regular;
 
 
 // description
@@ -303,7 +303,7 @@ _.extend(Regular, {
         template = node.innerHTML;
         if(name = dom.attr(node, 'name')) Regular.component(name, this);
       }
-      if(typeof template == 'string'){
+      if(typeof template === 'string'){
         this.prototype.template = new Parser(template).parse();
       }
     }
@@ -320,8 +320,8 @@ _.extend(Regular, {
   directive: function(name, cfg){
 
     if(_.typeOf(name) === "object"){
-      for(var i in name){
-        if(name.hasOwnProperty(i)) this.directive(i, name[i]);
+      for(var k in name){
+        if(name.hasOwnProperty(k)) this.directive(k, name[k]);
       }
       return this;
     }
@@ -464,7 +464,7 @@ Regular.implement({
    */
   $bind: function(component, expr1, expr2){
     var type = _.typeOf(expr1);
-    if(expr1.type === 'expression' || type == 'string'){
+    if(expr1.type === 'expression' || type === 'string'){
       this._bind(component, expr1, expr2)
     }else if( type === "array" ){ // multiply same path binding through array
       for(var i = 0, len = expr1.length; i < len; i++){
@@ -487,7 +487,7 @@ Regular.implement({
    * @param  {Regular} component [description]
    * @return {This}    this
    */
-  $unbind: function(component){
+  $unbind: function(){
     // todo
   },
   $get: function(expr){
@@ -620,9 +620,9 @@ _.setName = '_p_';
 _.ctxName = '_c_';
 
 
-_.nextTick = typeof setImmediate === 'function'
-  ? setImmediate.bind(win) 
-  : function(callback) {
+_.nextTick = typeof setImmediate === 'function'? 
+  setImmediate.bind(win) : 
+  function(callback) {
     setTimeout(callback, 0) 
   }
 
@@ -777,17 +777,17 @@ _.escapeRegExp = function(string){// Credit: XRegExp 0.6.1 (c) 2007-2008 Steven 
 // simple get accessor
 
 _.createObject = function(o, props){
-    function foo() {}
-    foo.prototype = o;
-    var res = new foo;
+    function Foo() {}
+    Foo.prototype = o;
+    var res = new Foo;
     if(props) _.extend(res, props);
     return res;
 }
 
 _.createProto = function(fn, o){
-    function foo() { this.constructor = fn;}
-    foo.prototype = o;
-    return (fn.prototype = new foo());
+    function Foo() { this.constructor = fn;}
+    Foo.prototype = o;
+    return (fn.prototype = new Foo());
 }
 
 
@@ -797,14 +797,14 @@ clone
 */
 _.clone = function clone(obj){
     var type = _.typeOf(obj);
-    if(type == 'array'){
+    if(type === 'array'){
       var cloned = [];
       for(var i=0,len = obj.length; i< len;i++){
         cloned[i] = obj[i]
       }
       return cloned;
     }
-    if(type == 'object'){
+    if(type === 'object'){
       var cloned = {};
       for(var i in obj) if(obj.hasOwnProperty(i)){
         cloned[i] = obj[i];
@@ -869,13 +869,13 @@ var ld = (function(){
       var current = matrix[i][j];
       while(i>0 || j>0){
       // the last line
-        if (i == 0) {
+        if (i === 0) {
           edits.unshift(3);
           j--;
           continue;
         }
         // the last col
-        if (j == 0) {
+        if (j === 0) {
           edits.unshift(2);
           i--;
           continue;
@@ -886,12 +886,12 @@ var ld = (function(){
 
         var min = Math.min(north, west, northWest);
 
-        if (min == west) {
+        if (min === west) {
           edits.unshift(2); //delete
           i--;
           current = west;
-        } else if (min == northWest ) {
-          if (northWest == current) {
+        } else if (min === northWest ) {
+          if (northWest === current) {
             edits.unshift(0); //no change
           } else {
             edits.unshift(1); //update
@@ -915,7 +915,7 @@ var ld = (function(){
 
       for(var i=0;i<edits.length;i++){
         if(edits[i] > 0 ){ // NOT LEAVE
-          if(step.index == null){
+          if(step.index === null){
             step.index = m;
           }
         } else { //LEAVE
@@ -1016,7 +1016,7 @@ _.cache = function(max){
         cache[keys.shift()] = undefined;
       }
       // 
-      if(cache[key] == undefined){
+      if(cache[key] === undefined){
         keys.push(key);
       }
       cache[key] = value;
@@ -1119,6 +1119,8 @@ var combine = require('./helper/combine.js');
 var walkers = module.exports = {};
 
 walkers.list = function(ast){
+
+  var Regular = walkers.Regular;  
   var placeholder = document.createComment("Regular list");
   // proxy Component to implement list item, so the behaviar is similar with angular;
   var Section =  Regular.extend( { 
@@ -1299,12 +1301,13 @@ walkers.element = function(ast){
     component, self = this,
     Constructor=this.constructor,
     children = ast.children,
+    group,
     Component = Constructor.component(ast.tag);
 
 
 
   if(children && children.length){
-    var group = this.$compile(children);
+    group = this.$compile(children);
   }
 
 
@@ -1328,7 +1331,8 @@ walkers.element = function(ast){
       }
     }
 
-    if(ast.children) var $body = this.$compile(ast.children);
+    var $body;
+    if(ast.children) $body = this.$compile(ast.children);
     var component = new Component({data: data, events: events, $body: $body, $parent: this});
     for(var i = 0, len = attrs.length; i < len; i++){
       var attr = attrs[i];
@@ -1413,7 +1417,7 @@ walkers.attribute = function(ast ,options){
     if(typeof binding === 'function') binding = {destroy: binding}; 
     return binding;
   }else{
-    if(value.type == 'expression' ){
+    if(value.type === 'expression' ){
       this.$watch(value, function(nvalue, old){
         dom.attr(element, name, nvalue);
       });
@@ -1506,9 +1510,10 @@ var dom = module.exports;
 var env = require("./env.js");
 var _ = require("./util");
 var tNode = document.createElement('div')
-var addEvent, removeEvent, isFixEvent;
+var addEvent, removeEvent;
 var noop = function(){}
-var body = dom.body = document.body;
+
+dom.body = document.body;
 
 dom.doc = document;
 
@@ -1567,7 +1572,7 @@ dom.inject = function(node, refer, position){
     }
   }
 
-  var firstChild,lastChild, parentNode, next;
+  var firstChild, next;
   switch(position){
     case 'bottom':
       refer.appendChild( node );
@@ -1615,7 +1620,7 @@ dom.create = function(type, ns, attrs){
       try{
         return document.createElement(str+'>');
       }catch(e){
-        return document.createElement(input);
+        return document.createElement("input");
       }
       
     }
@@ -1662,9 +1667,7 @@ dom.attr = function(node, name, value){
       }
     } else {
       return (node[name] ||
-               (node.attributes.getNamedItem(name)|| noop).specified)
-             ? name
-             : undefined;
+               (node.attributes.getNamedItem(name)|| noop).specified) ? name : undefined;
     }
   } else if (typeof (value) !== 'undefined') {
     // if in specialAttr;
@@ -1680,8 +1683,6 @@ dom.attr = function(node, name, value){
   }
 }
 
-// @TODO: event fixed,  context proxy , etc...
-var handlers = {};
 
 dom.on = function(node, type, handler){
   var types = type.split(' ');
@@ -1794,7 +1795,7 @@ dom.hasClass = function(node, className){
 
 //http://stackoverflow.com/questions/11068196/ie8-ie7-onchange-event-is-emited-only-after-repeated-selection
 function fixEventName(elem, name){
-  return (name == 'change'  &&  dom.msie < 9 && 
+  return (name === 'change'  &&  dom.msie < 9 && 
       (elem && elem.tagName && elem.tagName.toLowerCase()==='input' && 
         (elem.type === 'checkbox' || elem.type === 'radio')
       )
@@ -1803,7 +1804,7 @@ function fixEventName(elem, name){
 
 var rMouseEvent = /^(?:click|dblclick|contextmenu|DOMMouseScroll|mouse(?:\w+))$/
 var doc = document;
-doc = (!doc.compatMode || doc.compatMode == 'CSS1Compat') ? doc.documentElement : doc.body;
+doc = (!doc.compatMode || doc.compatMode === 'CSS1Compat') ? doc.documentElement : doc.body;
 function Event(ev){
   ev = ev || window.event;
   if(ev._fixed) return ev;
@@ -1819,12 +1820,12 @@ function Event(ev){
     this.pageY = (ev.pageX != null) ? ev.pageY : ev.clientY + doc.scrollTop;
     if (type === 'mouseover' || type === 'mouseout'){// fix relatedTarget
       var related = ev.relatedTarget || ev[(type === 'mouseover' ? 'from' : 'to') + 'Element'];
-      while (related && related.nodeType == 3) related = related.parentNode;
+      while (related && related.nodeType === 3) related = related.parentNode;
       this.relatedTarget = related;
     }
   }
   // if is mousescroll
-  if (type == 'DOMMouseScroll' || type == 'mousewheel'){
+  if (type === 'DOMMouseScroll' || type === 'mousewheel'){
     // ff ev.detail: 3    other ev.wheelDelta: -120
     this.wheelDelta = (ev.wheelDelta) ? ev.wheelDelta / 120 : -(ev.detail || 0) / 3;
   }
@@ -1877,16 +1878,15 @@ dom.nextFrame = (function(){
   
   return function(callback){
     var id = request(callback);
-    return function cancel(){
-      cancel(id);
-    }
+    return function(){ cancel(id); }
   }
 })();
 
 // 3ks for angular's raf  service
+var k;
 dom.nextReflow = function(callback){
   dom.nextFrame(function(){
-    var k = document.body.offsetWidth;
+    k = document.body.offsetWidth;
     callback();
   })
 }
@@ -1897,8 +1897,6 @@ dom.nextReflow = function(callback){
 });
 require.register("regularjs/src/group.js", function(exports, require, module){
 var _ = require('./util');
-var dom = require('./dom');
-var animate = require('./helper/animate')
 var combine = require('./helper/combine')
 
 function Group(list){
@@ -3274,8 +3272,8 @@ var methods = {
               }
             }
             if(eq !== false){
-              for(var m in last){
-                if(last[m] !== now[m]){
+              for(var n in last){
+                if(last[n] !== now[n]){
                   eq = false;
                   break;
                 }
@@ -3349,10 +3347,6 @@ var methods = {
     this._records = null;
     return _records;
   }
-}
-
-function dirtyWatcher(watcher, index, watchers){
-
 }
 
 
@@ -3542,7 +3536,7 @@ animate.remove = function(node, callback){
 
 
 
-var startClassAnimate = animate.startClassAnimate = function ( node, className,  callback, mode ){
+animate.startClassAnimate = function ( node, className,  callback, mode ){
   var activeClassName, timeout, tid, onceAnim;
   if( (!animationEnd && !transitionEnd) || env.isRunning ){
     return callback();
@@ -3564,7 +3558,7 @@ var startClassAnimate = animate.startClassAnimate = function ( node, className, 
     callback();
 
   });
-  if(mode == 2){ // auto removed
+  if(mode === 2){ // auto removed
     dom.addClass( node, className );
 
     activeClassName = className.split(/\s+/).map(function(name){
@@ -3749,7 +3743,7 @@ Regular.directive('r-class', function(elem, value){
     var className = ' '+ elem.className.replace(/\s+/g, ' ') +' ';
     for(var i in nvalue) if(nvalue.hasOwnProperty(i)){
       className = className.replace(' ' + i + ' ',' ');
-      if(nvalue[i] == true){
+      if(nvalue[i] === true){
         className += i+' ';
       }
     }
@@ -3775,7 +3769,7 @@ Regular.directive('r-hide', function(elem, value){
   var preBool = null, compelete;
   this.$watch(value, function(nvalue){
     var bool = !!nvalue;
-    if(bool==preBool) return; 
+    if(bool === preBool) return; 
     preBool = bool;
     if(bool){
       if(elem.onleave){
@@ -3888,7 +3882,7 @@ function initSelect( elem, parsed){
 function initText(elem, parsed){
   var inProgress = false;
   var self = this;
-  this.$watch(parsed, function(newValue, oldValue){
+  this.$watch(parsed, function(newValue){
     if(inProgress){ return; }
     if(elem.value !== newValue) elem.value = newValue == null? "": "" + newValue;
   });
@@ -3943,12 +3937,12 @@ function initText(elem, parsed){
 function initCheckBox(elem, parsed){
   var inProgress = false;
   var self = this;
-  this.$watch(parsed, function(newValue, oldValue){
+  this.$watch(parsed, function(newValue){
     if(inProgress) return;
     dom.attr(elem, 'checked', !!newValue);
   });
 
-  var handler = function handler(ev){
+  var handler = function handler(){
     var value = this.checked;
     parsed.set(self, value);
     inProgress= true;
@@ -3974,13 +3968,13 @@ function initCheckBox(elem, parsed){
 function initRadio(elem, parsed){
   var self = this;
   var inProgress = false;
-  this.$watch(parsed, function(newValue, oldValue){
+  this.$watch(parsed, function( newValue ){
     if(inProgress) return;
     if(newValue === elem.value) elem.checked = true;
   });
 
 
-  var handler = function handler(ev){
+  var handler = function handler(){
     var value = this.value;
     parsed.set(self, value);
     inProgress= true;
@@ -4152,6 +4146,17 @@ function processAnimate( element, value ){
     seed = createSeed( type );
   }
 
+  function whenCallback(start, value){
+    if( !!value ) start()
+  }
+
+  function animationDestroy(element){
+    return function(){
+      element.onenter = undefined;
+      element.onleave = undefined;
+    } 
+  }
+
   for( var i = 0, len = composites.length; i < len; i++ ){
 
     composite = composites[i];
@@ -4163,10 +4168,7 @@ function processAnimate( element, value ){
 
     if( command === WHEN_COMMAND ){
       reset("when");
-      this.$watch(param, function(start, value){
-        // confirm is not in this animation
-        if( !!value ) start()
-      }.bind( this, seed.start ) );
+      this.$watch(param, whenCallback.bind( this, seed.start ) );
       continue;
     }
 
@@ -4180,18 +4182,13 @@ function processAnimate( element, value ){
         destroy = this._handleEvent( element, param, seed.start );
       }
 
-      destroies.push( destroy? destroy : function (){
-          element.onenter = undefined;
-          element.onleave = undefined;
-      });
+      destroies.push( destroy? destroy : animationDestroy(element) );
       destroy = null;
       continue
     }
 
     var animator =  Regular.animation(command) 
-    if(!animator){
-      // _.log("animation " + command + "is not register. ignored");
-    }else if( seed ){
+    if( animator && seed ){
       seed.push(
         animator.call(this,{
           element: element,
@@ -4261,19 +4258,21 @@ Regular.directive( /^delegate-\w+$/, function( elem, value, name ) {
   var type = name.split("-")[1];
   var fire = _.handleEvent.call(this, value, type);
 
+  function delegateEvent(ev){
+    matchParent(ev, _delegates[type]);
+  }
+
   if( !_delegates[type] ){
     _delegates[type] = [];
 
-    function delegateEvent(ev){
-      matchParent(ev, _delegates[type]);
-    }
     root.$on( "inject", function( newParent ){
       var preParent = this.parentNode;
       if( preParent ){
-        dom.off(preParent,type, delegateEvent);
+        dom.off(preParent, type, delegateEvent);
       }
       dom.on(newParent, type, delegateEvent);
     })
+
     root.$on("destroy", function(){
       if(root.parentNode) dom.off(root.parentNode, type, delegateEvent)
       root._delegates[type] = null;
@@ -4300,7 +4299,7 @@ function matchParent(ev , delegates){
   var target = ev.target;
   while(target && target !== dom.doc){
     for( var i = 0, len = delegates.length; i < len; i++ ){
-      if(delegates[i]["element"] === target){
+      if(delegates[i].element === target){
         delegates[i].fire(ev);
       }
     }

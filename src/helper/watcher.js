@@ -120,8 +120,8 @@ var methods = {
               }
             }
             if(eq !== false){
-              for(var m in last){
-                if(last[m] !== now[m]){
+              for(var n in last){
+                if(last[n] !== now[n]){
                   eq = false;
                   break;
                 }
@@ -195,10 +195,6 @@ var methods = {
     this._records = null;
     return _records;
   }
-}
-
-function dirtyWatcher(watcher, index, watchers){
-
 }
 
 

@@ -54,7 +54,7 @@
     "eqnull"        : true,    // Tolerate use of `== null`.
     "es5"           : false,    // Allow EcmaScript 5 syntax.
     "esnext"        : false,    // Allow ES.next specific features such as `const` and `let`.
-    "evil"          : false,    // Tolerate use of `eval`.
+    "evil"          : true,    // Tolerate use of `eval`.
     "expr"          : true,    // Tolerate `ExpressionStatement` as Programs.
     "funcscope"     : false,    // Tolerate declarations of variables inside of control structures while accessing them later from the outside.
     "globalstrict"  : true,    // Allow global "use strict" (also enables 'strict').
@@ -69,11 +69,11 @@
     "regexdash"     : false,    // Tolerate unescaped last dash i.e. `[-...]`.
     "scripturl"     : false,    // Tolerate script-targeted URLs.
     "smarttabs"     : false,    // Tolerate mixed tabs and spaces when the latter are used for alignmnent only.
-    "shadow"        : false,    // Allows re-define variables later in code e.g. `var x=1; x=2;`.
+    "shadow"        : true,    // Allows re-define variables later in code e.g. `var x=1; x=2;`.
     "sub"           : false,    // Tolerate all forms of subscript notation besides dot notation e.g. `dict['key']` instead of `dict.key`.
     "supernew"      : true,    // Tolerate `new function () { ... };` and `new Object;`.
     "validthis"     : false,    // Tolerate strict violations when the code is running in strict mode and you use this in a non-constructor function.
-    "unused"        : true,     // Errors on unused variables
+    "unused"        : false,     // Errors on unused variables
 
     // == Environments ====================================================
     //

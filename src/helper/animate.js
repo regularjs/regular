@@ -101,7 +101,7 @@ animate.remove = function(node, callback){
 
 
 
-var startClassAnimate = animate.startClassAnimate = function ( node, className,  callback, mode ){
+animate.startClassAnimate = function ( node, className,  callback, mode ){
   var activeClassName, timeout, tid, onceAnim;
   if( (!animationEnd && !transitionEnd) || env.isRunning ){
     return callback();
@@ -123,7 +123,7 @@ var startClassAnimate = animate.startClassAnimate = function ( node, className, 
     callback();
 
   });
-  if(mode == 2){ // auto removed
+  if(mode === 2){ // auto removed
     dom.addClass( node, className );
 
     activeClassName = className.split(/\s+/).map(function(name){

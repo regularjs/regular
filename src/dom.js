@@ -13,9 +13,10 @@ var dom = module.exports;
 var env = require("./env.js");
 var _ = require("./util");
 var tNode = document.createElement('div')
-var addEvent, removeEvent, isFixEvent;
+var addEvent, removeEvent;
 var noop = function(){}
-var body = dom.body = document.body;
+
+dom.body = document.body;
 
 dom.doc = document;
 
@@ -74,7 +75,7 @@ dom.inject = function(node, refer, position){
     }
   }
 
-  var firstChild,lastChild, parentNode, next;
+  var firstChild, next;
   switch(position){
     case 'bottom':
       refer.appendChild( node );
@@ -122,7 +123,7 @@ dom.create = function(type, ns, attrs){
       try{
         return document.createElement(str+'>');
       }catch(e){
-        return document.createElement(input);
+        return document.createElement("input");
       }
       
     }
@@ -169,9 +170,7 @@ dom.attr = function(node, name, value){
       }
     } else {
       return (node[name] ||
-               (node.attributes.getNamedItem(name)|| noop).specified)
-             ? name
-             : undefined;
+               (node.attributes.getNamedItem(name)|| noop).specified) ? name : undefined;
     }
   } else if (typeof (value) !== 'undefined') {
     // if in specialAttr;
@@ -187,8 +186,6 @@ dom.attr = function(node, name, value){
   }
 }
 
-// @TODO: event fixed,  context proxy , etc...
-var handlers = {};
 
 dom.on = function(node, type, handler){
   var types = type.split(' ');
@@ -301,7 +298,7 @@ dom.hasClass = function(node, className){
 
 //http://stackoverflow.com/questions/11068196/ie8-ie7-onchange-event-is-emited-only-after-repeated-selection
 function fixEventName(elem, name){
-  return (name == 'change'  &&  dom.msie < 9 && 
+  return (name === 'change'  &&  dom.msie < 9 && 
       (elem && elem.tagName && elem.tagName.toLowerCase()==='input' && 
         (elem.type === 'checkbox' || elem.type === 'radio')
       )
@@ -310,7 +307,7 @@ function fixEventName(elem, name){
 
 var rMouseEvent = /^(?:click|dblclick|contextmenu|DOMMouseScroll|mouse(?:\w+))$/
 var doc = document;
-doc = (!doc.compatMode || doc.compatMode == 'CSS1Compat') ? doc.documentElement : doc.body;
+doc = (!doc.compatMode || doc.compatMode === 'CSS1Compat') ? doc.documentElement : doc.body;
 function Event(ev){
   ev = ev || window.event;
   if(ev._fixed) return ev;
@@ -326,12 +323,12 @@ function Event(ev){
     this.pageY = (ev.pageX != null) ? ev.pageY : ev.clientY + doc.scrollTop;
     if (type === 'mouseover' || type === 'mouseout'){// fix relatedTarget
       var related = ev.relatedTarget || ev[(type === 'mouseover' ? 'from' : 'to') + 'Element'];
-      while (related && related.nodeType == 3) related = related.parentNode;
+      while (related && related.nodeType === 3) related = related.parentNode;
       this.relatedTarget = related;
     }
   }
   // if is mousescroll
-  if (type == 'DOMMouseScroll' || type == 'mousewheel'){
+  if (type === 'DOMMouseScroll' || type === 'mousewheel'){
     // ff ev.detail: 3    other ev.wheelDelta: -120
     this.wheelDelta = (ev.wheelDelta) ? ev.wheelDelta / 120 : -(ev.detail || 0) / 3;
   }
@@ -384,16 +381,15 @@ dom.nextFrame = (function(){
   
   return function(callback){
     var id = request(callback);
-    return function cancel(){
-      cancel(id);
-    }
+    return function(){ cancel(id); }
   }
 })();
 
 // 3ks for angular's raf  service
+var k;
 dom.nextReflow = function(callback){
   dom.nextFrame(function(){
-    var k = document.body.offsetWidth;
+    k = document.body.offsetWidth;
     callback();
   })
 }

@@ -8,6 +8,8 @@ var combine = require('./helper/combine.js');
 var walkers = module.exports = {};
 
 walkers.list = function(ast){
+
+  var Regular = walkers.Regular;  
   var placeholder = document.createComment("Regular list");
   // proxy Component to implement list item, so the behaviar is similar with angular;
   var Section =  Regular.extend( { 
@@ -188,12 +190,13 @@ walkers.element = function(ast){
     component, self = this,
     Constructor=this.constructor,
     children = ast.children,
+    group,
     Component = Constructor.component(ast.tag);
 
 
 
   if(children && children.length){
-    var group = this.$compile(children);
+    group = this.$compile(children);
   }
 
 
@@ -217,7 +220,8 @@ walkers.element = function(ast){
       }
     }
 
-    if(ast.children) var $body = this.$compile(ast.children);
+    var $body;
+    if(ast.children) $body = this.$compile(ast.children);
     var component = new Component({data: data, events: events, $body: $body, $parent: this});
     for(var i = 0, len = attrs.length; i < len; i++){
       var attr = attrs[i];
@@ -302,7 +306,7 @@ walkers.attribute = function(ast ,options){
     if(typeof binding === 'function') binding = {destroy: binding}; 
     return binding;
   }else{
-    if(value.type == 'expression' ){
+    if(value.type === 'expression' ){
       this.$watch(value, function(nvalue, old){
         dom.attr(element, name, nvalue);
       });

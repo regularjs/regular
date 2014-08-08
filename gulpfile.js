@@ -91,7 +91,7 @@ gulp.task('karma', function (done) {
 });
 
 
-gulp.task('build', function(){
+gulp.task('build',["jshint"], function(){
   // form minify    
   gulp.src('./component.json')
     .pipe(component.scripts({
@@ -164,10 +164,10 @@ gulp.task('cover', function(cb){
     });
 })
 
-gulp.task('test', ['mocha', 'karma'])
+gulp.task('test', ['jshint','mocha', 'karma'])
 
 // for travis
-gulp.task('travis', ['build', 'mocha',  'karma']);
+gulp.task('travis', ['jshint' ,'build','mocha',  'karma']);
 
 gulp.task('mocha', function() {
 

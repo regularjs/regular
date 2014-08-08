@@ -1,7 +1,6 @@
 
 var Lexer = require("./parser/Lexer.js");
 var Parser = require("./parser/Parser.js");
-var node = require("./parser/node.js");
 var dom = require("./dom.js");
 var Group = require('./group.js');
 var _ = require('./util');
@@ -10,7 +9,6 @@ var Event = require('./helper/event.js');
 var combine = require('./helper/combine.js');
 var Watcher = require('./helper/watcher.js');
 var parse = require('./helper/parse.js');
-var walkers = require('./walkers.js');
 var doc = typeof document==='undefined'? {} : document;
 var env = require('./env.js');
 
@@ -26,7 +24,7 @@ var env = require('./env.js');
 var Regular = function(options){
   var prevRunning = env.isRunning;
   env.isRunning = true;
-  var node, template, name;
+  var node, template;
 
   options = options || {};
   options.data = options.data || {};
@@ -69,6 +67,8 @@ var Regular = function(options){
 }
 
 
+var walkers = require('./walkers.js');
+walkers.Regular = Regular;
 
 
 // description
@@ -94,7 +94,7 @@ _.extend(Regular, {
         template = node.innerHTML;
         if(name = dom.attr(node, 'name')) Regular.component(name, this);
       }
-      if(typeof template == 'string'){
+      if(typeof template === 'string'){
         this.prototype.template = new Parser(template).parse();
       }
     }
@@ -111,8 +111,8 @@ _.extend(Regular, {
   directive: function(name, cfg){
 
     if(_.typeOf(name) === "object"){
-      for(var i in name){
-        if(name.hasOwnProperty(i)) this.directive(i, name[i]);
+      for(var k in name){
+        if(name.hasOwnProperty(k)) this.directive(k, name[k]);
       }
       return this;
     }
@@ -255,7 +255,7 @@ Regular.implement({
    */
   $bind: function(component, expr1, expr2){
     var type = _.typeOf(expr1);
-    if(expr1.type === 'expression' || type == 'string'){
+    if(expr1.type === 'expression' || type === 'string'){
       this._bind(component, expr1, expr2)
     }else if( type === "array" ){ // multiply same path binding through array
       for(var i = 0, len = expr1.length; i < len; i++){
@@ -278,7 +278,7 @@ Regular.implement({
    * @param  {Regular} component [description]
    * @return {This}    this
    */
-  $unbind: function(component){
+  $unbind: function(){
     // todo
   },
   $get: function(expr){

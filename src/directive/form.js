@@ -69,7 +69,7 @@ function initSelect( elem, parsed){
 function initText(elem, parsed){
   var inProgress = false;
   var self = this;
-  this.$watch(parsed, function(newValue, oldValue){
+  this.$watch(parsed, function(newValue){
     if(inProgress){ return; }
     if(elem.value !== newValue) elem.value = newValue == null? "": "" + newValue;
   });
@@ -124,12 +124,12 @@ function initText(elem, parsed){
 function initCheckBox(elem, parsed){
   var inProgress = false;
   var self = this;
-  this.$watch(parsed, function(newValue, oldValue){
+  this.$watch(parsed, function(newValue){
     if(inProgress) return;
     dom.attr(elem, 'checked', !!newValue);
   });
 
-  var handler = function handler(ev){
+  var handler = function handler(){
     var value = this.checked;
     parsed.set(self, value);
     inProgress= true;
@@ -155,13 +155,13 @@ function initCheckBox(elem, parsed){
 function initRadio(elem, parsed){
   var self = this;
   var inProgress = false;
-  this.$watch(parsed, function(newValue, oldValue){
+  this.$watch(parsed, function( newValue ){
     if(inProgress) return;
     if(newValue === elem.value) elem.checked = true;
   });
 
 
-  var handler = function handler(ev){
+  var handler = function handler(){
     var value = this.value;
     parsed.set(self, value);
     inProgress= true;

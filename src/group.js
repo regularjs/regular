@@ -1,6 +1,4 @@
 var _ = require('./util');
-var dom = require('./dom');
-var animate = require('./helper/animate')
 var combine = require('./helper/combine')
 
 function Group(list){
