@@ -70,15 +70,127 @@ describe("Computed Property", function(){
   })
 })
 describe("Expression", function(){
-  it("+=, -= /= *= %= should work as expect", function(){
-    var component = new Regular({data: {a: 1}});
-    component.$get("a+=1");
-    expect(component.data.a).to.equal(2);
-    
-    expect(component.$get("a-=1")).to.equal(1);
-    expect(component.$get("a*=100")).to.equal(100);
-    expect(component.$get("a/=2")).to.equal(50);
-    expect(component.$get("a%=3")).to.equal(2);
+  function run_expr(expr, context){
+    return expect(Regular.expression(expr).get(context));
+  }
+  describe("compiled expression", function(){
+
+    var context = new Regular({
+      data: {
+        a: 2,
+        b: 3,
+        c: {
+          c1: 1,
+          c2: 2
+        },
+        ab: function(a, b){
+          return a + b;
+        }
+      },
+      show: function(){
+        var data = this.data;
+        data.a++;
+        return data.a;
+      }
+    })
+
+    describe('Primative Type', function(){
+      it("object type returns correctly", function(){
+        run_expr("{a: 1, b: b+1}", context).to.eql({a:1, b: 4});
+        run_expr("{a: 1, b: b+1,}", context).to.eql({a:1, b: 4});
+      });
+
+      it("array type returns correctly", function(){
+        run_expr("[1,5+a, a+b]", context).to.eql([1,7,5]);
+
+      });
+      it("range type returns correctly", function(){
+        run_expr("a..b", context).to.eql([2,3]);
+      });
+
+
+      it("primative type returns correctly", function(){
+        run_expr("1", context).to.eql(1);
+        run_expr("null", context).to.eql(null);
+        run_expr("undefined", context).to.eql(undefined);
+        run_expr("Math", context).to.eql(Math);
+        run_expr("1.1", context).to.eql(1.1);
+        run_expr("-1.1", context).to.eql(-1.1);
+        run_expr("-1.1e3", context).to.eql(-1.1e3);
+        run_expr("true", context).to.eql(true);
+        run_expr("false", context).to.eql(false);
+      })
+
+    })
+
+    describe('Operation', function(){
+      it("add/sub returns correctly", function(){
+        run_expr("1+3", context).to.eql(4);
+        run_expr("b-a", context).to.eql(1);
+      });
+
+      it("mult/div returns correctly", function(){
+        run_expr(" 3 * a ", context).to.eql(6);
+        run_expr("b/a", context).to.eql(1.5);
+      });
+      it("logic operation returns correctly", function(){
+        run_expr(" 3 || a ", context).to.eql(3);
+        run_expr("b && a", context).to.eql(2);
+        run_expr("!b", context).to.eql(false);
+      });
+      it("Relation operation returns correctly", function(){
+        run_expr(" 3 === a ", context).to.eql(false);
+        run_expr(" 3 == a ", context).to.eql(false);
+        run_expr("b !== a", context).to.eql(true);
+        run_expr("b != a", context).to.eql(true);
+        run_expr("b >= a", context).to.eql(true);
+        run_expr("b > a", context).to.eql(true);
+        run_expr("b < a", context).to.eql(false);
+        run_expr("b <= a", context).to.eql(false);
+
+      });
+
+      it("condition returns correctly", function(){
+        run_expr("a? 2: 3", context).to.eql(2);
+      })
+
+      it("paren returns correctly", function(){
+        run_expr("(2+3)*b", context).to.eql(15);
+      })
+
+      it("function call returns correctly", function(){
+        run_expr("ab(a,2)", context).to.eql(4)
+        run_expr("this.show()", context)
+        expect(context.data.a).to.eql(3);
+      })
+
+      it("assignment should works correctly", function(){
+        run_expr("a=1", context).to.eql(1)
+        expect(context.data.a).to.eql(1);
+      })
+
+      it("member should works correctly", function(){
+        expect(context.data.c.c1).to.eql(1);
+        run_expr("c.c1=10", context).to.eql(10)
+        expect(context.data.c.c1).to.eql(10);
+      })
+
+      it("setable expression should works correctly", function(){
+        expect(context.data.c.c2).to.eql(2);
+        context.$update("c.c2", 10);
+        expect(context.data.c.c2).to.eql(10);
+      })
+      it("+=, -= /= *= %= should work as expect", function(){
+        var component = new Regular({data: {a: 1}});
+        component.$get("a+=1");
+        expect(component.data.a).to.equal(2);
+        
+        expect(component.$get("a-=1")).to.equal(1);
+        expect(component.$get("a*=100")).to.equal(100);
+        expect(component.$get("a/=2")).to.equal(50);
+        expect(component.$get("a%=3")).to.equal(2);
+      })
+    })
   })
 })
 
