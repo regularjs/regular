@@ -31,7 +31,7 @@ var methods = {
         return equal? false: prev;
       }
     }else{
-      expr = parseExpression(expr);
+      expr = this.$expression? this.$expression(expr) : parseExpression(expr);
       get = expr.get;
       once = expr.once || expr.constant;
     }
@@ -65,7 +65,6 @@ var methods = {
       }
     }
   },
-
   /**
    * the whole digest loop ,just like angular, it just a dirty-check loop;
    * @param  {String} path  now regular process a pure dirty-check loop, but in parse phase, 

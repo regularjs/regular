@@ -2,7 +2,6 @@ var // packages
   _ = require("../util.js"),
  animate = require("../helper/animate.js"),
  dom = require("../dom.js"),
- parse = require("../helper/parse.js"),
  Regular = require("../Regular.js");
 
 
@@ -87,7 +86,7 @@ Regular.animation({
     }
   },
   "call": function(step){
-    var fn = parse.expression(step.param).get, self = this;
+    var fn = this.expression(step.param).get, self = this;
     return function(done){
       // _.log(step.param, 'call')
       fn(self);

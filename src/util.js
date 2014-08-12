@@ -17,6 +17,8 @@ _.varName = '_d_';
 _.setName = '_p_';
 _.ctxName = '_c_';
 
+_.rWord = /^[\$\w]+$/;
+_.rSimpleAccessor = /^[\$\w]+(\.[\$\w]+)*$/;
 
 _.nextTick = typeof setImmediate === 'function'? 
   setImmediate.bind(win) : 
@@ -485,9 +487,18 @@ _.once = function(fn){
   }
 }
 
-_.log = function(msg){
-  if(window.console)  window.console.log(msg);
+
+
+
+
+
+
+
+_.log = function(msg, type){
+  if(window.console)  window.console[type || "log"](msg);
 }
+
+
 
 
 //http://www.w3.org/html/wg/drafts/html/master/single-page.html#void-elements
@@ -503,4 +514,8 @@ _.assert = function(test, msg){
 }
 
 
+
+_.defineProperty = function(){
+  
+}
 

@@ -15,6 +15,7 @@ function Parser(input, opts){
   this.input = input;
   this.tokens = new Lexer(input, opts).lex();
   this.pos = 0;
+  this.noComputed =  opts.noComputed;
   this.length = this.tokens.length;
 }
 
@@ -355,7 +356,8 @@ op.assign = function(){
   var left = this.condition(), ll;
   if(ll = this.eat(['=', '+=', '-=', '*=', '/=', '%='])){
     if(!left.set) this.error('invalid lefthand expression in assignment expression');
-    return this.getset('(' + left.get + ll.type  + this.condition().get + ')', left.set);
+    return this.getset( left.set.replace("_p_", this.condition().get).replace("'='", "'"+ll.type+"'"), left.set);
+    // return this.getset('(' + left.get + ll.type  + this.condition().get + ')', left.set);
   }
   return left;
 }
@@ -486,19 +488,16 @@ op.unary = function(){
 op.member = function(base, last, pathes){
   var ll, path;
 
+  var onlySimpleAccessor = false;
   if(!base){ //first
     path = this.primary();
     var type = typeof path;
-    if(type === 'string'){ // no keyword ident
+    if(type === 'string'){ 
       pathes = [];
-      if(path === '$self'){ // $self.1
-        pathes.push('*');
-        base = varName;
-      }else{ // keypath **
-        pathes.push(path);
-        last = path;
-        base = varName + "['" + path + "']";
-      }
+      pathes.push( path );
+      last = path;
+      base = ctxName + "._simpleAccessorGet('" + path + "', " + varName + "['" + path + "'])";
+      onlySimpleAccessor = true;
     }else{ //Primative Type
       if(path.get === 'this'){
         base = ctxName;
@@ -507,7 +506,6 @@ op.member = function(base, last, pathes){
         pathes = null;
         base = path.get;
       }
-      
     }
   }else{ // not first enter
     if(typeof last === 'string' && isPath( last) ){ // is valid path
@@ -538,9 +536,12 @@ op.member = function(base, last, pathes){
         return this.member(base, null, pathes);
     }
   }
-  if(pathes && pathes.length) this.depend.push(pathes);
+  if( pathes && pathes.length ) this.depend.push( pathes );
   var res =  {get: base};
-  if(last) res.set = base + '=' + _.setName;
+  if(last){
+    if(onlySimpleAccessor) res.set = ctxName + "._simpleAccessorSet('" + path + "'," + _.setName + "," + _.varName + ", '=')";
+    else res.set = base + '=' + _.setName;
+  }
   return res;
 }
 

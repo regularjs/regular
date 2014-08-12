@@ -109,6 +109,7 @@ IE7+ and other modern browser. __In fact, most of our products need to support I
 
 ## Changelog
 
+* `0.2.4`: suport computed property  see more on [regularjs.guide](http://regularjs.github.io/guide/)
 * `0.2.3`: pure declarative animation `r-animated` is supported
 * `0.2.2`: you can use `delegate-[event]` to delegate the event from element to containerElement.
 * `0.2.1`: now pass `Non-Expression` to `on-*` attribute will proxy the event to specified event.
