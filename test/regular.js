@@ -207,13 +207,6 @@ require.relative = function(parent) {
   return localRequire;
 };
 require.register("regularjs/src/Regular.js", function(exports, require, module){
-/**
- * Provides more features for the widget module...
- *
- * @module widget
- * @submodule widget-foo
- * @main widget
- */
 
 var Lexer = require("./parser/Lexer.js");
 var Parser = require("./parser/Parser.js");
@@ -232,13 +225,13 @@ var env = require('./env.js');
 
 
 /**
-* This is the description for my class.
-* > dadada
-*
-* @class MyClass
+* `Regular` is regularjs's NameSpace and BaseClass. Every Component is inherited from it
+* 
+* @class Regular
+* @module Regular
 * @constructor
+* @param {Object} options specification of the component
 */
-
 var Regular = function(options){
   var prevRunning = env.isRunning;
   env.isRunning = true;
@@ -246,7 +239,9 @@ var Regular = function(options){
 
   options = options || {};
   options.data = options.data || {};
+  options.computed = options.computed || {};
   if(this.data) _.extend(options.data, this.data);
+  if(this.computed) _.extend(options.computed, this.computed);
   _.extend(this, options, true);
   if(this.$parent){
      this.$parent._append(this);
@@ -267,11 +262,15 @@ var Regular = function(options){
     this.$on(this.events);
     this.events = null;
   }
+  // handle computed
+  this.computed = handleComputed(this.computed);
+
 
   if(template){
     this.group = this.$compile(this.template);
     combine.node(this);
   }
+
 
   if(this.$root === this) this.$update();
   this.$ready = true;
@@ -299,7 +298,6 @@ _.extend(Regular, {
   _protoInheritCache: ['use', 'directive'] ,
   __after__: function(supr, o) {
 
-
     var template;
     this.__after__ = supr.__after__;
 
@@ -314,16 +312,18 @@ _.extend(Regular, {
         this.prototype.template = new Parser(template).parse();
       }
     }
+
+    if(o.computed) this.prototype.computed = handleComputed(o.computed);
     // inherit directive and other config from supr
     Regular._inheritConfig(this, supr);
 
   },
   /**
-   * directive's setter and getter
-   * @param  {String|RegExp} name  
-   * @param  {[type]} cfg  [description]
-   * @return {[type]}      [description]
-   */
+   * Define a directive
+   *
+   * @method directive
+   * @return {Object} Copy of ...
+   */  
   directive: function(name, cfg){
 
     if(_.typeOf(name) === "object"){
@@ -420,6 +420,25 @@ Regular.implement({
 
 
   init: function(){},
+  destroy: function(){
+    // destroy event wont propgation;
+    this.$emit({type: 'destroy', stop: true });
+    this.group && this.group.destroy(true);
+    this.group = null;
+    this.parentNode = null;
+    this._watchers = null;
+    this._children = [];
+    var parent = this.$parent;
+    if(parent){
+      var index = parent._children.indexOf(this);
+      parent._children.splice(index,1);
+    }
+    this.$parent = null;
+    this.$root = null;
+    this._events = null;
+    this.$off();
+  },
+
   /**
    * compile a block ast ; return a group;
    * @param  {Array} parsed ast
@@ -471,7 +490,7 @@ Regular.implement({
    */
   $bind: function(component, expr1, expr2){
     var type = _.typeOf(expr1);
-    if(expr1.type === 'expression' || type == 'string'){
+    if( expr1.type === 'expression' || type === 'string' ){
       this._bind(component, expr1, expr2)
     }else if( type === "array" ){ // multiply same path binding through array
       for(var i = 0, len = expr1.length; i < len; i++){
@@ -498,51 +517,82 @@ Regular.implement({
     // todo
   },
   $get: function(expr){
-    return Regular.expression(expr).get(this);
-  },
-  destroy: function(){
-    // destroy event wont propgation;
-    this.$emit({type: 'destroy', stop: true });
-    this.group && this.group.destroy(true);
-    this.group = null;
-    this.parentNode = null;
-    this._watchers = null;
-    this._children = [];
-    var parent = this.$parent;
-    if(parent){
-      var index = parent._children.indexOf(this);
-      parent._children.splice(index,1);
-    }
-    this.$parent = null;
-    this.$root = null;
-    this._events = null;
-    this.$off();
+    return parse.expression(expr).get(this);
   },
   $inject: function(node, position){
     var fragment = combine.node(this);
     if(typeof node === 'string') node = dom.find(node);
-    if(!node) throw 'injected node is not found'
+    if(!node) throw 'injected node is not found';
     if(!fragment) return;
     dom.inject(fragment, node, position);
     this.$emit("inject", node);
     this.parentNode = Array.isArray(fragment)? fragment[0].parentNode: fragment.parentNode;
     return this;
   },
+  /**
+   * we need  to detect computed property
+   */
+  _simpleAccessorGet:function(path, defaults){
+    var computed = this.computed,
+      computedProperty = computed[path];
+    if(computedProperty){
+      if(computedProperty.get)  return computedProperty.get(this);
+      else _.log("the computed '" + path + "' don't define the get function,  get data."+path + " altnately", "error")
+    }
+    return defaults;
+
+  },
+  _simpleAccessorSet:function(path, value, data, op){
+    var computed = this.computed,
+      op = op || "=",
+      computedProperty = computed[path],
+      prev;
+
+    if(op!== '='){
+      prev = computedProperty? computedProperty.get(this): data[path];
+      switch(op){
+        case "+=":
+          value = prev + value;
+          break;
+        case "-=":
+          value = prev - value;
+          break;
+        case "*=":
+          value = prev * value;
+          break;
+        case "/=":
+          value = prev / value;
+          break;
+        case "%=":
+          value = prev % value;
+          break;
+      }
+    }  
+
+    if(computedProperty) {
+      if(computedProperty.set) return computedProperty.set(this, value);
+      else _.log("the computed '" + path + "' don't define the set function,  assign data."+path + " altnately", "error" )
+    }
+    data[path] = value;
+    return value;
+  },
   // private bind logic
   _bind: function(component, expr1, expr2){
 
     var self = this;
     // basic binding
+
     if(!component || !(component instanceof Regular)) throw "$bind() should pass Regular component as first argument";
     if(!expr1) throw "$bind() should  pass as least one expression to bind";
-    expr1 = Regular.expression(expr1);
 
     if(!expr2) expr2 = expr1;
-    else expr2 = Regular.expression(expr2);
+
+    expr1 = parse.expression( expr1 );
+    expr2 = parse.expression( expr2 );
 
     // set is need to operate setting ;
     if(expr2.set){
-      var wid1 = this.$watch(expr1, function(value){
+      var wid1 = this.$watch( expr1, function(value){
         component.$update(expr2, value)
       });
       component.$on('destroy', function(){
@@ -577,7 +627,6 @@ Regular.implement({
     component.$root = this.$root;
     component.$parent = this;
   },
-
   // find filter
   _f: function(name){
     var Component = this.constructor;
@@ -605,6 +654,53 @@ Regular.prototype.inject = Regular.prototype.$inject;
 
 module.exports = Regular;
 
+
+
+var handleComputed = (function(){
+  // wrap the computed getter;
+  function wrapGet(get){
+    return function(context){
+      var ctx = context.$context;
+      return get.call( ctx, ctx.data );
+    }
+  }
+  // wrap the computed setter;
+  function wrapSet(set){
+    return function(context, value){
+      var ctx = context.$context;
+      set.call( ctx, value, ctx.data );
+      return value;
+    }
+  }
+
+  return function(computed){
+    if(!computed) return;
+    var parsedComputed = {}, handle, pair, type;
+    for(var i in computed){
+      handle = computed[i]
+      type = typeof handle;
+
+      if(handle.type === 'expression'){
+        parsedComputed[i] = handle;
+        continue;
+      }
+      if( type === "string" ){
+        parsedComputed[i]=parse.expression(handle)
+      }else{
+        pair = parsedComputed[i] = {type: 'expression'};
+        if(type === "function" ){
+          pair.get = wrapGet(handle);
+
+        }else{
+          if(handle.get) pair.get = wrapGet(handle.get);
+          if(handle.set) pair.set = wrapSet(handle.set);
+        }
+      } 
+    }
+    return parsedComputed;
+  }
+})();
+
 });
 require.register("regularjs/src/util.js", function(exports, require, module){
 require('./helper/shim.js');
@@ -626,6 +722,8 @@ _.varName = '_d_';
 _.setName = '_p_';
 _.ctxName = '_c_';
 
+_.rWord = /^[\$\w]+$/;
+_.rSimpleAccessor = /^[\$\w]+(\.[\$\w]+)*$/;
 
 _.nextTick = typeof setImmediate === 'function'
   ? setImmediate.bind(win) 
@@ -1094,9 +1192,18 @@ _.once = function(fn){
   }
 }
 
-_.log = function(msg){
-  if(window.console)  window.console.log(msg);
+
+
+
+
+
+
+
+_.log = function(msg, type){
+  if(window.console)  window.console[type || "log"](msg);
 }
+
+
 
 
 //http://www.w3.org/html/wg/drafts/html/master/single-page.html#void-elements
@@ -2347,6 +2454,7 @@ function Parser(input, opts){
   this.input = input;
   this.tokens = new Lexer(input, opts).lex();
   this.pos = 0;
+  this.noComputed =  opts.noComputed;
   this.length = this.tokens.length;
 }
 
@@ -2687,7 +2795,8 @@ op.assign = function(){
   var left = this.condition(), ll;
   if(ll = this.eat(['=', '+=', '-=', '*=', '/=', '%='])){
     if(!left.set) this.error('invalid lefthand expression in assignment expression');
-    return this.getset('(' + left.get + ll.type  + this.condition().get + ')', left.set);
+    return this.getset( left.set.replace("_p_", this.condition().get).replace("'='", "'"+ll.type+"'"), left.set);
+    // return this.getset('(' + left.get + ll.type  + this.condition().get + ')', left.set);
   }
   return left;
 }
@@ -2818,19 +2927,16 @@ op.unary = function(){
 op.member = function(base, last, pathes){
   var ll, path;
 
+  var onlySimpleAccessor = false;
   if(!base){ //first
     path = this.primary();
     var type = typeof path;
-    if(type === 'string'){ // no keyword ident
+    if(type === 'string'){ 
       pathes = [];
-      if(path === '$self'){ // $self.1
-        pathes.push('*');
-        base = varName;
-      }else{ // keypath **
-        pathes.push(path);
-        last = path;
-        base = varName + "['" + path + "']";
-      }
+      pathes.push( path );
+      last = path;
+      base = ctxName + "._simpleAccessorGet('" + path + "', " + varName + "['" + path + "'])";
+      onlySimpleAccessor = true;
     }else{ //Primative Type
       if(path.get === 'this'){
         base = ctxName;
@@ -2839,7 +2945,6 @@ op.member = function(base, last, pathes){
         pathes = null;
         base = path.get;
       }
-      
     }
   }else{ // not first enter
     if(typeof last === 'string' && isPath( last) ){ // is valid path
@@ -2870,9 +2975,12 @@ op.member = function(base, last, pathes){
         return this.member(base, null, pathes);
     }
   }
-  if(pathes && pathes.length) this.depend.push(pathes);
+  if( pathes && pathes.length ) this.depend.push( pathes );
   var res =  {get: base};
-  if(last) res.set = base + '=' + _.setName;
+  if(last){
+    if(onlySimpleAccessor) res.set = ctxName + "._simpleAccessorSet('" + path + "'," + _.setName + "," + _.varName + ", '=')";
+    else res.set = base + '=' + _.setName;
+  }
   return res;
 }
 
@@ -3146,15 +3254,29 @@ var exprCache = require('../env').exprCache;
 var _ = require("../util");
 var Parser = require("../parser/Parser.js");
 module.exports = {
-  expression: function(expr){
+  expression: function(expr, simple){
     // @TODO cache
-    if(typeof expr === 'string' && (expr = expr.trim()) ){
-      expr = exprCache.get(expr) || exprCache.set(expr, new Parser(expr, {state: 'JST', mode: 2}).expression() )
+    if( typeof expr === 'string' && ( expr = expr.trim() ) ){
+      expr = exprCache.get( expr ) || exprCache.set( expr, new Parser( expr, { state: 'JST', mode: 2 } ).expression() )
     }
-    if(expr) return _.touchExpression(expr);
+    if(expr) return _.touchExpression( expr );
   },
   parse: function(template){
     return new Parser(template).parse();
+  }
+}
+
+
+function handleSimpleAccessor(path){
+  return {
+    type: "expression",
+    get: function(context){
+      return context.data[path];
+    },
+    set: function(context, value){
+      var data = context.data;
+      return data[path] = value; 
+    }
   }
 }
 });
@@ -3192,7 +3314,7 @@ var methods = {
         return equal? false: prev;
       }
     }else{
-      expr = parseExpression(expr);
+      expr = this.$expression? this.$expression(expr) : parseExpression(expr);
       get = expr.get;
       once = expr.once || expr.constant;
     }
@@ -3226,7 +3348,6 @@ var methods = {
       }
     }
   },
-
   /**
    * the whole digest loop ,just like angular, it just a dirty-check loop;
    * @param  {String} path  now regular process a pure dirty-check loop, but in parse phase, 
@@ -4013,7 +4134,6 @@ var // packages
   _ = require("../util.js"),
  animate = require("../helper/animate.js"),
  dom = require("../dom.js"),
- parse = require("../helper/parse.js"),
  Regular = require("../Regular.js");
 
 
@@ -4098,7 +4218,7 @@ Regular.animation({
     }
   },
   "call": function(step){
-    var fn = parse.expression(step.param).get, self = this;
+    var fn = this.expression(step.param).get, self = this;
     return function(done){
       // _.log(step.param, 'call')
       fn(self);

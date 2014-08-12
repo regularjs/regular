@@ -9,8 +9,82 @@ function destroy(component, container){
   expect(container.innerHTML).to.equal('');
 }
 
+describe("Computed Property", function(){
+  var container = document.createElement("div");
+  it("only pass string will use Regular.expression to generate get(may have set)", function(){
+    var Component = Regular.extend({
+      computed: {
+        len: "items.length"
+      }
+    })
+
+    var component = new Component({data: {items: [1,2]}});
+    expect(component.$get("len")).to.equal(2);
+    component.$update("len", 1);
+    expect(component.$get("items").length).to.equal(1);
+  })
+
+  it("only pass a function should register a get function", function(){
+    var Component = Regular.extend({
+      computed: {
+        len: function(data){
+          return data.items.length
+        }
+      }
+    })
+    var component = new Component({data: {items: [1,2]}});
+    expect(component.$get("len")).to.equal(2);
+    component.$update("len", 1); 
+    expect(component.$get("len")).to.equal(2);// not affect len computed
+    expect(component.data.len).to.equal(1) //but affcet the data;
+  })
+
+  it("define get/set computed property should works as expect", function(){
+    var Component = Regular.extend({
+      template: "<div>{{fullname}}</div>",
+      computed: {
+        fullname: {
+          get: function(data){
+            return data.first + "-" + data.last;
+          },
+          set: function(value, data){
+            var tmp = value.split("-");
+            data.first = tmp[0];
+            data.last = tmp[1];
+          }
+        }
+      }
+    })
+
+    var component = new Component({
+      data: {first: '1', last: '2'}
+    }).$inject(container);
+
+
+
+    expect( nes.one("div", container).innerHTML ).to.equal("1-2");
+
+    component.$update("fullname", "3-4");
+    expect( component.$get("first")).to.equal("3");
+    expect( component.$get("last")).to.equal("4");
+  })
+})
+describe("Expression", function(){
+  it("+=, -= /= *= %= should work as expect", function(){
+    var component = new Regular({data: {a: 1}});
+    component.$get("a+=1");
+    expect(component.data.a).to.equal(2);
+    
+    expect(component.$get("a-=1")).to.equal(1);
+    expect(component.$get("a*=100")).to.equal(100);
+    expect(component.$get("a/=2")).to.equal(50);
+    expect(component.$get("a%=3")).to.equal(2);
+  })
+})
 
 describe("Watcher-System", function(){
+
+
 
   it("the digest progress is works correctly on basic usage", function(){
     var component = new Regular();
@@ -173,4 +247,88 @@ describe("Watcher-System", function(){
 })
 
 
+}();
+
+void function(){
+  var Regular = require_lib('index.js');
+  var parse = require_lib("helper/parse");
+  describe("component.watcher", function(){
+    var watcher = new Regular({
+      data: {
+        str: 'hehe',
+        obj: {},
+        array: []
+      }
+    });
+
+    it('it should watch once when have @(str) ', function(){
+      var trigger = 0;
+      var trigger2 =0;
+      watcher.$watch('@(str)', function(){
+        trigger++;
+      })
+      watcher.$watch('str', function(){
+        trigger2++;
+      })
+
+      watcher.data.str = 'haha'
+      watcher.$digest();
+      watcher.data.str = 'heihei'
+      watcher.$digest();
+      expect(trigger).to.equal(1);
+      expect(trigger2).to.equal(2);
+
+    } )
+
+    it("beacuse of cache passed same expr should return the same expression", function(){
+      var expr = parse.expression("a+b");
+      var expr2 = parse.expression("a+b");
+      expect(expr === expr2).to.equal(true);
+    })
+
+    it("watch accept multi binding ", function(){
+      watcher.$watch(["str", "array.length"], function(str, len){
+        expect(str).to.equal("haha")
+        expect(len).to.equal(2)
+      })
+
+      watcher.data.str = "haha";
+      watcher.data.array = [1,2];
+      watcher.$digest();
+    })
+
+    it("watch object deep should checked the key", function(){
+      var watcher = new Regular({
+        data: {
+          str: 'hehe',
+          obj: {},
+          array: []
+        }
+      })
+
+      var trigger = 0;
+      var trigger2 = 0;
+      watcher.$watch("obj", function(){
+        trigger++;
+      })
+      watcher.$watch("obj", function(){
+        trigger2++;
+      }, true)
+
+      watcher.$digest();
+      watcher.data.obj.name = 1;
+      watcher.$digest();
+      watcher.data.obj.name = 2;
+      watcher.$digest();
+      expect(trigger).to.equal(1);
+      expect(trigger2).to.equal(3);
+    })
+
+  })
+
 }()
+
+
+
+
+
