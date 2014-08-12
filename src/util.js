@@ -515,3 +515,7 @@ _.assert = function(test, msg){
 
 
 
+_.defineProperty = function(){
+  
+}
+

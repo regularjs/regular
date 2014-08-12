@@ -1,6 +1,6 @@
 /**
 @author	leeluolee
-@version	0.2.2
+@version	0.2.4
 @homepage	http://regularjs.github.io
 */
 
@@ -1219,6 +1219,10 @@ _.assert = function(test, msg){
 }
 
 
+
+_.defineProperty = function(){
+  
+}
 
 
 });

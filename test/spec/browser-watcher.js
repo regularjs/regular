@@ -67,6 +67,56 @@ describe("Computed Property", function(){
     component.$update("fullname", "3-4");
     expect( component.$get("first")).to.equal("3");
     expect( component.$get("last")).to.equal("4");
+
+    destroy(component, container);
+  })
+  it("computed property in intialize will merge/override the setting on Component.extend", function(){
+    var Component = Regular.extend({
+      template: "<div>{{fullname}}</div><div>{{hello}}</div>",
+      computed: {
+        fullname: {
+          get: function(data){
+            return data.first + "-" + data.last;
+          },
+          set: function(value, data){
+            var tmp = value.split("-");
+            data.first = tmp[0];
+            data.last = tmp[1];
+          }
+        }
+      }
+    })
+
+    var component = new Component({
+      data: {
+        first: '1', last: '2'
+      },
+      computed: {
+        fullname: {
+          get: function(data){
+            return data.first + "=" + data.last;
+          },
+          set: function(value, data){
+            var tmp = value.split("=");
+            data.first = tmp[0];
+            data.last = tmp[1];
+          }
+        },
+        hello: function(data){
+          return "hello" + data.first + data.last
+        }
+      }
+    }).$inject(container);
+
+
+    var divs = nes.all("div", container);
+    expect(divs[0].innerHTML ).to.equal("1=2");
+    expect(divs[1].innerHTML ).to.equal("hello12");
+
+    component.$update("fullname", "3=4");
+    expect(divs[0].innerHTML ).to.equal("3=4");
+    expect(divs[1].innerHTML ).to.equal("hello34");
+    destroy(component, container);
   })
 })
 describe("Expression", function(){
