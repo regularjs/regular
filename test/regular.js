@@ -253,7 +253,6 @@ var Regular = function(options){
   }
   if(typeof template === 'string') this.template = new Parser(template).parse()
   this.computed = handleComputed(this.computed);
-  this.config && this.config(this.data);
   this.$context = this.$context || this;
   this.$root = this.$root || this;
   // if have events
@@ -261,9 +260,9 @@ var Regular = function(options){
     this.$on(this.events);
     this.events = null;
   }
+
+  this.config && this.config(this.data);
   // handle computed
-
-
   if(template){
     this.group = this.$compile(this.template);
     combine.node(this);
