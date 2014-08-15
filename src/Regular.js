@@ -43,6 +43,7 @@ var Regular = function(options){
     template = node.innerHTML;
   }
   if(typeof template === 'string') this.template = new Parser(template).parse()
+  this.computed = handleComputed(this.computed);
   this.config && this.config(this.data);
   this.$context = this.$context || this;
   this.$root = this.$root || this;
@@ -52,7 +53,6 @@ var Regular = function(options){
     this.events = null;
   }
   // handle computed
-  this.computed = handleComputed(this.computed);
 
 
   if(template){
@@ -320,53 +320,6 @@ Regular.implement({
     this.parentNode = Array.isArray(fragment)? fragment[0].parentNode: fragment.parentNode;
     return this;
   },
-  /**
-   * we need  to detect computed property
-   */
-  _simpleAccessorGet:function(path, defaults){
-    var computed = this.computed,
-      computedProperty = computed[path];
-    if(computedProperty){
-      if(computedProperty.get)  return computedProperty.get(this);
-      else _.log("the computed '" + path + "' don't define the get function,  get data."+path + " altnately", "error")
-    }
-    return defaults;
-
-  },
-  _simpleAccessorSet:function(path, value, data, op){
-    var computed = this.computed,
-      op = op || "=",
-      computedProperty = computed[path],
-      prev;
-
-    if(op!== '='){
-      prev = computedProperty? computedProperty.get(this): data[path];
-      switch(op){
-        case "+=":
-          value = prev + value;
-          break;
-        case "-=":
-          value = prev - value;
-          break;
-        case "*=":
-          value = prev * value;
-          break;
-        case "/=":
-          value = prev / value;
-          break;
-        case "%=":
-          value = prev % value;
-          break;
-      }
-    }  
-
-    if(computedProperty) {
-      if(computedProperty.set) return computedProperty.set(this, value);
-      else _.log("the computed '" + path + "' don't define the set function,  assign data."+path + " altnately", "error" )
-    }
-    data[path] = value;
-    return value;
-  },
   // private bind logic
   _bind: function(component, expr1, expr2){
 
@@ -418,13 +371,6 @@ Regular.implement({
     component.$root = this.$root;
     component.$parent = this;
   },
-  // find filter
-  _f: function(name){
-    var Component = this.constructor;
-    var filter = Component.filter(name);
-    if(typeof filter !== 'function') throw 'filter ' + name + 'is undefined';
-    return filter;
-  },
   _handleEvent: function(elem, type, value){
     var Component = this.constructor,
       fire = typeof value !== "function"? _.handleEvent.call( this, value, type ) : value,
@@ -438,6 +384,59 @@ Regular.implement({
     return handler ? destroy : function() {
       dom.off(elem, type, fire);
     }
+  },
+  // find filter
+  _f_: function(name){
+    var Component = this.constructor;
+    var filter = Component.filter(name);
+    if(typeof filter !== 'function') throw 'filter ' + name + 'is undefined';
+    return filter;
+  },
+  // simple accessor get
+  _sg_:function(path, defaults){
+    var computed = this.computed,
+      computedProperty = computed[path];
+    if(computedProperty){
+      if(computedProperty.get)  return computedProperty.get(this);
+      else _.log("the computed '" + path + "' don't define the get function,  get data."+path + " altnately", "error")
+    }
+    return defaults;
+
+  },
+  // simple accessor set
+  _ss_:function(path, value, data, op){
+    var computed = this.computed,
+      op = op || "=",
+      computedProperty = computed[path],
+      prev;
+
+    if(op!== '='){
+      prev = computedProperty? computedProperty.get(this): data[path];
+      switch(op){
+        case "+=":
+          value = prev + value;
+          break;
+        case "-=":
+          value = prev - value;
+          break;
+        case "*=":
+          value = prev * value;
+          break;
+        case "/=":
+          value = prev / value;
+          break;
+        case "%=":
+          value = prev % value;
+          break;
+      }
+    }  
+
+    if(computedProperty) {
+      if(computedProperty.set) return computedProperty.set(this, value);
+      else _.log("the computed '" + path + "' don't define the set function,  assign data."+path + " altnately", "error" )
+    }
+    data[path] = value;
+    return value;
   }
 });
 
@@ -452,7 +451,7 @@ var handleComputed = (function(){
   function wrapGet(get){
     return function(context){
       var ctx = context.$context;
-      return get.call( ctx, ctx.data );
+      return get.call(ctx, ctx.data );
     }
   }
   // wrap the computed setter;
@@ -476,12 +475,11 @@ var handleComputed = (function(){
         continue;
       }
       if( type === "string" ){
-        parsedComputed[i]=parse.expression(handle)
+        parsedComputed[i] = parse.expression(handle)
       }else{
         pair = parsedComputed[i] = {type: 'expression'};
         if(type === "function" ){
           pair.get = wrapGet(handle);
-
         }else{
           if(handle.get) pair.get = wrapGet(handle.get);
           if(handle.set) pair.set = wrapSet(handle.set);

@@ -56,10 +56,10 @@ module.exports = function extend(o){
   }
 
 
-  if(supr.__after__) supr.__after__.call(fn, supr, o);
 
   fn.implement = implement
   fn.implement(o)
+  if(supr.__after__) supr.__after__.call(fn, supr, o);
   fn.extend = extend;
   return fn;
 }

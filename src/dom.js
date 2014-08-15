@@ -7,7 +7,6 @@
 
 // ---
 // license: MIT-style license. http://mootools.net
-// requires: [Window, Document, Array, String, Function, Object, Number, Slick.Parser, Slick.Finder]
 
 var dom = module.exports;
 var env = require("./env.js");

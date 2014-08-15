@@ -14,11 +14,15 @@ describe("Computed Property", function(){
   it("only pass string will use Regular.expression to generate get(may have set)", function(){
     var Component = Regular.extend({
       computed: {
-        len: "items.length"
-      }
-    })
+        len: "items.length",
+        hello: function(){}
+      },
+      template: "xx"
+    });
+
 
     var component = new Component({data: {items: [1,2]}});
+
     expect(component.$get("len")).to.equal(2);
     component.$update("len", 1);
     expect(component.$get("items").length).to.equal(1);
@@ -70,6 +74,11 @@ describe("Computed Property", function(){
 
     destroy(component, container);
   })
+
+  it("context should point to component", function(){
+
+  })
+
   it("computed property in intialize will merge/override the setting on Component.extend", function(){
     var Component = Regular.extend({
       template: "<div>{{fullname}}</div><div>{{hello}}</div>",

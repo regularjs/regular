@@ -8,6 +8,21 @@ void function(){
 
   describe("test Regular's modular mechanism", function(){
 
+    describe("Regular definition" , function(){
+      it("should preparse template in Regular.extend", function(){
+        var Component = Regular.extend({
+          template: "aa",
+          computed: {
+            "len": "left + right" 
+          }
+        });
+
+        expect(Component.prototype.template).to.an("array");
+        expect(Component.prototype.computed.len.type).to.equal("expression");
+
+      })
+    })
+
     describe('fitler, directive, event isolation ', function(){
       var Root = Regular;
       var Parent = Regular.extend();
@@ -103,6 +118,7 @@ void function(){
     })
 
   });
+
 
 
 describe("Some buildin plugin", function(){

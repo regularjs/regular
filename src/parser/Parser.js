@@ -336,7 +336,7 @@ op.filter = function(){
           "var ", attr = "_f_", "=", left.get, ";"]
     do{
 
-      buffer.push(attr + " = "+ctxName+"._f('" + this.match('IDENT').value+ "')(" + attr) ;
+      buffer.push(attr + " = "+ctxName+"._f_('" + this.match('IDENT').value+ "')(" + attr) ;
       if(this.eat(':')){
         buffer.push(", "+ this.arguments("|").join(",") + ");")
       }else{
@@ -496,7 +496,7 @@ op.member = function(base, last, pathes){
       pathes = [];
       pathes.push( path );
       last = path;
-      base = ctxName + "._simpleAccessorGet('" + path + "', " + varName + "['" + path + "'])";
+      base = ctxName + "._sg_('" + path + "', " + varName + "['" + path + "'])";
       onlySimpleAccessor = true;
     }else{ //Primative Type
       if(path.get === 'this'){
@@ -539,7 +539,7 @@ op.member = function(base, last, pathes){
   if( pathes && pathes.length ) this.depend.push( pathes );
   var res =  {get: base};
   if(last){
-    if(onlySimpleAccessor) res.set = ctxName + "._simpleAccessorSet('" + path + "'," + _.setName + "," + _.varName + ", '=')";
+    if(onlySimpleAccessor) res.set = ctxName + "._ss_('" + path + "'," + _.setName + "," + _.varName + ", '=')";
     else res.set = base + '=' + _.setName;
   }
   return res;

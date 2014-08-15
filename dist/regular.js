@@ -254,6 +254,7 @@ var Regular = function(options){
     template = node.innerHTML;
   }
   if(typeof template === 'string') this.template = new Parser(template).parse()
+  this.computed = handleComputed(this.computed);
   this.config && this.config(this.data);
   this.$context = this.$context || this;
   this.$root = this.$root || this;
@@ -263,7 +264,6 @@ var Regular = function(options){
     this.events = null;
   }
   // handle computed
-  this.computed = handleComputed(this.computed);
 
 
   if(template){
@@ -531,53 +531,6 @@ Regular.implement({
     this.parentNode = Array.isArray(fragment)? fragment[0].parentNode: fragment.parentNode;
     return this;
   },
-  /**
-   * we need  to detect computed property
-   */
-  _simpleAccessorGet:function(path, defaults){
-    var computed = this.computed,
-      computedProperty = computed[path];
-    if(computedProperty){
-      if(computedProperty.get)  return computedProperty.get(this);
-      else _.log("the computed '" + path + "' don't define the get function,  get data."+path + " altnately", "error")
-    }
-    return defaults;
-
-  },
-  _simpleAccessorSet:function(path, value, data, op){
-    var computed = this.computed,
-      op = op || "=",
-      computedProperty = computed[path],
-      prev;
-
-    if(op!== '='){
-      prev = computedProperty? computedProperty.get(this): data[path];
-      switch(op){
-        case "+=":
-          value = prev + value;
-          break;
-        case "-=":
-          value = prev - value;
-          break;
-        case "*=":
-          value = prev * value;
-          break;
-        case "/=":
-          value = prev / value;
-          break;
-        case "%=":
-          value = prev % value;
-          break;
-      }
-    }  
-
-    if(computedProperty) {
-      if(computedProperty.set) return computedProperty.set(this, value);
-      else _.log("the computed '" + path + "' don't define the set function,  assign data."+path + " altnately", "error" )
-    }
-    data[path] = value;
-    return value;
-  },
   // private bind logic
   _bind: function(component, expr1, expr2){
 
@@ -629,13 +582,6 @@ Regular.implement({
     component.$root = this.$root;
     component.$parent = this;
   },
-  // find filter
-  _f: function(name){
-    var Component = this.constructor;
-    var filter = Component.filter(name);
-    if(typeof filter !== 'function') throw 'filter ' + name + 'is undefined';
-    return filter;
-  },
   _handleEvent: function(elem, type, value){
     var Component = this.constructor,
       fire = typeof value !== "function"? _.handleEvent.call( this, value, type ) : value,
@@ -649,6 +595,59 @@ Regular.implement({
     return handler ? destroy : function() {
       dom.off(elem, type, fire);
     }
+  },
+  // find filter
+  _f_: function(name){
+    var Component = this.constructor;
+    var filter = Component.filter(name);
+    if(typeof filter !== 'function') throw 'filter ' + name + 'is undefined';
+    return filter;
+  },
+  // simple accessor get
+  _sg_:function(path, defaults){
+    var computed = this.computed,
+      computedProperty = computed[path];
+    if(computedProperty){
+      if(computedProperty.get)  return computedProperty.get(this);
+      else _.log("the computed '" + path + "' don't define the get function,  get data."+path + " altnately", "error")
+    }
+    return defaults;
+
+  },
+  // simple accessor set
+  _ss_:function(path, value, data, op){
+    var computed = this.computed,
+      op = op || "=",
+      computedProperty = computed[path],
+      prev;
+
+    if(op!== '='){
+      prev = computedProperty? computedProperty.get(this): data[path];
+      switch(op){
+        case "+=":
+          value = prev + value;
+          break;
+        case "-=":
+          value = prev - value;
+          break;
+        case "*=":
+          value = prev * value;
+          break;
+        case "/=":
+          value = prev / value;
+          break;
+        case "%=":
+          value = prev % value;
+          break;
+      }
+    }  
+
+    if(computedProperty) {
+      if(computedProperty.set) return computedProperty.set(this, value);
+      else _.log("the computed '" + path + "' don't define the set function,  assign data."+path + " altnately", "error" )
+    }
+    data[path] = value;
+    return value;
   }
 });
 
@@ -663,7 +662,7 @@ var handleComputed = (function(){
   function wrapGet(get){
     return function(context){
       var ctx = context.$context;
-      return get.call( ctx, ctx.data );
+      return get.call(ctx, ctx.data );
     }
   }
   // wrap the computed setter;
@@ -687,12 +686,11 @@ var handleComputed = (function(){
         continue;
       }
       if( type === "string" ){
-        parsedComputed[i]=parse.expression(handle)
+        parsedComputed[i] = parse.expression(handle)
       }else{
         pair = parsedComputed[i] = {type: 'expression'};
         if(type === "function" ){
           pair.get = wrapGet(handle);
-
         }else{
           if(handle.get) pair.get = wrapGet(handle.get);
           if(handle.set) pair.set = wrapSet(handle.set);
@@ -1624,7 +1622,6 @@ require.register("regularjs/src/dom.js", function(exports, require, module){
 
 // ---
 // license: MIT-style license. http://mootools.net
-// requires: [Window, Document, Array, String, Function, Object, Number, Slick.Parser, Slick.Finder]
 
 var dom = module.exports;
 var env = require("./env.js");
@@ -2779,7 +2776,7 @@ op.filter = function(){
           "var ", attr = "_f_", "=", left.get, ";"]
     do{
 
-      buffer.push(attr + " = "+ctxName+"._f('" + this.match('IDENT').value+ "')(" + attr) ;
+      buffer.push(attr + " = "+ctxName+"._f_('" + this.match('IDENT').value+ "')(" + attr) ;
       if(this.eat(':')){
         buffer.push(", "+ this.arguments("|").join(",") + ");")
       }else{
@@ -2939,7 +2936,7 @@ op.member = function(base, last, pathes){
       pathes = [];
       pathes.push( path );
       last = path;
-      base = ctxName + "._simpleAccessorGet('" + path + "', " + varName + "['" + path + "'])";
+      base = ctxName + "._sg_('" + path + "', " + varName + "['" + path + "'])";
       onlySimpleAccessor = true;
     }else{ //Primative Type
       if(path.get === 'this'){
@@ -2982,7 +2979,7 @@ op.member = function(base, last, pathes){
   if( pathes && pathes.length ) this.depend.push( pathes );
   var res =  {get: base};
   if(last){
-    if(onlySimpleAccessor) res.set = ctxName + "._simpleAccessorSet('" + path + "'," + _.setName + "," + _.varName + ", '=')";
+    if(onlySimpleAccessor) res.set = ctxName + "._ss_('" + path + "'," + _.setName + "," + _.varName + ", '=')";
     else res.set = base + '=' + _.setName;
   }
   return res;
@@ -3157,10 +3154,10 @@ module.exports = function extend(o){
   }
 
 
-  if(supr.__after__) supr.__after__.call(fn, supr, o);
 
   fn.implement = implement
   fn.implement(o)
+  if(supr.__after__) supr.__after__.call(fn, supr, o);
   fn.extend = extend;
   return fn;
 }
