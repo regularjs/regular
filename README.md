@@ -80,6 +80,7 @@ or....
 * Social 
   1. twitter: follow the [@regularjs](https://twitter.com/regularjs). 
   2. weibo: chinese friends can also follow author's weibo[@拴萝卜的棍子](http://weibo.com/luobolee)
+  3. gitter: talk on [![Gitter chat](https://badges.gitter.im/regularjs/regular.png)](https://gitter.im/regularjs/regular)
 
 ## Contribute
 
