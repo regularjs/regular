@@ -579,13 +579,13 @@ Regular.implement({
     component.$root = this.$root;
     component.$parent = this;
   },
-  _handleEvent: function(elem, type, value){
+  _handleEvent: function(elem, type, value, attrs){
     var Component = this.constructor,
       fire = typeof value !== "function"? _.handleEvent.call( this, value, type ) : value,
       handler = Component.event(type), destroy;
 
     if ( handler ) {
-      destroy = handler.call(this, elem, fire);
+      destroy = handler.call(this, elem, fire, attrs);
     } else {
       dom.on(elem, type, fire);
     }
@@ -1510,7 +1510,7 @@ walkers.element = function(ast){
 function walkAttributes(attrs, element){
   var bindings = []
   for(var i = 0, len = attrs.length; i < len; i++){
-    var binding = this._walk(attrs[i], {element: element, fromElement: true})
+    var binding = this._walk(attrs[i], {element: element, fromElement: true, attrs: attrs})
     if(binding) bindings.push(binding);
   }
   return bindings;
@@ -1528,7 +1528,7 @@ walkers.attribute = function(ast ,options){
 
 
   if(directive && directive.link){
-    var binding = directive.link.call(self, element, value, name);
+    var binding = directive.link.call(self, element, value, name, options.attrs);
     if(typeof binding === 'function') binding = {destroy: binding}; 
     return binding;
   }else{
@@ -4369,16 +4369,16 @@ Regular.event( "enter" , function(elem, fire) {
 })
 
 
-Regular.directive( /^on-\w+$/, function( elem, value, name ) {
+Regular.directive( /^on-\w+$/, function( elem, value, name , attrs) {
   if ( !name || !value ) return;
   var type = name.split("-")[1];
-  return this._handleEvent( elem, type, value );
+  return this._handleEvent( elem, type, value, attrs );
 });
 // TODO.
 /**
 - $('dx').delegate()
 */
-Regular.directive( /^delegate-\w+$/, function( elem, value, name ) {
+Regular.directive( /^delegate-\w+$/, function( elem, value, name, attrs ) {
   var root = this.$root;
   var _delegates = root._delegates || ( root._delegates = {} );
   if ( !name || !value ) return;

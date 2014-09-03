@@ -370,13 +370,13 @@ Regular.implement({
     component.$root = this.$root;
     component.$parent = this;
   },
-  _handleEvent: function(elem, type, value){
+  _handleEvent: function(elem, type, value, attrs){
     var Component = this.constructor,
       fire = typeof value !== "function"? _.handleEvent.call( this, value, type ) : value,
       handler = Component.event(type), destroy;
 
     if ( handler ) {
-      destroy = handler.call(this, elem, fire);
+      destroy = handler.call(this, elem, fire, attrs);
     } else {
       dom.on(elem, type, fire);
     }

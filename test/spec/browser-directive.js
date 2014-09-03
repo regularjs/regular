@@ -68,6 +68,39 @@ describe("Directive", function(){
       }).$inject(container)
     })
 
+    it('the whole attributes should be get in directive handler', function(done){
+      var tmpName = "t-" + Regular.util.uid();
+      Regular.directive(tmpName, function(elem, value, name, attrs){
+        expect(value.type).to.equal('expression')        
+        expect(value.get).to.be.a('function');
+        expect(value.set).to.be.a('function');
+        expect(attrs.length).to.equal(3);
+        done()
+      })
+      var component = new Regular({
+        template: "<div class='m-class' "+tmpName+"={{content}} t-randomAttr={{1}}></div>",
+        data: {
+          content:'hello'
+        }
+      })
+
+    })
+    it('the whole attributes should be get in event handler', function(done){
+      var tmpName = "on-upload2";
+      Regular.event("upload2", function(elem, fire, attrs){
+        expect(attrs.length).to.equal(3);
+        done()
+      })
+      var component = new Regular({
+        template: "<div class='m-class' on-upload2={{content}} t-randomAttr={{1}}></div>",
+        data: {
+          content:'hello'
+        }
+      })
+
+    })
+
+
   })
 
 

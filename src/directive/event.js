@@ -23,16 +23,16 @@ Regular.event( "enter" , function(elem, fire) {
 })
 
 
-Regular.directive( /^on-\w+$/, function( elem, value, name ) {
+Regular.directive( /^on-\w+$/, function( elem, value, name , attrs) {
   if ( !name || !value ) return;
   var type = name.split("-")[1];
-  return this._handleEvent( elem, type, value );
+  return this._handleEvent( elem, type, value, attrs );
 });
 // TODO.
 /**
 - $('dx').delegate()
 */
-Regular.directive( /^delegate-\w+$/, function( elem, value, name ) {
+Regular.directive( /^delegate-\w+$/, function( elem, value, name, attrs ) {
   var root = this.$root;
   var _delegates = root._delegates || ( root._delegates = {} );
   if ( !name || !value ) return;

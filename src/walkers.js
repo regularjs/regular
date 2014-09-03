@@ -284,7 +284,7 @@ walkers.element = function(ast){
 function walkAttributes(attrs, element){
   var bindings = []
   for(var i = 0, len = attrs.length; i < len; i++){
-    var binding = this._walk(attrs[i], {element: element, fromElement: true})
+    var binding = this._walk(attrs[i], {element: element, fromElement: true, attrs: attrs})
     if(binding) bindings.push(binding);
   }
   return bindings;
@@ -302,7 +302,7 @@ walkers.attribute = function(ast ,options){
 
 
   if(directive && directive.link){
-    var binding = directive.link.call(self, element, value, name);
+    var binding = directive.link.call(self, element, value, name, options.attrs);
     if(typeof binding === 'function') binding = {destroy: binding}; 
     return binding;
   }else{
