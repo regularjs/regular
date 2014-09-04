@@ -167,6 +167,34 @@ describe("Nested Component", function(){
 
       destroy(component, container);
 
+    }) 
+
+    it("sub_component should get initail data from component during initailize", function(){
+      var container = document.createElement("div");
+      var Component = NameSpace.extend({
+        name: "test",
+        template: "<p on-click={{this.$emit('hello', $event)}}></p>"
+      })
+
+      var i =0;
+      var type=null;
+      var component = new NameSpace({
+        template: "<test on-hello='hello' />",
+        init: function(){
+          this.$on('hello', function(ev){
+            type = ev.type;
+            i++;
+          })
+        }
+      }).$inject(container);
+
+      dispatchMockEvent(nes.one("p", container), "click");
+
+      expect(i).to.equal(1);
+      expect(type).to.equal("click");
+
+      destroy(component, container);
+
     })
 
   })

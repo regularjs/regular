@@ -217,6 +217,8 @@ walkers.element = function(ast){
 
       if(value.type !== 'expression'){
         data[attr.name] = value;
+      }else{
+        data[attr.name] = value.get(self); 
       }
     }
 
