@@ -242,6 +242,19 @@ walkers.element = function(ast){
 
   var child;
 
+  if(group && !_.isVoidTag(ast.tag)){
+    dom.inject( combine.node(group) , element)
+  }
+
+  // sort before
+  attrs.sort(function(a1, a2){
+    var d1 = Constructor.directive(a1.name),
+      d2 = Constructor.directive(a2.name);
+    if(d1 && d2) return (d2.priority || 1) - (d1.priority || 1);
+    if(d1) return 1;
+    if(d2) return -1;
+    return -1;
+  })
   // may distinct with if else
   var destroies = walkAttributes.call(this, attrs, element, destroies);
 
@@ -252,10 +265,6 @@ walkers.element = function(ast){
     type: "element",
     group: group,
     node: function(){
-      if(!res.init && group && !_.isVoidTag(ast.tag)){
-        animate.inject( combine.node(group) , element)
-        res.init = true;
-      }
       return element;
     },
     last: function(){

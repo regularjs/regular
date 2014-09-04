@@ -193,7 +193,7 @@ describe('r-model directive', function(){
   describe('checkbox binding', function(){
     it('input:checkbox"s initial state should be correct', function(){
       var template = 
-        "<input type='checkbox' r-model={{nontype}} checked >"+
+        "<input checked  type='checkbox' r-model={{nontype}} >"+
         "<input type='checkbox' r-model={{nontype3}}>"+
         "<input type='checkbox' r-model={{nontype2}} checked=checked>";
       var component = new Regular({
@@ -363,6 +363,38 @@ describe('r-model directive', function(){
       destroy(component, container);
 
     })
+
+    it("r-model in if should works as expect", function(){
+      var container = document.createElement('div')
+      var Component = Regular.extend({});
+      var component = new Regular({
+        data: {test: true} ,
+        template: "{{#if !test}}<input r-model={{item}} value='1' />{{/if}}"
+      }).$inject(container)
+
+      component.$update("test", false);
+
+      expect(nes.one("input", container).value).to.equal('1');
+      expect(component.data.item).to.equal('1');
+
+      destroy(component, container);
+
+    })
+    it("r-model in list should works as expect", function(){
+      var container = document.createElement('div')
+      var Component = Regular.extend({});
+      var component = new Regular({
+        data: {test: true, hello: {}} ,
+        template: "{{#list [1,2,3,4] as item}}<input r-model={{hello.name}} value='1' />{{/list}}"
+      }).$inject(container)
+
+      expect(nes.one("input", container).value).to.equal('1');
+      expect(component.data.hello.name).to.equal('1');
+
+      destroy(component, container);
+
+    })
+
   })
 
 })

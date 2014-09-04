@@ -1,4 +1,4 @@
-![logo](http://regularjs.github.io//asserts/image/regular-icon-100.png) 
+
 
 # regular = react(ractive) + angular.
 
@@ -24,10 +24,10 @@ __template__
 
 ```html
 {{#list notes as c}}
-  <p>{{c.content}}<a href='#' on-click={{this.remove(c)}}>remove</a></p>
+  &amp;amp;lt;p>{{c.content}}&amp;amp;lt;a href='#' on-click={{this.remove(c)}}>remove&amp;amp;lt;/a>&amp;amp;lt;/p>
 {{/list}}
-<textarea r-model={{draftComment}}></textarea>
-<button on-click={{this.add()}}>new Note</button>
+&amp;amp;lt;textarea r-model={{draftComment}}>&amp;amp;lt;/textarea>
+&amp;amp;lt;button on-click={{this.add()}}>new Note&amp;amp;lt;/button>
 ```
 
 __javascript__
@@ -59,7 +59,7 @@ then you can find `regular.js` and `regular.min.js` in `dist` folder;
 or....
 
 ```html
-<script src="https://rawgit.com/regularjs/regular/master/dist/regular.min.js"></script>
+&amp;amp;lt;script src="https://rawgit.com/regularjs/regular/master/dist/regular.min.js">&amp;amp;lt;/script>
 ```
 
 
@@ -119,7 +119,7 @@ IE7+ and other modern browser. __In fact, most of our products need to support I
   1. `@(Expression)` to create binding-once Expression 
   2. lightweight animation support
   3. svg support
-  4. `{{#if }}` can be used in tag. like `<div {{#if !user }} on-click = {{this.login()}}{{/if}}></div>`
+  4. `{{#if }}` can be used in tag. like `&amp;amp;lt;div {{#if !user }} on-click = {{this.login()}}{{/if}}>&amp;amp;lt;/div>`
 
 
 ## TODO

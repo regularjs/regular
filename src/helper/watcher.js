@@ -35,6 +35,7 @@ var methods = {
       get = expr.get;
       once = expr.once || expr.constant;
     }
+    
     this._watchers.push({
       id: uid, 
       get: get, 

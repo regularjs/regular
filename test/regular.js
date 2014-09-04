@@ -1468,6 +1468,19 @@ walkers.element = function(ast){
 
   var child;
 
+  if(group && !_.isVoidTag(ast.tag)){
+    dom.inject( combine.node(group) , element)
+  }
+
+  // sort before
+  attrs.sort(function(a1, a2){
+    var d1 = Constructor.directive(a1.name),
+      d2 = Constructor.directive(a2.name);
+    if(d1 && d2) return (d2.priority || 1) - (d1.priority || 1);
+    if(d1) return 1;
+    if(d2) return -1;
+    return -1;
+  })
   // may distinct with if else
   var destroies = walkAttributes.call(this, attrs, element, destroies);
 
@@ -1478,10 +1491,6 @@ walkers.element = function(ast){
     type: "element",
     group: group,
     node: function(){
-      if(!res.init && group && !_.isVoidTag(ast.tag)){
-        animate.inject( combine.node(group) , element)
-        res.init = true;
-      }
       return element;
     },
     last: function(){
@@ -3316,6 +3325,7 @@ var methods = {
       get = expr.get;
       once = expr.once || expr.constant;
     }
+    
     this._watchers.push({
       id: uid, 
       get: get, 
@@ -3994,12 +4004,10 @@ function initSelect( elem, parsed){
     self.$update();
     inProgress = false;
   }
-  dom.on(elem, "change", handler);
-  this.$on('init', function(){
-    if(parsed.get(self) === undefined){
-       parsed.set(self, elem.value);
-    }
-  });
+
+  if(parsed.get(self) === undefined && elem.value){
+     parsed.set(self, elem.value);
+  }
   return function destroy(){
     dom.off(elem, "change", handler);
   }
@@ -4042,11 +4050,9 @@ function initText(elem, parsed){
     dom.on(elem, "cut", handler)
     dom.on(elem, "change", handler)
   }
-  this.$on('init', function(){
-    if(parsed.get(self) === undefined){
-       parsed.set(self, elem.value);
-    }
-  })
+  if(parsed.get(self) === undefined && elem.value){
+     parsed.set(self, elem.value);
+  }
   return function destroy(){
     if(dom.msie !== 9 && "oninput" in dom.tNode ){
       elem.removeEventListener("input", handler );
@@ -4078,12 +4084,10 @@ function initCheckBox(elem, parsed){
     inProgress = false;
   }
   if(parsed.set) dom.on(elem, "change", handler)
-  this.$on('init', function(){
 
-    if(parsed.get(self) === undefined){
-      parsed.set(self, elem.checked);
-    }
-  });
+  if(parsed.get(self) === undefined){
+    parsed.set(self, !!elem.checked);
+  }
 
   return function destroy(){
     if(parsed.set) dom.off(elem, "change", handler)
@@ -4111,11 +4115,9 @@ function initRadio(elem, parsed){
   }
   if(parsed.set) dom.on(elem, "change", handler)
   // beacuse only after compile(init), the dom structrue is exsit. 
-  this.$on('init', function(){
-    if(parsed.get(self) === undefined){
-      if(elem.checked) parsed.set(self, elem.value);
-    }
-  });
+  if(parsed.get(self) === undefined){
+    if(elem.checked) parsed.set(self, elem.value);
+  }
 
   return function destroy(){
     if(parsed.set) dom.off(elem, "change", handler)
