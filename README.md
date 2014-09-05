@@ -1,6 +1,8 @@
 
 
-# regular = react(ractive) + angular.
+# regularjs: a framework for creating data-driven component
+
+
 
 [![Build Status](https://travis-ci.org/regularjs/regular.svg?branch=master)](https://travis-ci.org/regularjs/regular)
 
@@ -9,10 +11,10 @@ regularjs is a live template engine helping us to create interactive component.
 __features__
 
 1. __data-binding__ based on dirty-check
-2. __string-based template__ 
+2. __string-based template__ full control on template logic
 3. __independent lifecycle__ —— can be integrated with whatever framework you already used.
-4. __nested component__
-5. class-based component. just like [angular-classy](http://davej.github.io/angular-classy/) do for angular
+4. __nested component__ use component like custelement
+5.  class-based component. just like [angular-classy](http://davej.github.io/angular-classy/) do for angular
 6. powerfull animation supported ([blog](http://regularjs.github.io/blog/2014/07/26/2014-7-26-animation-rethink/))
 7. __directive, filter, event__ is supported, and extend easily.
 
@@ -24,10 +26,10 @@ __template__
 
 ```html
 {{#list notes as c}}
-  &amp;amp;lt;p>{{c.content}}&amp;amp;lt;a href='#' on-click={{this.remove(c)}}>remove&amp;amp;lt;/a>&amp;amp;lt;/p>
+  <p>{{c.content}}<a href='#' on-click={{this.remove(c)}}>remove</a></p>
 {{/list}}
-&amp;amp;lt;textarea r-model={{draftComment}}>&amp;amp;lt;/textarea>
-&amp;amp;lt;button on-click={{this.add()}}>new Note&amp;amp;lt;/button>
+<textarea r-model={{draftComment}}></textarea>
+<button on-click={{this.add()}}>new Note</button>
 ```
 
 __javascript__
@@ -59,7 +61,7 @@ then you can find `regular.js` and `regular.min.js` in `dist` folder;
 or....
 
 ```html
-&amp;amp;lt;script src="https://rawgit.com/regularjs/regular/master/dist/regular.min.js">&amp;amp;lt;/script>
+<script src="https://rawgit.com/regularjs/regular/master/dist/regular.min.js"></script>
 ```
 
 
@@ -119,7 +121,8 @@ IE7+ and other modern browser. __In fact, most of our products need to support I
   1. `@(Expression)` to create binding-once Expression 
   2. lightweight animation support
   3. svg support
-  4. `{{#if }}` can be used in tag. like `&amp;amp;lt;div {{#if !user }} on-click = {{this.login()}}{{/if}}>&amp;amp;lt;/div>`
+  4. `{{#if }}` can be used in tag. like `<div {{#if !user }} on-click = {{this.login()}}{{/if}}></div>`
+
 
 
 ## TODO
