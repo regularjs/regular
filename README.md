@@ -1,77 +1,58 @@
+<a href="http://regularjs.github.io">
+  ![regularjs](http://regularjs.github.io/image/regular-icon-100.png)
+</a>
+
+# Regularjs
 
 
-# regularjs: a framework for creating data-driven component
+[![Build Status](http://img.shields.io/travis/regularjs/regular/master.svg?style=flat-square)](http://travis-ci.org/regularjs/regular)
+
+> Regularjs is a __live template engine__ helping us to create data-driven component.
 
 
 
-[![Build Status](https://travis-ci.org/regularjs/regular.svg?branch=master)](https://travis-ci.org/regularjs/regular)
 
-regularjs is a live template engine helping us to create interactive component.
+## Features
 
-__features__
+- __String-based template__ make it easy and flexible to build your component.
+- __data-binding__ based on dirty-check, angular experience also make sense to regularjs
+- __self-contained and well encapsulation__, friendly with large-project
+- __nested and composite component__, use component just like custom element.
+- __directive, filter, event and animation...__  all you need is provided out of box with __concise API__
 
-1. __data-binding__ based on dirty-check
-2. __string-based template__ full control on template logic
-3. __independent lifecycle__ —— can be integrated with whatever framework you already used.
-4. __nested component__ use component like custelement
-5.  class-based component. just like [angular-classy](http://davej.github.io/angular-classy/) do for angular
-6. powerfull animation supported ([blog](http://regularjs.github.io/blog/2014/07/26/2014-7-26-animation-rethink/))
-7. __directive, filter, event__ is supported, and extend easily.
 
-## Take a glance at regularjs
 
-with the code that less than 20 line , a simple noteapp is done. check the result on [jsfiddle](http://jsfiddle.net/leeluolee/e6yD3/)
+## Quirk Start
 
-__template__
+define a Regular Component can not be simple any more.
 
-```html
-{{#list notes as c}}
-  <p>{{c.content}}<a href='#' on-click={{this.remove(c)}}>remove</a></p>
-{{/list}}
-<textarea r-model={{draftComment}}></textarea>
-<button on-click={{this.add()}}>new Note</button>
+```js
+var Note = Regular.extend({
+template: 
+  "<input {{#if !disabled}} r-model='hello' {{#else}} disabled {{/if}}  > {{hello}} \
+<button on-click={{disabled = !disabled}}>{{disabled? 'active': 'disable'}} it</button>"
+})
+
+var note = new Note().$inject("#app");
+
 ```
 
-__javascript__
-```javascript
-var NoteApp = Regular.extend({
-  template: "#todos",
-  remove: function(index){
-    this.data.notes.splice(index,1);
-  },
-  add: function(){
-    var data = this.data;
-    data.notes.push({ content: data.draftComment})
-    data.draftComment = "";
-  }
-});
+__[Result on codepen.io](http://codepen.io/leeluolee/pen/JqAaH)__
 
-new NoteApp({ data: {notes:[] }}).inject(document.body);
-```
+It is very simple, but hard to implement in other mvvm library or template. beacuse regularjs is based on string-based parser and dom-based compiler.
 
+See more on [Quirk Start](http://regularjs.github.io/guide/en/getting-start/README.html)
 
-
-
-## Installation
-
-regularjs can be installed via `component` and `bower` . you can also directly download the [latest package](https://github.com/regularjs/regular/archive/master.zip)
-
-then you can find `regular.js` and `regular.min.js` in `dist` folder;
-
-or....
-
-```html
-<script src="https://rawgit.com/regularjs/regular/master/dist/regular.min.js"></script>
-```
-
-
-
-
-## Resource
+## Resources
 
 * __[regular's Offcial Guide](http://regularjs.github.io/guide/)__(use gitbook)
 * __[Offcial Site ](http://regularjs.github.io)__
+* __[demo on codepen.io](http://codepen.io/search?q=regularjs&limit=all&depth=everything&show_forks=false)__
 
+
+## Browser Compatibility
+
+IE7+ and other modern browser. 
 
 ## Community
 
@@ -81,53 +62,26 @@ or....
 
 * Social 
   1. twitter: follow the [@regularjs](https://twitter.com/regularjs). 
-  2. weibo: chinese friends can also follow author's weibo[@拴萝卜的棍子](http://weibo.com/luobolee)
   3. gitter: talk on [![Gitter chat](https://badges.gitter.im/regularjs/regular.png)](https://gitter.im/regularjs/regular)
+  2. weibo: [@拴萝卜的棍子](http://weibo.com/luobolee)
 
 ## Contribute
 
-__regularjs is still in heavily development__, helping us with pull request and  feedback. there is some recommend to contributor.
+__regularjs is still in heavily development__, helping us with feedback. there is some recommend to contributor.
 
 * Please [open issue](https://github.com/regularjs/regular/issues) before sending pull request, 
 * if needed, add your testcase at `test/specs` folder. always make sure the `gulp test` is passed, and the `test/runner/index.html` is passed in every target browser (if you doesn't have some browser installed that list in [gulpfile's karmaConfig](https://github.com/regularjs/regular/blob/master/gulpfile.js#L30))
 
-##Gulp Task
 
-###1. `gulp test`
-the test command contains `casper`, `mocha`, `karma`. and output the coverage information
+## Who is use ?
 
-###2. `gulp dev`
-watch and build the source code
-
-###3. other... see the gulpfile.js
-
-
-## [LICENSE](https://github.com/regularjs/regular/blob/master/LICENSE)
-
-MIT.
-
-## Browser Compatibility
-
-IE7+ and other modern browser. __In fact, most of our products need to support IE6, so ie6 is still under testing currently__
-
-## Changelog
-
-* `0.2.4`: suport computed property  see more on [regularjs.guide](http://regularjs.github.io/guide/)
-* `0.2.3`: pure declarative animation `r-animated` is supported
-* `0.2.2`: you can use `delegate-[event]` to delegate the event from element to containerElement.
-* `0.2.1`: now pass `Non-Expression` to `on-*` attribute will proxy the event to specified event.
-
-* `0.2.0`: 
-  1. `@(Expression)` to create binding-once Expression 
-  2. lightweight animation support
-  3. svg support
-  4. `{{#if }}` can be used in tag. like `<div {{#if !user }} on-click = {{this.login()}}{{/if}}></div>`
+1. [NestEase](https://github.com/NetEase) : operator of famous [www.163.com](http://www.163.com).
 
 
 
-## TODO
+## LICENSE
 
-1. example gallery   `progressing`
-2. interactive tutorial
-3. blog
+[MIT](https://github.com/regularjs/regular/blob/master/LICENSE).
+
+
 
