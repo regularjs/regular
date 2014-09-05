@@ -69,7 +69,7 @@ or....
 
 ## Resource
 
-* __[regular's Offcial Guide](http://leeluolee.gitbooks.io/regular-guide/)__(use gitbook)
+* __[regular's Offcial Guide](http://regularjs.github.io/guide/)__(use gitbook)
 * __[Offcial Site ](http://regularjs.github.io)__
 
 
