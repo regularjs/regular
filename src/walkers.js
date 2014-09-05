@@ -255,6 +255,7 @@ walkers.element = function(ast){
     if(d1 && d2) return (d2.priority || 1) - (d1.priority || 1);
     if(d1) return 1;
     if(d2) return -1;
+    if(a2.name === "type") return 1;
     return -1;
   })
   // may distinct with if else
@@ -318,9 +319,10 @@ walkers.attribute = function(ast ,options){
     return binding;
   }else{
     if(value.type === 'expression' ){
+
       this.$watch(value, function(nvalue, old){
         dom.attr(element, name, nvalue);
-      });
+      }, {init: true});
     }else{
       if(_.isBooleanAttr(name)){
         dom.attr(element, name, true);

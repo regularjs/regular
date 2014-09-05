@@ -1,6 +1,6 @@
 /**
 @author	leeluolee
-@version	0.2.5
+@version	0.2.6
 @homepage	http://regularjs.github.io
 */
 ;(function(){
@@ -1483,6 +1483,7 @@ walkers.element = function(ast){
     if(d1 && d2) return (d2.priority || 1) - (d1.priority || 1);
     if(d1) return 1;
     if(d2) return -1;
+    if(a2.name === "type") return 1;
     return -1;
   })
   // may distinct with if else
@@ -1546,9 +1547,10 @@ walkers.attribute = function(ast ,options){
     return binding;
   }else{
     if(value.type === 'expression' ){
+
       this.$watch(value, function(nvalue, old){
         dom.attr(element, name, nvalue);
-      });
+      }, {init: true});
     }else{
       if(_.isBooleanAttr(name)){
         dom.attr(element, name, true);
@@ -3329,8 +3331,8 @@ var methods = {
       get = expr.get;
       once = expr.once || expr.constant;
     }
-    
-    this._watchers.push({
+
+    var watcher = {
       id: uid, 
       get: get, 
       fn: fn, 
@@ -3338,8 +3340,11 @@ var methods = {
       force: options.force,
       test: test,
       deep: options.deep
-    });
-    this._records && this._records.push(uid);
+    }
+    
+    this._watchers.push( watcher );
+    this._records && this._records.push( uid );
+    if(options.init) this._checkSingleWatch( watcher, this._watchers.length-1 );
     return uid;
 
   },
@@ -3385,70 +3390,16 @@ var methods = {
     // if(this.context) return this.context.$digest();
     // if(this.$emit) this.$emit('digest');
     var watchers = this._watchers;
-    var dirty = false;
+    var dirty = false, children, watcher, watcherDirty;
     if(watchers && watchers.length){
       for(var i = 0, len = watchers.length;i < len; i++){
-        var loopDirty = false;
-        var watcher = watchers[i];
-        if(!watcher) continue;
-        if(watcher.test) { //multi 
-          var result = watcher.test(this);
-          if(result){
-            dirty = true;
-            loopDirty = true;
-            watcher.fn.apply(this, result)
-          }
-          continue;
-        }
-        var now = watcher.get(this);
-        var last = watcher.last;
-        var eq = true;
-        if(_.typeOf( now ) === 'object' && watcher.deep){
-          if(!watcher.last){
-             eq = false;
-           }else{
-            for(var j in now){
-              if(watcher.last[j] !== now[j]){
-                eq = false;
-                break;
-              }
-            }
-            if(eq !== false){
-              for(var n in last){
-                if(last[n] !== now[n]){
-                  eq = false;
-                  break;
-                }
-              }
-            }
-          }
-        }else{
-          eq = _.equals(now, watcher.last);
-        }
-        if(eq === false || watcher.force){
-          eq = false;
-          watcher.force = null;
-          loopDirty = true;
-          watcher.fn.call(this, now, watcher.last);
-          if(typeof now !== 'object'|| watcher.deep){
-            watcher.last = _.clone(now);
-          }else{
-            watcher.last = now;
-          }
-        }else{
-          if( _.typeOf(eq) === 'array' && eq.length ){
-            watcher.fn.call(this, now, eq);
-            loopDirty = true;
-            watcher.last = _.clone(now);
-          }else{
-            eq = true;
-          }
-        }
-        if(eq !== true) dirty = true;
-        if(loopDirty && watcher.once) watchers.splice(i, 1);
+        watcher = watchers[i];
+        watcherDirty = this._checkSingleWatch(watcher, i);
+        if(watcherDirty) dirty = true;
       }
     }
-    var children = this._children;
+    // check children's dirty.
+    children = this._children;
     if(children && children.length){
       for(var m = 0, mlen = children.length; m < mlen; m++){
         if(children[m]._digest()) dirty = true;
@@ -3456,6 +3407,70 @@ var methods = {
     }
     return dirty;
   },
+  // check a single one watcher 
+  _checkSingleWatch: function(watcher, i){
+    var dirty = false;
+    if(!watcher) return;
+    if(watcher.test) { //multi 
+      var result = watcher.test(this);
+      if(result){
+        dirty = true;
+        watcher.fn.apply(this, result)
+      }
+    }else{
+
+      var now = watcher.get(this);
+      var last = watcher.last;
+      var eq = true;
+
+      if(_.typeOf( now ) === 'object' && watcher.deep){
+        if(!watcher.last){
+           eq = false;
+         }else{
+          for(var j in now){
+            if(watcher.last[j] !== now[j]){
+              eq = false;
+              break;
+            }
+          }
+          if(eq !== false){
+            for(var n in last){
+              if(last[n] !== now[n]){
+                eq = false;
+                break;
+              }
+            }
+          }
+        }
+      }else{
+        eq = _.equals(now, watcher.last);
+      }
+      if(eq === false || watcher.force){ // in some case. if undefined, we must force digest.
+        eq = false;
+        watcher.force = null;
+        dirty = true;
+        watcher.fn.call(this, now, watcher.last);
+        if(typeof now !== 'object'|| watcher.deep){
+          watcher.last = _.clone(now);
+        }else{
+          watcher.last = now;
+        }
+      }else{ // if eq == true
+        if( _.typeOf(eq) === 'array' && eq.length ){
+          watcher.fn.call(this, now, eq);
+          dirty = true;
+          watcher.last = _.clone(now);
+        }else{
+          eq = true;
+        }
+      }
+      // @TODO
+      if(dirty && watcher.once) this._watchers.splice(i, 1);
+
+      return dirty;
+    }
+  },
+
   /**
    * **tips**: whatever param you passed in $update, after the function called, dirty-check(digest) phase will enter;
    * 

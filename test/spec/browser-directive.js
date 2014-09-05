@@ -327,20 +327,37 @@ describe('r-model directive', function(){
         destroy(component, container);
 
     })
+
+    it("r-model:select in list should works as expect", function(){
+      var container = document.createElement('div')
+      var Component = Regular.extend({});
+      var component = new Regular({
+        data: {test: true, hello: {}} ,
+        template: "{{#list 1..2 as hah}}<select r-model='hello.name'>{{#list [1,2,3,4] as item}}<option value={{item}} selected={{item_index==2}}>haha</option>{{/list}}</select>{{/list}}"
+      }).$inject(container)
+
+
+      expect(nes.one("select", container).value).to.equal('3');
+      expect(component.data.hello.name).to.equal('3');
+
+      destroy(component, container);
+
+    })
   })
 
 
   describe('radio binding', function(){
+    var container = document.createElement("div");
 
     it('input:checkbox"s initial state should be correct', function(){
       var template = 
-        "<input type='radio' r-model={{radio}} value='radio1'>" + 
-        "<input type='radio' r-model={{radio}} checked value='radio2'>"
+        "<input  value='radio1' type='radio' r-model={{radio}}>" + 
+        "<input value='radio2' type='radio' r-model={{radio}} checked >"
       var component = new Regular({
         template: template
       }).$inject(container);
 
-      expect($('input', container).length).to.equal(2);
+      expect(nes.all('input', container).length).to.equal(2);
       expect(component.data.radio).to.equal('radio2');
 
       destroy(component, container);
@@ -394,21 +411,6 @@ describe('r-model directive', function(){
       destroy(component, container);
 
     });
-    it("r-model:select in list should works as expect", function(){
-      var container = document.createElement('div')
-      var Component = Regular.extend({});
-      var component = new Regular({
-        data: {test: true, hello: {}} ,
-        template: "{{#list 1..2 as hah}}<select r-model='hello.name'>{{#list [1,2,3,4] as item}}<option value={{item}} selected={{item_index==2}}>haha</option>{{/list}}</select>{{/list}}"
-      }).$inject(container)
-
-
-      expect(nes.one("select", container).value).to.equal('3');
-      expect(component.data.hello.name).to.equal('3');
-
-      destroy(component, container);
-
-    })
 
   })
 
