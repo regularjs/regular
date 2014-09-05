@@ -393,6 +393,21 @@ describe('r-model directive', function(){
 
       destroy(component, container);
 
+    });
+    it("r-model:select in list should works as expect", function(){
+      var container = document.createElement('div')
+      var Component = Regular.extend({});
+      var component = new Regular({
+        data: {test: true, hello: {}} ,
+        template: "{{#list 1..2 as hah}}<select r-model='hello.name'>{{#list [1,2,3,4] as item}}<option value={{item}} selected={{item_index==2}}>haha</option>{{/list}}</select>{{/list}}"
+      }).$inject(container)
+
+
+      expect(nes.one("select", container).value).to.equal('3');
+      expect(component.data.hello.name).to.equal('3');
+
+      destroy(component, container);
+
     })
 
   })

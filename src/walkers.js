@@ -78,7 +78,7 @@ walkers.list = function(ast){
     }
   }
 
-  var watchid = this.$watch(ast.sequence, update);
+  this.$watch(ast.sequence, update, { init: true });
   return group;
 }
 

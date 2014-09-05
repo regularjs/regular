@@ -21,7 +21,6 @@ void function(){
 
       expect(nes.one("input", container).value).to.equal("1");
       destroy(component, container)
-
     })
   })
 
