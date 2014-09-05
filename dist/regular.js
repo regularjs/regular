@@ -4024,6 +4024,8 @@ function initSelect( elem, parsed){
     inProgress = false;
   }
 
+  dom.on(elem, "change", handler);
+  
   if(parsed.get(self) === undefined && elem.value){
      parsed.set(self, elem.value);
   }
