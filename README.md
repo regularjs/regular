@@ -1,6 +1,8 @@
 
 
-# regular = react(ractive) + angular.
+# regularjs: a framework for creating data-driven component
+
+
 
 [![Build Status](https://travis-ci.org/regularjs/regular.svg?branch=master)](https://travis-ci.org/regularjs/regular)
 
@@ -67,7 +69,7 @@ or....
 
 ## Resource
 
-* __[regular's Offcial Guide](http://leeluolee.gitbooks.io/regular-guide/)__(use gitbook)
+* __[regular's Offcial Guide](http://regularjs.github.io/guide/)__(use gitbook)
 * __[Offcial Site ](http://regularjs.github.io)__
 
 
