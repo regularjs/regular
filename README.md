@@ -17,7 +17,7 @@
 - __String-based template__ make it flexible to build your component.
 - __data-binding__ is based on dirty-check, angular experience also make sense to regularjs
 - __self-contained and well encapsulation__, make it be easily integrated with other framework
-- __ composite component__, use component just like custom element.
+- __composite component__ , using component as 'custom element'.
 - __directive, filter, event and animation...__  all you need is provided out of box with __concise API__
 
 
@@ -40,7 +40,7 @@ var note = new Note().$inject("#app");
 
 __[Example1 on codepen.io](http://codepen.io/leeluolee/pen/JqAaH)__
 
- the Example is simple, but you can find the dynamic toggle on directive or attribute is easily implement by living template. 
+ the Example is dead simple, but you can find the directive and attribute is easily switched by statement 'if'. which is difficult with other mvvm framework. 
 
 
 ### Example 2: __define a List Component__
@@ -65,9 +65,9 @@ In this Example, we create a ListView by statement `list`.
 __[Example2 on codepen.io](http://codepen.io/leeluolee/pen/mAKlL)__
 
 
-### Example 3: __ refactoring Note to composite with List __
+### Example 3: combine Note with NoteList
 
-first, we need refactor Note to make it easily integrated with NoteList.
+we need refactor Note to make it be easily integrated with NoteList.
 
 ```javascript
 var Note = Regular.extend({
@@ -80,7 +80,7 @@ Regular.component('list', NoteList);
 
 ```
 
-Define Core Component: NoteApp.
+then, define Core Component: NoteApp.
 
 ```javascript
 var NoteApp = Regular.extend({
@@ -97,7 +97,7 @@ noteapp.$inject('#app');
 
 ```
 
-you can register a component via attribute `name` or method `Component.component`, to make them nestable in other component.
+you can register a component(via attribute `name` or method `Component.component`) to make them nestable in other component.
 
 __[Example3 on codepen.io](http://codepen.io/leeluolee/pen/bqkLp)__
 
