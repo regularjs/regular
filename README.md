@@ -67,18 +67,27 @@ __[Example2 on codepen.io](http://codepen.io/leeluolee/pen/mAKlL)__
 
 ### Example 3: combine Note with NoteList
 
-we need refactor Note to make it be easily integrated with NoteList.
+we need refactor Note to make it composable.
 
 ```javascript
 var Note = Regular.extend({
-name: 'note',
-template: 
-  "<input r-model={{draft}} on-enter={{this.$emit('post', draft)}}>" 
+  name: 'note',  // register component during the definition of Component
+  template: 
+   "<input r-model={{draft}} on-enter={{this.post()}}>", 
+  post: function(){
+    var data = this.data;
+    this.$emit('post', data.draft);
+    data.draft = ""; //clear the draft
+  }
+
 });
 
-Regular.component('list', NoteList); 
+Regular.component('list', NoteList);  // manual register a component
 
 ```
+when 'Enter' is pressed, we emit a 'post' event with the `draft` as the $event object. 
+
+> the `this` in template is pointing to the component self. 
 
 then, define Core Component: NoteApp.
 
@@ -97,7 +106,7 @@ noteapp.$inject('#app');
 
 ```
 
-you can register a component(via attribute `name` or method `Component.component`) to make them nestable in other component.
+you can register a component(via attribute `name` or method `Component.component`) to make them composable in other component.
 
 __[Example3 on codepen.io](http://codepen.io/leeluolee/pen/bqkLp)__
 
