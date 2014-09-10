@@ -146,7 +146,7 @@ __regularjs is still in heavily development__, helping us with feedback. there i
 
 ## Who is use ?
 
-1. [NestEase](https://github.com/NetEase) : operator of famous [www.163.com](http://www.163.com).
+1. [NetEase](https://github.com/NetEase) : operator of famous [www.163.com](http://www.163.com).
 
 
 
