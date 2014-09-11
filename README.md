@@ -7,41 +7,112 @@
 
 [![Build Status](http://img.shields.io/travis/regularjs/regular/master.svg?style=flat-square)](http://travis-ci.org/regularjs/regular)
 
-> Regularjs is a __live template engine__ helping us to create data-driven component.
+> Regularjs is a __living template engine__ that helping us to create data-driven component.
 
 
 
 
 ## Features
 
-- __String-based template__ make it easy and flexible to build your component.
-- __data-binding__ based on dirty-check, angular experience also make sense to regularjs
-- __self-contained and well encapsulation__, friendly with large-project
-- __nested and composite component__, use component just like custom element.
+- __String-based template__ make it flexible to build your component.
+- __data-binding__ is based on dirty-check, angular experience also make sense to regularjs
+- __self-contained and well encapsulation__, make it be easily integrated with other framework
+- __composite component__ , using component as 'custom element'.
 - __directive, filter, event and animation...__  all you need is provided out of box with __concise API__
 
 
 
 ## Quirk Start
 
-define a Regular Component can not be simple any more.
+### Example 1: __define a simple Note Component__
 
-```js
+```javascript
 var Note = Regular.extend({
 template: 
-  "<input {{#if !disabled}} r-model='hello' {{#else}} disabled {{/if}}  > {{hello}} \
+  "<input {{#if !disabled}} r-model='hello' {{#else}} disabled {{/if}} > {{hello}} \
 <button on-click={{disabled = !disabled}}>{{disabled? 'active': 'disable'}} it</button>"
 })
 
-var note = new Note().$inject("#app");
+// inject component into #app , you can also inject at 'before' , 'after', 'top'.
+var note = new Note().$inject("#app"); 
 
 ```
 
-__[Result on codepen.io](http://codepen.io/leeluolee/pen/JqAaH)__
+__[Example1 on codepen.io](http://codepen.io/leeluolee/pen/JqAaH)__
 
-It is very simple, but hard to implement in other mvvm library or template. beacuse regularjs is based on string-based parser and dom-based compiler.
+ the Example is dead simple, but you can find the directive and attribute is easily switched by statement 'if'. which is difficult with other mvvm framework. 
 
-See more on [Quirk Start](http://regularjs.github.io/guide/en/getting-start/README.html)
+
+### Example 2: __define a List Component__
+
+```javascript
+var NoteList = Regular.extend({
+template: 
+  "<ul>{{#list notes as nt}}" +
+    "<li class={{nt.done? 'done': ''}} on-click={{nt.done= !nt.done}}>{{nt.content}}</li>" + 
+  "{{/list}}</ul>"
+});
+
+var list = new NoteList({
+  data: {notes: [{content: 'playgame'}, {content: 'homework'}]}
+}).$inject("#app");
+
+
+```
+
+In this Example, we create a ListView by statement `list`. 
+
+__[Example2 on codepen.io](http://codepen.io/leeluolee/pen/mAKlL)__
+
+
+### Example 3: combine Note with NoteList
+
+we need refactor Note to make it composable.
+
+```javascript
+var Note = Regular.extend({
+  name: 'note',  // register component during the definition of Component
+  template: 
+   "<input r-model={{draft}} on-enter={{this.post()}}>", 
+  post: function(){
+    var data = this.data;
+    this.$emit('post', data.draft);
+    data.draft = ""; //clear the draft
+  }
+
+});
+
+Regular.component('list', NoteList);  // manual register a component
+
+```
+when 'Enter' is pressed, we emit a 'post' event with the `draft` as the $event object. 
+
+> the `this` in template is pointing to the component self. 
+
+then, define Core Component: NoteApp.
+
+```javascript
+var NoteApp = Regular.extend({
+  template: 
+    "<note on-post={{notes.push({ content: $event} )}}/>"+ 
+    "<list notes = {{notes}}></list>"
+})
+
+var noteapp = new NoteApp({
+    data: {notes:[] }
+});
+
+noteapp.$inject('#app');
+
+```
+
+you can register a component(via attribute `name` or method `Component.component`) to make them composable in other component.
+
+__[Example3 on codepen.io](http://codepen.io/leeluolee/pen/bqkLp)__
+
+
+
+See more on [Guide: Quirk Start](http://regularjs.github.io/guide/en/getting-start/README.html)
 
 ## Resources
 
@@ -75,7 +146,7 @@ __regularjs is still in heavily development__, helping us with feedback. there i
 
 ## Who is use ?
 
-1. [NestEase](https://github.com/NetEase) : operator of famous [www.163.com](http://www.163.com).
+1. [NetEase](https://github.com/NetEase) : operator of famous [www.163.com](http://www.163.com).
 
 
 
