@@ -195,6 +195,8 @@ walkers.element = function(ast){
 
 
 
+
+  if(ast.tag === 'svg') this._ns_ = 'svg';
   if(children && children.length){
     group = this.$compile(children);
   }
@@ -238,7 +240,6 @@ walkers.element = function(ast){
     return this.$body;
   }
 
-  if(ast.tag === 'svg') this._ns_ = 'svg';
   var element = dom.create(ast.tag, this._ns_, attrs);
   // context element
 
@@ -341,26 +342,3 @@ walkers.attribute = function(ast ,options){
 
 }
 
-// walkers.attributes = function(array, parent){
-//   if(parent.type === 'if'){
-
-//   }
-//   // make the directive after attribute
-//   attrs.sort(function(a, b){
-//     var da = Constructor.directive(a.name);
-//     var db = Constructor.directive(b.name);
-
-//     if(!db) return !da? 0: 1;
-//     if(!da) return -1;
-//     return ( b.priority || 1 ) - ( a.priority || 1 );
-//   })
-
-//   var node = document.createTextNode(ast.text);
-//   return node;
-// }
-
-// dada
-
-// function bindAttrWatcher(element, attr, destroies){
-  
-// }

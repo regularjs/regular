@@ -91,6 +91,7 @@ gulp.task('karma', function (done) {
 });
 
 
+// build after jshint
 gulp.task('build',["jshint"], function(){
   // form minify    
   gulp.src('./component.json')
@@ -134,6 +135,7 @@ gulp.task('v', function(fn){
 })
 
 
+// watch file then build
 gulp.task('dev', function(){
   gulp.watch(['component.json', 'src/**/*.js'], ['build'])
 })
@@ -144,6 +146,7 @@ gulp.task('dev-test', function(){
 
 
 
+// 
 gulp.task('jshint', function(){
       // jshint
   gulp.src(['src/**/*.js'])

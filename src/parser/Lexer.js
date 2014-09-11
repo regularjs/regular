@@ -206,7 +206,7 @@ var rules = {
   TAG_UNQ_VALUE: [/[^&"'=><`\r\n\f ]+/, 'UNQ', 'TAG'],
 
   TAG_OPEN: [/<({NAME})\s*/, function(all, one){
-    return {type: 'TAG_OPEN', value: one.toLowerCase() }
+    return {type: 'TAG_OPEN', value: one}
   }, 'TAG'],
   TAG_CLOSE: [/<\/({NAME})[\r\n\f ]*>/, function(all, one){
     this.leave();

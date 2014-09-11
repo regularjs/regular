@@ -1,6 +1,6 @@
 /**
 @author	leeluolee
-@version	0.2.6
+@version	0.2.7
 @homepage	http://regularjs.github.io
 */
 
@@ -1421,6 +1421,8 @@ walkers.element = function(ast){
 
 
 
+
+  if(ast.tag === 'svg') this._ns_ = 'svg';
   if(children && children.length){
     group = this.$compile(children);
   }
@@ -1464,7 +1466,6 @@ walkers.element = function(ast){
     return this.$body;
   }
 
-  if(ast.tag === 'svg') this._ns_ = 'svg';
   var element = dom.create(ast.tag, this._ns_, attrs);
   // context element
 
@@ -1567,29 +1568,6 @@ walkers.attribute = function(ast ,options){
 
 }
 
-// walkers.attributes = function(array, parent){
-//   if(parent.type === 'if'){
-
-//   }
-//   // make the directive after attribute
-//   attrs.sort(function(a, b){
-//     var da = Constructor.directive(a.name);
-//     var db = Constructor.directive(b.name);
-
-//     if(!db) return !da? 0: 1;
-//     if(!da) return -1;
-//     return ( b.priority || 1 ) - ( a.priority || 1 );
-//   })
-
-//   var node = document.createTextNode(ast.text);
-//   return node;
-// }
-
-// dada
-
-// function bindAttrWatcher(element, attr, destroies){
-  
-// }
 
 });
 require.register("regularjs/src/env.js", function(exports, require, module){
@@ -1619,6 +1597,7 @@ require("./module/timeout.js");
 
 module.exports.dom = require("./dom.js");
 module.exports.util = require("./util.js");
+module.exports.env = require("./env.js");
 
 
 });
@@ -2262,7 +2241,7 @@ var rules = {
   TAG_UNQ_VALUE: [/[^&"'=><`\r\n\f ]+/, 'UNQ', 'TAG'],
 
   TAG_OPEN: [/<({NAME})\s*/, function(all, one){
-    return {type: 'TAG_OPEN', value: one.toLowerCase() }
+    return {type: 'TAG_OPEN', value: one}
   }, 'TAG'],
   TAG_CLOSE: [/<\/({NAME})[\r\n\f ]*>/, function(all, one){
     this.leave();
