@@ -39,10 +39,14 @@ var Regular = function(options){
 
   template = this.template;
 
-  if(typeof template === 'string' && template.length < 40 && (node = dom.find(template))) {
+  // template is a string (len < 40). we will find it container first
+  if((typeof template === 'string' && template.length < 40) && (node = dom.find(template))) {
     template = node.innerHTML;
   }
-  if(typeof template === 'string') this.template = new Parser(template).parse()
+  // if template is a xml
+  if(template && template.nodeType) template = template.innerHTML;
+  if(typeof template === 'string') this.template = new Parser(template).parse();
+
   this.computed = handleComputed(this.computed);
   this.$context = this.$context || this;
   this.$root = this.$root || this;
@@ -98,6 +102,9 @@ _.extend(Regular, {
         template = node.innerHTML;
         if(name = dom.attr(node, 'name')) Regular.component(name, this);
       }
+
+      if(template.nodeType) template = template.innerHTML;
+
       if(typeof template === 'string'){
         this.prototype.template = new Parser(template).parse();
       }

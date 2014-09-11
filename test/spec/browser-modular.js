@@ -21,6 +21,23 @@ void function(){
         expect(Component.prototype.computed.len.type).to.equal("expression");
 
       })
+      it("should accepet [Element] as the template", function(){
+        var templateNode = document.createElement("div");
+        
+        templateNode.innerHTML = "<div>{{hello}}</div>";
+        var Component = Regular.extend({
+          template: templateNode
+        });
+
+        expect(Component.prototype.template).to.an("array");
+
+        var component = new Regular({
+          template: templateNode
+        })
+
+        expect(component.template).to.an("array");
+
+      })
     })
 
     describe('fitler, directive, event isolation ', function(){
