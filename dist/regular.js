@@ -4221,7 +4221,7 @@ Regular.animation({
     }
   },
   "call": function(step){
-    var fn = this.expression(step.param).get, self = this;
+    var fn = Regular.expression(step.param).get, self = this;
     return function(done){
       // _.log(step.param, 'call')
       fn(self);

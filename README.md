@@ -111,7 +111,6 @@ you can register a component(via attribute `name` or method `Component.component
 __[Example3 on codepen.io](http://codepen.io/leeluolee/pen/bqkLp)__
 
 
-
 See more on [Guide: Quirk Start](http://regularjs.github.io/guide/en/getting-start/README.html)
 
 ## Resources
@@ -144,7 +143,7 @@ __regularjs is still in heavily development__, helping us with feedback. there i
 * if needed, add your testcase at `test/specs` folder. always make sure the `gulp test` is passed, and the `test/runner/index.html` is passed in every target browser (if you doesn't have some browser installed that list in [gulpfile's karmaConfig](https://github.com/regularjs/regular/blob/master/gulpfile.js#L30))
 
 
-## Who is use ?
+## Who are use ?
 
 1. [NetEase](https://github.com/NetEase) : operator of famous [www.163.com](http://www.163.com).
 
