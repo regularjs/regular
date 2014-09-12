@@ -1,6 +1,6 @@
 /**
 @author	leeluolee
-@version	0.2.7
+@version	0.2.8
 @homepage	http://regularjs.github.io
 */
 ;(function(){
@@ -1628,6 +1628,11 @@ var tNode = document.createElement('div')
 var addEvent, removeEvent;
 var noop = function(){}
 
+var namespaces = {
+  html: "http://www.w3.org/1999/xhtml",
+  svg: "http://www.w3.org/2000/svg"
+}
+
 dom.body = document.body;
 
 dom.doc = document;
@@ -1720,7 +1725,7 @@ dom.id = function(id){
 dom.create = function(type, ns, attrs){
   if(ns === 'svg'){
     if(!env.svg) throw Error('the env need svg support')
-    ns = "http://www.w3.org/2000/svg";
+    ns = namespaces.svg;
   }
   //@fix ie can't dynamic type
   if(type === 'input'){
@@ -1752,7 +1757,8 @@ dom.fragment = function(){
 
 var specialAttr = {
   'class': function(node, value){
-    ('className' in node) ? node.className = (value || '') : node.setAttribute('class', value);
+    ('className' in node && (node.namespaceURI === namespaces.html || !node.namespaceURI)) ?
+      node.className = (value || '') : node.setAttribute('class', value);
   },
   'for': function(node, value){
     ('htmlFor' in node) ? node.htmlFor = value : node.setAttribute('for', value);
