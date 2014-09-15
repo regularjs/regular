@@ -8,35 +8,40 @@ var API = {
                 this.$on(i, event[i]);
             }
         }else{
-            var handles = this._handles || (this._handles = {}),
+            // @patch: for list
+            var context = this.$context || this;
+            var handles = context._handles || (context._handles = {}),
                 calls = handles[event] || (handles[event] = []);
             calls.push(fn);
         }
         return this;
     },
     $off: function(event, fn) {
-        if(!this._handles) return;
-        if(!event) this._handles = [];
-        var handles = this._handles,
+        var context = this.$context || this;
+        if(!context._handles) return;
+        if(!event) context._handles = [];
+        var handles = context._handles,
             calls;
 
         if (calls = handles[event]) {
             if (!fn) {
                 handles[event] = [];
-                return this;
+                return context;
             }
             for (var i = 0, len = calls.length; i < len; i++) {
                 if (fn === calls[i]) {
                     calls.splice(i, 1);
-                    return this;
+                    return context;
                 }
             }
         }
-        return this;
+        return context;
     },
     // bubble event
     $emit: function(event){
-        var handles = this._handles, calls, args, type;
+        // @patch: for list
+        var context = this.$context || this;
+        var handles = context._handles, calls, args, type;
         if(!event) return;
         if(typeof event === "object"){
             type = event.type;
@@ -45,12 +50,12 @@ var API = {
             args = slice.call(arguments, 1);
             type = event;
         }
-        if (!handles || !(calls = handles[type])) return this;
+        if (!handles || !(calls = handles[type])) return context;
         for (var i = 0, len = calls.length; i < len; i++) {
-            calls[i].apply(this, args)
+            calls[i].apply(context, args)
         }
-        // if(calls.length) this.$update();
-        return this;
+        // if(calls.length) context.$update();
+        return context;
     },
     // capture  event
     $broadcast: function(){

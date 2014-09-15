@@ -141,6 +141,23 @@ void function(){
         destroy(component, container);
 
       })
+      it("on,off's context should point to outer component", function(){
+        var context, num=0;
+        var Component = Regular.extend({
+          template: "{{#list 1..2 as i}} <li tmp-test></li> {{/list}}"
+        }).directive({
+          "tmp-test":function(){
+            this.$on("hello", function(){
+              num++;
+            })
+          }
+        })
+        var component = new Component();
+        component.$emit("hello");
+
+        expect(num).to.equal(2);
+
+      })
     })
     describe("list with nested", function(){
 

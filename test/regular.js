@@ -268,7 +268,7 @@ var Regular = function(options){
   this.config && this.config(this.data);
   // handle computed
   if(template){
-    this.group = this.$compile(this.template);
+    this.group = this.$compile(this.template, {namespace: options.namespace});
     combine.node(this);
   }
 
@@ -278,7 +278,8 @@ var Regular = function(options){
   this.$emit({type: 'init', stop: true });
   if( this.init ) this.init(this.data);
 
-  if(this.$root === this) this.$update();
+  // @TODO: remove, maybe , there is no need to update after init; 
+  // if(this.$root === this) this.$update();
   env.isRunning = prevRunning;
 
   // children is not required;
@@ -452,10 +453,14 @@ Regular.implement({
    * @return {[type]}
    */
   $compile: function(ast, options){
+    options = options || {};
     if(typeof ast === 'string'){
       ast = new Parser(ast).parse()
     }
-    var record = options && options.record, records;
+    var preNs = this.__ns__,
+      record = options.record, 
+      records;
+    if(options.namespace) this.__ns__ = options.namespace;
     if(record) this._record();
     var group = this._walk(ast, options);
     if(record){
@@ -466,8 +471,10 @@ Regular.implement({
         group.ondestroy = function(){ self.$unwatch(records); }
       }
     }
+    if(options.namespace) this.__ns__ = preNs;
     return group;
   },
+
 
   /**
    * create two-way binding with another component;
@@ -1243,7 +1250,8 @@ var walkers = module.exports = {};
 walkers.list = function(ast){
 
   var Regular = walkers.Regular;  
-  var placeholder = document.createComment("Regular list");
+  var placeholder = document.createComment("Regular list"),
+    namespace = this.__ns__;
   // proxy Component to implement list item, so the behaviar is similar with angular;
   var Section =  Regular.extend( { 
     template: ast.body, 
@@ -1287,7 +1295,8 @@ walkers.list = function(ast){
         data[indexName] = o;
         data[variable] = item;
 
-        var section = new Section({data: data, $parent: self });
+        //@TODO
+        var section = new Section({data: data, $parent: self , namespace: namespace});
 
 
         // autolink
@@ -1318,7 +1327,7 @@ walkers.list = function(ast){
 walkers.template = function(ast){
   var content = ast.content, compiled;
   var placeholder = document.createComment('template');
-  var compiled;
+  var compiled, namespace = this.__ns__;
   // var fragment = dom.fragment();
   // fragment.appendChild(placeholder);
   var group = new Group();
@@ -1330,9 +1339,10 @@ walkers.template = function(ast){
         compiled.destroy(true); 
         group.children.pop();
       }
-      
-      group.push( compiled =  self.$compile(value, {record: true}) ); 
+      group.push( compiled =  self.$compile(value, {record: true, namespace: namespace}) ); 
       if(placeholder.parentNode) animate.inject(combine.node(compiled), placeholder, 'before')
+    }, {
+      init: true
     });
   }
   return group;
@@ -1367,7 +1377,7 @@ walkers['if'] = function(ast, options){
   var placeholder = document.createComment("Regular if" + ii++);
   var group = new Group();
   group.push(placeholder);
-  var preValue = null;
+  var preValue = null, namespace= this.__ns__;
 
 
   var update = function (nvalue, old){
@@ -1380,7 +1390,7 @@ walkers['if'] = function(ast, options){
     }
     if(value){ //true
       if(ast.consequent && ast.consequent.length){
-        consequent = self.$compile( ast.consequent , {record:true})
+        consequent = self.$compile( ast.consequent , {record:true, namespace: namespace })
         // placeholder.parentNode && placeholder.parentNode.insertBefore( node, placeholder );
         group.push(consequent);
         if(placeholder.parentNode){
@@ -1389,7 +1399,7 @@ walkers['if'] = function(ast, options){
       }
     }else{ //false
       if(ast.alternate && ast.alternate.length){
-        alternate = self.$compile(ast.alternate, {record:true});
+        alternate = self.$compile(ast.alternate, {record:true, namespace: namespace});
         group.push(alternate);
         if(placeholder.parentNode){
           animate.inject(combine.node(alternate), placeholder, 'before');
@@ -1397,7 +1407,7 @@ walkers['if'] = function(ast, options){
       }
     }
   }
-  this.$watch(ast.test, update, {force: true});
+  this.$watch(ast.test, update, {force: true, init: true});
 
   return group;
 }
@@ -1423,15 +1433,15 @@ walkers.element = function(ast){
     component, self = this,
     Constructor=this.constructor,
     children = ast.children,
-    group,
-    Component = Constructor.component(ast.tag);
+    namespace = this.__ns__,
+    group, Component = Constructor.component(ast.tag);
 
 
+  if(ast.tag === 'svg') var namespace = "svg";
 
 
-  if(ast.tag === 'svg') this._ns_ = 'svg';
   if(children && children.length){
-    group = this.$compile(children);
+    group = this.$compile(children, {namespace: namespace });
   }
 
 
@@ -1459,7 +1469,7 @@ walkers.element = function(ast){
 
     var $body;
     if(ast.children) $body = this.$compile(ast.children);
-    var component = new Component({data: data, events: events, $body: $body, $parent: this});
+    var component = new Component({data: data, events: events, $body: $body, $parent: this, namespace: namespace});
     for(var i = 0, len = attrs.length; i < len; i++){
       var attr = attrs[i];
       var value = attr.value||"";
@@ -1473,7 +1483,7 @@ walkers.element = function(ast){
     return this.$body;
   }
 
-  var element = dom.create(ast.tag, this._ns_, attrs);
+  var element = dom.create(ast.tag, namespace, attrs);
   // context element
 
   var child;
@@ -1495,7 +1505,6 @@ walkers.element = function(ast){
   // may distinct with if else
   var destroies = walkAttributes.call(this, attrs, element, destroies);
 
-  if(ast.tag === 'svg') this._ns_ = null;
 
 
   var res  = {
@@ -3286,7 +3295,10 @@ function Watcher(){}
 
 var methods = {
   $watch: function(expr, fn, options){
-    var get, once, test;
+    var 
+      get, once, 
+      test, 
+      rlen; //records length
     if(!this._watchers) this._watchers = [];
     options = options || {};
     if(options === true){
@@ -3327,8 +3339,13 @@ var methods = {
     }
     
     this._watchers.push( watcher );
-    this._records && this._records.push( uid );
-    if(options.init) this._checkSingleWatch( watcher, this._watchers.length-1 );
+
+    rlen = this._records && this._records.length;
+    if(rlen) this._records[rlen-1].push(uid)
+    // init state.
+    if(options.init === true){
+       this._checkSingleWatch( watcher, this._watchers.length-1 );
+    }
     return uid;
 
   },
@@ -3441,9 +3458,9 @@ var methods = {
         }
       }else{ // if eq == true
         if( _.typeOf(eq) === 'array' && eq.length ){
+          watcher.last = _.clone(now);
           watcher.fn.call(this, now, eq);
           dirty = true;
-          watcher.last = _.clone(now);
         }else{
           eq = true;
         }
@@ -3480,13 +3497,13 @@ var methods = {
     }
     if(this.$root) this.$root.$digest()
   },
+  // auto collect watchers for logic-control.
   _record: function(){
-    this._records = [];
+    if(!this._records) this._records = [];
+    this._records.push([]);
   },
   _release: function(){
-    var _records = this._records;
-    this._records = null;
-    return _records;
+    return this._records.pop();
   }
 }
 
@@ -3512,35 +3529,40 @@ var API = {
                 this.$on(i, event[i]);
             }
         }else{
-            var handles = this._handles || (this._handles = {}),
+            // @patch: for list
+            var context = this.$context || this;
+            var handles = context._handles || (context._handles = {}),
                 calls = handles[event] || (handles[event] = []);
             calls.push(fn);
         }
         return this;
     },
     $off: function(event, fn) {
-        if(!this._handles) return;
-        if(!event) this._handles = [];
-        var handles = this._handles,
+        var context = this.$context || this;
+        if(!context._handles) return;
+        if(!event) context._handles = [];
+        var handles = context._handles,
             calls;
 
         if (calls = handles[event]) {
             if (!fn) {
                 handles[event] = [];
-                return this;
+                return context;
             }
             for (var i = 0, len = calls.length; i < len; i++) {
                 if (fn === calls[i]) {
                     calls.splice(i, 1);
-                    return this;
+                    return context;
                 }
             }
         }
-        return this;
+        return context;
     },
     // bubble event
     $emit: function(event){
-        var handles = this._handles, calls, args, type;
+        // @patch: for list
+        var context = this.$context || this;
+        var handles = context._handles, calls, args, type;
         if(!event) return;
         if(typeof event === "object"){
             type = event.type;
@@ -3549,12 +3571,12 @@ var API = {
             args = slice.call(arguments, 1);
             type = event;
         }
-        if (!handles || !(calls = handles[type])) return this;
+        if (!handles || !(calls = handles[type])) return context;
         for (var i = 0, len = calls.length; i < len; i++) {
-            calls[i].apply(this, args)
+            calls[i].apply(context, args)
         }
-        // if(calls.length) this.$update();
-        return this;
+        // if(calls.length) context.$update();
+        return context;
     },
     // capture  event
     $broadcast: function(){

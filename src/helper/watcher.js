@@ -6,7 +6,10 @@ function Watcher(){}
 
 var methods = {
   $watch: function(expr, fn, options){
-    var get, once, test;
+    var 
+      get, once, 
+      test, 
+      rlen; //records length
     if(!this._watchers) this._watchers = [];
     options = options || {};
     if(options === true){
@@ -47,8 +50,13 @@ var methods = {
     }
     
     this._watchers.push( watcher );
-    this._records && this._records.push( uid );
-    if(options.init) this._checkSingleWatch( watcher, this._watchers.length-1 );
+
+    rlen = this._records && this._records.length;
+    if(rlen) this._records[rlen-1].push(uid)
+    // init state.
+    if(options.init === true){
+       this._checkSingleWatch( watcher, this._watchers.length-1 );
+    }
     return uid;
 
   },
@@ -161,9 +169,9 @@ var methods = {
         }
       }else{ // if eq == true
         if( _.typeOf(eq) === 'array' && eq.length ){
+          watcher.last = _.clone(now);
           watcher.fn.call(this, now, eq);
           dirty = true;
-          watcher.last = _.clone(now);
         }else{
           eq = true;
         }
@@ -200,13 +208,13 @@ var methods = {
     }
     if(this.$root) this.$root.$digest()
   },
+  // auto collect watchers for logic-control.
   _record: function(){
-    this._records = [];
+    if(!this._records) this._records = [];
+    this._records.push([]);
   },
   _release: function(){
-    var _records = this._records;
-    this._records = null;
-    return _records;
+    return this._records.pop();
   }
 }
 

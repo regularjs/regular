@@ -59,7 +59,7 @@ var Regular = function(options){
   this.config && this.config(this.data);
   // handle computed
   if(template){
-    this.group = this.$compile(this.template);
+    this.group = this.$compile(this.template, {namespace: options.namespace});
     combine.node(this);
   }
 
@@ -69,7 +69,8 @@ var Regular = function(options){
   this.$emit({type: 'init', stop: true });
   if( this.init ) this.init(this.data);
 
-  if(this.$root === this) this.$update();
+  // @TODO: remove, maybe , there is no need to update after init; 
+  // if(this.$root === this) this.$update();
   env.isRunning = prevRunning;
 
   // children is not required;
@@ -243,10 +244,14 @@ Regular.implement({
    * @return {[type]}
    */
   $compile: function(ast, options){
+    options = options || {};
     if(typeof ast === 'string'){
       ast = new Parser(ast).parse()
     }
-    var record = options && options.record, records;
+    var preNs = this.__ns__,
+      record = options.record, 
+      records;
+    if(options.namespace) this.__ns__ = options.namespace;
     if(record) this._record();
     var group = this._walk(ast, options);
     if(record){
@@ -257,8 +262,10 @@ Regular.implement({
         group.ondestroy = function(){ self.$unwatch(records); }
       }
     }
+    if(options.namespace) this.__ns__ = preNs;
     return group;
   },
+
 
   /**
    * create two-way binding with another component;

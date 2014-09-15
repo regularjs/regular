@@ -4,6 +4,7 @@ var karma = require('karma').server;
 var _ = require('./src/util.js');
 var gulp = require('gulp');
 var spawn = require('child_process').spawn;
+var shell = require('gulp-shell');
 var component = require('gulp-component');
 var istanbul = require('gulp-istanbul');
 var jshint = require('gulp-jshint');
@@ -138,6 +139,18 @@ gulp.task('v', function(fn){
 // watch file then build
 gulp.task('dev', function(){
   gulp.watch(['component.json', 'src/**/*.js'], ['build'])
+  var puer = spawn('puer', ["--no-reload"], {})
+  puer.stdout.on('data', function (data) {
+    console.log(""+ data);
+  });
+  puer.stderr.on('data', function (data) {
+    console.log('stderr: ' + data);
+  });
+
+  puer.on('close', function (code) {
+    console.log('puer test compelete!');
+  });
+
 })
 
 gulp.task('dev-test', function(){

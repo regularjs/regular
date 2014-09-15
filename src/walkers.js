@@ -10,7 +10,8 @@ var walkers = module.exports = {};
 walkers.list = function(ast){
 
   var Regular = walkers.Regular;  
-  var placeholder = document.createComment("Regular list");
+  var placeholder = document.createComment("Regular list"),
+    namespace = this.__ns__;
   // proxy Component to implement list item, so the behaviar is similar with angular;
   var Section =  Regular.extend( { 
     template: ast.body, 
@@ -54,7 +55,8 @@ walkers.list = function(ast){
         data[indexName] = o;
         data[variable] = item;
 
-        var section = new Section({data: data, $parent: self });
+        //@TODO
+        var section = new Section({data: data, $parent: self , namespace: namespace});
 
 
         // autolink
@@ -85,7 +87,7 @@ walkers.list = function(ast){
 walkers.template = function(ast){
   var content = ast.content, compiled;
   var placeholder = document.createComment('template');
-  var compiled;
+  var compiled, namespace = this.__ns__;
   // var fragment = dom.fragment();
   // fragment.appendChild(placeholder);
   var group = new Group();
@@ -97,9 +99,10 @@ walkers.template = function(ast){
         compiled.destroy(true); 
         group.children.pop();
       }
-      
-      group.push( compiled =  self.$compile(value, {record: true}) ); 
+      group.push( compiled =  self.$compile(value, {record: true, namespace: namespace}) ); 
       if(placeholder.parentNode) animate.inject(combine.node(compiled), placeholder, 'before')
+    }, {
+      init: true
     });
   }
   return group;
@@ -134,7 +137,7 @@ walkers['if'] = function(ast, options){
   var placeholder = document.createComment("Regular if" + ii++);
   var group = new Group();
   group.push(placeholder);
-  var preValue = null;
+  var preValue = null, namespace= this.__ns__;
 
 
   var update = function (nvalue, old){
@@ -147,7 +150,7 @@ walkers['if'] = function(ast, options){
     }
     if(value){ //true
       if(ast.consequent && ast.consequent.length){
-        consequent = self.$compile( ast.consequent , {record:true})
+        consequent = self.$compile( ast.consequent , {record:true, namespace: namespace })
         // placeholder.parentNode && placeholder.parentNode.insertBefore( node, placeholder );
         group.push(consequent);
         if(placeholder.parentNode){
@@ -156,7 +159,7 @@ walkers['if'] = function(ast, options){
       }
     }else{ //false
       if(ast.alternate && ast.alternate.length){
-        alternate = self.$compile(ast.alternate, {record:true});
+        alternate = self.$compile(ast.alternate, {record:true, namespace: namespace});
         group.push(alternate);
         if(placeholder.parentNode){
           animate.inject(combine.node(alternate), placeholder, 'before');
@@ -164,7 +167,7 @@ walkers['if'] = function(ast, options){
       }
     }
   }
-  this.$watch(ast.test, update, {force: true});
+  this.$watch(ast.test, update, {force: true, init: true});
 
   return group;
 }
@@ -190,15 +193,15 @@ walkers.element = function(ast){
     component, self = this,
     Constructor=this.constructor,
     children = ast.children,
-    group,
-    Component = Constructor.component(ast.tag);
+    namespace = this.__ns__,
+    group, Component = Constructor.component(ast.tag);
 
 
+  if(ast.tag === 'svg') var namespace = "svg";
 
 
-  if(ast.tag === 'svg') this._ns_ = 'svg';
   if(children && children.length){
-    group = this.$compile(children);
+    group = this.$compile(children, {namespace: namespace });
   }
 
 
@@ -226,7 +229,7 @@ walkers.element = function(ast){
 
     var $body;
     if(ast.children) $body = this.$compile(ast.children);
-    var component = new Component({data: data, events: events, $body: $body, $parent: this});
+    var component = new Component({data: data, events: events, $body: $body, $parent: this, namespace: namespace});
     for(var i = 0, len = attrs.length; i < len; i++){
       var attr = attrs[i];
       var value = attr.value||"";
@@ -240,7 +243,7 @@ walkers.element = function(ast){
     return this.$body;
   }
 
-  var element = dom.create(ast.tag, this._ns_, attrs);
+  var element = dom.create(ast.tag, namespace, attrs);
   // context element
 
   var child;
@@ -262,7 +265,6 @@ walkers.element = function(ast){
   // may distinct with if else
   var destroies = walkAttributes.call(this, attrs, element, destroies);
 
-  if(ast.tag === 'svg') this._ns_ = null;
 
 
   var res  = {

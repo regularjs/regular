@@ -441,7 +441,6 @@ void function(){
       watcher.$watch('str', function(){
         trigger2++;
       })
-
       watcher.data.str = 'haha'
       watcher.$digest();
       watcher.data.str = 'heihei'
@@ -457,10 +456,11 @@ void function(){
       expect(expr === expr2).to.equal(true);
     })
 
-    it("watch accept multi binding ", function(){
+    it("watch accept multi binding ", function(done){
       watcher.$watch(["str", "array.length"], function(str, len){
         expect(str).to.equal("haha")
         expect(len).to.equal(2)
+        done();
       })
 
       watcher.data.str = "haha";
