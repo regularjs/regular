@@ -15,6 +15,7 @@ extend(String.prototype, {
   }
 });
 
+
 // Array proto;
 extend(Array.prototype, {
   indexOf: function(obj, from){

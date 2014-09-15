@@ -1,0 +1,55 @@
+<head>
+<style>
+ .clock { width: 300px; height: 300px; }
+.clock-face { fill: none; stroke: #333; stroke-width: 2; }
+.major-mark { stroke: #555; stroke-width: 2; }
+.hour-hand, .minute-hand { stroke: #333; stroke-width: 2; }
+.second-hand { stroke: #f33; stroke-width: 1; }
+ 
+</style>
+</head>
+
+<body>
+  
+<script type="text/regular" id="clock">
+  <svg class="clock" viewBox="0 0 100 100">
+    <g transform="translate(50, 50)">
+       <circle class="clock-face" r="48"/>
+
+      {{#list 1..12 as i}}
+      <line class="major-mark" y1="35" y2="45" transform="rotate({{ 360 * i / 12 }})"/>
+      {{/list}}
+
+      <line class="hour-hand" y1="2" y2="-20" transform="rotate({{ 30 * date.getHours() + date.getMinutes() / 2 }})"/>
+      <line class="minute-hand" y1="2" y2="-45" transform="rotate({{ 6 * date.getMinutes() + date.getSeconds() / 10 }})"/>
+      <line class="second-hand" y1="2" y2="-45" transform="rotate({{ 6 * date.getSeconds() }})"/>
+    </g>
+  </svg>
+</script>
+
+
+<script src="../../dist/regular.js"></script>
+<script>
+  var Clock, clock, template;
+
+  template = document.getElementById('clock');
+
+  Clock = Regular.extend({
+   template: template.innerHTML,
+   config: function(data) {
+     data.date = new Date();
+   },
+   init: function(data) {
+     this.$interval(function() {
+       data.date = new Date();
+     });
+   }
+  }).use('timeout');
+
+  clock = new Clock();
+  clock.$inject(template, 'after');
+
+</script>
+
+<!-- include regular.js -->
+</body>
