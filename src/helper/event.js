@@ -19,7 +19,7 @@ var API = {
     $off: function(event, fn) {
         var context = this.$context || this;
         if(!context._handles) return;
-        if(!event) context._handles = [];
+        if(!event) context._handles = {};
         var handles = context._handles,
             calls;
 

@@ -30,6 +30,7 @@ walkers.list = function(ast){
 
 
   function update(newValue, splices){
+    newValue = newValue || [];
     if(!splices || !splices.length) return;
     var cur = placeholder;
     var m = 0, len = newValue.length,

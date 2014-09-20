@@ -1,6 +1,6 @@
 /**
 @author	leeluolee
-@version	0.2.8
+@version	0.2.9
 @homepage	http://regularjs.github.io
 */
 ;(function(){
@@ -1272,6 +1272,7 @@ walkers.list = function(ast){
 
 
   function update(newValue, splices){
+    newValue = newValue || [];
     if(!splices || !splices.length) return;
     var cur = placeholder;
     var m = 0, len = newValue.length,
