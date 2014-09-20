@@ -1272,6 +1272,7 @@ walkers.list = function(ast){
 
 
   function update(newValue, splices){
+    newValue = newValue || [];
     if(!splices || !splices.length) return;
     var cur = placeholder;
     var m = 0, len = newValue.length,
@@ -3549,7 +3550,7 @@ var API = {
     $off: function(event, fn) {
         var context = this.$context || this;
         if(!context._handles) return;
-        if(!event) context._handles = [];
+        if(!event) context._handles = {};
         var handles = context._handles,
             calls;
 
