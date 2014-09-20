@@ -58,6 +58,81 @@ void function(){
         destroy(component, container)
       }
     })
+
+  it("should destroy clear when have non parentNode", function(){
+    var list = "{{#list 1..3 as num}}{{num}}{{/list}}"
+    var component = new Regular({
+      template: list
+    }).$inject(container);
+    expect(container.innerHTML.slice(-3)).to.equal("123")
+    destroy(component, container);
+  })
+
+    it("bugfix #11, item in list destroy all $context's event", function(){
+      var list =
+        "{{#list todos as todo}}" + 
+          "<div class='a-{{todo_index}}'>{{todo.content}}</div>" + 
+        "{{/list}}";
+
+      var num =0;
+      var component = new Regular({
+        data: {todos: [{content: "hello"}, {content: "hello2"}]},
+        template: list,
+        events: {
+          "haha": function(){
+            num++
+          }
+        }
+      }).$inject(container);
+
+      component.$emit("haha", 111);
+
+      component.data.todos[0] = {content: "haha"}
+      expect(num).to.equal(1);
+
+      component.$update();
+
+      component.$emit("haha", 111);
+      expect(num).to.equal(2);
+
+      component.$emit("haha", 111);
+      expect(num).to.equal(3);
+
+
+
+
+
+      destroy(component, container);
+    })    
+
+    it("bugfix #12, subComponentUpdate force outerComponent $update when initialize", function(){
+      // we need force __checkOnece enter digest phase
+      var Modal = Regular.extend({
+        template: '{{#include this.content}}'
+      });
+
+      var Input = Regular.extend({
+        template: "<input type='email' class='form-control'>",
+        init: function(){
+          this.$update(); // @bug!! will forece outer Component to update
+        }
+      })
+
+      // 直接调用
+      var Modal2 = Modal.extend({
+        content:  '<input2 type="text" />'
+      }).component("input2", Input)
+
+
+      var component = new Modal2().$inject(container);
+
+      expect(nes.all('input' ,container).length).to.equal(1)
+
+
+
+      destroy(component, container);
+    })
+
     describe("svg namespace", function(){
       // need include
       // 1. list

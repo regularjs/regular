@@ -55,7 +55,9 @@ var methods = {
     if(rlen) this._records[rlen-1].push(uid)
     // init state.
     if(options.init === true){
-       this._checkSingleWatch( watcher, this._watchers.length-1 );
+      this.$phase = 'digest';
+      this._checkSingleWatch( watcher, this._watchers.length-1 );
+      this.$phase = null;
     }
     return uid;
 

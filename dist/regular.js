@@ -3354,7 +3354,9 @@ var methods = {
     if(rlen) this._records[rlen-1].push(uid)
     // init state.
     if(options.init === true){
-       this._checkSingleWatch( watcher, this._watchers.length-1 );
+      this.$phase = 'digest';
+      this._checkSingleWatch( watcher, this._watchers.length-1 );
+      this.$phase = null;
     }
     return uid;
 
@@ -3550,7 +3552,7 @@ var API = {
     $off: function(event, fn) {
         var context = this.$context || this;
         if(!context._handles) return;
-        if(!event) context._handles = {};
+        if(!event) this._handles = {};
         var handles = context._handles,
             calls;
 
