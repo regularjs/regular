@@ -41,7 +41,7 @@ function initSelect( elem, parsed){
     if(inProgress) return;
     var children = _.slice(elem.getElementsByTagName('option'))
     children.forEach(function(node, index){
-      if(node.value === newValue){
+      if(node.value == newValue){
         elem.selectedIndex = index;
       }
     })
@@ -153,7 +153,7 @@ function initRadio(elem, parsed){
   var inProgress = false;
   this.$watch(parsed, function( newValue ){
     if(inProgress) return;
-    if(newValue === elem.value) elem.checked = true;
+    if(newValue == elem.value) elem.checked = true;
   });
 
 

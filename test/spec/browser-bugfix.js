@@ -68,7 +68,7 @@ void function(){
     destroy(component, container);
   })
 
-    it("bugfix #11, item in list destroy all $context's event", function(){
+    it("bugfix #12, item in list destroy all $context's event", function(){
       var list =
         "{{#list todos as todo}}" + 
           "<div class='a-{{todo_index}}'>{{todo.content}}</div>" + 
@@ -100,12 +100,10 @@ void function(){
 
 
 
-
-
       destroy(component, container);
     })    
 
-    it("bugfix #12, subComponentUpdate force outerComponent $update when initialize", function(){
+    it("bugfix #13, subComponentUpdate force outerComponent $update when initialize", function(){
       // we need force __checkOnece enter digest phase
       var Modal = Regular.extend({
         template: '{{#include this.content}}'
@@ -125,6 +123,28 @@ void function(){
 
 
       var component = new Modal2().$inject(container);
+
+      expect(nes.all('input' ,container).length).to.equal(1)
+
+
+
+      destroy(component, container);
+    })
+    it("bugfix #11, 换行导致模板无法解析", function(){
+      
+var template = (function(){/*
+<input type="text"  class="form-control"
+                                 id="username" name="username" value="">
+*/}).toString().match(/\/\*([\s\S]*)\*\//)[1];
+
+      // we need force __checkOnece enter digest phase
+      var Component = Regular.extend({
+        template: template
+      });
+      console.log(template)
+
+
+      var component = new Component().$inject(container);
 
       expect(nes.all('input' ,container).length).to.equal(1)
 

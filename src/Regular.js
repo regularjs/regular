@@ -218,6 +218,7 @@ Regular.implement({
 
 
   init: function(){},
+  config: function(){},
   destroy: function(){
     // destroy event wont propgation;
     this.$emit({type: 'destroy', stop: true });
