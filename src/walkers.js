@@ -177,12 +177,12 @@ walkers['if'] = function(ast, options){
 walkers.expression = function(ast){
   var node = document.createTextNode("");
   this.$watch(ast, function(newval){
-    dom.text(node, "" + (newval == null? "": String(newval)));
+    dom.text(node, "" + (newval == null? "": "" + newval) );
   })
   return node;
 }
 walkers.text = function(ast){
-  var node = document.createTextNode(ast.text);
+  var node = document.createTextNode(_.convertEntity(ast.text));
   return node;
 }
 

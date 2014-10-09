@@ -20,6 +20,7 @@
     "src/helper/event.js",
     "src/helper/animate.js",
     "src/helper/combine.js",
+    "src/helper/entities.js",
     "src/directive/base.js",
     "src/directive/form.js",
     "src/directive/animation.js",

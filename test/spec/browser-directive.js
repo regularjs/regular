@@ -120,7 +120,7 @@ describe('r-model directive', function(){
       }).$inject(container)
 
 
-      expect($('input', container).length).to.equal(1);
+      expect(nes.all('input', container).length).to.equal(1);
       // expect($('div', container).html()).to.equal('87399126@163.com')
 
       component.$update('email','hello');
@@ -128,7 +128,7 @@ describe('r-model directive', function(){
 
 
       expect(component.data.email).to.equal('hello')
-      expect($('input', container).val()).to.equal('hello')
+      expect(nes.one('input', container).value).to.equal('hello')
 
       destroy(component, container)
 
@@ -142,19 +142,19 @@ describe('r-model directive', function(){
         template: template
       }).$inject(container)
 
-      expect($('input', container).length).to.equal(2)
-      expect($('input:nth-child(10n+1)', container).val()).to.equal("123456");
-      expect($('input:nth-child(10n+2)', container).val()).to.equal("");
+      var inputs = nes.all('input', container);
+
+      expect(inputs.length).to.equal(2)
+      expect(inputs[0].value).to.equal("123456");
+      expect(inputs[1].value).to.equal("");
 
       component.$update({
         text: '1234',
         password: 3456
       })
-      expect($('input:nth-child(10n+1)', container).val()).to.equal("3456");
-      expect($('input:nth-child(10n+2)', container).val()).to.equal("1234");
-      // destroy
-      component.destroy();
-      expect(container.innerHTML).to.equal("");
+      expect(inputs[0].value).to.equal("3456");
+      expect(inputs[1].value).to.equal("1234");
+      destroy(component, container)
     })
     it('input with non type should works as expect', function(){
       var template = "<input r-model={{nontype}}>";

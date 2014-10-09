@@ -6,13 +6,13 @@
 <script id="helloword" type="text/regular" name="helloword">
   Hello 
   {{#if user}}
-    <strong>{{user}}</strong>, <a href='#' on-click={{user = null}}>logout</a>
+    <strong> &cent; {{user}}</strong>, <a href='#' on-click={{user = null}}>logout</a>
   {{#else}}
     Friend, please <a href='#' on-click={{this.login()}}>login</a>
   {{/if}}
 </script>
 <!-- include regular.js -->
-<script src="https://rawgit.com/regularjs/regular/master/dist/regular.js"></script>
+<script src="../dist/regular.js"></script>
 
 
 <!-- Define your Own Component -->

@@ -1,5 +1,6 @@
 require('./helper/shim.js');
 var _  = module.exports;
+var entities = require('./helper/entities.js');
 var slice = [].slice;
 var o2str = ({}).toString;
 var win = typeof window !=='undefined'? window: global;
@@ -165,13 +166,22 @@ _.findSubCapture = function (regStr) {
 };
 
 
-_.escapeRegExp = function(string){// Credit: XRegExp 0.6.1 (c) 2007-2008 Steven Levithan <http://stevenlevithan.com/regex/xregexp/> MIT License
-  return string.replace(/[-[\]{}()*+?.\\^$|,#\s]/g, function(match){
+_.escapeRegExp = function( str){// Credit: XRegExp 0.6.1 (c) 2007-2008 Steven Levithan <http://stevenlevithan.com/regex/xregexp/> MIT License
+  return str.replace(/[-[\]{}()*+?.\\^$|,#\s]/g, function(match){
     return '\\' + match;
   });
 };
 
 
+var rEntity = new RegExp("&(" + Object.keys(entities).join('|') + ');', 'gi');
+
+_.convertEntity = function(chr){
+
+  return ("" + chr).replace(rEntity, function(all, capture){
+    return String.fromCharCode(entities[capture])
+  });
+
+}
 
 
 // simple get accessor
@@ -189,7 +199,6 @@ _.createProto = function(fn, o){
     Foo.prototype = o;
     return (fn.prototype = new Foo());
 }
-
 
 
 /**

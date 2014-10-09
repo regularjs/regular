@@ -2,6 +2,8 @@
 var Regular = require_lib("index.js");
 void function(){
 
+  var dom = Regular.dom;
+
   function destroy(component, container){
     component.destroy();
     expect(container.innerHTML).to.equal('');
@@ -137,11 +139,9 @@ var template = (function(){/*
                                  id="username" name="username" value="">
 */}).toString().match(/\/\*([\s\S]*)\*\//)[1];
 
-      // we need force __checkOnece enter digest phase
       var Component = Regular.extend({
         template: template
       });
-      console.log(template)
 
 
       var component = new Component().$inject(container);
@@ -149,6 +149,34 @@ var template = (function(){/*
       expect(nes.all('input' ,container).length).to.equal(1)
 
 
+
+      destroy(component, container);
+    })
+    it("bugfix #14, html entity isn't converted", function(){
+
+
+      // 'lt':60, 
+      // 'gt':62, 
+      // 'nbsp':160, 
+      // 'iexcl':161, 
+      // 'cent':162, 
+
+      var template =  "<p>&cent;</p><p>{{text}}</p>"
+      var Component = Regular.extend({
+        template: template
+      });
+
+
+      var component = new Component().$inject(container);
+
+      var ps = nes.all('p' ,container);
+
+
+      expect(dom.text(ps[0])).to.equal(String.fromCharCode(162));
+
+      component.$update('text', "&lt;");
+
+      expect(dom.text(ps[1])).to.equal("&lt;");
 
       destroy(component, container);
     })
