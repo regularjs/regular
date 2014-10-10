@@ -60,7 +60,6 @@ var methods = {
       this.$phase = null;
     }
     return uid;
-
   },
   $unwatch: function(uid){
     if(!this._watchers) this._watchers = [];

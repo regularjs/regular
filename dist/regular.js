@@ -247,6 +247,7 @@ var Regular = function(options){
      this.$parent._append(this);
   }
   this._children = [];
+  this.$refs = {};
 
   template = this.template;
 
@@ -445,6 +446,7 @@ Regular.implement({
     }
     this.$parent = null;
     this.$root = null;
+    this.$refs = null;
     this._events = null;
     this.$off();
   },
@@ -1441,13 +1443,16 @@ walkers.text = function(ast){
 
 var eventReg = /^on-(.+)$/
 
+/**
+ * walkers element (contains component)
+ */
 walkers.element = function(ast){
   var attrs = ast.attrs, 
     component, self = this,
     Constructor=this.constructor,
     children = ast.children,
-    namespace = this.__ns__,
-    group, Component = Constructor.component(ast.tag);
+    namespace = this.__ns__, ref, group, 
+    Component = Constructor.component(ast.tag);
 
 
   if(ast.tag === 'svg') var namespace = "svg";
@@ -1478,11 +1483,16 @@ walkers.element = function(ast){
       }else{
         data[attr.name] = value.get(self); 
       }
+      if( attr.name === 'ref'  && value != null){
+        ref = value.type === 'expression'? value.get(self): value;
+      }
+
     }
 
     var $body;
     if(ast.children) $body = this.$compile(ast.children);
     var component = new Component({data: data, events: events, $body: $body, $parent: this, namespace: namespace});
+    if(ref &&  self.$context.$refs) self.$context.$refs[ref] = component;
     for(var i = 0, len = attrs.length; i < len; i++){
       var attr = attrs[i];
       var value = attr.value||"";
@@ -1490,6 +1500,11 @@ walkers.element = function(ast){
         this.$watch(value, component.$update.bind(component, attr.name))
         if(value.set) component.$watch(attr.name, self.$update.bind(self, value))
       }
+    }
+    if(ref){
+      component.$on('destroy', function(){
+        if(self.$context.$refs) self.$context.$refs[ref] = null;
+      })
     }
     return component;
   }else if(ast.tag === 'r-content' && this.$body){
@@ -1533,6 +1548,7 @@ walkers.element = function(ast){
       if( first ){
         animate.remove( element, group? group.destroy.bind( group ): _.noop );
       }
+      // destroy ref
       if( destroies.length ) {
         destroies.forEach(function( destroy ){
           if( destroy ){
@@ -1574,6 +1590,18 @@ walkers.attribute = function(ast ,options){
     if(typeof binding === 'function') binding = {destroy: binding}; 
     return binding;
   }else{
+    if( name === 'ref'  && value != null && options.fromElement){
+      var ref = value.type === 'expression'? value.get(self): value;
+      var refs = this.$context.$refs;
+      if(refs){
+        refs[ref] = element
+        return {
+          destroy: function(){
+            refs[ref] = null;
+          }
+        }
+      }
+    }
     if(value.type === 'expression' ){
 
       this.$watch(value, function(nvalue, old){
@@ -3370,7 +3398,6 @@ var methods = {
       this.$phase = null;
     }
     return uid;
-
   },
   $unwatch: function(uid){
     if(!this._watchers) this._watchers = [];
@@ -3910,6 +3937,7 @@ var combine = module.exports = {
 }
 });
 require.register("regularjs/src/helper/entities.js", function(exports, require, module){
+// http://stackoverflow.com/questions/1354064/how-to-convert-characters-to-html-entities-using-plain-javascript
 var entities = {
   'quot':34, 
   'amp':38, 
