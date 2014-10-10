@@ -1,3 +1,4 @@
+// http://stackoverflow.com/questions/1354064/how-to-convert-characters-to-html-entities-using-plain-javascript
 var entities = {
   'quot':34, 
   'amp':38, 
