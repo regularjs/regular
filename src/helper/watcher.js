@@ -6,10 +6,7 @@ function Watcher(){}
 
 var methods = {
   $watch: function(expr, fn, options){
-    var 
-      get, once, 
-      test, 
-      rlen; //records length
+    var get, once, test, rlen; //records length
     if(!this._watchers) this._watchers = [];
     options = options || {};
     if(options === true){
@@ -60,7 +57,6 @@ var methods = {
       this.$phase = null;
     }
     return uid;
-
   },
   $unwatch: function(uid){
     if(!this._watchers) this._watchers = [];

@@ -36,6 +36,7 @@ var Regular = function(options){
      this.$parent._append(this);
   }
   this._children = [];
+  this.$refs = {};
 
   template = this.template;
 
@@ -233,6 +234,7 @@ Regular.implement({
     this.$parent = null;
     this.$root = null;
     this._handles = null;
+    this.$refs = null;
   },
 
   /**
