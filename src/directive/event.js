@@ -46,7 +46,7 @@ Regular.directive( /^delegate-\w+$/, function( elem, value, name, attrs ) {
   if( !_delegates[type] ){
     _delegates[type] = [];
 
-    root.$on( "inject", function( newParent ){
+    root.$on( "$inject", function( newParent ){
       var preParent = this.parentNode;
       if( preParent ){
         dom.off(preParent, type, delegateEvent);
@@ -54,7 +54,7 @@ Regular.directive( /^delegate-\w+$/, function( elem, value, name, attrs ) {
       dom.on(newParent, type, delegateEvent);
     })
 
-    root.$on("destroy", function(){
+    root.$on("$destroy", function(){
       if(root.parentNode) dom.off(root.parentNode, type, delegateEvent)
       root._delegates[type] = null;
     })

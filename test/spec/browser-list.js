@@ -270,7 +270,7 @@ void function(){
         destroy(component, container);
       })
       it("component in list should works as expect", function(){
-        var container = document.createElement('table')
+        var container = document.createElement('div')
         var num = 0;
         var Component = Regular.extend({})
           .directive('r-name', function(elem, value){
@@ -300,6 +300,49 @@ void function(){
 
         destroy(component, container);
       })
+
+      var container = document.createElement('div')
+        it("item in list should not emit ,init, update or destroy to outerComponent", function(){
+        var List = Regular.extend({
+          template: "{{#list items as item}}<div>{{item}}</div>{{/list}}"
+        })
+        var initTimes = 0;
+        var destroyTimes = 0;
+        var updateTimes = 0;
+        var component = new List({
+          data: {
+            items: [1,2,3]
+          },
+          events: {
+            $init: function(){
+              initTimes++
+            },
+            $destroy: function(){
+              destroyTimes++
+            },
+            update: function(){
+              updateTimes++
+            }
+          }
+        })
+
+        expect(initTimes).to.equal(1);
+        expect(destroyTimes).to.equal(0);
+        expect(updateTimes).to.equal(1);
+
+        component.$update(function(data){
+          data.items.pop();
+        })
+        
+        expect(initTimes).to.equal(1);
+        expect(destroyTimes).to.equal(0);
+        expect(updateTimes).to.equal(2);
+
+
+
+
+      })
+
 
 
     })

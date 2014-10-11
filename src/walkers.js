@@ -15,7 +15,11 @@ walkers.list = function(ast){
   // proxy Component to implement list item, so the behaviar is similar with angular;
   var Section =  Regular.extend( { 
     template: ast.body, 
-    $context: this.$context
+    $context: this.$context,
+    // proxy the event to $context
+    $on: this.$context.$on.bind(this.$context),
+    $off: this.$context.$off.bind(this.$context),
+    $emit: this.$context.$emit.bind(this.$context)
   });
   Regular._inheritConfig(Section, this.constructor);
 

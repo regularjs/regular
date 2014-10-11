@@ -96,7 +96,7 @@ var methods = {
         throw 'there may a circular dependencies reaches' 
       }
     }
-    if(n>0 && this.$emit) this.$emit("update");
+    if( n > 0 && this.$emit) this.$emit("$update");
     this.$phase = null;
   },
   // private digest logic

@@ -1,6 +1,7 @@
 // simplest event emitter 60 lines
 // ===============================
 var slice = [].slice, _ = require("../util.js");
+var buildin = ['$inject', "$init", "$destroy", "$update"];
 var API = {
     $on: function(event, fn) {
         if(typeof event === "object"){
@@ -9,7 +10,7 @@ var API = {
             }
         }else{
             // @patch: for list
-            var context = this.$context || this;
+            var context = this;
             var handles = context._handles || (context._handles = {}),
                 calls = handles[event] || (handles[event] = []);
             calls.push(fn);
@@ -17,7 +18,7 @@ var API = {
         return this;
     },
     $off: function(event, fn) {
-        var context = this.$context || this;
+        var context = this;
         if(!context._handles) return;
         if(!event) this._handles = {};
         var handles = context._handles,
@@ -40,17 +41,26 @@ var API = {
     // bubble event
     $emit: function(event){
         // @patch: for list
-        var context = this.$context || this;
+        var context = this;
         var handles = context._handles, calls, args, type;
         if(!event) return;
-        if(typeof event === "object"){
-            type = event.type;
-            args = event.data || [];
-        }else{
-            args = slice.call(arguments, 1);
-            type = event;
+        var args = slice.call(arguments, 1);
+        var type = event;
+
+        if(!handles) return context;
+        // @deprecated 0.3.0
+        // will be removed when completely remove the old events('destroy' 'init') support
+
+        /*@remove 0.4.0*/
+        var isBuildin = ~buildin.indexOf(type);
+        if(calls = handles[type.slice(1)]){
+            for (var j = 0, len = calls.length; j < len; j++) {
+                calls[j].apply(context, args)
+            }
         }
-        if (!handles || !(calls = handles[type])) return context;
+        /*/remove*/
+
+        if (!(calls = handles[type])) return context;
         for (var i = 0, len = calls.length; i < len; i++) {
             calls[i].apply(context, args)
         }

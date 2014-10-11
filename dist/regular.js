@@ -277,7 +277,7 @@ var Regular = function(options){
 
   if(this.$root === this) this.$update();
   this.$ready = true;
-  this.$emit({type: 'init', stop: true });
+  if(this.$context === this) this.$emit("$init");
   if( this.init ) this.init(this.data);
 
   // @TODO: remove, maybe , there is no need to update after init; 
@@ -426,13 +426,11 @@ Event.mixTo(Regular);
 Watcher.mixTo(Regular);
 
 Regular.implement({
-
-
   init: function(){},
   config: function(){},
   destroy: function(){
     // destroy event wont propgation;
-    this.$emit({type: 'destroy', stop: true });
+    if(this.$context === this) this.$emit("$destroy");
     this.group && this.group.destroy(true);
     this.group = null;
     this.parentNode = null;
@@ -445,8 +443,7 @@ Regular.implement({
     }
     this.$parent = null;
     this.$root = null;
-    this._events = null;
-    this.$off();
+    this._handles = null;
   },
 
   /**
@@ -541,7 +538,7 @@ Regular.implement({
     if(!node) throw 'injected node is not found';
     if(!fragment) return;
     dom.inject(fragment, node, position);
-    this.$emit("inject", node);
+    this.$emit("$inject", node);
     this.parentNode = Array.isArray(fragment)? fragment[0].parentNode: fragment.parentNode;
     return this;
   },
@@ -564,7 +561,7 @@ Regular.implement({
       var wid1 = this.$watch( expr1, function(value){
         component.$update(expr2, value)
       });
-      component.$on('destroy', function(){
+      component.$on('$destroy', function(){
         self.$unwatch(wid1)
       })
     }
@@ -573,7 +570,7 @@ Regular.implement({
         self.$update(expr1, value)
       });
       // when brother destroy, we unlink this watcher
-      this.$on('destroy', component.$unwatch.bind(component,wid2))
+      this.$on('$destroy', component.$unwatch.bind(component,wid2))
     }
     // sync the component's state to called's state
     expr2.set(component, expr1.get(this));
@@ -1267,7 +1264,11 @@ walkers.list = function(ast){
   // proxy Component to implement list item, so the behaviar is similar with angular;
   var Section =  Regular.extend( { 
     template: ast.body, 
-    $context: this.$context
+    $context: this.$context,
+    // proxy the event to $context
+    $on: this.$context.$on.bind(this.$context),
+    $off: this.$context.$off.bind(this.$context),
+    $emit: this.$context.$emit.bind(this.$context)
   });
   Regular._inheritConfig(Section, this.constructor);
 
@@ -3406,7 +3407,7 @@ var methods = {
         throw 'there may a circular dependencies reaches' 
       }
     }
-    if(n>0 && this.$emit) this.$emit("update");
+    if( n > 0 && this.$emit) this.$emit("$update");
     this.$phase = null;
   },
   // private digest logic
@@ -3545,6 +3546,7 @@ require.register("regularjs/src/helper/event.js", function(exports, require, mod
 // simplest event emitter 60 lines
 // ===============================
 var slice = [].slice, _ = require("../util.js");
+var buildin = ['$inject', "$init", "$destroy", "$update"];
 var API = {
     $on: function(event, fn) {
         if(typeof event === "object"){
@@ -3553,7 +3555,7 @@ var API = {
             }
         }else{
             // @patch: for list
-            var context = this.$context || this;
+            var context = this;
             var handles = context._handles || (context._handles = {}),
                 calls = handles[event] || (handles[event] = []);
             calls.push(fn);
@@ -3561,7 +3563,7 @@ var API = {
         return this;
     },
     $off: function(event, fn) {
-        var context = this.$context || this;
+        var context = this;
         if(!context._handles) return;
         if(!event) this._handles = {};
         var handles = context._handles,
@@ -3584,17 +3586,26 @@ var API = {
     // bubble event
     $emit: function(event){
         // @patch: for list
-        var context = this.$context || this;
+        var context = this;
         var handles = context._handles, calls, args, type;
         if(!event) return;
-        if(typeof event === "object"){
-            type = event.type;
-            args = event.data || [];
-        }else{
-            args = slice.call(arguments, 1);
-            type = event;
+        var args = slice.call(arguments, 1);
+        var type = event;
+
+        if(!handles) return context;
+        // @deprecated 0.3.0
+        // will be removed when completely remove the old events('destroy' 'init') support
+
+        /*@remove 0.4.0*/
+        var isBuildin = ~buildin.indexOf(type);
+        if(calls = handles[type.slice(1)]){
+            for (var j = 0, len = calls.length; j < len; j++) {
+                calls[j].apply(context, args)
+            }
         }
-        if (!handles || !(calls = handles[type])) return context;
+        /*/remove*/
+
+        if (!(calls = handles[type])) return context;
         for (var i = 0, len = calls.length; i < len; i++) {
             calls[i].apply(context, args)
         }
@@ -3910,6 +3921,7 @@ var combine = module.exports = {
 }
 });
 require.register("regularjs/src/helper/entities.js", function(exports, require, module){
+// http://stackoverflow.com/questions/1354064/how-to-convert-characters-to-html-entities-using-plain-javascript
 var entities = {
   'quot':34, 
   'amp':38, 
@@ -4705,7 +4717,7 @@ Regular.directive( /^delegate-\w+$/, function( elem, value, name, attrs ) {
   if( !_delegates[type] ){
     _delegates[type] = [];
 
-    root.$on( "inject", function( newParent ){
+    root.$on( "$inject", function( newParent ){
       var preParent = this.parentNode;
       if( preParent ){
         dom.off(preParent, type, delegateEvent);
@@ -4713,7 +4725,7 @@ Regular.directive( /^delegate-\w+$/, function( elem, value, name, attrs ) {
       dom.on(newParent, type, delegateEvent);
     })
 
-    root.$on("destroy", function(){
+    root.$on("$destroy", function(){
       if(root.parentNode) dom.off(root.parentNode, type, delegateEvent)
       root._delegates[type] = null;
     })

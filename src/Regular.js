@@ -66,7 +66,7 @@ var Regular = function(options){
 
   if(this.$root === this) this.$update();
   this.$ready = true;
-  this.$emit({type: 'init', stop: true });
+  if(this.$context === this) this.$emit("$init");
   if( this.init ) this.init(this.data);
 
   // @TODO: remove, maybe , there is no need to update after init; 
@@ -215,13 +215,11 @@ Event.mixTo(Regular);
 Watcher.mixTo(Regular);
 
 Regular.implement({
-
-
   init: function(){},
   config: function(){},
   destroy: function(){
     // destroy event wont propgation;
-    this.$emit({type: 'destroy', stop: true });
+    if(this.$context === this) this.$emit("$destroy");
     this.group && this.group.destroy(true);
     this.group = null;
     this.parentNode = null;
@@ -234,8 +232,7 @@ Regular.implement({
     }
     this.$parent = null;
     this.$root = null;
-    this._events = null;
-    this.$off();
+    this._handles = null;
   },
 
   /**
@@ -330,7 +327,7 @@ Regular.implement({
     if(!node) throw 'injected node is not found';
     if(!fragment) return;
     dom.inject(fragment, node, position);
-    this.$emit("inject", node);
+    this.$emit("$inject", node);
     this.parentNode = Array.isArray(fragment)? fragment[0].parentNode: fragment.parentNode;
     return this;
   },
@@ -353,7 +350,7 @@ Regular.implement({
       var wid1 = this.$watch( expr1, function(value){
         component.$update(expr2, value)
       });
-      component.$on('destroy', function(){
+      component.$on('$destroy', function(){
         self.$unwatch(wid1)
       })
     }
@@ -362,7 +359,7 @@ Regular.implement({
         self.$update(expr1, value)
       });
       // when brother destroy, we unlink this watcher
-      this.$on('destroy', component.$unwatch.bind(component,wid2))
+      this.$on('$destroy', component.$unwatch.bind(component,wid2))
     }
     // sync the component's state to called's state
     expr2.set(component, expr1.get(this));
