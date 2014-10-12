@@ -474,7 +474,7 @@ _.handleEvent = function(value, type ){
     return function fire(obj){
       self.data.$event = obj;
       var res = evaluate(self);
-      if(res !== true && obj && obj.preventDefault) obj.preventDefault();
+      if(res === false && obj && obj.preventDefault) obj.preventDefault();
       delete self.data.$event;
       self.$update();
     }
