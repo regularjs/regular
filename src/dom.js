@@ -120,9 +120,8 @@ dom.create = function(type, ns, attrs){
       var str = '<input '
       for(var i = 0; i < attrs.length; i++){
         var attr = attrs[i];
-        if(attr.value && attr.value.type !==' expression' && (attr.name === "type"  || attr.name === "type") ){
+        if(attr.value && attr.value.type !==' expression' && (attr.name === "type") ){
           str += (' '+attr.name + '="' + attr.value+'"');
-          attrs.splice(i, 1);
         }
       }
       try{

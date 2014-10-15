@@ -302,6 +302,30 @@ void function(){
       })
 
       var container = document.createElement('div')
+      it("input:checkbox in list should have correct type", function(){
+        var List = Regular.extend({
+          template: "<div>{{#list items as item}}<input type='checkbox' class='1' >{{/list}}</div>"
+        })
+
+        var component = new List({
+          data: {
+            items: [1,2,3,4]
+          }
+        }).$inject(container)
+
+        var inputs = nes.all("input", container);
+        var types = inputs.map(function(node){
+          return node.type
+        })
+
+        expect(types).to.eql(["checkbox","checkbox","checkbox","checkbox"])
+
+        destroy(component, container);
+
+
+      })
+
+
         it("item in list should not emit ,init, update or destroy to outerComponent", function(){
         var List = Regular.extend({
           template: "{{#list items as item}}<div>{{item}}</div>{{/list}}"
