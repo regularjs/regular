@@ -14,16 +14,3 @@ module.exports = {
   }
 }
 
-
-function handleSimpleAccessor(path){
-  return {
-    type: "expression",
-    get: function(context){
-      return context.data[path];
-    },
-    set: function(context, value){
-      var data = context.data;
-      return data[path] = value; 
-    }
-  }
-}

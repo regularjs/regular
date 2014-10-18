@@ -1,6 +1,6 @@
 /**
 @author	leeluolee
-@version	0.2.11
+@version	0.2.12
 @homepage	http://regularjs.github.io
 */
 ;(function(){
@@ -1222,7 +1222,7 @@ _.once = function(fn){
 
 
 _.log = function(msg, type){
-  if(window.console)  window.console[type || "log"](msg);
+  if(typeof console !== "undefined")  console[type || "log"](msg);
 }
 
 
@@ -3322,18 +3322,6 @@ module.exports = {
 }
 
 
-function handleSimpleAccessor(path){
-  return {
-    type: "expression",
-    get: function(context){
-      return context.data[path];
-    },
-    set: function(context, value){
-      var data = context.data;
-      return data[path] = value; 
-    }
-  }
-}
 });
 require.register("regularjs/src/helper/watcher.js", function(exports, require, module){
 var _ = require('../util.js');

@@ -8,6 +8,7 @@ var shell = require('gulp-shell');
 var component = require('gulp-component');
 var istanbul = require('gulp-istanbul');
 var jshint = require('gulp-jshint');
+var webpack = require('gulp-webpack');
 var mocha = require('gulp-mocha');
 var uglify = require('gulp-uglify');
 var gutil = require('gulp-util');
@@ -21,6 +22,17 @@ try{
   pkg_component = JSON.parse(fs.readFileSync('./component.json', 'utf8'))
 }catch(e){}
 
+gulp.task('node', function() {
+  return gulp.src('src/node.js')
+    .pipe(webpack({
+      output: {
+        filename: 'regular-parser.js',
+        libraryTarget: "umd"
+      }
+    }
+    ))
+    .pipe(gulp.dest('dist/'));
+});
 
 gulp.task('default', ['test'], function() {});
 
@@ -93,7 +105,7 @@ gulp.task('karma', function (done) {
 
 
 // build after jshint
-gulp.task('build',["jshint"], function(){
+gulp.task('build',["jshint", 'node'], function(){
   // form minify    
   gulp.src('./component.json')
     .pipe(component.scripts({

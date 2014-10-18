@@ -504,7 +504,7 @@ _.once = function(fn){
 
 
 _.log = function(msg, type){
-  if(window.console)  window.console[type || "log"](msg);
+  if(typeof console !== "undefined")  console[type || "log"](msg);
 }
 
 
