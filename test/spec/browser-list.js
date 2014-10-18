@@ -302,10 +302,11 @@ void function(){
       })
 
       var container = document.createElement('div')
+      
       it("input:checkbox in list should have correct type", function(){
         var List = Regular.extend({
           template: "<div>{{#list items as item}}<input type='checkbox' class='1' >{{/list}}</div>"
-        })
+        });
 
         var component = new List({
           data: {
