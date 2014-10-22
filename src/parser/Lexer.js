@@ -1,4 +1,9 @@
 var _ = require("../util.js");
+var config = require("../config.js");
+
+// some custom tag config will conflict with the Lexer progress
+var conflictTag = {"}": "{", "]": "["};
+
 
 var test = /a|(b)/.exec("a");
 var testSubCapure = test && test[1] === undefined? 
@@ -12,6 +17,11 @@ function wrapHander(handler){
 }
 
 function Lexer(input, opts){
+  if(conflictTag[config.END]){
+    this.markStart = conflictTag[config.END];
+    this.markEnd = config.END;
+  }
+
   this.input = (input||"").trim();
   this.opts = opts || {};
   this.map = this.opts.mode !== 2?  map1: map2;
@@ -26,7 +36,7 @@ lo.lex = function(str){
   str = (str || this.input).trim();
   var tokens = [], split, test,mlen, token, state;
   this.input = str, 
-    
+  this.marks = 0;
   // init the pos index
   this.index=0;
   var i = 0;
@@ -85,43 +95,24 @@ lo._process = function(args, split,str){
   }
   return token;
 }
-/**
- * 进入某种状态
- * @param  {[type]} state [description]
- * @return {[type]}
- */
 lo.enter = function(state){
-  // 如果有多层状态则 则这里用一个栈来标示，
-  // 个人目前还没有遇到词法解析阶段需要多层判断的场景
   this.states.push(state)
   return this;
 }
-/**
- * 退出
- * @return {[type]}
- */
 
 lo.state = function(){
   var states = this.states;
   return states[states.length-1];
 }
 
-/**
- * 退出某种状态
- * @return {[type]}
- */
 lo.leave = function(state){
   var states = this.states;
   if(!state || states[states.length-1] === state) states.pop()
 }
 
 var macro = {
-  'BEGIN': '{{',
-  'END': '}}',
-  //http://www.w3.org/TR/REC-xml/#NT-Name
-  // ":" | [A-Z] | "_" | [a-z] | [#xC0-#xD6] | [#xD8-#xF6] | [#xF8-#x2FF] | [#x370-#x37D] | [#x37F-#x1FFF] | [#x200C-#x200D] | [#x2070-#x218F] | [#x2C00-#x2FEF] | [#x3001-#xD7FF] | [#xF900-#xFDCF] | [#xFDF0-#xFFFD] | [#x10000-#xEFFFF]
-  // 暂时不这么严格，提取合适范围
-  // 'NAME': /(?:[:_A-Za-z\xC0-\u2FEF\u3001-\uD7FF\uF900-\uFFFF][-\.:_0-9A-Za-z\xB7\xC0-\u2FEF\u3001-\uD7FF\uF900-\uFFFF]*)/
+  'BEGIN': '{',
+  'END': '}',
   'NAME': /(?:[:_A-Za-z][-\.:_0-9A-Za-z]*)/,
   'IDENT': /[\$_A-Za-z][_0-9A-Za-z\$]*/,
   'SPACE': /[\r\n\f ]/
@@ -173,9 +164,6 @@ function setup(map){
   return map;
 }
 
-/**
- * build the mode 1 and mode 2‘s tokenizer
- */
 var rules = {
 
   // 1. INIT
@@ -242,11 +230,17 @@ var rules = {
     }
   }, 'JST'],
   JST_LEAVE: [/{END}/, function(){
-    this.leave('JST');
-    return {type: 'END'}
+    debugger
+    if(!this.markEnd || !this.marks ){
+      this.leave('JST');
+      return {type: 'END'}
+    }else{
+      this.marks--;
+      return {type: this.markEnd, value: this.markEnd}
+    }
   }, 'JST'],
 
-  JST_CLOSE: [/{BEGIN}\s*\/\s*({IDENT})\s*{END}/, function(all, one){
+  JST_CLOSE: [/{BEGIN}\s*\/({IDENT})\s*{END}/, function(all, one){
     this.leave('JST');
     return {
       type: 'CLOSE',
@@ -257,6 +251,13 @@ var rules = {
     this.leave();
   }, 'JST'],
   JST_EXPR_OPEN: ['{BEGIN}',function(all, one){
+    if(all === this.markStart){
+      if(this.marks){
+        return {type: this.markStart, value: this.markStart };
+      }else{
+        this.marks++;
+      }
+    }
     var escape = one === '=';
     return {
       type: 'EXPR_OPEN',

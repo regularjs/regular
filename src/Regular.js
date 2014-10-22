@@ -2,6 +2,7 @@
 var Lexer = require("./parser/Lexer.js");
 var Parser = require("./parser/Parser.js");
 var dom = require("./dom.js");
+var config = require("./config.js");
 var Group = require('./group.js');
 var _ = require('./util');
 var extend = require('./helper/extend.js');
@@ -165,6 +166,18 @@ _.extend(Regular, {
     fn(this, Regular);
     return this;
   },
+  // config the Regularjs's global
+  config: function(name, value){
+    var needGenLexer = false;
+    if(typeof name === "object"){
+      for(var i in name){
+        // if you config
+        if( i ==="END" || i==='BEGIN' )  needGenLexer = true;
+        config[i] = name[i];
+      }
+    }
+    if(needGenLexer) Lexer.setup();
+  },
   expression: parse.expression,
   parse: parse.parse,
 
@@ -205,6 +218,7 @@ _.extend(Regular, {
     })
     return self;
   }
+
 });
 
 extend(Regular);

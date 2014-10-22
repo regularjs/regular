@@ -10,6 +10,7 @@
     "src/index.js",
     "src/dom.js",
     "src/group.js",
+    "src/config.js",
     "src/parser/Lexer.js",
     "src/parser/node.js",
     "src/parser/Parser.js",
