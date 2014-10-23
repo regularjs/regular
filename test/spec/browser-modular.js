@@ -5,6 +5,11 @@ void function(){
     Regular._events = {}
     Regular._filters = {}
   }
+  
+  function destroy(component, container){
+    component.destroy();
+    expect(container.innerHTML).to.equal('');
+  }
 
   describe("test Regular's modular mechanism", function(){
 

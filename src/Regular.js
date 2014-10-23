@@ -92,6 +92,7 @@ _.extend(Regular, {
   _plugins: {},
   _exprCache:{},
   _running: false,
+  _config: config,
   _protoInheritCache: ['use', 'directive'] ,
   __after__: function(supr, o) {
 

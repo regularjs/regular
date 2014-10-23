@@ -1,5 +1,5 @@
 
 module.exports = {
-'BEGIN': '{',
-'END': '}'
+'BEGIN': '{{',
+'END': '}}'
 }

@@ -151,17 +151,17 @@ gulp.task('v', function(fn){
 // watch file then build
 gulp.task('dev', function(){
   gulp.watch(['component.json', 'src/**/*.js'], ['build'])
-  var puer = spawn('puer', ["--no-reload"], {})
-  puer.stdout.on('data', function (data) {
-    console.log(""+ data);
-  });
-  puer.stderr.on('data', function (data) {
-    console.log('stderr: ' + data);
-  });
+  // var puer = spawn('puer', ["--no-reload"], {})
+  // puer.stdout.on('data', function (data) {
+  //   console.log(""+ data);
+  // });
+  // puer.stderr.on('data', function (data) {
+  //   console.log('stderr: ' + data);
+  // });
 
-  puer.on('close', function (code) {
-    console.log('puer test compelete!');
-  });
+  // puer.on('close', function (code) {
+  //   console.log('puer test compelete!');
+  // });
 
 })
 
