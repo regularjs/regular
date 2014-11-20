@@ -1,6 +1,6 @@
 /**
 @author	leeluolee
-@version	0.2.12
+@version	0.2.14
 @homepage	http://regularjs.github.io
 */
 ;(function(){
@@ -1563,6 +1563,8 @@ walkers.element = function(ast){
     destroy: function(first){
       if( first ){
         animate.remove( element, group? group.destroy.bind( group ): _.noop );
+      }else if(group) {
+        group.destroy();
       }
       // destroy ref
       if( destroies.length ) {

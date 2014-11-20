@@ -70,6 +70,42 @@ void function(){
           expect(context).to.equal(component);
 
       })
+      it("nested binder(>2) should be destroy after destroy", function(){
+
+          var container = document.createElement('div');
+          var Component = Regular.extend();
+          var destroy_directive=1, destroy_upload=1;
+          Component.event('upload', function(elem, fire){
+            return function(){
+              destroy_upload++;
+            }
+          }).directive("r-test", function(){
+            return function(){
+              destroy_directive++;
+            }
+            
+          })
+          var list = [];
+          var template = 
+          '<div class="m-imgview {{clazz}}">\
+              <div class="img  animated" >\
+                <div class="btns">\
+                  <label class="local btn  btn-primary btn-sm" r-test=1 on-upload={{this.handleUpload($event,img_index)}}>本地上传</label>\
+                </div>\
+              </div>\
+          </div>';
+
+          var component = new Component({
+            template: template,
+            data: { test: 0 , name: 'hahah', imgs:['null']}
+          }).$inject(container);
+
+          component.destroy();
+          expect(destroy_upload).to.equal(2)
+          expect(destroy_directive).to.equal(2)
+
+
+      })
 
       it("event should go proxy way when pass Non-Expreesion as attribute_value", function(){
         var container = document.createElement('div');
