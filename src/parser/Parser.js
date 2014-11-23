@@ -625,12 +625,17 @@ op.object = function(){
 // [ assign[,assign]*]
 op.array = function(){
   var code = [this.match('[').type], item;
-  while(item = this.assign()){
-    code.push(item.get);
-    if(this.eat(',')) code.push(",");
-    else break;
+  if( this.eat("]") ){
+
+     code.push("]");
+  } else {
+    while(item = this.assign()){
+      code.push(item.get);
+      if(this.eat(',')) code.push(",");
+      else break;
+    }
+    code.push(this.match(']').type);
   }
-  code.push(this.match(']').type);
   return {get: code.join("")};
 }
 

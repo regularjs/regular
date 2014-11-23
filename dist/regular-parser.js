@@ -70,7 +70,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(3);
-	var node = __webpack_require__(5);
+	var node = __webpack_require__(4);
 	var Lexer = __webpack_require__(2);
 	var varName = _.varName;
 	var ctxName = _.ctxName;
@@ -696,12 +696,17 @@ return /******/ (function(modules) { // webpackBootstrap
 	// [ assign[,assign]*]
 	op.array = function(){
 	  var code = [this.match('[').type], item;
-	  while(item = this.assign()){
-	    code.push(item.get);
-	    if(this.eat(',')) code.push(",");
-	    else break;
+	  if( this.eat("]") ){
+
+	     code.push("]");
+	  } else {
+	    while(item = this.assign()){
+	      code.push(item.get);
+	      if(this.eat(',')) code.push(",");
+	      else break;
+	    }
+	    code.push(this.match(']').type);
 	  }
-	  code.push(this.match(']').type);
 	  return {get: code.join("")};
 	}
 
@@ -731,7 +736,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(3);
-	var config = __webpack_require__(4);
+	var config = __webpack_require__(5);
 
 	// some custom tag  will conflict with the Lexer progress
 	var conflictTag = {"}": "{", "]": "["}, map1, map2;
@@ -979,7 +984,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  // 2. TAG
 	  // --------------------
 	  TAG_NAME: [/{NAME}/, 'NAME', 'TAG'],
-	  TAG_UNQ_VALUE: [/[^&"'=><`\r\n\f ]+/, 'UNQ', 'TAG'],
+	  TAG_UNQ_VALUE: [/[^\{}&"'=><`\r\n\f ]+/, 'UNQ', 'TAG'],
 
 	  TAG_OPEN: [/<({NAME})\s*/, function(all, one){
 	    return {type: 'TAG_OPEN', value: one}
@@ -1616,16 +1621,6 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 4 */
 /***/ function(module, exports, __webpack_require__) {
 
-	
-	module.exports = {
-	'BEGIN': '{{',
-	'END': '}}'
-	}
-
-/***/ },
-/* 5 */
-/***/ function(module, exports, __webpack_require__) {
-
 	module.exports = {
 	  element: function(name, attrs, children){
 	    return {
@@ -1680,6 +1675,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }
 	}
 
+
+/***/ },
+/* 5 */
+/***/ function(module, exports, __webpack_require__) {
+
+	
+	module.exports = {
+	'BEGIN': '{{',
+	'END': '}}'
+	}
 
 /***/ },
 /* 6 */

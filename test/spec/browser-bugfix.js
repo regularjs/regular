@@ -14,13 +14,38 @@ void function(){
 
 
   var container = document.createElement("div");   
+  describe("bugbush for paopao.163.com", function(){
+    it("void array literal should works", function(){
+      expect(function(){
+        var component = new Component({
+          template: "{{#if []}}{{hello.name.first}}{{/if}}",
+          data: {hello: {name: { first: "haha"}}}
+        })
+      }).to.not.throwException();
+
+    })
+    it("number in element nearto {{ should not throwException", function(){
+
+
+      expect(function(){
+        var component = new Component({
+          template: "<div {{#if true}}x = 1{{/if}}>1</div>",
+          data: {}
+        })
+      }).to.not.throwException();
+
+
+    })
+
+  })
+
   describe("Bugfix", function(){
     it("bugfix #4", function(){
 
       var Demo = Component.extend({name: "demo", template: "<input r-model = 'demo.name' title={{demo.name}}>"})
       var DemoApp = Component.extend({template: "{{#list demos as demo}}<demo demo={{demo}}/>{{/list}}"});
       var component = new DemoApp({ 
-        data: {demos: [{name:1}] }
+        data: { demos: [{name:1}] }
       }).$inject(container);
 
       expect(nes.one("input", container).value).to.equal("1");
