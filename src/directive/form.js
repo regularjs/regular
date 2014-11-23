@@ -154,6 +154,7 @@ function initRadio(elem, parsed){
   this.$watch(parsed, function( newValue ){
     if(inProgress) return;
     if(newValue == elem.value) elem.checked = true;
+    else elem.checked = false;
   });
 
 

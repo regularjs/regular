@@ -2009,14 +2009,14 @@ function Event(ev){
 _.extend(Event.prototype, {
   immediateStop: _.isFalse,
   stop: function(){
-    this.preventDefault().stopPropgation();
+    this.preventDefault().stopPropagation();
   },
   preventDefault: function(){
     if (this.event.preventDefault) this.event.preventDefault();
     else this.event.returnValue = false;
     return this;
   },
-  stopPropgation: function(){
+  stopPropagation: function(){
     if (this.event.stopPropagation) this.event.stopPropagation();
     else this.event.cancelBubble = true;
     return this;
@@ -4454,6 +4454,7 @@ function initRadio(elem, parsed){
   this.$watch(parsed, function( newValue ){
     if(inProgress) return;
     if(newValue == elem.value) elem.checked = true;
+    else elem.checked = false;
   });
 
 
