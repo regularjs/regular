@@ -17,9 +17,9 @@ var before_mocha = require('./test/before_mocha.js');
 var pkg;
 
 try{
-  pkg = JSON.parse(fs.readFileSync('./package.json', 'utf8'))
-  pkg_bower = JSON.parse(fs.readFileSync('./bower.json', 'utf8'))
-  pkg_component = JSON.parse(fs.readFileSync('./component.json', 'utf8'))
+  pkg = require('./package.json')
+  pkg_bower = require('./bower.json')
+  pkg_component = require('./component.json')
 }catch(e){}
 
 gulp.task('node', function() {
