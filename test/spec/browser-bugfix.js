@@ -26,15 +26,29 @@ void function(){
     })
     it("number in element nearto {{ should not throwException", function(){
 
-
       expect(function(){
         var component = new Component({
           template: "<div {{#if true}}x = 1{{/if}}>1</div>",
           data: {}
         })
       }).to.not.throwException();
+    })
 
+    it("customer event should also trigger the digest", function(){
+      Component.event("drag", function(element, fire){
+        Regular.dom.on(element, "click", function(){
+          fire({hello:1})
+        })
+      })
 
+      var component = new Component({
+        template: "{{#list 1..1 as i}}<div ref=first on-drag={{name=2}}>{{name}}</div>{{/list}}"
+      }).$inject(container);
+
+      dispatchMockEvent(component.$refs.first, 'click');
+      expect(component.$refs.first.innerHTML).to.equal("2");
+      destroy(component,container);
+      
     })
 
   })

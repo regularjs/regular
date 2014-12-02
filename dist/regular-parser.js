@@ -1043,17 +1043,19 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }, 'JST'],
 	  JST_EXPR_OPEN: ['{BEGIN}',function(all, one){
 	    if(all === this.markStart){
-	      if(this.marks){
-	        return {type: this.markStart, value: this.markStart };
+	      if(this.firstEnterStart){
+	        this.marks++
+	        this.firstEnterStart = false;
+	        return { type: this.markStart, value: this.markStart };
 	      }else{
-	        this.marks++;
+	        this.firstEnterStart = true;
 	      }
 	    }
-	    var escape = one === '=';
 	    return {
 	      type: 'EXPR_OPEN',
-	      escape: escape
+	      escape: false
 	    }
+
 	  }, 'JST'],
 	  JST_IDENT: ['{IDENT}', 'IDENT', 'JST'],
 	  JST_SPACE: [/[ \r\n\f]+/, null, 'JST'],

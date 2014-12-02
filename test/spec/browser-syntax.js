@@ -16,10 +16,11 @@ void function(){
       })
 
       var component = new Regular({
-        template: "<p>[{a:1}['a']]</p>"
+        template: "<p>[{a:1}['a']][a]</p>",
+        data: {a:1}
       }).$inject( container );
 
-      expect(nes.one("p",container).innerHTML).to.equal('1');
+      expect(nes.one("p",container).innerHTML).to.equal('11');
       destroy(component, container)
     })
     it("END and BEGIN can accpet '{' and '}'", function(){
@@ -30,10 +31,11 @@ void function(){
       })
 
       var component = new Regular({
-        template: "<p>{{a:1}['a']}</p>"
+        template: "<p>{{a:1}['a']}{a}</p>",
+        data: {a:1}
       }).$inject( container );
 
-      expect(nes.one("p",container).innerHTML).to.equal('1');
+      expect(nes.one("p",container).innerHTML).to.equal('11');
       destroy(component, container)
     })
     it("END and BEGIN can accpet '[[' and ']]'", function(){
@@ -44,7 +46,8 @@ void function(){
       })
 
       var component = new Regular({
-        template: "<p>[[ {a:1}['a'] ]]</p>"
+        template: "<p>[[ {a:1}['a'] ]]</p>",
+        data: {a:1}
       }).$inject( container );
 
       expect(nes.one("p",container).innerHTML).to.equal('1');
