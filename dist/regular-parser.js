@@ -1023,6 +1023,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	  }, 'JST'],
 	  JST_LEAVE: [/{END}/, function(){
+	    this.firstEnterStart = false;
 	    if(!this.markEnd || !this.marks ){
 	      this.leave('JST');
 	      return {type: 'END'}
