@@ -1,4 +1,6 @@
 var _ = require("../util.js");
+
+var config = require("../config.js");
 var node = require("./node.js");
 var Lexer = require("./Lexer.js");
 var varName = _.varName;
@@ -190,7 +192,7 @@ op.attvalue = function(){
     case "STRING":
       this.next();
       var value = ll.value;
-      if(~value.indexOf('{{')){
+      if(~value.indexOf(config.BEGIN) && ~value.indexOf(config.END)){
         var constant = true;
         var parsed = new Parser(value, { mode: 2 }).parse();
         if(parsed.length === 1 && parsed[0].type === 'expression') return parsed[0];
@@ -296,7 +298,7 @@ op.list = function(){
       container.push(this.statement());
     }
   }
-  if(ll.value !== 'list') this.error('expect ' + '{{/list}} got ' + '{{/' + ll.value + '}}', ll.pos );
+  if(ll.value !== 'list') this.error('expect ' + 'list got ' + '/' + ll.value + ' ', ll.pos );
   return node.list(sequence, variable, consequent, alternate);
 }
 

@@ -70,7 +70,9 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(3);
-	var node = __webpack_require__(4);
+
+	var config = __webpack_require__(4);
+	var node = __webpack_require__(5);
 	var Lexer = __webpack_require__(2);
 	var varName = _.varName;
 	var ctxName = _.ctxName;
@@ -261,7 +263,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    case "STRING":
 	      this.next();
 	      var value = ll.value;
-	      if(~value.indexOf('{{')){
+	      if(~value.indexOf(config.BEGIN) && ~value.indexOf(config.END)){
 	        var constant = true;
 	        var parsed = new Parser(value, { mode: 2 }).parse();
 	        if(parsed.length === 1 && parsed[0].type === 'expression') return parsed[0];
@@ -736,7 +738,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(3);
-	var config = __webpack_require__(5);
+	var config = __webpack_require__(4);
 
 	// some custom tag  will conflict with the Lexer progress
 	var conflictTag = {"}": "{", "]": "["}, map1, map2;
@@ -1624,6 +1626,16 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 4 */
 /***/ function(module, exports, __webpack_require__) {
 
+	
+	module.exports = {
+	'BEGIN': '{{',
+	'END': '}}'
+	}
+
+/***/ },
+/* 5 */
+/***/ function(module, exports, __webpack_require__) {
+
 	module.exports = {
 	  element: function(name, attrs, children){
 	    return {
@@ -1678,16 +1690,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }
 	}
 
-
-/***/ },
-/* 5 */
-/***/ function(module, exports, __webpack_require__) {
-
-	
-	module.exports = {
-	'BEGIN': '{{',
-	'END': '}}'
-	}
 
 /***/ },
 /* 6 */

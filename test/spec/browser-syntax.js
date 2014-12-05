@@ -36,8 +36,31 @@ void function(){
       }).$inject(container);
 
 
-
       expect(nes.all("tr",container).length,container).to.equal(3);
+      destroy(component, container)
+    })
+
+    it("custom END and BEGIN should also affect string-interplation", function(){
+
+
+      Regular.config({
+        END: '}',
+        BEGIN: '{'
+      })
+      var component = new Regular({
+        template: '<div title="{title}1"  on-click={title="2"} on-click={content=2}>{content}</div>',
+        data: {title: "1", content: "1"}
+      }).$inject(container);
+
+
+      var div = nes.one("div",container);
+      expect(div.title).to.equal("11");
+      expect(div.innerHTML).to.equal("1");
+      dispatchMockEvent(div, 'click');
+
+      expect(div.title).to.equal("21");
+      expect(div.innerHTML).to.equal("2");
+
       destroy(component, container)
     })
     it("END and BEGIN can accpet '[[' and ']]'", function(){
