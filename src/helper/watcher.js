@@ -83,7 +83,7 @@ var methods = {
    */
 
   $digest: function(){
-    if(this.$phase === 'digest') return;
+    if(this.$phase === 'digest' || this._mute) return;
     this.$phase = 'digest';
     var dirty = false, n =0;
     while(dirty = this._digest()){

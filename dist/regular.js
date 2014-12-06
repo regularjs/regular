@@ -549,8 +549,13 @@ Regular.implement({
   $get: function(expr){
     return parse.expression(expr).get(this);
   },
-  $inject: function(node, position){
+  $inject: function(node, position, options){
     var fragment = combine.node(this);
+
+    if(node === false) {
+      if(!this._fragContainer)  this._fragContainer = dom.fragment();
+      return this.$inject(this._fragContainer);
+    }
     if(typeof node === 'string') node = dom.find(node);
     if(!node) throw 'injected node is not found';
     if(!fragment) return;
@@ -558,6 +563,10 @@ Regular.implement({
     this.$emit("$inject", node);
     this.parentNode = Array.isArray(fragment)? fragment[0].parentNode: fragment.parentNode;
     return this;
+  },
+  $mute: function(isMute){
+    this._mute = !!isMute;
+    if(this._mute) this.$update();
   },
   // private bind logic
   _bind: function(component, expr1, expr2){
@@ -2808,7 +2817,7 @@ op.list = function(){
       container.push(this.statement());
     }
   }
-  if(ll.value !== 'list') this.error('expect ' + '{{/list}} got ' + '{{/' + ll.value + '}}', ll.pos );
+  if(ll.value !== 'list') this.error('expect ' + 'list got ' + '/' + ll.value + ' ', ll.pos );
   return node.list(sequence, variable, consequent, alternate);
 }
 
@@ -3433,7 +3442,7 @@ var methods = {
    */
 
   $digest: function(){
-    if(this.$phase === 'digest') return;
+    if(this.$phase === 'digest' || this._mute) return;
     this.$phase = 'digest';
     var dirty = false, n =0;
     while(dirty = this._digest()){
