@@ -563,8 +563,15 @@ Regular.implement({
     return this;
   },
   $mute: function(isMute){
+
+    isMute = !!isMute;
+
+    var needupdate = isMute == false && this._mute;
+
     this._mute = !!isMute;
-    if(this._mute) this.$update();
+
+    if(needupdate) this.$update();
+    return this;
   },
   // private bind logic
   _bind: function(component, expr1, expr2){
