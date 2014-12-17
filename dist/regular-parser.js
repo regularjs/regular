@@ -55,13 +55,22 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ function(module, exports, __webpack_require__) {
 
 	
-	var Parser = __webpack_require__(1)
-	var Lexer = __webpack_require__(2)
+	var Parser = __webpack_require__(2)
+	var Lexer = __webpack_require__(3)
+	var config = __webpack_require__(1); 
 
-	exports.parse = function(str, stringify){
+	exports.parse = function(str, options){
+	  options = options || {};
+
+	  if(options.BEGIN || options.END){
+	    if(options.BEGIN) config.BEGIN = options.BEGIN;
+	    if(options.END) config.END = options.END;
+	    Lexer.setup();
+	  }
 	  var ast = new Parser(str).parse();
-	  return stringify === false? ast : JSON.stringify(ast);
+	  return options.stringify === false? ast : JSON.stringify(ast);
 	}
+
 
 
 
@@ -69,11 +78,21 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 1 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var _ = __webpack_require__(3);
+	
+	module.exports = {
+	'BEGIN': '{{',
+	'END': '}}'
+	}
 
-	var config = __webpack_require__(4);
+/***/ },
+/* 2 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var _ = __webpack_require__(4);
+
+	var config = __webpack_require__(1);
 	var node = __webpack_require__(5);
-	var Lexer = __webpack_require__(2);
+	var Lexer = __webpack_require__(3);
 	var varName = _.varName;
 	var ctxName = _.ctxName;
 	var isPath = _.makePredicate("STRING IDENT NUMBER");
@@ -734,11 +753,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 2 */
+/* 3 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var _ = __webpack_require__(3);
-	var config = __webpack_require__(4);
+	var _ = __webpack_require__(4);
+	var config = __webpack_require__(1);
 
 	// some custom tag  will conflict with the Lexer progress
 	var conflictTag = {"}": "{", "]": "["}, map1, map2;
@@ -1086,7 +1105,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 3 */
+/* 4 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(global) {__webpack_require__(6);
@@ -1621,16 +1640,6 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	
 	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
-
-/***/ },
-/* 4 */
-/***/ function(module, exports, __webpack_require__) {
-
-	
-	module.exports = {
-	'BEGIN': '{{',
-	'END': '}}'
-	}
 
 /***/ },
 /* 5 */

@@ -191,6 +191,7 @@ walkers.text = function(ast){
 }
 
 
+
 var eventReg = /^on-(.+)$/
 
 /**

@@ -137,6 +137,30 @@ void function(){
 
         expect(component.some).to.equal(hello);
       })
+      it('data, events, computed, should merged throw extend and initialize', function(){
+        reset();
+        var Component = Regular.extend({
+          data: {a:1},
+          events: {b:1},
+          computed: {c: "a+b"}
+        }).implement({
+          data: {a: 2, b:1},
+          events: {c: 1},
+          computed: {c: "a-b"}
+        })
+
+        var component =  new Component({
+          data: {a: 3,b:2},
+          computed: {c: "a*b"}
+        })
+
+        expect(component.events.c).to.equal(1);
+        expect(component.events.b).to.equal(1);
+        expect(component.data.a).to.equal(3);
+        expect(component.data.b).to.equal(2);
+        expect(component.$get("c")).to.equal(6);
+
+      })
     })
 
   });

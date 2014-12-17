@@ -236,11 +236,15 @@ var Regular = function(options){
   env.isRunning = true;
   var node, template;
 
+  console.log(this)
   options = options || {};
   options.data = options.data || {};
   options.computed = options.computed || {};
+  options.events = options.events || {};
   if(this.data) _.extend(options.data, this.data);
   if(this.computed) _.extend(options.computed, this.computed);
+  if(this.events) _.extend(options.events, this.events);
+
   _.extend(this, options, true);
   if(this.$parent){
      this.$parent._append(this);
@@ -264,7 +268,6 @@ var Regular = function(options){
   // if have events
   if(this.events){
     this.$on(this.events);
-    this.events = null;
   }
 
   this.config && this.config(this.data);
@@ -299,9 +302,6 @@ _.extend(Regular, {
   // private data stuff
   _directives: { __regexp__:[] },
   _plugins: {},
-  _exprCache:{},
-  _running: false,
-  _config: config,
   _protoInheritCache: ['use', 'directive'] ,
   __after__: function(supr, o) {
 
@@ -309,6 +309,7 @@ _.extend(Regular, {
     this.__after__ = supr.__after__;
 
     if(o.name) Regular.component(o.name, this);
+    // this.prototype.template = dom.initTemplate(o)
     if(template = o.template){
       var node, name;
       if( typeof template === 'string' && template.length < 20 && ( node = dom.find( template )) ){
@@ -566,7 +567,7 @@ Regular.implement({
 
     isMute = !!isMute;
 
-    var needupdate = isMute == false && this._mute;
+    var needupdate = isMute === false && this._mute;
 
     this._mute = !!isMute;
 
@@ -1469,6 +1470,7 @@ walkers.text = function(ast){
   var node = document.createTextNode(_.convertEntity(ast.text));
   return node;
 }
+
 
 
 var eventReg = /^on-(.+)$/
@@ -3222,10 +3224,13 @@ function process( what, o, supro ) {
   }
 }
 
+// if the property is ["events", "data", "computed"] , we should merge them
+var merged = ["events", "data", "computed"], mlen = merged.length;
 module.exports = function extend(o){
   o = o || {};
   var supr = this, proto,
     supro = supr && supr.prototype || {};
+
   if(typeof o === 'function'){
     proto = o.prototype;
     o.implement = implement;
@@ -3240,6 +3245,17 @@ module.exports = function extend(o){
   proto = _.createProto(fn, supro);
 
   function implement(o){
+    // we need merge the merged property
+    var len = mlen;
+    for(;len--;){
+      var prop = merged[len];
+      if(o.hasOwnProperty(prop) && proto.hasOwnProperty(prop)){
+        _.extend(proto[prop], o[prop], true) 
+        delete o[prop];
+      }
+    }
+
+
     process(proto, o, supro); 
     return this;
   }

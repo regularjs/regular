@@ -27,11 +27,15 @@ var Regular = function(options){
   env.isRunning = true;
   var node, template;
 
+  console.log(this)
   options = options || {};
   options.data = options.data || {};
   options.computed = options.computed || {};
+  options.events = options.events || {};
   if(this.data) _.extend(options.data, this.data);
   if(this.computed) _.extend(options.computed, this.computed);
+  if(this.events) _.extend(options.events, this.events);
+
   _.extend(this, options, true);
   if(this.$parent){
      this.$parent._append(this);
@@ -55,7 +59,6 @@ var Regular = function(options){
   // if have events
   if(this.events){
     this.$on(this.events);
-    this.events = null;
   }
 
   this.config && this.config(this.data);
@@ -90,9 +93,6 @@ _.extend(Regular, {
   // private data stuff
   _directives: { __regexp__:[] },
   _plugins: {},
-  _exprCache:{},
-  _running: false,
-  _config: config,
   _protoInheritCache: ['use', 'directive'] ,
   __after__: function(supr, o) {
 
@@ -100,6 +100,7 @@ _.extend(Regular, {
     this.__after__ = supr.__after__;
 
     if(o.name) Regular.component(o.name, this);
+    // this.prototype.template = dom.initTemplate(o)
     if(template = o.template){
       var node, name;
       if( typeof template === 'string' && template.length < 20 && ( node = dom.find( template )) ){
@@ -357,7 +358,7 @@ Regular.implement({
 
     isMute = !!isMute;
 
-    var needupdate = isMute == false && this._mute;
+    var needupdate = isMute === false && this._mute;
 
     this._mute = !!isMute;
 
