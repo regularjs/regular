@@ -27,7 +27,6 @@ var Regular = function(options){
   env.isRunning = true;
   var node, template;
 
-  console.log(this)
   options = options || {};
   options.data = options.data || {};
   options.computed = options.computed || {};
