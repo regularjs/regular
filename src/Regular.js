@@ -347,7 +347,7 @@ Regular.implement({
     }
     if(typeof node === 'string') node = dom.find(node);
     if(!node) throw 'injected node is not found';
-    if(!fragment) return;
+    if(!fragment) return this;
     dom.inject(fragment, node, position);
     this.$emit("$inject", node);
     this.parentNode = Array.isArray(fragment)? fragment[0].parentNode: fragment.parentNode;
