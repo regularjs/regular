@@ -238,7 +238,6 @@ var Regular = function(options){
   env.isRunning = true;
   var node, template;
 
-  console.log(this)
   options = options || {};
   options.data = options.data || {};
   options.computed = options.computed || {};
@@ -2409,8 +2408,8 @@ var rules = {
     }
   }, 'JST'],
   JST_LEAVE: [/{END}/, function(){
-    this.firstEnterStart = false;
     if(!this.markEnd || !this.marks ){
+      this.firstEnterStart = false;
       this.leave('JST');
       return {type: 'END'}
     }else{
@@ -2430,7 +2429,7 @@ var rules = {
   }, 'JST'],
   JST_EXPR_OPEN: ['{BEGIN}',function(all, one){
     if(all === this.markStart){
-      if(this.firstEnterStart){
+      if(this.firstEnterStart || this.marks){
         this.marks++
         this.firstEnterStart = false;
         return { type: this.markStart, value: this.markStart };

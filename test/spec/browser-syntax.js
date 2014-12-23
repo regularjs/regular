@@ -48,8 +48,11 @@ void function(){
         BEGIN: '{'
       })
       var component = new Regular({
-        template: '<div title="{title}1"  on-click={title="2"} on-click={content=2}>{content}</div>',
-        data: {title: "1", content: "1"}
+        template: '<div title="{title}1"  on-click={title="2"} on-click={content=2} on-click={ this.nest({param: {title: title}}) }>{content}</div>',
+        data: {title: "1", content: "1"},
+        nest: function(option){
+          this.data.param = option.param;
+        }
       }).$inject(container);
 
 
@@ -60,6 +63,8 @@ void function(){
 
       expect(div.title).to.equal("21");
       expect(div.innerHTML).to.equal("2");
+
+      expect(component.data.param).to.eql({title: "2"})
 
       destroy(component, container)
     })

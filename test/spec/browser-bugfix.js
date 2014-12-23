@@ -373,6 +373,7 @@ var template = (function(){/*
           destroy(component, container)
         }
       })
+
     })
   })
 
