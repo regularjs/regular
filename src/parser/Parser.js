@@ -498,7 +498,7 @@ op.member = function(base, last, pathes){
       pathes = [];
       pathes.push( path );
       last = path;
-      base = ctxName + "._sg_('" + path + "', " + varName + "['" + path + "'])";
+      base = ctxName + "._sg_('" + path + "', " + varName + ")";
       onlySimpleAccessor = true;
     }else{ //Primative Type
       if(path.get === 'this'){

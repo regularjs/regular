@@ -653,7 +653,7 @@ Regular.implement({
       if(computedProperty.get)  return computedProperty.get(this);
       else _.log("the computed '" + path + "' don't define the get function,  get data."+path + " altnately", "error")
     }
-    return defaults;
+    return defaults[path];
 
   },
   // simple accessor set
@@ -3026,7 +3026,7 @@ op.member = function(base, last, pathes){
       pathes = [];
       pathes.push( path );
       last = path;
-      base = ctxName + "._sg_('" + path + "', " + varName + "['" + path + "'])";
+      base = ctxName + "._sg_('" + path + "', " + varName + ")";
       onlySimpleAccessor = true;
     }else{ //Primative Type
       if(path.get === 'this'){
@@ -3414,7 +3414,13 @@ var methods = {
       }
     }else{
       expr = this.$expression? this.$expression(expr) : parseExpression(expr);
-      get = expr.get;
+      get = function(ctx){
+        try{
+          return expr.get(ctx)
+        }catch(e){
+          return undefined
+        }
+      }
       once = expr.once || expr.constant;
     }
 

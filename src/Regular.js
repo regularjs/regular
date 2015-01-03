@@ -444,7 +444,7 @@ Regular.implement({
       if(computedProperty.get)  return computedProperty.get(this);
       else _.log("the computed '" + path + "' don't define the get function,  get data."+path + " altnately", "error")
     }
-    return defaults;
+    return defaults[path];
 
   },
   // simple accessor set
