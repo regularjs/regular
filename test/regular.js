@@ -1536,9 +1536,10 @@ walkers.element = function(ast){
       })
     }
     return component;
-  }else if(ast.tag === 'r-content' && this.$body){
-    return this.$body;
   }
+  // else if(ast.tag === 'r-content' && this.$body){
+  //   return this.$body;
+  // }
 
   var element = dom.create(ast.tag, namespace, attrs);
   // context element
