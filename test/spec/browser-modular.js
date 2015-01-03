@@ -29,7 +29,7 @@ void function(){
       it("should accepet [Element] as the template", function(){
         var templateNode = document.createElement("div");
         
-        templateNode.innerHTML = "<div>{{hello}}</div>";
+        templateNode.innerHTML = "<div>{hello}</div>";
         var Component = Regular.extend({
           template: templateNode
         });
@@ -169,7 +169,7 @@ void function(){
 
 describe("Some buildin plugin", function(){
   var Component = Regular.extend({
-    template: "<div>{{this.name}}</div>"
+    template: "<div>{ this.name}</div>"
   }).use("timeout");
 
   it("timeout's $timeout should update when time is out", function(done){

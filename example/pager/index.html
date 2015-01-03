@@ -15,17 +15,14 @@
     // //1. nest style
     var app = new Regular({
       template: 
-        "{{total}}:{{current}}<button on-click={{total = total + 1}}>total+1</button>\
-          <pager total={{Math.floor(total/20)}} current={{current}} on-nav='{{this.go}}'/>\
-          <pager total={{Math.floor(total/20)}} current={{current}} />",
+        "{total}:{current}<button on-click={total = total + 1}>total+1</button>\
+          <pager total={Math.floor(total/20)} current={current} on-nav='{this.go}'/>\
+          <pager total={Math.floor(total/20)} current={current} />",
       data: {total: 292, current:10},
       go: function(page){
         console.log(page)
       } 
     } ).inject("#app");
-
-    //2. initialize style
-    // var pager = new Pager({data: {total: 100, current:11}}).inject('#app');
 
 
     </script>

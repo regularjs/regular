@@ -1340,9 +1340,7 @@ walkers.list = function(ast){
         data[indexName] = o;
         data[variable] = item;
 
-        //@TODO
         var section = new Section({data: data, $parent: self , namespace: namespace});
-
 
         // autolink
         var insert =  combine.last(group.get(o));
@@ -2113,8 +2111,8 @@ module.exports = Group;
 require.register("regularjs/src/config.js", function(exports, require, module){
 
 module.exports = {
-'BEGIN': '{{',
-'END': '}}'
+'BEGIN': '{',
+'END': '}'
 }
 });
 require.register("regularjs/src/parser/Lexer.js", function(exports, require, module){
@@ -2148,12 +2146,14 @@ function Lexer(input, opts){
     this.markEnd = config.END;
   }
 
-
   this.input = (input||"").trim();
   this.opts = opts || {};
   this.map = this.opts.mode !== 2?  map1: map2;
   this.states = ["INIT"];
-  if(this.opts.state) this.states.push( this.opts.state );
+  if(opts && opts.expression){
+     this.states.push("JST");
+     this.expression = true;
+  }
 }
 
 var lo = Lexer.prototype
@@ -2405,7 +2405,8 @@ var rules = {
       value: name
     }
   }, 'JST'],
-  JST_LEAVE: [/{END}/, function(){
+  JST_LEAVE: [/{END}/, function(all){
+    if(this.markEnd === all && this.expression) return {type: this.markEnd, value: this.markEnd};
     if(!this.markEnd || !this.marks ){
       this.firstEnterStart = false;
       this.leave('JST');
@@ -2427,6 +2428,7 @@ var rules = {
   }, 'JST'],
   JST_EXPR_OPEN: ['{BEGIN}',function(all, one){
     if(all === this.markStart){
+      if(this.expression) return { type: this.markStart, value: this.markStart };
       if(this.firstEnterStart || this.marks){
         this.marks++
         this.firstEnterStart = false;
@@ -3365,7 +3367,7 @@ module.exports = {
   expression: function(expr, simple){
     // @TODO cache
     if( typeof expr === 'string' && ( expr = expr.trim() ) ){
-      expr = exprCache.get( expr ) || exprCache.set( expr, new Parser( expr, { state: 'JST', mode: 2 } ).expression() )
+      expr = exprCache.get( expr ) || exprCache.set( expr, new Parser( expr, { mode: 2, expression: true } ).expression() )
     }
     if(expr) return _.touchExpression( expr );
   },

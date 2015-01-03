@@ -2,6 +2,8 @@
   ![regularjs](http://regularjs.github.io/image/regular-icon-100.png)
 </a>
 
+> <p align='center'><b>After version 0.3.0: regularjs change the default TAG from `{{}}` to the more clean`{}`</b>, please use `Regular.config({BEGIN:'{{', END: '}}'})` if you need the old syntax`</p>
+
 # Regularjs
 
 
@@ -29,8 +31,8 @@
 ```javascript
 var Note = Regular.extend({
 template: 
-  "<input {{#if !disabled}} r-model='hello' {{#else}} disabled {{/if}} > {{hello}} \
-<button on-click={{disabled = !disabled}}>{{disabled? 'active': 'disable'}} it</button>"
+  "<input {#if !disabled} r-model='hello' {#else} disabled {/if} > {hello} \
+<button on-click={disabled = !disabled}>{disabled? 'active': 'disable'} it</button>"
 })
 
 // inject component into #app , you can also inject at 'before' , 'after', 'top'.
@@ -48,9 +50,9 @@ __[Example1 on codepen.io](http://codepen.io/leeluolee/pen/JqAaH)__
 ```javascript
 var NoteList = Regular.extend({
 template: 
-  "<ul>{{#list notes as nt}}" +
-    "<li class={{nt.done? 'done': ''}} on-click={{nt.done= !nt.done}}>{{nt.content}}</li>" + 
-  "{{/list}}</ul>"
+  "<ul>{#list notes as nt}" +
+    "<li class={nt.done? 'done': ''} on-click={nt.done= !nt.done}>{{nt.content}}</li>" + 
+  "{/list}</ul>"
 });
 
 var list = new NoteList({
@@ -73,7 +75,7 @@ we need refactor Note to make it composable.
 var Note = Regular.extend({
   name: 'note',  // register component during the definition of Component
   template: 
-   "<input r-model={{draft}} on-enter={{this.post()}}>", 
+   "<input r-model={draft} on-enter={this.post()}>", 
   post: function(){
     var data = this.data;
     this.$emit('post', data.draft);
@@ -94,8 +96,8 @@ then, define Core Component: NoteApp.
 ```javascript
 var NoteApp = Regular.extend({
   template: 
-    "<note on-post={{notes.push({ content: $event} )}}/>"+ 
-    "<list notes = {{notes}}></list>"
+    "<note on-post={notes.push({ content: $event} )}/>"+ 
+    "<list notes ={notes}></list>"
 })
 
 var noteapp = new NoteApp({

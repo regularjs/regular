@@ -45,7 +45,7 @@ describe("Filter", function(){
   var container = document.createElement('div')
   it("fitler should works correctly", function(){
     var component = new Component({
-      template: "<div>{{test|lowercase}}</div>",
+      template: "<div>{test|lowercase}</div>",
       data: {test: "ABcD"}
     }).$inject(container);
 
@@ -57,7 +57,7 @@ describe("Filter", function(){
 
   it("filter should works with param", function(){
     var component = new Component({
-      template: "<div>{{test|format: 'yyyy-MM-dd'}}</div>",
+      template: "<div>{test|format: 'yyyy-MM-dd'}</div>",
       data: {test: +new Date(1407908567273)}
     }).$inject(container);
     expect($("div",container).html()).to.equal('2014-08-13');

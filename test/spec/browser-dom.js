@@ -39,7 +39,7 @@ void function(){
       it("trigger simple click event", function(){
         var container = document.createElement('div');
         var component = new Regular({
-          template: "<div on-click={{name=1}}>test</div>",
+          template: "<div on-click={name=1}>test</div>",
           data: {test: 0}
         }).$inject(container);
 
@@ -63,7 +63,7 @@ void function(){
             context = this;
           })
           var component = new Component({
-            template: "<div on-hello={{name=name+1}} class='hello' >haha</div>",
+            template: "<div on-hello={name=name+1} class='hello' >haha</div>",
             data: { test: 0 , name: 'hahah'}
           }).$inject(container);
 
@@ -87,10 +87,10 @@ void function(){
           })
           var list = [];
           var template = 
-          '<div class="m-imgview {{clazz}}">\
+          '<div class="m-imgview {clazz}">\
               <div class="img  animated" >\
                 <div class="btns">\
-                  <label class="local btn  btn-primary btn-sm" r-test=1 on-upload={{this.handleUpload($event,img_index)}}>本地上传</label>\
+                  <label class="local btn  btn-primary btn-sm" r-test=1 on-upload={this.handleUpload($event,img_index)}>本地上传</label>\
                 </div>\
               </div>\
           </div>';
@@ -141,7 +141,7 @@ void function(){
         var container = document.createElement('div');
         var i = 0, j=0;
         var Component = Regular.extend({
-          template: "{{#list 1..1 as item}}{{#list 1..1 as todo}}<div on-click='hello2'></div>{{/list}}{{/list}}",
+          template: "{#list 1..1 as item}{#list 1..1 as todo}<div on-click='hello2'></div>{/list}{/list}",
           init: function(){
             this.$on("hello2", function(){
               i = 1;
@@ -172,7 +172,7 @@ void function(){
         });
 
         var component = new Component({
-          template: "<div on-click=hello2 on-click={{this.hello2()}} >haha</div>",
+          template: "<div on-click=hello2 on-click={this.hello2()} >haha</div>",
           data: { test: 0 , name: 'hahah'}
         }).$inject(container);
 
@@ -202,7 +202,7 @@ void function(){
       it("delegate Event should work via", function(){
         var i,j;
         var component = new Component({
-          template: "<div delegate-click=proxy delegate-click={{this.hello2()}} >haha</div>",
+          template: "<div delegate-click=proxy delegate-click={this.hello2()} >haha</div>",
           data: { test: 0 , name: 'hahah'},
           hello2: function(){
             i=1;
@@ -224,10 +224,10 @@ void function(){
 
       })
 
-      it("delegate Event should destroy via {{#if}}", function(){
+      it("delegate Event should destroy via {#if}", function(){
         var i = 0, j=0;
         var component = new Component({
-          template: "<div {{#if test}} delegate-click=proxy {{#else}} delegate-click=proxy2 {{/if}} >haha</div>",
+          template: "<div {#if test} delegate-click=proxy {#else} delegate-click=proxy2 {/if} >haha</div>",
           data: { test: true , name: 'hahah'}
         }).$inject(container);
 
@@ -264,7 +264,7 @@ void function(){
         document.body.appendChild(container2);
 
         var component = new Component({
-          template: "<div delegate-click={{i = i+1}}  >haha</div>",
+          template: "<div delegate-click={i = i+1}  >haha</div>",
           data: { i: 1 }
         }).$inject( container );
 

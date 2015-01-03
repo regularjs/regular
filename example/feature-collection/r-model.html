@@ -13,43 +13,43 @@
     <script id="form" type="text/regular">
       <form role="form">
         <div class="form-group">
-          <label for="exampleInputEmail1">Email address(value: {{email}})</label>
+          <label for="exampleInputEmail1">Email address(value: {email})</label>
           <input 
             type="email" class="form-control" id="exampleInputEmail1" placeholder="Enter email" value="87399126@163.com" 
-            r-model={{email}}>
+            r-model={email}>
         </div>
         <div class="form-group">
-          <label for="exampleInputPassword1">Password(value: {{password}})</label>
+          <label for="exampleInputPassword1">Password(value: {password})</label>
           <input type="password" class="form-control" id="exampleInputPassword1" placeholder="Password" value='default' r-model='password'>
         </div>
         <div class="checkbox">
           <label>
-            <input type="checkbox" checked  r-model={{checked}}> Check me out (value: {{checked}})
+            <input type="checkbox" checked  r-model={checked}> Check me out (value: {checked})
           </label>
         </div>
 
         <div class="form-group">
-          radio: {{radio}} 
-          <span  on-click={{radio="option3"}}>radio=option1</span>
+          radio: {radio} 
+          <span  on-click={radio="option3"}>radio=option1</span>
         </div>
         <div class="radio">
           <label>
-            <input type="radio" name="optionsRadios" id="optionsRadios1" value="option1" r-model={{radio}}>
+            <input type="radio" name="optionsRadios" id="optionsRadios1" value="option1" r-model={radio}>
             Option one is this and that&mdash;be sure to include why its great
           </label>
         </div>
         <div class="radio">
           <label>
-            <input type="radio" name="optionsRadios" id="optionsRadios2" value="option2" checked=checked r-model={{radio}} >
+            <input type="radio" name="optionsRadios" id="optionsRadios2" value="option2" checked=checked r-model={radio} >
             Option two can be something else and selecting it will deselect option one
           </label>
         </div>
         <div class="form-group" ng-repeat>
-        <!-- no wrap in {{}} is allowed -->
-        {{textarea}}
+        <!-- no wrap in {} is allowed -->
+        {textarea}
         <textarea class="form-control" rows="3" r-model='textarea'>hahah</textarea>
         </div>
-        <p>{{select}}</p>
+        <p>{select}</p>
         <select class="form-control" id='select' r-model='select'>
           <option selected value="1">1</option>
           <option value="2">2</option>

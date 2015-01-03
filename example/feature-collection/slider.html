@@ -38,22 +38,22 @@
 </div>
 <script name="slider" type="template/regular" id="slider">
 <div class='tool'>
-  <a class="small button warn" on-click="this.changeTheme()">Change Item Theme</a>
+  <a class="small button warn" on-click={this.changeTheme()}>Change Item Theme</a>
 </div>
-{{#list items as item}}
-  <a class="small button" on-click="this.nav(item_index)">Goto Slide {{@(item_index+1)}}</a>
-{{/list}}
-<div class="orbit-container orbit-container-{{themeIndex}}"><ul class="example-orbit-content orbit-slides-container">
-  {{#list items as item}}
-  <li class={{active==item_index? "active": ""}}>
-    {{#include themes[themeIndex]}}
+{#list items as item}
+  <a class="small button" on-click={this.nav(item_index)}>Goto Slide {@(item_index+1)}</a>
+{/list}
+<div class="orbit-container orbit-container-{themeIndex}"><ul class="example-orbit-content orbit-slides-container">
+  {#list items as item}
+  <li class={active==item_index? "active": ""}>
+    {#include themes[themeIndex]}
   </li>
-  {{/list}}
+  {/list}
 </ul>
-<a href="#" class="orbit-prev" on-click={{this.nav(active-1)}}><span></span></a>
-<a href="#" class="orbit-next" on-click={{this.nav(active+1)}}><span></span></a>
+<a href="#" class="orbit-prev" on-click={this.nav(active-1)}><span></span></a>
+<a href="#" class="orbit-next" on-click={this.nav(active+1)}><span></span></a>
 <div class="orbit-slide-number">
-  <span>{{active+1}}</span> of <span>{{items.length}}</span>
+  <span>{active+1}</span> of <span>{items.length}</span>
 </div>
 </div>
 </script>
@@ -72,6 +72,7 @@
       data.active = (active + len) %  len;
     },
     changeTheme: function(){
+      debugger
       var data = this.data;
       var len = data.themes.length;
       data.themeIndex = (data.themeIndex + 1 + len) % len;
@@ -82,11 +83,11 @@
   var slider = new Slider({
     data: {
       themes: [
-        '<div><h2>{{item.title}}</h2><h3>{{item.subtitle}}</h3></div>',
-        '<img src="{{item.url}}" alt="slide {{item_index}}"> <div class="orbit-caption">{{item.subtitle}}</div>'
+        '<div><h2>{item.title}</h2><h3>{item.subtitle}</h3></div>',
+        '<img src="{item.url}" alt="slide {item_index}"> <div class="orbit-caption">{item.subtitle}</div>'
       ],
       themeIndex: 0,
-      content: "<div><h2>{{item.title}}</h2><h3>{{item.subtitle}}</h3></div>",
+      content: "<div><h2>{item.title}</h2><h3>{item.subtitle}</h3></div>",
       items: [
         {title: "Header1", subtitle: "subtitle1", url: "http://foundation.zurb.com/docs/assets/img/examples/satelite-orbit.jpg"},
         {title: "Header2", subtitle: "subtitle2", url: "http://foundation.zurb.com/docs/assets/img/examples/andromeda-orbit.jpg"},

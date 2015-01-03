@@ -17,7 +17,7 @@ describe("Lexer under mode 1 and 2", function(){
   it("pure xml lex should return diff tokens under mode 1 and 2", function(){
     var input = "<ul><div>hello name</div></ul>";
     var input_attr = "<div attr='hello'></div>";
-    var input_attr_jst = "<div attr={{hello}}></div>";
+    var input_attr_jst = "<div attr={hello}></div>";
     // mode 1
     expect(l(input))
       .typeEqual("TAG_OPEN,>,TAG_OPEN,>,TEXT,TAG_CLOSE,TAG_CLOSE,EOF");
@@ -38,7 +38,7 @@ describe("Lexer under mode 1 and 2", function(){
 
 
   it("pure jst lex is equals under mode 1 and mode 2", function(){
-    var input = "{{#list haha}}{{haha}}{{/list}}";
+    var input = "{#list haha}{haha}{/list}";
     // mode 1
     expect(l(input))
       .typeEqual("OPEN,IDENT,END,EXPR_OPEN,IDENT,END,CLOSE,EOF");
@@ -49,13 +49,13 @@ describe("Lexer under mode 1 and 2", function(){
 
   })
   it("inteplation is parsed as expect", function(){
-    expect(l2('{{hello}}'))
+    expect(l2('{hello}'))
       .typeEqual("EXPR_OPEN,IDENT,END,EOF");
   })
 
   it("complex input should works under mode 1 and 2", function(){
 
-    var input = "{{#dada}}<div data=data>{{dadad}}</div>{{/dada}}";
+    var input = "{#dada}<div data=data>{dadad}</div>{/dada}";
 
     // mode 1
     expect(l(input))

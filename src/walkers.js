@@ -60,9 +60,7 @@ walkers.list = function(ast){
         data[indexName] = o;
         data[variable] = item;
 
-        //@TODO
         var section = new Section({data: data, $parent: self , namespace: namespace});
-
 
         // autolink
         var insert =  combine.last(group.get(o));

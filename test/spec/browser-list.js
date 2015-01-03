@@ -11,7 +11,7 @@ void function(){
 
     describe("basic", function(){
       it("the list based on range should work", function(){
-        var list = "<div t-test={{num}} class='m-model'>{{#list 1..3 as num}}<div class='a-{{num}}'>{{num}}</div> {{/list}}</div>"
+        var list = "<div t-test={num} class='m-model'>{#list 1..3 as num}<div class='a-{num}'>{num}</div> {/list}</div>"
         var BaseComponent = Regular.extend({
           template: list
         })
@@ -25,7 +25,7 @@ void function(){
       })
 
       it("should destroy clear when have non parentNode", function(){
-        var list = "{{#list 1..3 as num}}{{num}}{{/list}}"
+        var list = "{#list 1..3 as num}{num}{/list}"
         var component = new Regular({
           template: list
         }).$inject(container);
@@ -35,9 +35,9 @@ void function(){
 
       it("the dom should sync with the 'sequence' value", function(){
         var list =
-          "{{#list todos as todo}}" + 
-            "<div class='a-{{todo_index}}'>{{todo.content}}</div>" + 
-          "{{/list}}";
+          "{#list todos as todo}" + 
+            "<div class='a-{todo_index}'>{todo.content}</div>" + 
+          "{/list}";
         var component = new Regular({
           data: {todos: [{content: "hello"}, {content: "hello2"}]},
           template: list
@@ -61,9 +61,9 @@ void function(){
 
       it("list should work with sibling node or text", function(){
         var list =
-          "<a>name</a>{{#list todos as todo}}" + 
-            "<div >{{todo.content}}</div>" + 
-          "{{/list}}xxx";
+          "<a>name</a>{#list todos as todo}" + 
+            "<div >{todo.content}</div>" + 
+          "{/list}xxx";
         var component = new Regular({
           data: {todos: [{content: "hello"}, {content: "hello2"}]},
           template: list
@@ -78,9 +78,9 @@ void function(){
       it("delete first element should sync with dom", function(){
         var todos = [{content: "hello"}, {content: "hello2"}]
         var list =
-          "{{#list todos as todo}}" + 
-            "<div >{{todo_index}}{{todo.content}}</div>" + 
-          "{{/list}}";
+          "{#list todos as todo}" + 
+            "<div >{todo_index}{todo.content}</div>" + 
+          "{/list}";
         var component = new Regular({
           data: {todos: todos},
           template: list
@@ -99,9 +99,9 @@ void function(){
 
       it("the VARIABLE_index should work as expected", function(){
         var list =
-          "{{#list 1..4 as num}}" + 
-            "<div class='a-{{num}}'>{{num_index}}</div>" + 
-          "{{/list}}"
+          "{#list 1..4 as num}" + 
+            "<div class='a-{num}'>{num_index}</div>" + 
+          "{/list}"
         var component = new Regular({
           data: {todos: [{content: "hello"}, {content: "hello2"}]},
           template: list
@@ -119,9 +119,9 @@ void function(){
 
       it("the 'sequence' with expression should work as expect", function(){
         var list =
-          "{{#list this.filter() as num}}" + 
-            "<div>{{num_index}}</div>"+
-          "{{/list}}"
+          "{#list this.filter() as num}" + 
+            "<div>{num_index}</div>"+
+          "{/list}"
         var List = Regular.extend({
           template: list, 
           data: { len: 1, todos:[1,2,3,4,5,6] },
@@ -144,7 +144,7 @@ void function(){
       it("on,off's context should point to outer component", function(){
         var context, num=0;
         var Component = Regular.extend({
-          template: "{{#list 1..2 as i}} <li tmp-test></li> {{/list}}"
+          template: "{#list 1..2 as i} <li tmp-test></li> {/list}"
         }).directive({
           "tmp-test":function(){
             this.$on("hello", function(){
@@ -165,15 +165,15 @@ void function(){
 
       var TodoComponent = Regular.extend({
         name: 'todo',
-        template: "<div>{{content}}</div>"
+        template: "<div>{content}</div>"
       });
 
       var component = new Regular({
         data: {todos: [{content: "hello"}, {content: "hello2"}]},
         template: 
-          "{{#list todos as todo}}\
-            <todo content={{todo.content}}/>\
-           {{/list}}"
+          "{#list todos as todo}\
+            <todo content={todo.content}/>\
+           {/list}"
       }).$inject(container);
 
       expect($("div",container).length).to.equal(2);
@@ -188,13 +188,13 @@ void function(){
         var container = document.createElement('div');
 
         var list =
-          "{{#list 1..2 as todo}}" + 
-            "<div class='sub' data-value={{this.get(todo_index)}}>" + 
-            "{{#list 1..2 as num}}" + 
-            "<div class='sub2'>{{this.get(num_index)}}</div>"+
-            "{{/list}}" +
+          "{#list 1..2 as todo}" + 
+            "<div class='sub' data-value={this.get(todo_index)}>" + 
+            "{#list 1..2 as num}" + 
+            "<div class='sub2'>{this.get(num_index)}</div>"+
+            "{/list}" +
             "</div>"+
-          "{{/list}}"
+          "{/list}"
         var List = Regular.extend({
           hello: "123456",
           template: list, 
@@ -223,13 +223,13 @@ void function(){
       it("list with table should work correctly", function(){
         var container = document.createElement('table')
         var list =
-          "{{#list todos as todo}}" + 
-            "<tr class={{this.get(todo_index)}}>" + 
-            "{{#list 1..2 as num}}" + 
-            "<td>{{this.get(num_index)}}</td>"+
-            "{{/list}}" +
+          "{#list todos as todo}" + 
+            "<tr class={this.get(todo_index)}>" + 
+            "{#list 1..2 as num}" + 
+            "<td>{this.get(num_index)}</td>"+
+            "{/list}" +
             "</tr>"+
-          "{{/list}}"
+          "{/list}"
         var List = Regular.extend({
           template: list, 
           get: function(index){
@@ -262,7 +262,7 @@ void function(){
             num++;
           })
         var component = new Component({
-          template: "{{#list 1..2 as num}}<div r-name='name'>haha</div>{{/list}}"
+          template: "{#list 1..2 as num}<div r-name='name'>haha</div>{/list}"
         }).$inject(container)
 
         expect(num).to.equal(2);
@@ -278,12 +278,12 @@ void function(){
           })
 
         var Item = Regular.extend({
-          template: "<p>{{item}}</p>",
+          template: "<p>{item}</p>",
           name: 'item'
         })
         var component = new Regular({
           data: {items: ["item1", "item2"]} ,
-          template: "{{#list items as item}}<item item={{item}} />{{/list}}"
+          template: "{#list items as item}<item item={item} />{/list}"
         }).$inject(container)
 
         expect($("p",container).length).to.equal(2);
@@ -305,7 +305,7 @@ void function(){
       
       it("input:checkbox in list should have correct type", function(){
         var List = Regular.extend({
-          template: "<div>{{#list items as item}}<input type='checkbox' class='1' >{{/list}}</div>"
+          template: "<div>{#list items as item}<input type='checkbox' class='1' >{/list}</div>"
         });
 
         var component = new List({
@@ -329,7 +329,7 @@ void function(){
 
         it("item in list should not emit ,init, update or destroy to outerComponent", function(){
         var List = Regular.extend({
-          template: "{{#list items as item}}<div>{{item}}</div>{{/list}}"
+          template: "{#list items as item}<div>{item}</div>{/list}"
         })
         var initTimes = 0;
         var destroyTimes = 0;

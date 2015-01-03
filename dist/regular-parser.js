@@ -80,8 +80,8 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	
 	module.exports = {
-	'BEGIN': '{{',
-	'END': '}}'
+	'BEGIN': '{',
+	'END': '}'
 	}
 
 /***/ },
@@ -786,12 +786,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	    this.markEnd = config.END;
 	  }
 
-
 	  this.input = (input||"").trim();
 	  this.opts = opts || {};
 	  this.map = this.opts.mode !== 2?  map1: map2;
 	  this.states = ["INIT"];
-	  if(this.opts.state) this.states.push( this.opts.state );
+	  if(opts && opts.expression){
+	     this.states.push("JST");
+	     this.expression = true;
+	  }
 	}
 
 	var lo = Lexer.prototype
@@ -1043,7 +1045,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	      value: name
 	    }
 	  }, 'JST'],
-	  JST_LEAVE: [/{END}/, function(){
+	  JST_LEAVE: [/{END}/, function(all){
+	    if(this.markEnd === all && this.expression) return {type: this.markEnd, value: this.markEnd};
 	    if(!this.markEnd || !this.marks ){
 	      this.firstEnterStart = false;
 	      this.leave('JST');
@@ -1065,6 +1068,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }, 'JST'],
 	  JST_EXPR_OPEN: ['{BEGIN}',function(all, one){
 	    if(all === this.markStart){
+	      if(this.expression) return { type: this.markStart, value: this.markStart };
 	      if(this.firstEnterStart || this.marks){
 	        this.marks++
 	        this.firstEnterStart = false;

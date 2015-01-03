@@ -19,7 +19,7 @@ void function(){
       var container = document.createElement("div");
       var Component = NameSpace.extend({
         name: "test1",
-        template: "<p>{{hello}}</p>"
+        template: "<p>{hello}</p>"
       })
       var component = new NameSpace({
         template: "<test1 hello='leeluolee' />"
@@ -33,10 +33,10 @@ void function(){
       var container = document.createElement("div");
       var Component = NameSpace.extend({
         name: "test2",
-        template: "<p on-click={{hello='haha'}}>{{hello}}</p>"
+        template: "<p on-click={hello='haha'}>{hello}</p>"
       })
       var component = new NameSpace({
-        template: "<test2 hello={{name}} /><span class='name'>{{name}}</span>",
+        template: "<test2 hello={name} /><span class='name'>{name}</span>",
         data: {name: "leeluolee"}
       }).$inject(container)
 
@@ -55,10 +55,10 @@ void function(){
       var container = document.createElement("div");
       var Component = NameSpace.extend({
         name: "test2",
-        template: "<p on-click={{hello='haha'}}>{{hello}}</p>"
+        template: "<p on-click={hello='haha'}>{hello}</p>"
       })
       var component = new NameSpace({
-        template: "<test2 hello={{name+'1'}} /><span class='name'>{{name}}</span>",
+        template: "<test2 hello={name+'1'} /><span class='name'>{name}</span>",
         data: {name: "leeluolee"}
       }).$inject(container)
 
@@ -81,7 +81,7 @@ void function(){
 
       var i = 0;
       var component = new NameSpace({
-        template: "<test on-hello={{this.hello}}><span on-click={{this.hello()}}>{{name}}</span></test>",
+        template: "<test on-hello={this.hello}><span on-click={this.hello()}>{name}</span></test>",
         data: {name: "leeluolee"},
         hello: function(){
           i++
@@ -103,12 +103,12 @@ void function(){
       var container = document.createElement("div");
       var Component = NameSpace.extend({
         name: "test",
-        template: "<p>{{user.name.first}}</p>"
+        template: "<p>{user.name.first}</p>"
       })
 
       var component = new NameSpace({
-        template: "<test user={{user}}></test>",
-        data: {user: {name: {first: "Zheng"}}}
+        template: "<test user={user}></test>",
+        data: {user: {name: {first: "Zheng"} } }
       }).$inject(container);
 
       expect(nes.one("p", container).innerHTML).to.equal("Zheng");
@@ -117,108 +117,6 @@ void function(){
 
     })
 
-    describe("refs attribute", function(){
-      var container = document.createElement("div");
-      var Component = Regular.extend({
-        template: "<div>haha</div>"
-      });
-      it("ref on element should work as expect", function(){
-        var component = new NameSpace({
-          template: "<div ref=haha>hello</div>",
-          data: {
-            hello: 1
-          }
-        }).$inject(container)
-
-        expect(component.$refs["haha"] === nes.one('div', container)).to.equal(true);
-        destroy(component, container);
-      })
-      it("ref on element with expression should work as expect", function(){
-        var component = new NameSpace({
-          template: "<p ref={{haha}}></p>",
-          data: {
-            haha: "haha"
-          }
-        }).$inject(container)
-
-        expect(component.$refs["haha"] === nes.one('p', container)).to.equal(true);
-        destroy(component, container);
-
-      })
-
-      it("ref on component should work as expect", function(){
-        var Component1 = NameSpace.extend({
-          name: "haha",
-          template: "<input type='text' />"
-        }) 
-        var component = new NameSpace({
-          template: "<haha ref=haha></haha>",
-          data: {
-            haha: "haha"
-          }
-        }).$inject(container)
-
-        expect(component.$refs["haha"] instanceof Component1).to.equal(true);
-        destroy(component, container);
-      })
-
-      it("ref on component with should work as expect", function(){
-        var Component1 = NameSpace.extend({
-          name: "haha",
-          template: "<input type='text' />"
-        }) 
-        var component = new NameSpace({
-          template: "<haha ref={{haha}}></haha>",
-          data: {
-            haha: "haha"
-          }
-        }).$inject(container)
-
-
-        expect(component.$refs["haha"] instanceof Component1).to.equal(true);
-
-        destroy(component, container);
-      })
-
-      it("ref should works with list", function(){
-        var component = new NameSpace({
-          template: "{{#list items as item}}<div ref={{haha + item_index}} id={{item_index}}>haha</div>{{/list}}",
-          data: {
-            haha: "haha",
-            items: [1,2,3]
-          }
-        }).$inject(container)
-
-
-        expect(component.$refs["haha0"].id).to.equal("0");
-        expect(component.$refs["haha1"].id).to.equal("1");
-        expect(component.$refs["haha2"].id).to.equal("2");
-
-        component.$update(function(data){
-          data.items.pop();
-        })
-
-        expect(component.$refs["haha2"]).to.equal(null);
-
-        destroy(component, container);
-      })
-      it("ref should destroied as expect", function(){
-        var component = new NameSpace({
-          template: "{{#list items as item}}<div ref={{haha + item_index}} id={{item_index}}>haha</div>{{/list}}",
-          data: {
-            haha: "haha",
-            items: [1,2,3]
-          }
-        }).$inject(container)
-
-        component.$update(function(data){
-          data.items.pop();
-        })
-
-        destroy(component, container);
-        expect(component.$refs).to.equal(null);
-      })
-    })
 
     describe("nested Component with Event", function(){
 
@@ -226,12 +124,12 @@ void function(){
         var container = document.createElement("div");
         var Component = NameSpace.extend({
           name: "test",
-          template: "<p on-click={{this.$emit('hello')}}></p>"
+          template: "<p on-click={this.$emit('hello')}></p>"
         })
 
         var i =0;
         var component = new NameSpace({
-          template: "<test on-hello={{this.hello()}} />",
+          template: "<test on-hello={this.hello()} />",
           hello: function(){
             i++
           }
@@ -248,7 +146,7 @@ void function(){
         var container = document.createElement("div");
         var Component = NameSpace.extend({
           name: "test",
-          template: "<p on-click={{this.$emit('hello', $event)}}></p>"
+          template: "<p on-click={this.$emit('hello', $event)}></p>"
         })
 
         var i =0;

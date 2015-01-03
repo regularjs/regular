@@ -16,13 +16,13 @@
     <g transform="translate(50, 50)">
        <circle class="clock-face" r="48"/>
 
-      {{#list 1..12 as i}}
-      <line class="major-mark" y1="35" y2="45" transform="rotate({{ 360 * i / 12 }})"/>
-      {{/list}}
+      {#list 1..12 as i}
+      <line class="major-mark" y1="35" y2="45" transform="rotate({ 360 * i / 12 })"/>
+      {/list}
 
-      <line class="hour-hand" y1="2" y2="-20" transform="rotate({{ 30 * date.getHours() + date.getMinutes() / 2 }})"/>
-      <line class="minute-hand" y1="2" y2="-45" transform="rotate({{ 6 * date.getMinutes() + date.getSeconds() / 10 }})"/>
-      <line class="second-hand" y1="2" y2="-45" transform="rotate({{ 6 * date.getSeconds() }})"/>
+      <line class="hour-hand" y1="2" y2="-20" transform="rotate({ 30 * date.getHours() + date.getMinutes() / 2 })"/>
+      <line class="minute-hand" y1="2" y2="-45" transform="rotate({ 6 * date.getMinutes() + date.getSeconds() / 10 })"/>
+      <line class="second-hand" y1="2" y2="-45" transform="rotate({ 6 * date.getSeconds() })"/>
     </g>
   </svg>
 </script>

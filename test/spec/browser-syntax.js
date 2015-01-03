@@ -8,7 +8,16 @@ void function(){
 
   describe("config", function(){
     var container = document.createElement("div");
+
+    after(function() {
+      Regular.config({
+        END: '}',
+        BEGIN: '{'
+      })
+    });
+
     it("END and BEGIN can accpet '[' and ']'", function(){
+
 
       Regular.config({
         END: ']',
@@ -97,23 +106,17 @@ void function(){
       expect(nes.one("p",container).innerHTML).to.equal('1');
       destroy(component, container)
     })
-    it("RETURN '{{' and '}}'", function(){
+  })
 
-      Regular.config({
-        END: '}}',
-        BEGIN: '{{'
-      })
+  describe("Interplation", function(){
+    var container = document.createElement("div");
+
+    it("deep undefined shouldn't throw a xx of undefined error", function(){
 
       var component = new Regular({
-        template: "<p>{{{a:1}['a']}}</p>"
-      }).$inject( container );
-
-      expect(nes.one("p",container).innerHTML).to.equal('1');
-      destroy(component, container)
-
+        template: "{{}}"
+      }).$inject(container);
     })
-
-
   })
 
 }()

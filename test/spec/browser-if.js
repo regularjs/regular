@@ -16,7 +16,7 @@ void function(){
 
         var container = document.createElement('div');
         var component = new Regular({
-          template: "{{#if test}}<div>test</div>{{/if}}",
+          template: "{#if test}<div>test</div>{/if}",
           data: {test: true}
         }).$inject(container);
 
@@ -32,7 +32,7 @@ void function(){
       it("regular should convert value to boolean", function(){
         var container = document.createElement('div');
         var component = new Regular({
-          template: "{{#if test}}<div>test</div>{{/if}}",
+          template: "{#if test}<div>test</div>{/if}",
           data: {test: 0}
         }).$inject(container);
 
@@ -49,7 +49,7 @@ void function(){
 
         var container = document.createElement('div');
         var component = new Regular({
-          template: "{{#if test}}<div>test</div>{{#else}}<div>altname</div>{{/if}}"
+          template: "{#if test}<div>test</div>{#else}<div>altname</div>{/if}"
         }).$inject(container);
 
         expect($("div",container).length).to.equal(1);
@@ -66,7 +66,7 @@ void function(){
 
         var container = document.createElement('div');
         var component = new Regular({
-          template: "{{#if test > 5}}<div>test</div>{{#elseif test<2}}<div>altname</div>{{/if}}",
+          template: "{#if test > 5}<div>test</div>{#elseif test<2}<div>altname</div>{/if}",
           data: {test: 1}
         }).$inject(container);
 
@@ -85,7 +85,7 @@ void function(){
       it("use if elseif else should work correctly", function(){
         var container = document.createElement('div');
         var component = new Regular({
-          template: "{{#if test > 5}}<div>test</div>{{#elseif test<2}}<div>altname</div>{{#else}}<div>altname2</div>{{/if}}",
+          template: "{#if test > 5}<div>test</div>{#elseif test<2}<div>altname</div>{#else}<div>altname2</div>{/if}",
           data: {test: 1}
         }).$inject(container);
 
@@ -105,7 +105,7 @@ void function(){
       it("use if elseif should equal with if else if", function(){
         var container = document.createElement('div');
         var component = new Regular({
-          template: "{{#if test > 5}}<div>test</div>{{#else}}{{#if test<2}}<div>altname</div>{{#else}}<div>altname2</div>{{/if}}{{/if}}",
+          template: "{#if test > 5}<div>test</div>{#else}{#if test<2}<div>altname</div>{#else}<div>altname2</div>{/if}{/if}",
           data: {test: 1}
         }).$inject(container);
 
@@ -123,7 +123,7 @@ void function(){
       it("if destroy should remove bind watchers", function(){
         var container = document.createElement('div');
         var component = new Regular({
-          template: "{{#if test > 5}}<div>{{test}} {{hello}}</div>{{#else}}<div>{{hello}}</div>{{/if}}",
+          template: "{#if test > 5}<div>{test} {hello}</div>{#else}<div>{hello}</div>{/if}",
           data: { test: 1 }
         }).$inject(container);
 
@@ -141,7 +141,7 @@ void function(){
       it("nested if destroy should remove bind watchers", function(){
         var container = document.createElement('div');
         var component = new Regular({
-          template: "{{#if test > 5}}{{#if test < 8}}<div>{{test}} {{hello}}</div>{{/if}}{{/if}}",
+          template: "{#if test > 5}{#if test < 8}<div>{test} {hello}</div>{/if}{/if}",
           data: { test: 6 }
         }).$inject(container);
 
@@ -162,13 +162,13 @@ void function(){
     describe("If combine with attribute", function(){
       it("other rule expect if should throw error when pass in tag", function(){
         expect(function(){
-          new Parser("<div {{#list xx as x}}ng-repeat{{/list}}>").parse();
+          new Parser("<div {#list xx as x}ng-repeat{/list}>").parse();
         }).to.throwError();
       })
       it("if should toggle the basic attribute", function(){
         var container = document.createElement('div');
         var component = new Regular({
-          template: "<div {{#if test}}class='name' title='noname'{{/if}} data-haha=name >haha</div>",
+          template: "<div {#if test}class='name' title='noname'{/if} data-haha=name >haha</div>",
           data: { test: 0 }
         }).$inject(container);
 
@@ -189,7 +189,7 @@ void function(){
       it("if combine with unassigned attribute should work correctly", function(){
         var container = document.createElement('div');
         var component = new Regular({
-          template: "<div {{#if test}}ng-repeat{{/if}} class='hello' >haha</div>",
+          template: "<div {#if test}ng-repeat{/if} class='hello' >haha</div>",
           data: { test: 0 }
         }).$inject(container);
 
@@ -207,7 +207,7 @@ void function(){
       it("if combine with inteplation attribute should work correctly", function(){
         var container = document.createElement('div');
         var component = new Regular({
-          template: "<div {{#if test}}ng-repeat={{name}}{{/if}} class='hello' >haha</div>",
+          template: "<div {#if test}ng-repeat={name}{/if} class='hello' >haha</div>",
           data: { test: 0 , name: 'hahah'}
         }).$inject(container);
 
@@ -227,7 +227,7 @@ void function(){
       it("if combine with event should work correctly", function(){
         var container = document.createElement('div');
         var component = new Regular({
-          template: "<div {{#if test}}ng-repeat={{name}}{{/if}} class='hello' >haha</div>",
+          template: "<div {#if test}ng-repeat={name}{/if} class='hello' >haha</div>",
           data: { test: 0 , name: 'hahah'}
         }).$inject(container);
       })
@@ -244,7 +244,7 @@ void function(){
           }
         })
         var component = new Component({
-          template: "<div {{#if test}}on-hello={{name=name+1}}{{/if}} class='hello' >haha</div>",
+          template: "<div {#if test}on-hello={name=name+1}{/if} class='hello' >haha</div>",
           data: { test: 0 , name: 'hahah'}
         }).$inject(container);
         var node = nes.one("div", container);
@@ -273,7 +273,7 @@ void function(){
         })
 
         var component = new Component({
-          template: "<div {{#if test}}on-hello={{name=name+1}}{{/if}} class='hello' >haha</div>",
+          template: "<div {#if test}on-hello={name=name+1}{/if} class='hello' >haha</div>",
           data: { test: 0 , name: 'hahah'}
         }).$inject(container);
 
@@ -294,7 +294,7 @@ void function(){
           })
         })
         var component = new Component({
-          template: "<div {{#if test}} t-hello='haha'{{/if}} class='hello' >haha</div>",
+          template: "<div {#if test} t-hello='haha'{/if} class='hello' >haha</div>",
           data: { test: 0 , name: 'hahah'}
         }).$inject(container);
 
@@ -316,7 +316,7 @@ void function(){
           this.$watch("hello", function(){})
         })
         var component = new Component({
-          template: "<div {{#if test}} t-hello='haha'{{/if}} class='hello' >haha</div>",
+          template: "<div {#if test} t-hello='haha'{/if} class='hello' >haha</div>",
           data: { test: 0 , name: 'hahah'}
         }).$inject(container);
         expect(component._watchers.length).to.equal(1)
@@ -332,7 +332,7 @@ void function(){
       it("if else combine with attribute should work as expect", function(){
         var container = document.createElement('div');
         var component = new Regular({
-          template: "<div {{#if test}} title='haha' {{#else}} title2='haha2' {{/if}} class='hello' >haha</div>",
+          template: "<div {#if test} title='haha' {#else} title2='haha2' {/if} class='hello' >haha</div>",
           data: { test: 1 , name: 'hahah'}
         }).$inject(container);
         var $node = $("div.hello",container)
@@ -347,7 +347,7 @@ void function(){
       it("if elseif combine with attribute should work as expect", function(){
         var container = document.createElement('div');
         var component = new Regular({
-          template: "<div {{#if test}} title='haha' {{#elseif name}} title2='haha2' {{/if}} class='hello' >haha</div>",
+          template: "<div {#if test} title='haha' {#elseif name} title2='haha2' {/if} class='hello' >haha</div>",
           data: { test: 0 , name: 'hahah'}
         }).$inject(container);
 
@@ -366,7 +366,7 @@ void function(){
       //   var container = document.createElement('div');
 
       //   var component = new Regular({
-      //     template: "<div {{#if test}} title='haha' {{#if name}} title2='haha2' {{/if}} {{/if}} class='hello' >haha</div>",
+      //     template: "<div {#if test} title='haha' {#if name} title2='haha2' {/if} {/if} class='hello' >haha</div>",
       //     data: { test: 1 , name: ''}
       //   }).$inject(container);
       //   var $node = $("div.hello",container)
@@ -382,7 +382,7 @@ void function(){
         var container = document.createElement('div');
 
         var component = new Regular({
-          template: "<div {{#if test}} title='haha' {{#elseif name}} title2='haha2' {{#else}} title3='haha3' {{/if}} class='hello' >haha</div>",
+          template: "<div {#if test} title='haha' {#elseif name} title2='haha2' {#else} title3='haha3' {/if} class='hello' >haha</div>",
           data: { test: 1 , name: ''}
         }).$inject(container);
         var $node = $("div.hello",container)
