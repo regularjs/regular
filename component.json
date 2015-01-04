@@ -1,6 +1,6 @@
 {
   "name": "regularjs",
-  "version": "0.2.14",
+  "version": "0.3.0-pre",
   "main": "src/index.js",
   "scripts": [
     "src/Regular.js",
