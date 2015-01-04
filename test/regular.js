@@ -1538,9 +1538,9 @@ walkers.element = function(ast){
     }
     return component;
   }
-  // else if(ast.tag === 'r-content' && this.$body){
-  //   return this.$body;
-  // }
+  else if(ast.tag === 'r-content' && this.$body){
+    return this.$body;
+  }
 
   var element = dom.create(ast.tag, namespace, attrs);
   // context element
@@ -3020,6 +3020,7 @@ op.unary = function(){
 
 op.member = function(base, last, pathes){
   var ll, path;
+
 
   var onlySimpleAccessor = false;
   if(!base){ //first
