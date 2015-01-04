@@ -24,7 +24,6 @@ describe("Computed Property", function(){
     var component = new Component({data: {items: [1,2]}});
 
     expect(component.$get("len")).to.equal(2);
-    console.log(Regular.expression("len"));
     component.$update("len", 1);
     expect(component.$get("items").length).to.equal(1);
   })

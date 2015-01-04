@@ -64,7 +64,6 @@ void function(){
         }
       }).$inject(container);
 
-
       var div = nes.one("div",container);
       expect(div.title).to.equal("11");
       expect(div.innerHTML).to.equal("1");
@@ -72,8 +71,6 @@ void function(){
 
       expect(div.title).to.equal("21");
       expect(div.innerHTML).to.equal("2");
-
-      expect(component.data.param).to.eql({title: "2"})
 
       destroy(component, container)
     })
@@ -111,12 +108,29 @@ void function(){
   describe("Interplation", function(){
     var container = document.createElement("div");
 
+
     it("deep undefined shouldn't throw a xx of undefined error", function(){
 
       var component = new Regular({
-        template: "{{}}"
+        template: "{#if hello.name.title}{hello.name.title}1{/if}{#list hello.is.undefined as item}{item.name}{/list}{#include hello}"
       }).$inject(container);
+
+      destroy(component, container)
     })
+
+    it("nest undefined with multi inteplation should work correct", function(){
+      var component = new Regular({
+        template: "<div class='test {hello.title.name} {name} 2' ref=test></div>",
+        data: {name: 2}
+      })
+
+      expect(component.$refs.test.className).to.equal("test  2 2");
+      destroy(component, container)
+    })
+
+    
+
+
   })
 
 }()

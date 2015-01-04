@@ -32,13 +32,7 @@ var methods = {
       }
     }else{
       expr = this.$expression? this.$expression(expr) : parseExpression(expr);
-      get = function(ctx){
-        try{
-          return expr.get(ctx)
-        }catch(e){
-          return undefined
-        }
-      }
+      get = expr.get;
       once = expr.once || expr.constant;
     }
 

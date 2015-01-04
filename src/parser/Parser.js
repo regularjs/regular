@@ -199,7 +199,9 @@ op.attvalue = function(){
         var body = [];
         parsed.forEach(function(item){
           if(!item.constant) constant=false;
-          body.push(item.body || "'" + item.text + "'");
+          // silent the mutiple inteplation
+          body.push( item.body?  
+            "(function(){try{return " + item.body + "}catch(e){return ''}})()" : "'" + item.text + "'");
         });
         body = "[" + body.join(",") + "].join('')";
         value = node.expression(body, null, constant);

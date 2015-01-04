@@ -1195,7 +1195,7 @@ _.cache = function(max){
 _.touchExpression = function(expr){
   if(expr.type === 'expression'){
     if(!expr.get){
-      expr.get = new Function("context", prefix + "return (" + expr.body + ")");
+      expr.get = new Function("context", prefix + "try{return (" + expr.body + ")}catch(e){return undefined}");
       expr.body = null;
       if(expr.setbody){
         expr.set = function(ctx, value){
@@ -2729,7 +2729,9 @@ op.attvalue = function(){
         var body = [];
         parsed.forEach(function(item){
           if(!item.constant) constant=false;
-          body.push(item.body || "'" + item.text + "'");
+          // silent the mutiple inteplation
+          body.push( item.body?  
+            "(function(){try{return " + item.body + "}catch(e){return ''}})()" : "'" + item.text + "'");
         });
         body = "[" + body.join(",") + "].join('')";
         value = node.expression(body, null, constant);
@@ -3416,13 +3418,7 @@ var methods = {
       }
     }else{
       expr = this.$expression? this.$expression(expr) : parseExpression(expr);
-      get = function(ctx){
-        try{
-          return expr.get(ctx)
-        }catch(e){
-          return undefined
-        }
-      }
+      get = expr.get;
       once = expr.once || expr.constant;
     }
 

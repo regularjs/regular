@@ -149,7 +149,7 @@ gulp.task('v', function(fn){
 
 
 // watch file then build
-gulp.task('dev', function(){
+gulp.task('dev', ['build'], function(){
   gulp.watch(['component.json', 'src/**/*.js'], ['build'])
   // var puer = spawn('puer', ["--no-reload"], {})
   // puer.stdout.on('data', function (data) {

@@ -289,7 +289,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var body = [];
 	        parsed.forEach(function(item){
 	          if(!item.constant) constant=false;
-	          body.push(item.body || "'" + item.text + "'");
+	          // silent the mutiple inteplation
+	          body.push( item.body?  
+	            "(function(){try{return " + item.body + "}catch(e){return ''}})()" : "'" + item.text + "'");
 	        });
 	        body = "[" + body.join(",") + "].join('')";
 	        value = node.expression(body, null, constant);
@@ -1560,7 +1562,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	_.touchExpression = function(expr){
 	  if(expr.type === 'expression'){
 	    if(!expr.get){
-	      expr.get = new Function("context", prefix + "return (" + expr.body + ")");
+	      expr.get = new Function("context", prefix + "try{return (" + expr.body + ")}catch(e){return undefined}");
 	      expr.body = null;
 	      if(expr.setbody){
 	        expr.set = function(ctx, value){
