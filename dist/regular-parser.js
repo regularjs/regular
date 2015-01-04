@@ -582,6 +582,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	op.member = function(base, last, pathes){
 	  var ll, path;
 
+
 	  var onlySimpleAccessor = false;
 	  if(!base){ //first
 	    path = this.primary();
