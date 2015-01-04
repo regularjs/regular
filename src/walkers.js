@@ -87,9 +87,10 @@ walkers.list = function(ast){
   return group;
 }
 
+// {#include }
 walkers.template = function(ast){
   var content = ast.content, compiled;
-  var placeholder = document.createComment('template');
+  var placeholder = document.createComment('inlcude');
   var compiled, namespace = this.__ns__;
   // var fragment = dom.fragment();
   // fragment.appendChild(placeholder);
@@ -239,7 +240,7 @@ walkers.element = function(ast){
     }
 
     var $body;
-    if(ast.children) $body = this.$compile(ast.children);
+    if(ast.children) $body = ast.children;
     var component = new Component({data: data, events: events, $body: $body, $parent: this, namespace: namespace});
     if(ref &&  self.$context.$refs) self.$context.$refs[ref] = component;
     for(var i = 0, len = attrs.length; i < len; i++){
