@@ -242,11 +242,14 @@ describe("Expression", function(){
         var component = new Regular({data: {a: 1}});
         component.$get("a+=1");
         expect(component.data.a).to.equal(2);
-        
-        expect(component.$get("a-=1")).to.equal(1);
-        expect(component.$get("a*=100")).to.equal(100);
-        expect(component.$get("a/=2")).to.equal(50);
-        expect(component.$get("a%=3")).to.equal(2);
+        component.$get("a-=1")
+        expect(component.data.a).to.equal(1);
+        component.$get("a*=100")
+        expect(component.data.a).to.equal(100);
+        component.$get("a/=2")
+        expect(component.data.a).to.equal(50);
+        component.$get("a%=3")
+        expect(component.data.a).to.equal(2);
       })
     })
   })

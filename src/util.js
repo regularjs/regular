@@ -446,7 +446,7 @@ _.cache = function(max){
 _.touchExpression = function(expr){
   if(expr.type === 'expression'){
     if(!expr.get){
-      expr.get = new Function("context", prefix + "try{return (" + expr.body + ")}catch(e){return undefined}");
+      expr.get = new Function("context", prefix + "return (" + expr.body + ")");
       expr.body = null;
       if(expr.setbody){
         expr.set = function(ctx, value){

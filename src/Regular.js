@@ -437,24 +437,26 @@ Regular.implement({
     return filter;
   },
   // simple accessor get
-  _sg_:function(path, defaults){
-    var computed = this.computed,
-      computedProperty = computed[path];
-    if(computedProperty){
-      if(computedProperty.get)  return computedProperty.get(this);
-      else _.log("the computed '" + path + "' don't define the get function,  get data."+path + " altnately", "error")
+  _sg_:function(path, defaults, needComputed){
+    if(needComputed){
+      var computed = this.computed,
+        computedProperty = computed[path];
+      if(computedProperty){
+        if(computedProperty.get)  return computedProperty.get(this);
+        else _.log("the computed '" + path + "' don't define the get function,  get data."+path + " altnately", "error")
+      }
     }
+    if(typeof defaults === "undefined" || typeof path == "undefined" ) return undefined;
     return defaults[path];
 
   },
   // simple accessor set
-  _ss_:function(path, value, data, op){
+  _ss_:function(path, value, data , op, computed){
     var computed = this.computed,
-      op = op || "=",
-      computedProperty = computed[path],
-      prev;
+      op = op || "=", prev, 
+      computedProperty = computed? computed[path]:null;
 
-    if(op!== '='){
+    if(op !== '='){
       prev = computedProperty? computedProperty.get(this): data[path];
       switch(op){
         case "+=":
@@ -473,8 +475,7 @@ Regular.implement({
           value = prev % value;
           break;
       }
-    }  
-
+    }
     if(computedProperty) {
       if(computedProperty.set) return computedProperty.set(this, value);
       else _.log("the computed '" + path + "' don't define the set function,  assign data."+path + " altnately", "error" )

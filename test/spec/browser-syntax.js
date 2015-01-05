@@ -128,6 +128,33 @@ void function(){
       destroy(component, container)
     })
 
+
+    it("if function call is undefined, should throw error  ", function(){
+      var component = new Regular({
+        template: "<div on-click={this.login()} ref=test></div>",
+        data: {name: 2}
+      })
+
+      expect(function(){
+        component.$get("hello.login()");
+      }).to.throwError()
+
+      expect(function(){
+        component.$get("hello.login");
+      }).to.not.throwError()
+
+      expect(function(){
+        component.$get("this.login()");
+      }).to.throwError()
+
+      expect(function(){
+        component.$get("this.login.hello");
+      }).to.not.throwError()
+
+
+      destroy(component, container)
+    })
+
     
 
 

@@ -346,5 +346,3 @@ Lexer.setup();
 
 
 module.exports = Lexer;
-
-
