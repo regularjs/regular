@@ -422,23 +422,41 @@ return /******/ (function(modules) { // webpackBootstrap
 	op.filter = function(){
 	  var left = this.assign();
 	  var ll = this.eat('|');
-	  var buffer, attr;
+	  var buffer = [], setBuffer,
+	    attr = "_t_", 
+	    set = left.set, get, 
+	    tmp = "";
+
 	  if(ll){
-	    buffer = [
-	      "(function(){", 
-	          "var ", attr = "_f_", "=", left.get, ";"]
+	    if(set) setBuffer = [];
+
+	    prefix = "(function(" + attr + "){";
+
 	    do{
 
-	      buffer.push(attr + " = "+ctxName+"._f_('" + this.match('IDENT').value+ "')(" + attr) ;
+	      tmp = attr + " = " + ctxName + "._f_('" + this.match('IDENT').value+ "' ).get.call( "+_.ctxName +"," + attr ;
 	      if(this.eat(':')){
-	        buffer.push(", "+ this.arguments("|").join(",") + ");")
+	        tmp +=", "+ this.arguments("|").join(",") + ");"
 	      }else{
-	        buffer.push(');');
+	        tmp += ');'
 	      }
+	      buffer.push(tmp);
+	      setBuffer && setBuffer.unshift( tmp.replace(" ).get.call", " ).set.call") );
 
 	    }while(ll = this.eat('|'));
-	    buffer.push("return " + attr + "})()");
-	    return this.getset(buffer.join(""));
+	    buffer.push("return " + attr );
+	    setBuffer.push("return " + attr);
+
+	    get =  prefix + buffer.join("") + "})("+left.get+")";
+	    // we call back to value.
+	    if(setBuffer){
+	      // change _ss__(name, _p_) to _s__(name, filterFn(_p_));
+	      set = set.replace(_.setName, 
+	        prefix + setBuffer.join("") + "})("+　_.setName　+")" );
+
+	    }
+	    // the set function is depend on the filter definition. if it have set method, the set will work
+	    return this.getset(get, set);
 	  }
 	  return left;
 	}

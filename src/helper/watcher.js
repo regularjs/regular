@@ -188,7 +188,7 @@ var methods = {
    * @param  {Whatever} value optional, when path is Function, the value is ignored
    * @return {this}     this 
    */
-  $update: function(path, value){
+  $set: function(path, value){
     if(path != null){
       var type = _.typeOf(path);
       if( type === 'string' || path.type === 'expression' ){
@@ -198,12 +198,16 @@ var methods = {
         path.call(this, this.data);
       }else{
         for(var i in path) {
-          if(path.hasOwnProperty(i)){
-            this.data[i] = path[i];
-          }
+          this.$set(i, path[i])
         }
       }
     }
+  },
+  $get: function(expr){
+    return parseExpression(expr).get(this);
+  },
+  $update: function(){
+    this.$set.apply(this, arguments);
     if(this.$root) this.$root.$digest()
   },
   // auto collect watchers for logic-control.

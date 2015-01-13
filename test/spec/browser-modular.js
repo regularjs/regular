@@ -1,10 +1,7 @@
 void function(){
   var Regular = require_lib('index.js');
 
-  function reset(){
-    Regular._events = {}
-    Regular._filters = {}
-  }
+  function reset(){}
   
   function destroy(component, container){
     component.destroy();
@@ -14,6 +11,7 @@ void function(){
   describe("test Regular's modular mechanism", function(){
 
     describe("Regular definition" , function(){
+
       it("should preparse template in Regular.extend", function(){
         var Component = Regular.extend({
           template: "aa",
@@ -26,6 +24,7 @@ void function(){
         expect(Component.prototype.computed.len.type).to.equal("expression");
 
       })
+
       it("should accepet [Element] as the template", function(){
         var templateNode = document.createElement("div");
         
@@ -71,7 +70,7 @@ void function(){
 
       it('filter should ioslated to Parent', function(){
         Parent.filter('foo', foo);
-        expect(Children.filter('foo')).to.equal(foo)
+        expect(Children.filter('foo').get).to.equal(foo)
         expect(Root.filter('foo')).to.equal(undefined)
       });
       it('directive should ioslated to Parent', function(){
@@ -120,7 +119,7 @@ void function(){
         var parent = new Parent();
         Parent.use(SomePlugin)
         expect(parent.foo1).to.equal(foo1);
-        expect(Children.filter('foo2')).to.equal(foo2)
+        expect(Children.filter('foo2').get).to.equal(foo2)
         expect(Root.filter('foo2')).to.equal(undefined)
       });
 

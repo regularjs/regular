@@ -36,6 +36,7 @@ Component.filter("format",function(value, format){
  }())
 
 
+
 function destroy(component, container){
   component.destroy();
   expect(container.innerHTML).to.equal('');
@@ -61,8 +62,113 @@ describe("Filter", function(){
       data: {test: +new Date(1407908567273)}
     }).$inject(container);
     expect($("div",container).html()).to.equal('2014-08-13');
-
     destroy(component, container);
+  })
+
+
+  it("filter's context should point to component self", function(){
+    var setValue, getValue;
+
+    Component.filter({
+      "context":{
+        set: function(){
+          setValue = this.a;
+        },
+        get: function(){
+          getValue = this.b;
+        }
+      }
+
+    })
+
+    var component = new Component({a:1,b:2});
+
+    component.$set("name|context");
+    expect(setValue).to.equal(1);
+    component.$get("name|context");
+    expect(getValue).to.equal(2);
+
+  })
+
+  it("use two-way filter", function(){
+    Component.filter({
+      // accept String
+      "split": {
+        get: function(preValue, split){
+          split = split || "-";
+          return preValue.split(split);
+        },
+        set: function(lastValue, split){
+          split = split || "-";
+          return lastValue.join(split);
+        }
+      },
+      // accept Array
+      "prefix": {
+        get: function(preValue, prefix){
+          prefix = prefix || "";
+          return preValue.map(function(value){
+            return prefix + value;
+          })
+        },
+        set: function(lastValue, prefix){
+          prefix = prefix || "";
+          return lastValue.map(function(value){
+            if(value.indexOf(prefix) === 0){
+              value = value.replace(prefix, "");
+            }
+            return value;
+          })
+
+        }
+      }
+    })
+
+    var component = new Component({
+      template: "<div ref=view>{fullname|split:'_'|prefix:'@'}</div>",
+      data: {fullname: 'haibo_zheng'}
+    })
+    expect(component.$refs.view.innerHTML).to.equal("@haibo,@zheng")
+    expect(component.$update("fullname|split:'_'|prefix:'@'", ["@zheng","@haibo"]))
+    expect(component.$refs.view.innerHTML).to.equal("@zheng,@haibo")
+    expect(component.data.fullname).to.equal("zheng_haibo")
+
+  })
+
+
+  it("builtin json", function(){
+    var component = new Component({
+      data: {user: {first: 'zheng', last: 'haibo'}}
+    })
+    if(typeof JSON !== 'undefined' && JSON.stringify){
+      expect(component.$get("user|json")).to.equal('{"first":"zheng","last":"haibo"}')
+    }
+  })
+
+
+  it("fitler with computed", function(){
+    Component.filter({
+      "cfilter": {
+        get: function(value){
+          return value.charAt(0);
+        },
+        set: function(){
+          
+        }
+      }
+    })
+    var component = new Component({
+      computed: {
+        tmp: {
+          set: function(value){
+            this.tmp2 = value;
+          },
+          get: function(){
+            return this.tmp2
+          }
+        }
+      }
+    })
 
   })
   

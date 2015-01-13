@@ -11,5 +11,5 @@ exports.transition = (function(){
 })();
 
 // whether have component in initializing
-exports.exprCache = _.cache(100);
+exports.exprCache = _.cache(1000);
 exports.isRunning = false;

@@ -421,6 +421,7 @@ describe('r-model directive', function(){
 describe('other buildin directive', function(){
   var container = document.createElement('div');
 
+
   it('r-hide should force element to "display:none" when the expression is evaluated to true', function(){
     var template = "<div r-hide={!!user}>Please Login</div>" 
 
