@@ -148,16 +148,17 @@ describe("Filter", function(){
 
   it("fitler with computed", function(){
     Component.filter({
-      "cfilter": {
+      "split2": {
         get: function(value){
-          return value.charAt(0);
+          return value.split("-")
         },
-        set: function(){
-          
+        set: function(value){
+          return  value.join("-");
         }
       }
     })
     var component = new Component({
+      tmp2: "zheng-haibo",
       computed: {
         tmp: {
           set: function(value){
@@ -170,6 +171,18 @@ describe("Filter", function(){
       }
     })
 
+    expect(component.$get("tmp|split2")).to.eql(["zheng","haibo"]);
+    expect(component.tmp2).to.equal("zheng-haibo");
+
+    component.$set("tmp|split2", ["leeluolee", "regularjs"])
+    expect(component.tmp2).to.equal("leeluolee-regularjs");
+    expect(component.$get("tmp|split2")).to.eql(["leeluolee", "regularjs"]);
+
+  })
+
+  it(" LeftHandExpression is setable with filter", function(){
+    var expr = Regular.expression("a+1|format")
+    expect(expr.setbody).to.equal(false)
   })
   
 })

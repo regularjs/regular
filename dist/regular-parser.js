@@ -422,7 +422,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	op.filter = function(){
 	  var left = this.assign();
 	  var ll = this.eat('|');
-	  var buffer = [], setBuffer,
+	  var buffer = [], setBuffer, prefix,
 	    attr = "_t_", 
 	    set = left.set, get, 
 	    tmp = "";
@@ -445,7 +445,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    }while(ll = this.eat('|'));
 	    buffer.push("return " + attr );
-	    setBuffer.push("return " + attr);
+	    setBuffer && setBuffer.push("return " + attr);
 
 	    get =  prefix + buffer.join("") + "})("+left.get+")";
 	    // we call back to value.

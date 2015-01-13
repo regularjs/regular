@@ -332,7 +332,7 @@ op.expr = function(){
 op.filter = function(){
   var left = this.assign();
   var ll = this.eat('|');
-  var buffer = [], setBuffer,
+  var buffer = [], setBuffer, prefix,
     attr = "_t_", 
     set = left.set, get, 
     tmp = "";
@@ -343,7 +343,6 @@ op.filter = function(){
     prefix = "(function(" + attr + "){";
 
     do{
-
       tmp = attr + " = " + ctxName + "._f_('" + this.match('IDENT').value+ "' ).get.call( "+_.ctxName +"," + attr ;
       if(this.eat(':')){
         tmp +=", "+ this.arguments("|").join(",") + ");"
@@ -355,7 +354,7 @@ op.filter = function(){
 
     }while(ll = this.eat('|'));
     buffer.push("return " + attr );
-    setBuffer.push("return " + attr);
+    setBuffer && setBuffer.push("return " + attr);
 
     get =  prefix + buffer.join("") + "})("+left.get+")";
     // we call back to value.
