@@ -433,7 +433,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	    prefix = "(function(" + attr + "){";
 
 	    do{
-
 	      tmp = attr + " = " + ctxName + "._f_('" + this.match('IDENT').value+ "' ).get.call( "+_.ctxName +"," + attr ;
 	      if(this.eat(':')){
 	        tmp +=", "+ this.arguments("|").join(",") + ");"

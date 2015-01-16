@@ -14,7 +14,7 @@ walkers.list = function(ast){
     namespace = this.__ns__;
   // proxy Component to implement list item, so the behaviar is similar with angular;
   var Section =  Regular.extend( { 
-    template: ast.body, 
+    template: ast.body,
     $context: this.$context,
     // proxy the event to $context
     $on: this.$context.$on.bind(this.$context),

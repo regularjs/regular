@@ -10,6 +10,7 @@ var Event = require('./helper/event.js');
 var combine = require('./helper/combine.js');
 var Watcher = require('./helper/watcher.js');
 var parse = require('./helper/parse.js');
+var filter = require('./helper/filter.js');
 var doc = typeof document==='undefined'? {} : document;
 var env = require('./env.js');
 
@@ -491,13 +492,9 @@ Regular.prototype.inject = Regular.prototype.$inject;
 
 
 // only one builtin filter
-Regular.filter("json", function(value, minify){
-  if(typeof JSON !== 'undefined' && JSON.stringify){
-    return JSON.stringify(value);
-  }else{
-    return value
-  }
-})
+
+console.log(filter)
+Regular.filter(filter);
 
 module.exports = Regular;
 

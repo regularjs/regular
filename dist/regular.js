@@ -221,6 +221,7 @@ var Event = require('./helper/event.js');
 var combine = require('./helper/combine.js');
 var Watcher = require('./helper/watcher.js');
 var parse = require('./helper/parse.js');
+var filter = require('./helper/filter.js');
 var doc = typeof document==='undefined'? {} : document;
 var env = require('./env.js');
 
@@ -702,13 +703,9 @@ Regular.prototype.inject = Regular.prototype.$inject;
 
 
 // only one builtin filter
-Regular.filter("json", function(value, minify){
-  if(typeof JSON !== 'undefined' && JSON.stringify){
-    return JSON.stringify(value);
-  }else{
-    return value
-  }
-})
+
+console.log(filter)
+Regular.filter(filter);
 
 module.exports = Regular;
 
@@ -2885,7 +2882,6 @@ op.filter = function(){
     prefix = "(function(" + attr + "){";
 
     do{
-
       tmp = attr + " = " + ctxName + "._f_('" + this.match('IDENT').value+ "' ).get.call( "+_.ctxName +"," + attr ;
       if(this.eat(':')){
         tmp +=", "+ this.arguments("|").join(",") + ");"
@@ -4302,6 +4298,23 @@ var entities = {
 
 
 module.exports  = entities;
+});
+require.register("regularjs/src/helper/filter.js", function(exports, require, module){
+
+var f = module.exports = {};
+
+// json:  two way filter.
+//  - get: JSON.stringify
+//  - set: JSON.parse
+//  - example: title | json
+f.json = {
+  get: function( value ){
+    return typeof JSON !== 'undefined'? JSON.stringify(value): value;
+  },
+  set: function( value ){
+    return typeof JSON !== 'undefined'? JSON.parse(value) : value;
+  }
+}
 });
 require.register("regularjs/src/directive/base.js", function(exports, require, module){
 // Regular
