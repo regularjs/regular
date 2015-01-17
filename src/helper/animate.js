@@ -54,6 +54,7 @@ animate.inject = function( node, refer ,direction, callback ){
     }
     dom.inject(fragment, refer, direction);
 
+    // if all nodes is done, we call the callback
     var enterCallback = function (){
       count++;
       if( count === len ) callback();
@@ -73,11 +74,6 @@ animate.inject = function( node, refer ,direction, callback ){
     }else{
       callback();
     }
-    // if( node.nodeType === 1 && callback !== false ){
-    //   return startClassAnimate( node, 'r-enter', callback , 2);
-    // }
-    // ignored else
-    
   }
 }
 
@@ -106,7 +102,6 @@ animate.startClassAnimate = function ( node, className,  callback, mode ){
   if( (!animationEnd && !transitionEnd) || env.isRunning ){
     return callback();
   }
-
 
   onceAnim = _.once(function onAnimateEnd(){
     if(tid) clearTimeout(tid);

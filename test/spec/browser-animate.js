@@ -1,69 +1,70 @@
-// void function(){
-//   var Regular = require_lib("index.js")
-//   function destroy(component, container){
-//     component.destroy();
-//     expect(container.innerHTML).to.equal('');
-//   }
+void function(){
+  var Regular = require_lib("index.js")
+  function destroy(component, container){
+    component.destroy();
+    expect(container.innerHTML).to.equal('');
+  }
 
-//   describe("Animation", function(){
-//     var Component = Regular.extend();
-//     describe("Basic", function(){
-//       var container = document.createElement("div");
-//       before(function(){
-//         document.body.appendChild( container );
-//       });
-//       after(function(){
-//         document.body.removeChild( container );
-//       });
-//       it("buildin Animation should available for SubComponent", function(){
+  describe("Animation", function(){
+    var Component = Regular.extend();
+    describe("Basic", function(){
+      var container = document.createElement("div");
+      before(function(){
+        document.body.appendChild( container );
+      });
+      after(function(){
+        document.body.removeChild( container );
+      });
 
-//         var Component2 = Component.extend();
+      it("buildin Animation should available for SubComponent", function(){
 
-//         expect(Component2.animation("wait")).to.be.a("function");
-//         expect(Component2.animation("class")).to.be.a("function");
-//         expect(Component2.animation("call")).to.be.a("function");
+        var Component2 = Component.extend();
 
-//       })
-//       it("extension is not available for Parent, but for SubComponent", function(){
+        expect(Component2.animation("wait")).to.be.a("function");
+        expect(Component2.animation("class")).to.be.a("function");
+        expect(Component2.animation("call")).to.be.a("function");
 
-//         function foo(){}
+      })
+      it("extension is not available for Parent, but for SubComponent", function(){
 
-//         Component.animation("style3", foo);
+        function foo(){}
 
-//         var Component2 = Component.extend();
+        Component.animation("style3", foo);
 
-//         expect(Component2.animation("style3")).to.equal(foo);
-//         expect(Regular.animation("style3")).to.equal(undefined);
+        var Component2 = Component.extend();
 
-//       })
+        expect(Component2.animation("style3")).to.equal(foo);
+        expect(Regular.animation("style3")).to.equal(undefined);
 
-//       // it("animation can triggered by event", function(done){
-//       //   var component = new Regular({
-//       //     template: "<div r-animation='on:click; class: animated;'></div>"
-//       //   }).$inject(container);
+      })
 
-
-//       //   var node =  nes.one('div', container)
-
-//       //   dispatchMockEvent(nes.one('div', container), 'click');
-
-//       //   Regular.dom.nextReflow(function(){
-
-//       //     expect(node.className ).to.equal("animated");
-
-//       //     Regular.dom.nextReflow(function(){
-
-//       //       expect(node.className ).to.equal("");
-
-//       //       destroy(component, container);
-//       //       done();
-//       //     })
-//       //   })
+      // it("animation can triggered by event", function(done){
+      //   var component = new Regular({
+      //     template: "<div r-animation='on:click; class: animated;'></div>"
+      //   }).$inject(container);
 
 
+      //   var node =  nes.one('div', container)
+
+      //   dispatchMockEvent(nes.one('div', container), 'click');
+
+      //   Regular.dom.nextReflow(function(){
+
+      //     expect(node.className ).to.equal("animated");
+
+      //     Regular.dom.nextReflow(function(){
+
+      //       expect(node.className ).to.equal("");
+
+      //       destroy(component, container);
+      //       done();
+      //     })
+      //   })
 
 
-//       // })
+
+
+      })
 
 //       // it("animation can be triggered by custom event", function(done){
 
@@ -165,5 +166,5 @@
 
 //       })
 //     })
-//   })
-// }()
+  })
+}()
