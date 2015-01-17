@@ -84,15 +84,18 @@ animate.inject = function( node, refer ,direction, callback ){
  * @return {[type]}            [description]
  */
 animate.remove = function(node, callback){
-  callback = callback || _.noop;
   if(node.onleave){
     node.onleave(function(){
-      dom.remove(node);
+      removeDone(node, callback)
     })
   }else{
-    dom.remove(node) 
-    callback && callback();
+    removeDone(node, callback)
   }
+}
+
+var removeDone = function (node, callback){
+    dom.remove(node);
+    callback && callback();
 }
 
 

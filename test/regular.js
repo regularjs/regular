@@ -3830,15 +3830,18 @@ animate.inject = function( node, refer ,direction, callback ){
  * @return {[type]}            [description]
  */
 animate.remove = function(node, callback){
-  callback = callback || _.noop;
   if(node.onleave){
     node.onleave(function(){
-      dom.remove(node);
+      removeDone(node, callback)
     })
   }else{
-    dom.remove(node) 
-    callback && callback();
+    removeDone(node, callback)
   }
+}
+
+var removeDone = function (node, callback){
+    dom.remove(node);
+    callback && callback();
 }
 
 
@@ -4758,9 +4761,12 @@ function processAnimate( element, value ){
       }else if(param === "enter"){
         element.onenter = seed.start;
       }else{
-        destroy = this._handleEvent( element, param, seed.start );
+        // destroy = this._handleEvent( element, param, seed.start );
+        this.$on(param, seed.start)
+        destroy = this.$off.bind(this, param, seed.start);
       }
 
+      // @TODO add
       destroies.push( destroy? destroy : animationDestroy(element) );
       destroy = null;
       continue

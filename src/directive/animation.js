@@ -180,9 +180,12 @@ function processAnimate( element, value ){
       }else if(param === "enter"){
         element.onenter = seed.start;
       }else{
-        destroy = this._handleEvent( element, param, seed.start );
+        // destroy = this._handleEvent( element, param, seed.start );
+        this.$on(param, seed.start)
+        destroy = this.$off.bind(this, param, seed.start);
       }
 
+      // @TODO add
       destroies.push( destroy? destroy : animationDestroy(element) );
       destroy = null;
       continue

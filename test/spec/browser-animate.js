@@ -1,13 +1,27 @@
 void function(){
-  var Regular = require_lib("index.js")
+  var Regular = require_lib("index.js");
+  var animate = require_lib("helper/animate.js");
+  var dom = require_lib("dom.js");
   function destroy(component, container){
     component.destroy();
     expect(container.innerHTML).to.equal('');
   }
 
+
+  // insert a test css
+  var sheet = (function() {
+    // Create the <style> tag
+    var style = document.createElement("style");
+
+    style.appendChild(document.createTextNode(""));
+    document.head.appendChild(style);
+
+    return style.sheet;
+  })();
+
   describe("Animation", function(){
     var Component = Regular.extend();
-    describe("Basic", function(){
+    describe("helper.animate ", function(){
       var container = document.createElement("div");
       before(function(){
         document.body.appendChild( container );
@@ -15,28 +29,6 @@ void function(){
       after(function(){
         document.body.removeChild( container );
       });
-
-      it("buildin Animation should available for SubComponent", function(){
-
-        var Component2 = Component.extend();
-
-        expect(Component2.animation("wait")).to.be.a("function");
-        expect(Component2.animation("class")).to.be.a("function");
-        expect(Component2.animation("call")).to.be.a("function");
-
-      })
-      it("extension is not available for Parent, but for SubComponent", function(){
-
-        function foo(){}
-
-        Component.animation("style3", foo);
-
-        var Component2 = Component.extend();
-
-        expect(Component2.animation("style3")).to.equal(foo);
-        expect(Regular.animation("style3")).to.equal(undefined);
-
-      })
 
       // it("animation can triggered by event", function(done){
       //   var component = new Regular({
@@ -61,10 +53,88 @@ void function(){
       //     })
       //   })
 
+      it("animate.inject", function(done){
+        var div1 =document.createElement("div");
+        var div2 =document.createElement("div");
 
-
+        animate.inject(div1, div2, 'bottom', function(){
+          expect(div2.getElementsByTagName("div")[0]).to.equal(div1);
+          done()
+        })
 
       })
+
+      it("animate.inject%animate.remove with callback", function(done){
+        var div1 =document.createElement("div");
+        var div2 =document.createElement("div");
+        var enter = false;
+        div1.onenter= function(cb){
+          enter = true
+          cb()
+        }
+
+        animate.inject(div1, div2, 'bottom', function(){
+          expect(div2.getElementsByTagName("div")[0]).to.equal(div1);
+          div1.enter = true;
+          div1.onenter = null;
+          div1.onleave = function(cb){
+            expect(div2.getElementsByTagName("div").length).to.equal(1);
+            cb();
+          }
+          animate.remove(div1, function(){
+            expect(div2.getElementsByTagName("div").length).to.equal(0);
+            done()
+          })
+        })
+
+      })
+
+      it("animate.startClass with no animation and transition", function(done){
+        var div1 = document.createElement("div");
+        animate.startClassAnimate(div1, 'bouceOut', function(){
+          expect(dom.hasClass(div1, 'bouceOut')).to.equal(false);
+          done()
+        })
+        // will add nextFlow
+        expect(dom.hasClass(div1, 'bouceOut')).to.equal(false)
+      })
+      it("animate.startClass with no transition mode 2", function(done){
+        var div1 = document.createElement("div");
+        animate.startClassAnimate(div1, 'bouceOut', function(){
+          expect(dom.hasClass(div1, 'bouceOut-active')).to.equal(false);
+          expect(dom.hasClass(div1, 'bouceOut')).to.equal(false);
+          done()
+        }, 2)
+        // will add nextFlow
+        expect(dom.hasClass(div1, 'bouceOut')).to.equal(true)
+        expect(dom.hasClass(div1, 'bouceOut-active')).to.equal(false)
+      })
+      it("animate.startClass with no transition in mode 3", function(done){
+        var div1 = document.createElement("div");
+        animate.startClassAnimate(div1, 'bouceOut', function(){
+          expect(dom.hasClass(div1, 'bouceOut')).to.equal(true);
+          done()
+        }, 3)
+        // will add nextFlow
+        expect(dom.hasClass(div1, 'bouceOut')).to.equal(false)
+      })
+      it("animate.startStyle with no transition", function(done){
+        var div1 = document.createElement("div");
+        animate.startStyleAnimate(div1,{width: '10px',height:"10px"}, function(){
+          expect(div1.style.width).to.equal("10px")
+          expect(div1.style.height).to.equal("10px")
+          done()
+        })
+        // will add nextFlow
+        expect(div1.style.width).to.not.equal("10px")
+        expect(div1.style.height).to.not.equal("10px")
+      })
+
+      it("animation.event should bount emit", function(done){
+        
+      })
+    })
+
 
 //       // it("animation can be triggered by custom event", function(done){
 
