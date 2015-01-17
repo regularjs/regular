@@ -493,7 +493,6 @@ Regular.prototype.inject = Regular.prototype.$inject;
 
 // only one builtin filter
 
-console.log(filter)
 Regular.filter(filter);
 
 module.exports = Regular;
