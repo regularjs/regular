@@ -117,32 +117,13 @@ See more on [Guide: Quirk Start](http://regularjs.github.io/guide/en/getting-sta
 
 ## Resources
 
-* __[regular's Offcial Guide](http://regularjs.github.io/guide/)__(use gitbook)
 * __[Offcial Site ](http://regularjs.github.io)__
-* __[demo on codepen.io](http://codepen.io/search?q=regularjs&limit=all&depth=everything&show_forks=false)__
+* __[Reference ](http://regularjs.github.io/reference)__
 
 
 ## Browser Compatibility
 
 IE7+ and other modern browser. 
-
-## Community
-
-* If you find bugs or have suggestion, please feel free to open [an issue](https://github.com/regularjs/regular/issues)
-
-* Ask any questions on [Stack Overflow](http://stackoverflow.com/questions/tagged/regularjs) with tag `regularjs`. 
-
-* Social 
-  1. twitter: follow the [@regularjs](https://twitter.com/regularjs). 
-  3. gitter: talk on [![Gitter chat](https://badges.gitter.im/regularjs/regular.png)](https://gitter.im/regularjs/regular)
-  2. weibo: [@拴萝卜的棍子](http://weibo.com/luobolee)
-
-## Contribute
-
-__regularjs is still in heavily development__, helping us with feedback. there is some recommend to contributor.
-
-* Please [open issue](https://github.com/regularjs/regular/issues) before sending pull request, 
-* if needed, add your testcase at `test/specs` folder. always make sure the `gulp test` is passed, and the `test/runner/index.html` is passed in every target browser (if you doesn't have some browser installed that list in [gulpfile's karmaConfig](https://github.com/regularjs/regular/blob/master/gulpfile.js#L30))
 
 
 ## installation
@@ -187,11 +168,29 @@ var Regular = require('regularjs/regular');
 2. [regular.min.js](https://rawgit.com/regularjs/regular/master/dist/regular.min.js)
 
 
-## Who are use ?
+## Who are using ?
 
 1. [NetEase](https://github.com/NetEase) : operator of famous [www.163.com](http://www.163.com).
 
 
+
+## Community
+
+* If you find bugs or have suggestion, please feel free to open [an issue](https://github.com/regularjs/regular/issues)
+
+* Ask any questions on [Stack Overflow](http://stackoverflow.com/questions/tagged/regularjs) with tag `regularjs`. 
+
+* Social 
+  1. twitter: follow the [@regularjs](https://twitter.com/regularjs). 
+  3. gitter: talk on [![Gitter chat](https://badges.gitter.im/regularjs/regular.png)](https://gitter.im/regularjs/regular)
+  2. weibo: [@拴萝卜的棍子](http://weibo.com/luobolee)
+
+## Contribute
+
+__regularjs is still in heavily development__, helping us with feedback. there is some recommend to contributor.
+
+* Please [open issue](https://github.com/regularjs/regular/issues) before sending pull request, 
+* if needed, add your testcase at `test/specs` folder. always make sure the `gulp test` is passed, and the `test/runner/index.html` is passed in every target browser (if you doesn't have some browser installed that list in [gulpfile's karmaConfig](https://github.com/regularjs/regular/blob/master/gulpfile.js#L30))
 
 
 
