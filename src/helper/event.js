@@ -1,7 +1,6 @@
 // simplest event emitter 60 lines
 // ===============================
 var slice = [].slice, _ = require("../util.js");
-var buildin = ['$inject', "$init", "$destroy", "$update"];
 var API = {
     $on: function(event, fn) {
         if(typeof event === "object"){
@@ -48,24 +47,17 @@ var API = {
         var type = event;
 
         if(!handles) return context;
-        // @deprecated 0.3.0
-        // will be removed when completely remove the old events('destroy' 'init') support
-
-        /*@remove 0.4.0*/
-        var isBuildin = ~buildin.indexOf(type);
         if(calls = handles[type.slice(1)]){
             for (var j = 0, len = calls.length; j < len; j++) {
                 calls[j].apply(context, args)
             }
         }
-        /*/remove*/
-
         if (!(calls = handles[type])) return context;
         for (var i = 0, len = calls.length; i < len; i++) {
             calls[i].apply(context, args)
         }
         // if(calls.length) context.$update();
-        return context;
+        return context;j啊
     },
     // capture  event
     $broadcast: function(){

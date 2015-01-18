@@ -145,6 +145,48 @@ __regularjs is still in heavily development__, helping us with feedback. there i
 * if needed, add your testcase at `test/specs` folder. always make sure the `gulp test` is passed, and the `test/runner/index.html` is passed in every target browser (if you doesn't have some browser installed that list in [gulpfile's karmaConfig](https://github.com/regularjs/regular/blob/master/gulpfile.js#L30))
 
 
+## installation
+
+###bower
+
+```javascript
+bower install regularjs
+```
+
+`dist/regular.js` have been packaged as a standard UMD, you can use it in AMD、commonjs and global.
+
+### npm (browserify or other based on commonjs)
+
+```js
+npm install regularjs
+```
+
+use
+
+```js
+var Regular = require('regularjs');
+```
+
+
+### component
+
+```js
+component install regularjs/regular
+```
+use
+
+```js
+var Regular = require('regularjs/regular');
+```
+
+
+
+### Directly download
+
+1. [regular.js](https://rawgit.com/regularjs/regular/master/dist/regular.js)
+2. [regular.min.js](https://rawgit.com/regularjs/regular/master/dist/regular.min.js)
+
+
 ## Who are use ?
 
 1. [NetEase](https://github.com/NetEase) : operator of famous [www.163.com](http://www.163.com).
