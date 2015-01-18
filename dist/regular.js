@@ -704,7 +704,6 @@ Regular.prototype.inject = Regular.prototype.$inject;
 
 // only one builtin filter
 
-console.log(filter)
 Regular.filter(filter);
 
 module.exports = Regular;
@@ -1306,7 +1305,7 @@ walkers.list = function(ast){
     namespace = this.__ns__;
   // proxy Component to implement list item, so the behaviar is similar with angular;
   var Section =  Regular.extend( { 
-    template: ast.body, 
+    template: ast.body,
     $context: this.$context,
     // proxy the event to $context
     $on: this.$context.$on.bind(this.$context),
@@ -4313,6 +4312,33 @@ f.json = {
   },
   set: function( value ){
     return typeof JSON !== 'undefined'? JSON.parse(value) : value;
+  }
+}
+
+f.last = function(arr){
+  return arr && arr[arr.length - 1];
+}
+
+f.every = {
+  get: function(arr, key){
+    key = key || 'checked';
+    arr = arr || [];
+
+    var len = arr.length;
+    for(;len--;){
+      if( !arr[len][key] ) return false;
+    }
+    return true
+  },
+  set: function(checkAll, key, arr){
+    arr = arr || [];
+    checkAll = !!checkAll;
+
+    var len = arr.length;
+    for(;len--;){
+      arr[len][key] = checkAll;
+    }
+    return arr;
   }
 }
 });

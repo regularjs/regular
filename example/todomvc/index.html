@@ -22,8 +22,7 @@
       </div>
       {#if !!items.length}
         <section id="main">
-          <!-- why not use r-model directly, beacuse the expression have not set function, so use checked with on-change -->
-          <input id="toggle-all" type="checkbox" name='toggle' on-change={this.toggleAll(items.length === this.getList('completed').length)} checked={items.length === this.getList('completed').length }>
+          <input id="toggle-all" type="checkbox" name='toggle' r-model={items| every: 'completed', items}>
           <label for="toggle-all">Mark all as complete</label>
           <ul id="todo-list">
             {#list this.getList(filter) as i}
@@ -47,13 +46,6 @@
       {/if}
     </script>
 
-<script src="https://rawgit.com/regularjs/regular/master/dist/regular.js"></script>
-
-<script>
-  
-
-</script>
-    
 
 <script src="../../dist/regular.js"></script>
 
@@ -109,7 +101,8 @@
       this.data.items.splice(index,1); 
     }
   })
-  
+
+
   // // localStorage stuff
   if(window.localStorage && window.JSON){
     var items = localStorage && localStorage.getItem('items');
