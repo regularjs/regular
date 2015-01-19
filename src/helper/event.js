@@ -57,7 +57,7 @@ var API = {
             calls[i].apply(context, args)
         }
         // if(calls.length) context.$update();
-        return context;j啊
+        return context;
     },
     // capture  event
     $broadcast: function(){
