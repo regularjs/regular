@@ -75,7 +75,7 @@ we need refactor Note to make it composable.
 var Note = Regular.extend({
   name: 'note',  // register component during the definition of Component
   template: 
-   "<input r-model={draft}> <button  on-enter={this.post()}> post</button>", 
+   "<input r-model={draft}> <button  on-click={this.post()}> post</button>", 
   post: function(){
     var data = this.data;
     this.$emit('post', data.draft);
