@@ -256,8 +256,8 @@ var Regular = function(options){
 
   template = this.template;
 
-  // template is a string (len < 40). we will find it container first
-  if((typeof template === 'string' && template.length < 40) && (node = dom.find(template))) {
+  // template is a string (len < 16). we will find it container first
+  if((typeof template === 'string' && template.length < 16) && (node = dom.find(template))) {
     template = node.innerHTML;
   }
   // if template is a xml
@@ -314,7 +314,7 @@ _.extend(Regular, {
     // this.prototype.template = dom.initTemplate(o)
     if(template = o.template){
       var node, name;
-      if( typeof template === 'string' && template.length < 20 && ( node = dom.find( template )) ){
+      if( typeof template === 'string' && template.length < 16 && ( node = dom.find( template )) ){
         template = node.innerHTML;
         if(name = dom.attr(node, 'name')) Regular.component(name, this);
       }
