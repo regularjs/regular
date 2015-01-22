@@ -99,7 +99,8 @@ _.extend(Regular, {
     var template;
     this.__after__ = supr.__after__;
 
-    if(o.name) supr.component(o.name, this);
+    // use name make the component global
+    if(o.name) Regular.component(o.name, this);
     // this.prototype.template = dom.initTemplate(o)
     if(template = o.template){
       var node, name;
