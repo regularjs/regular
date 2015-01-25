@@ -130,111 +130,170 @@ void function(){
         expect(div1.style.height).to.not.equal("10px")
       })
 
-      it("animation.event should bount emit", function(done){
-        
+      // it("animation.event should bind emit", function(done){
+      //   var component = new Component({
+      //     template: "<div r-animation='on: tap; class: animated;'></div>"
+      //   }).$inject(container);
+      // })
+    })
+
+    describe("Animator", function(){
+
+      var container = document.createElement("div");
+      before(function(){
+        document.body.appendChild( container );
+      });
+      after(function(){
+        document.body.removeChild( container );
+      });
+
+      it("animator: wait", function(done){
+        var wait = Regular.animation("wait");
+        var complete = false;
+        wait({param: 100})(function(){
+          complete= true;
+          done();
+        })
+
+        expect(complete).to.equal(false);
+      })
+      it("animator: class", function(done){
+        var element = document.createElement("div");
+        var klass = Regular.animation("class");
+        klass({
+          element: element,
+          param: "bouceOut animated"})(function(){
+          expect(element.className).to.equal("");
+          done();
+        })
+
+        dom.nextReflow(function(){
+          expect(element.className).to.equal("bouceOut animated");
+        })
+      })
+      it("animator: class,2", function(done){
+        var element = document.createElement("div");
+        var klass = Regular.animation("class");
+
+        klass({
+          element: element,
+          param: "bouceOut animated,2"})(function(){
+          expect(element.className).to.equal("");
+          done();
+        })
+
+        expect(element.className).to.equal("bouceOut animated");
+
+        dom.nextReflow(function(){
+          expect(dom.hasClass(element, "bouceOut-active")).to.equal(true);
+          expect(dom.hasClass(element, "animated-active")).to.equal(true);
+          expect(dom.hasClass(element, "bouceOut")).to.equal(true);
+          expect(dom.hasClass(element, "animated")).to.equal(true);
+        })
+
+      })
+      it("animator: class, 3", function(done){
+        var element = document.createElement("div");
+        var klass = Regular.animation("class");
+
+        klass({
+          element: element,
+          param: "bouceOut animated,3"})(function(){
+          expect(element.className).to.equal("bouceOut animated");
+          done();
+        })
+        expect(element.className).to.equal("");
+        dom.nextReflow(function(){
+          expect(element.className).to.equal("bouceOut animated");
+        })
+      })
+      it("animator: style", function(done){
+        var element = document.createElement("div");
+        var style = Regular.animation("style");
+        style({
+          element: element,
+          param: "left 10px, right 20px"
+        })(function(){
+          done();
+          expect(element.style.left).to.equal("10px");
+          expect(element.style.right).to.equal("20px");
+        })
+        expect(element.style.left).to.equal("");
+        expect(element.style.right).to.equal("");
+        dom.nextReflow(function(){
+          expect(element.style.left).to.equal("10px");
+          expect(element.style.right).to.equal("20px");
+        })
+      })
+      it("animator: call", function(done){
+        var element = document.createElement("div");
+        var call = Regular.animation("call");
+        var component = new Component({});
+        call.call(component, {
+          element: element,
+          param: "name=1"
+        })(function(){
+          expect(component.data.name).to.equal(1);
+          done();
+        })
+      })
+      it("animator: emit", function(done){
+        var emit = Regular.animation("emit");
+
+        var toasted = false;
+        var component = new Component({
+          data: {hello: "leeluolee"},
+          events: {
+            toast: function(param){
+              toasted = param
+            }
+          }
+        })
+        emit.call(component,{
+          param: "toast, hello",
+        })(function(){
+          expect(toasted).to.equal("leeluolee");
+          done();
+        })
+      })
+
+    })
+
+    describe("processAnimate", function(){
+      var processAnimate = Regular.directive("r-animation");
+
+      it("'on' should addListener on component but not element", function(done){
+        var element = document.createElement("div");
+        var component = new Component({
+          toastOver: function(){
+            expect(dom.hasClass(element, 'animated')).to.equal(false);
+            done()
+          }
+        });
+        processAnimate.link.call(component, element, "on: toast; class: animated; call: this.toastOver()");
+        component.$emit("toast");
+        expect(dom.hasClass(element, 'animated')).to.equal(false);
+        dom.nextReflow(function(){
+          expect(dom.hasClass(element, 'animated')).to.equal(true);
+        })
+      })
+      it("'when' should add a watcher", function(done){
+        var element = document.createElement("div");
+        var component = new Component({
+          toastOver: function(){
+            expect(dom.hasClass(element, 'animated')).to.equal(false);
+            done()
+          }
+        });
+        processAnimate.link.call(component, element, "when: toast==true; class: animated; call: this.toastOver()");
+        component.data.toast = true;
+        component.$update();
+        expect(dom.hasClass(element, 'animated')).to.equal(false);
+        dom.nextReflow(function(){
+          expect(dom.hasClass(element, 'animated')).to.equal(true);
+        })
       })
     })
 
-
-//       // it("animation can be triggered by custom event", function(done){
-
-//       //   var Component = Regular.extend()
-//       //     .event("tap", function(elem, fire){
-//       //       Regular.dom.on(elem, "click", fire)
-//       //       return function(){
-//       //         Regular.dom.off(elem, "click", fire);
-//       //       }
-//       //     })
-
-//       //   var component = new Component({
-//       //     template: "<div r-animation='on: tap; class: animated;'></div>"
-//       //   }).$inject(container);
-
-//       //   dispatchMockEvent(nes.one('div', container), 'click');
-
-//       //   Regular.dom.nextReflow(function(){
-
-//       //     expect(nes.one("div", container).className ).to.equal("animated");
-
-//       //     Regular.dom.nextReflow(function(){
-
-//       //       expect(nes.one("div", container).className ).to.equal("");
-
-//       //       destroy(component, container);
-//       //       done();
-//       //     })
-//       //   })
-
-//       // })
-//     });
-
-//     describe("Class", function(){
-
-//       var container = document.createElement("div");
-//       before(function(){
-//         document.body.appendChild( container );
-//       });
-//       after(function(){
-//         document.body.removeChild( container );
-//       });
-
-//       // it("class should add then remove in next frame.", function(done){
-//       //   var component = new Regular({
-//       //     template: "<div r-animation='when:test; class: animated;'></div>"
-//       //   }).$inject(container);
-
-//       //   component.$update("test", true);
-//       //   Regular.dom.nextReflow(function(){
-//       //     expect(nes.one("div", container).className ).to.equal("animated");
-//       //     Regular.dom.nextReflow(function(){
-//       //       expect(nes.one("div", container).className ).to.equal("");
-//       //       destroy(component, container);
-
-//       //       done();
-//       //     })
-//       //   })
-        
-//       // })
-//     })
-//     describe("Style", function(){
-//       var container = document.createElement("div");
-//       before(function(){
-//         document.body.appendChild( container );
-//       });
-//       after(function(){
-//         document.body.removeChild( container );
-//       });
-//       it("style should add style in nextFrame", function(done){
-
-//         var component = new Regular({
-//           template: "<div r-animation='when:test; style: left 10px;'></div>"
-//         }).$inject(container);
-
-//         component.$update("test", true);
-//         expect(nes.one("div", container).style.left).to.equal("");
-//         Regular.dom.nextReflow(function(){
-//           expect(nes.one("div", container).style.left ).to.equal("10px");
-//           destroy(component, container);
-//           done();
-//         })
-//       })
-
-//       it("style can add mulity style in nextFrame", function(done){
-//         var component = new Regular({
-//           template: "<div r-animation='when:test; style: left 10px;'></div>"
-//         }).$inject(container);
-
-//         var node = nes.one("div", container);
-//         component.$update("test", true);
-//         expect(node.style.left).to.equal("");
-//         Regular.dom.nextReflow(function(){
-//           expect(node.style.left ).to.equal("10px");
-//           destroy(component, container);
-
-//           done();
-//         })
-
-//       })
-//     })
   })
 }()

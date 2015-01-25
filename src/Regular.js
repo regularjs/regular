@@ -488,7 +488,10 @@ Regular.implement({
   }
 });
 
-Regular.prototype.inject = Regular.prototype.$inject;
+Regular.prototype.inject = function(){
+  _.log("use $inject instead of inject", "error");
+  this.$inejct.apply(this, arguments);
+}
 
 
 // only one builtin filter
