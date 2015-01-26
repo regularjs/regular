@@ -310,7 +310,8 @@ _.extend(Regular, {
     var template;
     this.__after__ = supr.__after__;
 
-    if(o.name) supr.component(o.name, this);
+    // use name make the component global
+    if(o.name) Regular.component(o.name, this);
     // this.prototype.template = dom.initTemplate(o)
     if(template = o.template){
       var node, name;
@@ -4460,9 +4461,7 @@ Regular.directive("r-model", function(elem, value){
 
 function initSelect( elem, parsed){
   var self = this;
-  var inProgress = false;
   this.$watch(parsed, function(newValue){
-    if(inProgress) return;
     var children = _.slice(elem.getElementsByTagName('option'))
     children.forEach(function(node, index){
       if(node.value == newValue){
@@ -4473,9 +4472,8 @@ function initSelect( elem, parsed){
 
   function handler(){
     parsed.set(self, this.value);
-    inProgress = true;
+    parsed.last = this.value;
     self.$update();
-    inProgress = false;
   }
 
   dom.on(elem, "change", handler);
@@ -4491,10 +4489,8 @@ function initSelect( elem, parsed){
 // input,textarea binding
 
 function initText(elem, parsed){
-  var inProgress = false;
   var self = this;
   this.$watch(parsed, function(newValue){
-    if(inProgress){ return; }
     if(elem.value !== newValue) elem.value = newValue == null? "": "" + newValue;
   });
 
@@ -4505,16 +4501,14 @@ function initText(elem, parsed){
       _.nextTick(function(){
         var value = that.value
         parsed.set(self, value);
-        inProgress = true;
+        parsed.last = value;
         self.$update();
       })
     }else{
         var value = that.value
         parsed.set(self, value);
-        inProgress = true;
         self.$update();
     }
-    inProgress = false;
   };
 
   if(dom.msie !== 9 && "oninput" in dom.tNode ){
@@ -4544,19 +4538,16 @@ function initText(elem, parsed){
 // input:checkbox  binding
 
 function initCheckBox(elem, parsed){
-  var inProgress = false;
   var self = this;
   this.$watch(parsed, function(newValue){
-    if(inProgress) return;
     dom.attr(elem, 'checked', !!newValue);
   });
 
   var handler = function handler(){
     var value = this.checked;
     parsed.set(self, value);
-    inProgress= true;
+    parsed.last = value;
     self.$update();
-    inProgress = false;
   }
   if(parsed.set) dom.on(elem, "change", handler)
 
@@ -4574,9 +4565,7 @@ function initCheckBox(elem, parsed){
 
 function initRadio(elem, parsed){
   var self = this;
-  var inProgress = false;
   this.$watch(parsed, function( newValue ){
-    if(inProgress) return;
     if(newValue == elem.value) elem.checked = true;
     else elem.checked = false;
   });
@@ -4585,14 +4574,15 @@ function initRadio(elem, parsed){
   var handler = function handler(){
     var value = this.value;
     parsed.set(self, value);
-    inProgress= true;
+    parsed.last = value;
     self.$update();
-    inProgress = false;
   }
   if(parsed.set) dom.on(elem, "change", handler)
   // beacuse only after compile(init), the dom structrue is exsit. 
   if(parsed.get(self) === undefined){
-    if(elem.checked) parsed.set(self, elem.value);
+    if(elem.checked) {
+      parsed.set(self, elem.value);
+    }
   }
 
   return function destroy(){
