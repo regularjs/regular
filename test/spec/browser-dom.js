@@ -195,8 +195,8 @@ void function(){
           hello2: function($event){
             $event.preventDefault();
             expect($event.origin).to.equal(this.$refs.div);
-            done();
             document.body.removeChild(container);
+            done();
             this.destroy();
           }
         }).$inject(container);
