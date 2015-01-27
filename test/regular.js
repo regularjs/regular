@@ -1884,7 +1884,9 @@ dom.attr = function(node, name, value){
 dom.on = function(node, type, handler){
   var types = type.split(' ');
   handler.real = function(ev){
-    handler.call(node, new Event(ev));
+    var $event = new Event(ev);
+    $event.origin = node;
+    handler.call(node, $event);
   }
   types.forEach(function(type){
     type = fixEventName(node, type);

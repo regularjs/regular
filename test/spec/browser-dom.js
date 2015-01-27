@@ -186,6 +186,23 @@ void function(){
 
       })
 
+      it("$event.origin should point to the element that bingding the event", function(done){
+        var container = document.createElement('div');
+        document.body.appendChild(container);
+        var component = new Regular({
+          template: "<div on-click=hello2 on-click={this.hello2($event)} ref=div > <a ref=a href='javascript:;'>haha</a></div>",
+          data: { test: 0 , name: 'hahah'},
+          hello2: function($event){
+            $event.preventDefault();
+            expect($event.origin).to.equal(this.$refs.div);
+            done();
+            document.body.removeChild(container);
+            this.destroy();
+          }
+        }).$inject(container);
+        dispatchMockEvent(component.$refs.a, "click");
+      })
+
     })
 
     describe("delegate Event via `delegate-*`", function(){
