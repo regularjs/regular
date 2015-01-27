@@ -308,7 +308,8 @@ _.extend(Regular, {
     var template;
     this.__after__ = supr.__after__;
 
-    if(o.name) supr.component(o.name, this);
+    // use name make the component global
+    if(o.name) Regular.component(o.name, this);
     // this.prototype.template = dom.initTemplate(o)
     if(template = o.template){
       var node, name;
@@ -697,7 +698,10 @@ Regular.implement({
   }
 });
 
-Regular.prototype.inject = Regular.prototype.$inject;
+Regular.prototype.inject = function(){
+  _.log("use $inject instead of inject", "error");
+  this.$inejct.apply(this, arguments);
+}
 
 
 // only one builtin filter
@@ -3792,6 +3796,7 @@ animate.inject = function( node, refer ,direction, callback ){
     }
     dom.inject(fragment, refer, direction);
 
+    // if all nodes is done, we call the callback
     var enterCallback = function (){
       count++;
       if( count === len ) callback();
@@ -3811,11 +3816,6 @@ animate.inject = function( node, refer ,direction, callback ){
     }else{
       callback();
     }
-    // if( node.nodeType === 1 && callback !== false ){
-    //   return startClassAnimate( node, 'r-enter', callback , 2);
-    // }
-    // ignored else
-    
   }
 }
 
@@ -3826,15 +3826,18 @@ animate.inject = function( node, refer ,direction, callback ){
  * @return {[type]}            [description]
  */
 animate.remove = function(node, callback){
-  callback = callback || _.noop;
   if(node.onleave){
     node.onleave(function(){
-      dom.remove(node);
+      removeDone(node, callback)
     })
   }else{
-    dom.remove(node) 
-    callback && callback();
+    removeDone(node, callback)
   }
+}
+
+var removeDone = function (node, callback){
+    dom.remove(node);
+    callback && callback();
 }
 
 
@@ -3844,7 +3847,6 @@ animate.startClassAnimate = function ( node, className,  callback, mode ){
   if( (!animationEnd && !transitionEnd) || env.isRunning ){
     return callback();
   }
-
 
   onceAnim = _.once(function onAnimateEnd(){
     if(tid) clearTimeout(tid);
@@ -4460,7 +4462,6 @@ function initSelect( elem, parsed){
   var self = this;
   var inProgress = false;
   this.$watch(parsed, function(newValue){
-    if(inProgress) return;
     var children = _.slice(elem.getElementsByTagName('option'))
     children.forEach(function(node, index){
       if(node.value == newValue){
@@ -4471,9 +4472,7 @@ function initSelect( elem, parsed){
 
   function handler(){
     parsed.set(self, this.value);
-    inProgress = true;
     self.$update();
-    inProgress = false;
   }
 
   dom.on(elem, "change", handler);
@@ -4698,13 +4697,19 @@ Regular.animation({
   },
   "emit": function(step){
     var param = step.param;
+    var tmp = param.split(","),
+      evt = tmp[0] || "",
+      args = tmp[1]? Regular.expression(tmp[1]).get: null;
+
+    if(!evt) throw "you shoud specified a eventname in emit command";
+
     var self = this;
     return function(done){
-      self.$emit(param, step);
+      self.$emit(evt, args? args(self) : undefined);
       done();
     }
   },
-  // style: left {{10}}pxkk,
+  // style: left {10}px,
   style: function(step){
     var styles = {}, 
       param = step.param,
@@ -4755,8 +4760,8 @@ function processAnimate( element, value ){
 
   function animationDestroy(element){
     return function(){
-      element.onenter = undefined;
-      element.onleave = undefined;
+      delete element.onenter;
+      delete element.onleave;
     } 
   }
 
@@ -4782,9 +4787,12 @@ function processAnimate( element, value ){
       }else if(param === "enter"){
         element.onenter = seed.start;
       }else{
-        destroy = this._handleEvent( element, param, seed.start );
+        // destroy = this._handleEvent( element, param, seed.start );
+        this.$on(param, seed.start)
+        destroy = this.$off.bind(this, param, seed.start);
       }
 
+      // @TODO add
       destroies.push( destroy? destroy : animationDestroy(element) );
       destroy = null;
       continue
@@ -4817,7 +4825,6 @@ function processAnimate( element, value ){
 Regular.directive( "r-animation", processAnimate)
 
 
-
 });
 require.register("regularjs/src/directive/event.js", function(exports, require, module){
 /**
@@ -4830,7 +4837,8 @@ var Regular = require("../Regular.js");
 
 Regular._addProtoInheritCache("event");
 
-Regular.event( "enter" , function(elem, fire) {
+Regular.event("enter", function(elem, fire) {
+  _.log("on-enter will be removed in 0.4.0", "error");
   function update( ev ) {
     if ( ev.which === 13 ) {
       ev.preventDefault();

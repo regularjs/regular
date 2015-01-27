@@ -38,7 +38,6 @@ function initSelect( elem, parsed){
   var self = this;
   var inProgress = false;
   this.$watch(parsed, function(newValue){
-    if(inProgress) return;
     var children = _.slice(elem.getElementsByTagName('option'))
     children.forEach(function(node, index){
       if(node.value == newValue){
@@ -49,9 +48,7 @@ function initSelect( elem, parsed){
 
   function handler(){
     parsed.set(self, this.value);
-    inProgress = true;
     self.$update();
-    inProgress = false;
   }
 
   dom.on(elem, "change", handler);

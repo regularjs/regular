@@ -96,13 +96,19 @@ Regular.animation({
   },
   "emit": function(step){
     var param = step.param;
+    var tmp = param.split(","),
+      evt = tmp[0] || "",
+      args = tmp[1]? Regular.expression(tmp[1]).get: null;
+
+    if(!evt) throw "you shoud specified a eventname in emit command";
+
     var self = this;
     return function(done){
-      self.$emit(param, step);
+      self.$emit(evt, args? args(self) : undefined);
       done();
     }
   },
-  // style: left {{10}}pxkk,
+  // style: left {10}px,
   style: function(step){
     var styles = {}, 
       param = step.param,
@@ -153,8 +159,8 @@ function processAnimate( element, value ){
 
   function animationDestroy(element){
     return function(){
-      element.onenter = undefined;
-      element.onleave = undefined;
+      delete element.onenter;
+      delete element.onleave;
     } 
   }
 
@@ -180,9 +186,12 @@ function processAnimate( element, value ){
       }else if(param === "enter"){
         element.onenter = seed.start;
       }else{
-        destroy = this._handleEvent( element, param, seed.start );
+        // destroy = this._handleEvent( element, param, seed.start );
+        this.$on(param, seed.start)
+        destroy = this.$off.bind(this, param, seed.start);
       }
 
+      // @TODO add
       destroies.push( destroy? destroy : animationDestroy(element) );
       destroy = null;
       continue
@@ -213,5 +222,4 @@ function processAnimate( element, value ){
 
 
 Regular.directive( "r-animation", processAnimate)
-
 
