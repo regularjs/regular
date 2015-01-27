@@ -1,6 +1,6 @@
 /**
 @author	leeluolee
-@version	0.3.0-pre
+@version	0.3.0
 @homepage	http://regularjs.github.io
 */
 ;(function(){

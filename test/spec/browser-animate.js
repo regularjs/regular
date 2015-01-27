@@ -8,16 +8,16 @@ void function(){
   }
 
 
-  // insert a test css
-  var sheet = (function() {
-    // Create the <style> tag
-    var style = document.createElement("style");
+  // // insert a test css
+  // var sheet = (function() {
+  //   // Create the <style> tag
+  //   var style = document.createElement("style");
 
-    style.appendChild(document.createTextNode(""));
-    document.head.appendChild(style);
+  //   style.appendChild(document.createTextNode(""));
+  //   document.head.appendChild(style);
 
-    return style.sheet;
-  })();
+  //   return style.sheet;
+  // })();
 
   describe("Animation", function(){
     var Component = Regular.extend();
@@ -250,7 +250,7 @@ void function(){
           }
         })
         emit.call(component,{
-          param: "toast, hello",
+          param: "toast, hello"
         })(function(){
           expect(toasted).to.equal("leeluolee");
           done();
