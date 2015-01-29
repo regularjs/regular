@@ -491,7 +491,7 @@ Regular.implement({
 
 Regular.prototype.inject = function(){
   _.log("use $inject instead of inject", "error");
-  this.$inejct.apply(this, arguments);
+  this.$inject.apply(this, arguments);
 }
 
 
