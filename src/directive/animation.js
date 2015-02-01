@@ -86,7 +86,7 @@ Regular.animation({
     }
   },
   "call": function(step){
-    var fn = Regular.expression(step.param).get, self = this;
+    var fn = this.$expression(step.param).get, self = this;
     return function(done){
       // _.log(step.param, 'call')
       fn(self);
@@ -98,7 +98,7 @@ Regular.animation({
     var param = step.param;
     var tmp = param.split(","),
       evt = tmp[0] || "",
-      args = tmp[1]? Regular.expression(tmp[1]).get: null;
+      args = tmp[1]? this.$expression(tmp[1]).get: null;
 
     if(!evt) throw "you shoud specified a eventname in emit command";
 

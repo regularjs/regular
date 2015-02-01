@@ -6,7 +6,7 @@ var config = require("./config.js");
 var Group = require('./group.js');
 var _ = require('./util');
 var extend = require('./helper/extend.js');
-var Event = require('./helper/event.js');
+var events = require('./helper/event.js');
 var combine = require('./helper/combine.js');
 var Watcher = require('./helper/watcher.js');
 var parse = require('./helper/parse.js');
@@ -99,7 +99,7 @@ _.extend(Regular, {
     var template;
     this.__after__ = supr.__after__;
 
-    // use name make the component global
+    // use name make the component global.
     if(o.name) Regular.component(o.name, this);
     // this.prototype.template = dom.initTemplate(o)
     if(template = o.template){
@@ -234,7 +234,7 @@ Regular._addProtoInheritCache("filter", function(cfg){
 })
 
 
-Event.mixTo(Regular);
+events.mixTo(Regular);
 Watcher.mixTo(Regular);
 
 Regular.implement({
@@ -271,9 +271,11 @@ Regular.implement({
       ast = new Parser(ast).parse()
     }
     var preNs = this.__ns__,
+      preExt = this.__ext__,
       record = options.record, 
       records;
     if(options.namespace) this.__ns__ = options.namespace;
+    if(options.extra) this.__ext__ = options.extra;
     if(record) this._record();
     var group = this._walk(ast, options);
     if(record){
@@ -285,6 +287,7 @@ Regular.implement({
       }
     }
     if(options.namespace) this.__ns__ = preNs;
+    if(options.extra) this.__ext__ = preExt;
     return group;
   },
 
@@ -433,6 +436,36 @@ Regular.implement({
       dom.off(elem, type, fire);
     }
   },
+  // 1. 用来处理exprBody -> Function
+  // 2. list里的循环
+  _touchExpr: function(expr){
+    var  rawget, ext = this.__ext__, touched = {};
+    if(expr.type !== 'expression' || expr.touched) return expr;
+    rawget = expr.get || (expr.get = new Function(_.ctxName, _.extName , _.prefix+ "return (" + expr.body + ")"));
+    touched.get = !ext? rawget: function(context){
+      return rawget(context, ext)
+    }
+
+    if(expr.setbody && !expr.set){
+      var setbody = expr.setbody;
+      expr.set = function(ctx, value, ext){
+        expr.set = new Function(_.ctxName, _.setName , _.extName, _.prefix + setbody);          
+        return expr.set(ctx, value, ext);
+      }
+      expr.setbody = null;
+    }
+    if(expr.set){
+      touched.set = !ext? expr.set : function(ctx, value){
+        return expr.set(ctx, value, ext);
+      }
+    }
+    _.extend(touched, {
+      type: 'expression',
+      touched: true,
+      once: expr.once || expr.constant
+    })
+    return touched
+  },
   // find filter
   _f_: function(name){
     var Component = this.constructor;
@@ -441,17 +474,19 @@ Regular.implement({
     return filter;
   },
   // simple accessor get
-  _sg_:function(path, defaults, needComputed){
-    if(needComputed){
+  _sg_:function(path, defaults, ext){
+    if(typeof ext !== 'undefined'){
+      // if(path === "demos")  debugger
       var computed = this.computed,
         computedProperty = computed[path];
       if(computedProperty){
+        if(computedProperty.type==='expression' && !computedProperty.get) this._touchExpr(computedProperty);
         if(computedProperty.get)  return computedProperty.get(this);
         else _.log("the computed '" + path + "' don't define the get function,  get data."+path + " altnately", "error")
       }
     }
     if(typeof defaults === "undefined" || typeof path == "undefined" ) return undefined;
-    return defaults[path];
+    return (ext && typeof ext[path] !== 'undefined')? ext[path]: defaults[path];
 
   },
   // simple accessor set
@@ -491,7 +526,7 @@ Regular.implement({
 
 Regular.prototype.inject = function(){
   _.log("use $inject instead of inject", "error");
-  this.$inejct.apply(this, arguments);
+  this.$inject.apply(this, arguments);
 }
 
 

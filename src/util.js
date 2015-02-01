@@ -17,6 +17,7 @@ _.uid = (function(){
 _.varName = '_d_';
 _.setName = '_p_';
 _.ctxName = '_c_';
+_.extName = '_e_';
 
 _.rWord = /^[\$\w]+$/;
 _.rSimpleAccessor = /^[\$\w]+(\.[\$\w]+)*$/;
@@ -29,10 +30,7 @@ _.nextTick = typeof setImmediate === 'function'?
 
 
 
-var prefix =  "var " + _.ctxName + "=context.$context||context;" + "var " + _.varName + "=context.data;";
-
-
-_.host = "data";
+_.prefix = "var " + _.varName + "=" + _.ctxName + ".data;" +  _.extName  + "=" + _.extName + "||'';";
 
 
 _.slice = function(obj, start, end){
@@ -45,7 +43,7 @@ _.slice = function(obj, start, end){
 }
 
 _.typeOf = function (o) {
-  return o == null ? String(o) : ({}).toString.call(o).slice(8, -1).toLowerCase();
+  return o == null ? String(o) : o2str.call(o).slice(8, -1).toLowerCase();
 }
 
 
@@ -442,25 +440,12 @@ _.cache = function(max){
   };
 }
 
-// setup the raw Expression
-_.touchExpression = function(expr){
-  if(expr.type === 'expression'){
-    if(!expr.get){
-      expr.get = new Function("context", prefix + "return (" + expr.body + ")");
-      expr.body = null;
-      if(expr.setbody){
-        expr.set = function(ctx, value){
-          if(expr.setbody){
-            expr.set = new Function('context', _.setName ,  prefix + expr.setbody);
-            expr.setbody = null;
-          }
-          return expr.set(ctx, value);
-        }
-      }
-    }
-  }
-  return expr;
-}
+// // setup the raw Expression
+// _.touchExpression = function(expr){
+//   if(expr.type === 'expression'){
+//   }
+//   return expr;
+// }
 
 
 // handle the same logic on component's `on-*` and element's `on-*`
@@ -498,11 +483,6 @@ _.once = function(fn){
 
 
 
-
-
-
-
-
 _.log = function(msg, type){
   if(typeof console !== "undefined")  console[type || "log"](msg);
 }
@@ -520,11 +500,5 @@ _.isTrue - function(){return true}
 
 _.assert = function(test, msg){
   if(!test) throw msg;
-}
-
-
-
-_.defineProperty = function(){
-  
 }
 

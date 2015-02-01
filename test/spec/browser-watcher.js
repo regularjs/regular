@@ -130,7 +130,7 @@ describe("Computed Property", function(){
 })
 describe("Expression", function(){
   function run_expr(expr, context){
-    return expect(Regular.expression(expr).get(context));
+    return expect(context.$expression(expr).get(context));
   }
   describe("compiled expression", function(){
     var context = new Regular({

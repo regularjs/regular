@@ -95,6 +95,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	var Lexer = __webpack_require__(3);
 	var varName = _.varName;
 	var ctxName = _.ctxName;
+	var extName = _.extName;
 	var isPath = _.makePredicate("STRING IDENT NUMBER");
 	var isKeyWord = _.makePredicate("true false undefined null this Array Date JSON Math NaN RegExp decodeURI decodeURIComponent encodeURI encodeURIComponent parseFloat parseInt Object");
 
@@ -596,7 +597,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	// member . ident  
 
 	op.member = function(base, last, pathes, prevBase){
-	  var ll, path;
+	  var ll, path, extValue;
 
 
 	  var onlySimpleAccessor = false;
@@ -607,7 +608,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	      pathes = [];
 	      pathes.push( path );
 	      last = path;
-	      base = ctxName + "._sg_('" + path + "', " + varName + ", 1)";
+	      extValue = extName + "." + path
+	      base = "(typeof "+ extValue+ "!=='undefined'? "+extValue+":"+ ctxName + "._sg_('" + path + "', " + varName + ", " + extName + "))";
 	      onlySimpleAccessor = true;
 	    }else{ //Primative Type
 	      if(path.get === 'this'){
@@ -1164,6 +1166,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	_.varName = '_d_';
 	_.setName = '_p_';
 	_.ctxName = '_c_';
+	_.extName = '_e_';
 
 	_.rWord = /^[\$\w]+$/;
 	_.rSimpleAccessor = /^[\$\w]+(\.[\$\w]+)*$/;
@@ -1176,10 +1179,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 
-	var prefix =  "var " + _.ctxName + "=context.$context||context;" + "var " + _.varName + "=context.data;";
-
-
-	_.host = "data";
+	_.prefix = "var " + _.varName + "=" + _.ctxName + ".data;" +  _.extName  + "=" + _.extName + "||'';";
 
 
 	_.slice = function(obj, start, end){
@@ -1192,7 +1192,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 	_.typeOf = function (o) {
-	  return o == null ? String(o) : ({}).toString.call(o).slice(8, -1).toLowerCase();
+	  return o == null ? String(o) : o2str.call(o).slice(8, -1).toLowerCase();
 	}
 
 
@@ -1589,25 +1589,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	  };
 	}
 
-	// setup the raw Expression
-	_.touchExpression = function(expr){
-	  if(expr.type === 'expression'){
-	    if(!expr.get){
-	      expr.get = new Function("context", prefix + "return (" + expr.body + ")");
-	      expr.body = null;
-	      if(expr.setbody){
-	        expr.set = function(ctx, value){
-	          if(expr.setbody){
-	            expr.set = new Function('context', _.setName ,  prefix + expr.setbody);
-	            expr.setbody = null;
-	          }
-	          return expr.set(ctx, value);
-	        }
-	      }
-	    }
-	  }
-	  return expr;
-	}
+	// // setup the raw Expression
+	// _.touchExpression = function(expr){
+	//   if(expr.type === 'expression'){
+	//   }
+	//   return expr;
+	// }
 
 
 	// handle the same logic on component's `on-*` and element's `on-*`
@@ -1645,11 +1632,6 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 
-
-
-
-
-
 	_.log = function(msg, type){
 	  if(typeof console !== "undefined")  console[type || "log"](msg);
 	}
@@ -1667,12 +1649,6 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	_.assert = function(test, msg){
 	  if(!test) throw msg;
-	}
-
-
-
-	_.defineProperty = function(){
-	  
 	}
 
 	

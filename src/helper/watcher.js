@@ -6,8 +6,9 @@ function Watcher(){}
 
 var methods = {
   $watch: function(expr, fn, options){
-    var get, once, test, rlen; //records length
+    var get, once, test, rlen, extra = this.__ext__; //records length
     if(!this._watchers) this._watchers = [];
+
     options = options || {};
     if(options === true){
        options = { deep: true }
@@ -16,13 +17,13 @@ var methods = {
     if(Array.isArray(expr)){
       var tests = [];
       for(var i = 0,len = expr.length; i < len; i++){
-          tests.push(parseExpression(expr[i]).get) 
+          tests.push(this.$expression(expr[i]).get)
       }
       var prev = [];
       test = function(context){
         var equal = true;
         for(var i =0, len = tests.length; i < len; i++){
-          var splice = tests[i](context);
+          var splice = tests[i](context, extra);
           if(!_.equals(splice, prev[i])){
              equal = false;
              prev[i] = _.clone(splice);
@@ -31,9 +32,9 @@ var methods = {
         return equal? false: prev;
       }
     }else{
-      expr = this.$expression? this.$expression(expr) : parseExpression(expr);
+      expr = this._touchExpr( parseExpression(expr) );
       get = expr.get;
-      once = expr.once || expr.constant;
+      once = expr.once;
     }
 
     var watcher = {
@@ -74,6 +75,9 @@ var methods = {
         }
       }
     }
+  },
+  $expression: function(value){
+    return this._touchExpr(parseExpression(value))
   },
   /**
    * the whole digest loop ,just like angular, it just a dirty-check loop;
@@ -192,7 +196,7 @@ var methods = {
     if(path != null){
       var type = _.typeOf(path);
       if( type === 'string' || path.type === 'expression' ){
-        path = parseExpression(path);
+        path = this.$expression(path);
         path.set(this, value);
       }else if(type === 'function'){
         path.call(this, this.data);
@@ -203,8 +207,8 @@ var methods = {
       }
     }
   },
-  $get: function(expr){
-    return parseExpression(expr).get(this);
+  $get: function(expr)  {
+    return this.$expression(expr).get(this);
   },
   $update: function(){
     this.$set.apply(this, arguments);

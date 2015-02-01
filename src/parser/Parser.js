@@ -5,6 +5,7 @@ var node = require("./node.js");
 var Lexer = require("./Lexer.js");
 var varName = _.varName;
 var ctxName = _.ctxName;
+var extName = _.extName;
 var isPath = _.makePredicate("STRING IDENT NUMBER");
 var isKeyWord = _.makePredicate("true false undefined null this Array Date JSON Math NaN RegExp decodeURI decodeURIComponent encodeURI encodeURIComponent parseFloat parseInt Object");
 
@@ -506,7 +507,7 @@ op.unary = function(){
 // member . ident  
 
 op.member = function(base, last, pathes, prevBase){
-  var ll, path;
+  var ll, path, extValue;
 
 
   var onlySimpleAccessor = false;
@@ -517,7 +518,8 @@ op.member = function(base, last, pathes, prevBase){
       pathes = [];
       pathes.push( path );
       last = path;
-      base = ctxName + "._sg_('" + path + "', " + varName + ", 1)";
+      extValue = extName + "." + path
+      base = "(typeof "+ extValue+ "!=='undefined'? "+extValue+":"+ ctxName + "._sg_('" + path + "', " + varName + ", " + extName + "))";
       onlySimpleAccessor = true;
     }else{ //Primative Type
       if(path.get === 'this'){

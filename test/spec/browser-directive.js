@@ -608,7 +608,6 @@ describe("refs attribute", function(){
       }
     }).$inject(container)
 
-
     expect(component.$refs["haha0"].id).to.equal("0");
     expect(component.$refs["haha1"].id).to.equal("1");
     expect(component.$refs["haha2"].id).to.equal("2");

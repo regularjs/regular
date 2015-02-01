@@ -57,11 +57,10 @@ void function(){
     it("bugfix #4", function(){
 
       var Demo = Component.extend({name: "demo", template: "<input r-model = 'demo.name' title={demo.name}>"})
-      var DemoApp = Component.extend({template: "{#list demos as demo}<demo demo={demo}/>{/list}"});
+      var DemoApp = Component.extend({template: "{#list demos as demo}<demo demo={demo}/>{demos.length}{/list}"});
       var component = new DemoApp({ 
         data: { demos: [{name:1}] }
       }).$inject(container);
-
       expect(nes.one("input", container).value).to.equal("1");
       destroy(component, container)
     })
@@ -108,7 +107,6 @@ void function(){
     expect(container.innerHTML.slice(-3)).to.equal("123")
     destroy(component, container);
   })
-
     it("bugfix #12, item in list destroy all $context's event", function(){
       var list =
         "{#list todos as todo}" + 

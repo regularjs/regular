@@ -11,17 +11,18 @@ walkers.list = function(ast){
 
   var Regular = walkers.Regular;  
   var placeholder = document.createComment("Regular list"),
-    namespace = this.__ns__;
+    namespace = this.__ns__,
+    extra = this.__ext__;
   // proxy Component to implement list item, so the behaviar is similar with angular;
-  var Section =  Regular.extend( { 
-    template: ast.body,
-    $context: this.$context,
-    // proxy the event to $context
-    $on: this.$context.$on.bind(this.$context),
-    $off: this.$context.$off.bind(this.$context),
-    $emit: this.$context.$emit.bind(this.$context)
-  });
-  Regular._inheritConfig(Section, this.constructor);
+  // var Section =  Regular.extend( { 
+  //   template: ast.body,
+  //   $context: this.$context,
+  //   // proxy the event to $context
+  //   $on: this.$context.$on.bind(this.$context),
+  //   $off: this.$context.$off.bind(this.$context),
+  //   $emit: this.$context.$emit.bind(this.$context)
+  // });
+  // Regular._inheritConfig(Section, this.constructor);
 
   // var fragment = dom.fragment();
   // fragment.appendChild(placeholder);
@@ -30,8 +31,6 @@ walkers.list = function(ast){
   group.push(placeholder);
   var indexName = ast.variable + '_index';
   var variable = ast.variable;
-  // group.push(placeholder);
-
 
   function update(newValue, splices){
     newValue = newValue || [];
@@ -56,15 +55,18 @@ walkers.list = function(ast){
       for(var o = index; o < index + splice.add; o++){ //add
         // prototype inherit
         var item = newValue[o];
-        var data = _.createObject(self.data);
+        var data = {};
         data[indexName] = o;
         data[variable] = item;
 
-        var section = new Section({data: data, $parent: self , namespace: namespace});
-
+        _.extend(data, extra);
+        var section = self.$compile(ast.body, {
+          extra: data,
+          namespace:namespace
+        })
+        section.data = data;
         // autolink
         var insert =  combine.last(group.get(o));
-        // animate.inject(combine.node(section),insert,'after')
         if(insert.parentNode){
           animate.inject(combine.node(section),insert, 'after');
         }
@@ -91,7 +93,7 @@ walkers.list = function(ast){
 walkers.template = function(ast){
   var content = ast.content, compiled;
   var placeholder = document.createComment('inlcude');
-  var compiled, namespace = this.__ns__;
+  var compiled, namespace = this.__ns__, extra = this.__ext__;
   // var fragment = dom.fragment();
   // fragment.appendChild(placeholder);
   var group = new Group();
@@ -103,7 +105,7 @@ walkers.template = function(ast){
         compiled.destroy(true); 
         group.children.pop();
       }
-      group.push( compiled =  self.$compile(value, {record: true, namespace: namespace}) ); 
+      group.push( compiled =  self.$compile(value, {record: true, namespace: namespace, extra: extra}) ); 
       if(placeholder.parentNode) animate.inject(combine.node(compiled), placeholder, 'before')
     }, {
       init: true
@@ -116,15 +118,15 @@ walkers.template = function(ast){
 // how to resolve this problem
 var ii = 0;
 walkers['if'] = function(ast, options){
-  var self = this, consequent, alternate;
+  var self = this, consequent, alternate, extra = this.__ext__;
   if(options && options.element){ // attribute inteplation
     var update = function(nvalue){
       if(!!nvalue){
         if(alternate) combine.destroy(alternate)
-        if(ast.consequent) consequent = self.$compile(ast.consequent, {record: true, element: options.element });
+        if(ast.consequent) consequent = self.$compile(ast.consequent, {record: true, element: options.element , extra:extra});
       }else{
         if(consequent) combine.destroy(consequent)
-        if(ast.alternate) alternate = self.$compile(ast.alternate, {record: true, element: options.element});
+        if(ast.alternate) alternate = self.$compile(ast.alternate, {record: true, element: options.element, extra: extra});
       }
     }
     this.$watch(ast.test, update, { force: true });
@@ -154,7 +156,7 @@ walkers['if'] = function(ast, options){
     }
     if(value){ //true
       if(ast.consequent && ast.consequent.length){
-        consequent = self.$compile( ast.consequent , {record:true, namespace: namespace })
+        consequent = self.$compile( ast.consequent , {record:true, namespace: namespace, extra:extra })
         // placeholder.parentNode && placeholder.parentNode.insertBefore( node, placeholder );
         group.push(consequent);
         if(placeholder.parentNode){
@@ -163,7 +165,7 @@ walkers['if'] = function(ast, options){
       }
     }else{ //false
       if(ast.alternate && ast.alternate.length){
-        alternate = self.$compile(ast.alternate, {record:true, namespace: namespace});
+        alternate = self.$compile(ast.alternate, {record:true, namespace: namespace, extra:extra});
         group.push(alternate);
         if(placeholder.parentNode){
           animate.inject(combine.node(alternate), placeholder, 'before');
@@ -179,6 +181,7 @@ walkers['if'] = function(ast, options){
 
 walkers.expression = function(ast){
   var node = document.createTextNode("");
+  ast = this._touchExpr(ast);
   this.$watch(ast, function(newval){
     dom.text(node, "" + (newval == null? "": "" + newval) );
   })
@@ -202,6 +205,8 @@ walkers.element = function(ast){
     Constructor=this.constructor,
     children = ast.children,
     namespace = this.__ns__, ref, group, 
+    extra = this.__ext__,
+    scope,
     Component = Constructor.component(ast.tag);
 
 
@@ -209,7 +214,7 @@ walkers.element = function(ast){
 
 
   if(children && children.length){
-    group = this.$compile(children, {namespace: namespace });
+    group = this.$compile(children, {namespace: namespace, extra: extra });
   }
 
 
@@ -217,8 +222,8 @@ walkers.element = function(ast){
     var data = {},events;
     for(var i = 0, len = attrs.length; i < len; i++){
       var attr = attrs[i];
-      var value = attr.value||"";
-      _.touchExpression(value);
+      var value = this._touchExpr(attr.value || "");
+      
       var name = attr.name;
       var etest = name.match(eventReg);
       // bind event proxy
@@ -236,19 +241,23 @@ walkers.element = function(ast){
       if( attr.name === 'ref'  && value != null){
         ref = value.type === 'expression'? value.get(self): value;
       }
+      if( attr.name === 'scope'){
+        scope = true;
+      }
 
     }
 
     var $body;
     if(ast.children) $body = ast.children;
-    var component = new Component({data: data, events: events, $body: $body, $parent: this, namespace: namespace});
+    var component = new Component({data: data, events: events, $body: $body, $parent: scope? null: this, namespace: namespace});
     if(ref &&  self.$context.$refs) self.$context.$refs[ref] = component;
     for(var i = 0, len = attrs.length; i < len; i++){
       var attr = attrs[i];
       var value = attr.value||"";
       if(value.type === 'expression' && attr.name.indexOf('on-')===-1){
+        value = self._touchExpr(value);
         this.$watch(value, component.$update.bind(component, attr.name))
-        if(value.set) component.$watch(attr.name, self.$update.bind(self, value))
+        if(value.set) component.$watch(attr.name, self.$update.bind(self, value));
       }
     }
     if(ref){
@@ -335,7 +344,7 @@ walkers.attribute = function(ast ,options){
   var name = attr.name,
     value = attr.value || "", directive = Component.directive(name);
 
-  _.touchExpression(value);
+  value = this._touchExpr(value);
 
 
   if(directive && directive.link){
