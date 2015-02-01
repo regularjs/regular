@@ -1,18 +1,21 @@
 
+var env = require('./env.js');
 var Lexer = require("./parser/Lexer.js");
 var Parser = require("./parser/Parser.js");
-var dom = require("./dom.js");
 var config = require("./config.js");
-var Group = require('./group.js');
 var _ = require('./util');
 var extend = require('./helper/extend.js');
-var events = require('./helper/event.js');
+if(env.browser){
 var combine = require('./helper/combine.js');
+var dom = require("./dom.js");
+var walkers = require('./walkers.js');
+var Group = require('./group.js');
+}
+var events = require('./helper/event.js');
 var Watcher = require('./helper/watcher.js');
 var parse = require('./helper/parse.js');
 var filter = require('./helper/filter.js');
 var doc = typeof document==='undefined'? {} : document;
-var env = require('./env.js');
 
 
 /**
@@ -69,7 +72,7 @@ var Regular = function(options){
   }
 
 
-  if(this.$root === this) this.$update();
+  if(!this.$parent) this.$update();
   this.$ready = true;
   if(this.$context === this) this.$emit("$init");
   if( this.init ) this.init(this.data);
@@ -82,8 +85,7 @@ var Regular = function(options){
 }
 
 
-var walkers = require('./walkers.js');
-walkers.Regular = Regular;
+walkers && (walkers.Regular = Regular);
 
 
 // description
@@ -182,11 +184,8 @@ _.extend(Regular, {
     if(needGenLexer) Lexer.setup();
   },
   expression: parse.expression,
-  parse: parse.parse,
-
   Parser: Parser,
   Lexer: Lexer,
-
   _addProtoInheritCache: function(name, transform){
     if( Array.isArray( name ) ){
       return name.forEach(Regular._addProtoInheritCache);
@@ -419,7 +418,6 @@ Regular.implement({
   },
   _append: function(component){
     this._children.push(component);
-    component.$root = this.$root;
     component.$parent = this;
   },
   _handleEvent: function(elem, type, value, attrs){
@@ -484,7 +482,7 @@ Regular.implement({
         if(computedProperty.get)  return computedProperty.get(this);
         else _.log("the computed '" + path + "' don't define the get function,  get data."+path + " altnately", "error")
       }
-    }
+  }
     if(typeof defaults === "undefined" || typeof path == "undefined" ) return undefined;
     return (ext && typeof ext[path] !== 'undefined')? ext[path]: defaults[path];
 

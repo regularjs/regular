@@ -334,7 +334,7 @@ op.filter = function(){
   var left = this.assign();
   var ll = this.eat('|');
   var buffer = [], setBuffer, prefix,
-    attr = "_t_", 
+    attr = "t", 
     set = left.set, get, 
     tmp = "";
 
@@ -377,7 +377,7 @@ op.assign = function(){
   var left = this.condition(), ll;
   if(ll = this.eat(['=', '+=', '-=', '*=', '/=', '%='])){
     if(!left.set) this.error('invalid lefthand expression in assignment expression');
-    return this.getset( left.set.replace("_p_", this.condition().get).replace("'='", "'"+ll.type+"'"), left.set);
+    return this.getset( left.set.replace( "," + _.setName, "," + this.condition().get ).replace("'='", "'"+ll.type+"'"), left.set);
     // return this.getset('(' + left.get + ll.type  + this.condition().get + ')', left.set);
   }
   return left;
@@ -519,7 +519,7 @@ op.member = function(base, last, pathes, prevBase){
       pathes.push( path );
       last = path;
       extValue = extName + "." + path
-      base = "(typeof "+ extValue+ "!=='undefined'? "+extValue+":"+ ctxName + "._sg_('" + path + "', " + varName + ", " + extName + "))";
+      base = ctxName + "._sg_('" + path + "', " + varName + ", " + extName + ")";
       onlySimpleAccessor = true;
     }else{ //Primative Type
       if(path.get === 'this'){

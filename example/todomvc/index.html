@@ -9,7 +9,7 @@
   <li  r-class={ {'completed': todo.completed, 'editing': todo.editing} }>
     <div class="view">
       <input class="toggle" type="checkbox" r-model={ todo.completed }>
-        <label on-dblclick={todo.editing = true}>{ todo.description }</label>
+        <label on-dblclick={todo.editin  = true}>{ todo.description }</label>
         <button on-click={ this.$emit('remove', todo_index) } class="destroy"></button>
         </div>
       <input id="edit" class="edit" on-enter={ todo.editing = false } r-model={todo.description} autofocus>

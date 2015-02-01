@@ -55,21 +55,8 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ function(module, exports, __webpack_require__) {
 
 	
-	var Parser = __webpack_require__(2)
-	var Lexer = __webpack_require__(3)
-	var config = __webpack_require__(1); 
-
-	exports.parse = function(str, options){
-	  options = options || {};
-
-	  if(options.BEGIN || options.END){
-	    if(options.BEGIN) config.BEGIN = options.BEGIN;
-	    if(options.END) config.END = options.END;
-	    Lexer.setup();
-	  }
-	  var ast = new Parser(str).parse();
-	  return options.stringify === false? ast : JSON.stringify(ast);
-	}
+	var Parser = __webpack_require__(1)
+	var Lexer = __webpack_require__(2)
 
 
 
@@ -78,21 +65,11 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 1 */
 /***/ function(module, exports, __webpack_require__) {
 
-	
-	module.exports = {
-	'BEGIN': '{',
-	'END': '}'
-	}
+	var _ = __webpack_require__(3);
 
-/***/ },
-/* 2 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var _ = __webpack_require__(4);
-
-	var config = __webpack_require__(1);
+	var config = __webpack_require__(4);
 	var node = __webpack_require__(5);
-	var Lexer = __webpack_require__(3);
+	var Lexer = __webpack_require__(2);
 	var varName = _.varName;
 	var ctxName = _.ctxName;
 	var extName = _.extName;
@@ -424,7 +401,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  var left = this.assign();
 	  var ll = this.eat('|');
 	  var buffer = [], setBuffer, prefix,
-	    attr = "_t_", 
+	    attr = "t", 
 	    set = left.set, get, 
 	    tmp = "";
 
@@ -467,7 +444,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  var left = this.condition(), ll;
 	  if(ll = this.eat(['=', '+=', '-=', '*=', '/=', '%='])){
 	    if(!left.set) this.error('invalid lefthand expression in assignment expression');
-	    return this.getset( left.set.replace("_p_", this.condition().get).replace("'='", "'"+ll.type+"'"), left.set);
+	    return this.getset( left.set.replace( "," + _.setName, "," + this.condition().get ).replace("'='", "'"+ll.type+"'"), left.set);
 	    // return this.getset('(' + left.get + ll.type  + this.condition().get + ')', left.set);
 	  }
 	  return left;
@@ -609,7 +586,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      pathes.push( path );
 	      last = path;
 	      extValue = extName + "." + path
-	      base = "(typeof "+ extValue+ "!=='undefined'? "+extValue+":"+ ctxName + "._sg_('" + path + "', " + varName + ", " + extName + "))";
+	      base = ctxName + "._sg_('" + path + "', " + varName + ", " + extName + ")";
 	      onlySimpleAccessor = true;
 	    }else{ //Primative Type
 	      if(path.get === 'this'){
@@ -790,11 +767,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 3 */
+/* 2 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var _ = __webpack_require__(4);
-	var config = __webpack_require__(1);
+	var _ = __webpack_require__(3);
+	var config = __webpack_require__(4);
 
 	// some custom tag  will conflict with the Lexer progress
 	var conflictTag = {"}": "{", "]": "["}, map1, map2;
@@ -1144,7 +1121,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 4 */
+/* 3 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(global) {__webpack_require__(6);
@@ -1163,10 +1140,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }
 	})();
 
-	_.varName = '_d_';
-	_.setName = '_p_';
-	_.ctxName = '_c_';
-	_.extName = '_e_';
+	_.varName = 'd';
+	_.setName = 'p_';
+	_.ctxName = 'c';
+	_.extName = 'e';
 
 	_.rWord = /^[\$\w]+$/;
 	_.rSimpleAccessor = /^[\$\w]+(\.[\$\w]+)*$/;
@@ -1653,6 +1630,16 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	
 	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
+
+/***/ },
+/* 4 */
+/***/ function(module, exports, __webpack_require__) {
+
+	
+	module.exports = {
+	'BEGIN': '{',
+	'END': '}'
+	}
 
 /***/ },
 /* 5 */

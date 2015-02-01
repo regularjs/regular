@@ -6,10 +6,7 @@ exports.svg = (function(){
 })();
 
 
-exports.transition = (function(){
-  
-})();
-
+exports.browser = typeof document !== "undefined" && document.nodeType;
 // whether have component in initializing
 exports.exprCache = _.cache(1000);
 exports.isRunning = false;

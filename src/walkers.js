@@ -206,7 +206,7 @@ walkers.element = function(ast){
     children = ast.children,
     namespace = this.__ns__, ref, group, 
     extra = this.__ext__,
-    scope,
+    isolate = 0,
     Component = Constructor.component(ast.tag);
 
 
@@ -241,23 +241,30 @@ walkers.element = function(ast){
       if( attr.name === 'ref'  && value != null){
         ref = value.type === 'expression'? value.get(self): value;
       }
-      if( attr.name === 'scope'){
-        scope = true;
+      if( attr.name === 'isolate'){
+        // 1: stop: composite -> parent
+        // 2. stop: composite <- parent
+        // 3. stop 1 and 2: composite <-> parent
+        // 0. stop nothing (defualt)
+        isolate = value.type === 'expression'? value.get(self): parseInt(value || 3, 10);
       }
 
     }
 
     var $body;
     if(ast.children) $body = ast.children;
-    var component = new Component({data: data, events: events, $body: $body, $parent: scope? null: this, namespace: namespace});
+    var component = new Component({data: data, events: events, $body: $body, $parent: isolate? null: this, namespace: namespace, $root: this.$root});
     if(ref &&  self.$context.$refs) self.$context.$refs[ref] = component;
     for(var i = 0, len = attrs.length; i < len; i++){
       var attr = attrs[i];
       var value = attr.value||"";
       if(value.type === 'expression' && attr.name.indexOf('on-')===-1){
         value = self._touchExpr(value);
-        this.$watch(value, component.$update.bind(component, attr.name))
-        if(value.set) component.$watch(attr.name, self.$update.bind(self, value));
+        // use bit operate to control scope
+        if( !(isolate & 2) ) 
+          this.$watch(value, component.$update.bind(component, attr.name))
+        if( value.set && !(isolate & 1 ) ) 
+          component.$watch(attr.name, self.$update.bind(self, value));
       }
     }
     if(ref){

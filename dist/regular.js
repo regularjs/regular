@@ -210,20 +210,23 @@ require.relative = function(parent) {
 };
 require.register("regularjs/src/Regular.js", function(exports, require, module){
 
+var env = require('./env.js');
 var Lexer = require("./parser/Lexer.js");
 var Parser = require("./parser/Parser.js");
-var dom = require("./dom.js");
 var config = require("./config.js");
-var Group = require('./group.js');
 var _ = require('./util');
 var extend = require('./helper/extend.js');
-var events = require('./helper/event.js');
+if(env.browser){
 var combine = require('./helper/combine.js');
+var dom = require("./dom.js");
+var walkers = require('./walkers.js');
+var Group = require('./group.js');
+}
+var events = require('./helper/event.js');
 var Watcher = require('./helper/watcher.js');
 var parse = require('./helper/parse.js');
 var filter = require('./helper/filter.js');
 var doc = typeof document==='undefined'? {} : document;
-var env = require('./env.js');
 
 
 /**
@@ -280,7 +283,7 @@ var Regular = function(options){
   }
 
 
-  if(this.$root === this) this.$update();
+  if(!this.$parent) this.$update();
   this.$ready = true;
   if(this.$context === this) this.$emit("$init");
   if( this.init ) this.init(this.data);
@@ -293,8 +296,7 @@ var Regular = function(options){
 }
 
 
-var walkers = require('./walkers.js');
-walkers.Regular = Regular;
+walkers && (walkers.Regular = Regular);
 
 
 // description
@@ -393,11 +395,8 @@ _.extend(Regular, {
     if(needGenLexer) Lexer.setup();
   },
   expression: parse.expression,
-  parse: parse.parse,
-
   Parser: Parser,
   Lexer: Lexer,
-
   _addProtoInheritCache: function(name, transform){
     if( Array.isArray( name ) ){
       return name.forEach(Regular._addProtoInheritCache);
@@ -630,7 +629,6 @@ Regular.implement({
   },
   _append: function(component){
     this._children.push(component);
-    component.$root = this.$root;
     component.$parent = this;
   },
   _handleEvent: function(elem, type, value, attrs){
@@ -695,7 +693,7 @@ Regular.implement({
         if(computedProperty.get)  return computedProperty.get(this);
         else _.log("the computed '" + path + "' don't define the get function,  get data."+path + " altnately", "error")
       }
-    }
+  }
     if(typeof defaults === "undefined" || typeof path == "undefined" ) return undefined;
     return (ext && typeof ext[path] !== 'undefined')? ext[path]: defaults[path];
 
@@ -811,10 +809,10 @@ _.uid = (function(){
   }
 })();
 
-_.varName = '_d_';
-_.setName = '_p_';
-_.ctxName = '_c_';
-_.extName = '_e_';
+_.varName = 'd';
+_.setName = 'p_';
+_.ctxName = 'c';
+_.extName = 'e';
 
 _.rWord = /^[\$\w]+$/;
 _.rSimpleAccessor = /^[\$\w]+(\.[\$\w]+)*$/;
@@ -1510,7 +1508,7 @@ walkers.element = function(ast){
     children = ast.children,
     namespace = this.__ns__, ref, group, 
     extra = this.__ext__,
-    scope,
+    isolate = 0,
     Component = Constructor.component(ast.tag);
 
 
@@ -1545,23 +1543,30 @@ walkers.element = function(ast){
       if( attr.name === 'ref'  && value != null){
         ref = value.type === 'expression'? value.get(self): value;
       }
-      if( attr.name === 'scope'){
-        scope = true;
+      if( attr.name === 'isolate'){
+        // 1: stop: composite -> parent
+        // 2. stop: composite <- parent
+        // 3. stop 1 and 2: composite <-> parent
+        // 0. stop nothing (defualt)
+        isolate = value.type === 'expression'? value.get(self): parseInt(value || 3, 10);
       }
 
     }
 
     var $body;
     if(ast.children) $body = ast.children;
-    var component = new Component({data: data, events: events, $body: $body, $parent: scope? null: this, namespace: namespace});
+    var component = new Component({data: data, events: events, $body: $body, $parent: isolate? null: this, namespace: namespace, $root: this.$root});
     if(ref &&  self.$context.$refs) self.$context.$refs[ref] = component;
     for(var i = 0, len = attrs.length; i < len; i++){
       var attr = attrs[i];
       var value = attr.value||"";
       if(value.type === 'expression' && attr.name.indexOf('on-')===-1){
         value = self._touchExpr(value);
-        this.$watch(value, component.$update.bind(component, attr.name))
-        if(value.set) component.$watch(attr.name, self.$update.bind(self, value));
+        // use bit operate to control scope
+        if( !(isolate & 2) ) 
+          this.$watch(value, component.$update.bind(component, attr.name))
+        if( value.set && !(isolate & 1 ) ) 
+          component.$watch(attr.name, self.$update.bind(self, value));
       }
     }
     if(ref){
@@ -1702,25 +1707,38 @@ exports.svg = (function(){
 })();
 
 
-exports.transition = (function(){
-  
-})();
-
+exports.browser = typeof document !== "undefined" && document.nodeType;
 // whether have component in initializing
 exports.exprCache = _.cache(1000);
 exports.isRunning = false;
 
 });
 require.register("regularjs/src/index.js", function(exports, require, module){
-module.exports = require("./Regular.js");
+var env =  require("./env.js");
+var config = require("./config"); 
+var Regular = module.exports = require("./Regular.js");
+var Parser = Regular.Parser;
+var Lexer = Regular.Lexer;
 
-require("./directive/base.js");
-require("./directive/animation.js");
-require("./module/timeout.js");
+if(env.browser){
+    require("./directive/base.js");
+    require("./directive/animation.js");
+    require("./module/timeout.js");
+    Regular.dom = require("./dom.js");
+}
+Regular.env = env;
+Regular.util = require("./util.js");
+Regular.parse = function(str, options){
+  options = options || {};
 
-module.exports.dom = require("./dom.js");
-module.exports.util = require("./util.js");
-module.exports.env = require("./env.js");
+  if(options.BEGIN || options.END){
+    if(options.BEGIN) config.BEGIN = options.BEGIN;
+    if(options.END) config.END = options.END;
+    Lexer.setup();
+  }
+  var ast = new Parser(str).parse();
+  return options.stringify === false? ast : JSON.stringify(ast);
+}
 
 
 });
@@ -1734,6 +1752,7 @@ require.register("regularjs/src/dom.js", function(exports, require, module){
 
 // ---
 // license: MIT-style license. http://mootools.net
+
 
 var dom = module.exports;
 var env = require("./env.js");
@@ -2896,7 +2915,7 @@ op.filter = function(){
   var left = this.assign();
   var ll = this.eat('|');
   var buffer = [], setBuffer, prefix,
-    attr = "_t_", 
+    attr = "t", 
     set = left.set, get, 
     tmp = "";
 
@@ -2939,7 +2958,7 @@ op.assign = function(){
   var left = this.condition(), ll;
   if(ll = this.eat(['=', '+=', '-=', '*=', '/=', '%='])){
     if(!left.set) this.error('invalid lefthand expression in assignment expression');
-    return this.getset( left.set.replace("_p_", this.condition().get).replace("'='", "'"+ll.type+"'"), left.set);
+    return this.getset( left.set.replace( "," + _.setName, "," + this.condition().get ).replace("'='", "'"+ll.type+"'"), left.set);
     // return this.getset('(' + left.get + ll.type  + this.condition().get + ')', left.set);
   }
   return left;
@@ -3081,7 +3100,7 @@ op.member = function(base, last, pathes, prevBase){
       pathes.push( path );
       last = path;
       extValue = extName + "." + path
-      base = "(typeof "+ extValue+ "!=='undefined'? "+extValue+":"+ ctxName + "._sg_('" + path + "', " + varName + ", " + extName + "))";
+      base = ctxName + "._sg_('" + path + "', " + varName + ", " + extName + ")";
       onlySimpleAccessor = true;
     }else{ //Primative Type
       if(path.get === 'this'){
@@ -3665,7 +3684,12 @@ var methods = {
   },
   $update: function(){
     this.$set.apply(this, arguments);
-    if(this.$root) this.$root.$digest()
+    var rootParent = this;
+    while(rootParent){
+      if(!rootParent.$parent) break;
+      rootParent = rootParent.$parent;
+    }
+    rootParent.$digest()
   },
   // auto collect watchers for logic-control.
   _record: function(){
@@ -4474,7 +4498,7 @@ Regular.directive("r-model", function(elem, value){
   var sign = tag;
   if(sign === "input") sign = elem.type || "text";
   else if(sign === "textarea") sign = "text";
-  if(typeof value === "string") value = Regular.expression(value);
+  if(typeof value === "string") value = this.$expression(value);
 
   if( modelHandlers[sign] ) return modelHandlers[sign].call(this, elem, value);
   else if(tag === "input"){

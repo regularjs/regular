@@ -16,11 +16,11 @@
     var app = new Regular({
       template: 
         "{total}:{current}<button on-click={total = total + 1}>total+1</button>\
-          <pager total={Math.floor(total/20)} current={current} on-nav={this.go()}/>\
-          <pager total={Math.floor(total/20)} current={current} />",
+          <pager total={Math.floor(total/20)} current={current}  isolate  />\
+          <pager total={Math.floor(total/20)} current={current}/>",
       data: {total: 292, current:10},
       go: function(page){
-        console.log(page)
+        this.data.current = page;
       } 
     } ).$inject("#app");
 

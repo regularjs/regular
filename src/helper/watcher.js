@@ -212,7 +212,12 @@ var methods = {
   },
   $update: function(){
     this.$set.apply(this, arguments);
-    if(this.$root) this.$root.$digest()
+    var rootParent = this;
+    while(rootParent){
+      if(!rootParent.$parent) break;
+      rootParent = rootParent.$parent;
+    }
+    rootParent.$digest()
   },
   // auto collect watchers for logic-control.
   _record: function(){

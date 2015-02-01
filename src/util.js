@@ -14,10 +14,10 @@ _.uid = (function(){
   }
 })();
 
-_.varName = '_d_';
-_.setName = '_p_';
-_.ctxName = '_c_';
-_.extName = '_e_';
+_.varName = 'd';
+_.setName = 'p_';
+_.ctxName = 'c';
+_.extName = 'e';
 
 _.rWord = /^[\$\w]+$/;
 _.rSimpleAccessor = /^[\$\w]+(\.[\$\w]+)*$/;
