@@ -150,7 +150,6 @@ function initRadio(elem, parsed){
   var handler = function handler(){
     var value = this.value;
     parsed.set(self, value);
-    wc.last = value;
     self.$update();
   }
   if(parsed.set) dom.on(elem, "change", handler)

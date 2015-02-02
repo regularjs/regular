@@ -70,16 +70,13 @@
         app.data.email = value + "@";
       }
     })
-
-    app.$watch("radio", function(value){
-      alert(value)
-    })
-
-    app.$watch("password", function(value){
-      if(value.length < 6){
-        value = value 
+    app.$watch("select", function(value){
+      if(value == 2){
+        app.data.select = 4
       }
     })
+
+ 
 
     </script>
   </body>
