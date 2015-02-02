@@ -36,7 +36,7 @@ Regular.directive("r-model", function(elem, value){
 
 function initSelect( elem, parsed){
   var self = this;
-  this.$watch(parsed, function(newValue){
+  var wc =this.$watch(parsed, function(newValue){
     var children = _.slice(elem.getElementsByTagName('option'))
     children.forEach(function(node, index){
       if(node.value == newValue){
@@ -47,7 +47,7 @@ function initSelect( elem, parsed){
 
   function handler(){
     parsed.set(self, this.value);
-    parsed.last = this.value;
+    wc.last = this.value;
     self.$update();
   }
 
@@ -65,7 +65,7 @@ function initSelect( elem, parsed){
 
 function initText(elem, parsed){
   var self = this;
-  this.$watch(parsed, function(newValue){
+  var wc = this.$watch(parsed, function(newValue){
     if(elem.value !== newValue) elem.value = newValue == null? "": "" + newValue;
   });
 
@@ -76,12 +76,13 @@ function initText(elem, parsed){
       _.nextTick(function(){
         var value = that.value
         parsed.set(self, value);
-        parsed.last = value;
+        wc.last = value;
         self.$update();
       })
     }else{
         var value = that.value
         parsed.set(self, value);
+        wc.last = value;
         self.$update();
     }
   };
@@ -114,14 +115,14 @@ function initText(elem, parsed){
 
 function initCheckBox(elem, parsed){
   var self = this;
-  this.$watch(parsed, function(newValue){
+  var watcher = this.$watch(parsed, function(newValue){
     dom.attr(elem, 'checked', !!newValue);
   });
 
   var handler = function handler(){
     var value = this.checked;
     parsed.set(self, value);
-    parsed.last = value;
+    watcher.last = value;
     self.$update();
   }
   if(parsed.set) dom.on(elem, "change", handler)
@@ -140,7 +141,7 @@ function initCheckBox(elem, parsed){
 
 function initRadio(elem, parsed){
   var self = this;
-  this.$watch(parsed, function( newValue ){
+  var wc = this.$watch(parsed, function( newValue ){
     if(newValue == elem.value) elem.checked = true;
     else elem.checked = false;
   });
@@ -149,7 +150,7 @@ function initRadio(elem, parsed){
   var handler = function handler(){
     var value = this.value;
     parsed.set(self, value);
-    parsed.last = value;
+    wc.last = value;
     self.$update();
   }
   if(parsed.set) dom.on(elem, "change", handler)

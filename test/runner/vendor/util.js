@@ -45,13 +45,13 @@ var dispatchMockEvent = (function(){
 
           case 'MouseEvent':
             ev = document.createEvent('MouseEvent');
-            ev.initMouseEvent(type, true, true)
+            ev.initMouseEvent(type, true, true, null, 1, 0, 0, 0, 0, false, false, false, false, 0, null)
             break;
 
           case 'KeyboardEvent':
             ev = document.createEvent(EventType || 'MouseEvent'),
                 initMethod = ev.initKeyboardEvent ? 'initKeyboardEvent': 'initKeyEvent';
-            ev[initMethod]( type, true, true)
+            ev[initMethod]( type, true, true, null, false, false, false, false, 9, 0 )
             break;
 
           case 'HTMLEvents':
@@ -68,4 +68,3 @@ var dispatchMockEvent = (function(){
       }
     }
 })();
-

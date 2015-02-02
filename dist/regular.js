@@ -735,7 +735,7 @@ Regular.implement({
 
 Regular.prototype.inject = function(){
   _.log("use $inject instead of inject", "error");
-  this.$inject.apply(this, arguments);
+  return this.$inject.apply(this, arguments);
 }
 
 
@@ -1566,7 +1566,8 @@ walkers.element = function(ast){
         if( !(isolate & 2) ) 
           this.$watch(value, component.$update.bind(component, attr.name))
         if( value.set && !(isolate & 1 ) ) 
-          component.$watch(attr.name, self.$update.bind(self, value));
+          // sync the data. it force the component don't trigger attr.name's first dirty echeck
+          component.$watch(attr.name, self.$update.bind(self, value), {sync: true});
       }
     }
     if(ref){
@@ -1737,7 +1738,7 @@ Regular.parse = function(str, options){
     Lexer.setup();
   }
   var ast = new Parser(str).parse();
-  return options.stringify === false? ast : JSON.stringify(ast);
+  return !options.stringify? ast : JSON.stringify(ast);
 }
 
 
@@ -3516,7 +3517,8 @@ var methods = {
       once: once, 
       force: options.force,
       test: test,
-      deep: options.deep
+      deep: options.deep,
+      last: options.sync? get(this): undefined
     }
     
     this._watchers.push( watcher );
@@ -3529,9 +3531,10 @@ var methods = {
       this._checkSingleWatch( watcher, this._watchers.length-1 );
       this.$phase = null;
     }
-    return uid;
+    return watcher;
   },
   $unwatch: function(uid){
+    uid = uid.uid || uid;
     if(!this._watchers) this._watchers = [];
     if(Array.isArray(uid)){
       for(var i =0, len = uid.length; i < len; i++){
@@ -4512,7 +4515,7 @@ Regular.directive("r-model", function(elem, value){
 
 function initSelect( elem, parsed){
   var self = this;
-  this.$watch(parsed, function(newValue){
+  var wc =this.$watch(parsed, function(newValue){
     var children = _.slice(elem.getElementsByTagName('option'))
     children.forEach(function(node, index){
       if(node.value == newValue){
@@ -4523,7 +4526,7 @@ function initSelect( elem, parsed){
 
   function handler(){
     parsed.set(self, this.value);
-    parsed.last = this.value;
+    wc.last = this.value;
     self.$update();
   }
 
@@ -4541,7 +4544,7 @@ function initSelect( elem, parsed){
 
 function initText(elem, parsed){
   var self = this;
-  this.$watch(parsed, function(newValue){
+  var wc = this.$watch(parsed, function(newValue){
     if(elem.value !== newValue) elem.value = newValue == null? "": "" + newValue;
   });
 
@@ -4552,12 +4555,13 @@ function initText(elem, parsed){
       _.nextTick(function(){
         var value = that.value
         parsed.set(self, value);
-        parsed.last = value;
+        wc.last = value;
         self.$update();
       })
     }else{
         var value = that.value
         parsed.set(self, value);
+        wc.last = value;
         self.$update();
     }
   };
@@ -4590,14 +4594,14 @@ function initText(elem, parsed){
 
 function initCheckBox(elem, parsed){
   var self = this;
-  this.$watch(parsed, function(newValue){
+  var watcher = this.$watch(parsed, function(newValue){
     dom.attr(elem, 'checked', !!newValue);
   });
 
   var handler = function handler(){
     var value = this.checked;
     parsed.set(self, value);
-    parsed.last = value;
+    watcher.last = value;
     self.$update();
   }
   if(parsed.set) dom.on(elem, "change", handler)
@@ -4616,7 +4620,7 @@ function initCheckBox(elem, parsed){
 
 function initRadio(elem, parsed){
   var self = this;
-  this.$watch(parsed, function( newValue ){
+  var wc = this.$watch(parsed, function( newValue ){
     if(newValue == elem.value) elem.checked = true;
     else elem.checked = false;
   });
@@ -4625,7 +4629,7 @@ function initRadio(elem, parsed){
   var handler = function handler(){
     var value = this.value;
     parsed.set(self, value);
-    parsed.last = value;
+    wc.last = value;
     self.$update();
   }
   if(parsed.set) dom.on(elem, "change", handler)

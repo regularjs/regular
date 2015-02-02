@@ -44,7 +44,8 @@ var methods = {
       once: once, 
       force: options.force,
       test: test,
-      deep: options.deep
+      deep: options.deep,
+      last: options.sync? get(this): undefined
     }
     
     this._watchers.push( watcher );
@@ -57,9 +58,10 @@ var methods = {
       this._checkSingleWatch( watcher, this._watchers.length-1 );
       this.$phase = null;
     }
-    return uid;
+    return watcher;
   },
   $unwatch: function(uid){
+    uid = uid.uid || uid;
     if(!this._watchers) this._watchers = [];
     if(Array.isArray(uid)){
       for(var i =0, len = uid.length; i < len; i++){

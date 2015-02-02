@@ -63,12 +63,16 @@
     <script>
     var Modal = Regular.extend({template: '#form'});
 
-    var app = new Modal().inject("#app");
+    var app = new Modal().$inject("#app");
 
     app.$watch("email", function(value){
       if(value.indexOf("@") === -1){
         app.data.email = value + "@";
       }
+    })
+
+    app.$watch("radio", function(value){
+      alert(value)
     })
 
     app.$watch("password", function(value){

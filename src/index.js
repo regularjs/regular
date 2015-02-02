@@ -21,6 +21,6 @@ Regular.parse = function(str, options){
     Lexer.setup();
   }
   var ast = new Parser(str).parse();
-  return options.stringify === false? ast : JSON.stringify(ast);
+  return !options.stringify? ast : JSON.stringify(ast);
 }
 

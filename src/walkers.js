@@ -264,7 +264,8 @@ walkers.element = function(ast){
         if( !(isolate & 2) ) 
           this.$watch(value, component.$update.bind(component, attr.name))
         if( value.set && !(isolate & 1 ) ) 
-          component.$watch(attr.name, self.$update.bind(self, value));
+          // sync the data. it force the component don't trigger attr.name's first dirty echeck
+          component.$watch(attr.name, self.$update.bind(self, value), {sync: true});
       }
     }
     if(ref){
