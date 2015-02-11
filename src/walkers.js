@@ -255,9 +255,21 @@ walkers.element = function(ast){
 
     }
 
-    var $body;
-    if(ast.children) $body = ast.children;
-    var component = new Component({data: data, events: events, $body: $body, $parent: isolate? null: this, namespace: namespace, $root: this.$root});
+    var config = { 
+        data: data, 
+        events: events, 
+        $parent: isolate? null: this, 
+        namespace: namespace, 
+        $root: this.$root
+      }
+    if(ast.children){
+        config.$body = ast.children;
+        config.__getTransclude = function(){
+          return self.$compile(config.$body, { namespace: namespace, extra: extra})
+        }
+    }
+
+    var component = new Component(config);
     if(ref &&  self.$context.$refs) self.$context.$refs[ref] = component;
     for(var i = 0, len = attrs.length; i < len; i++){
       var attr = attrs[i];
@@ -279,8 +291,8 @@ walkers.element = function(ast){
     }
     return component;
   }
-  else if(ast.tag === 'r-content' && this.$body){
-    return this.$body;
+  else if( ast.tag === 'r-content' && this.__getTransclude ){
+    return this.__getTransclude();
   }
 
   var element = dom.create(ast.tag, namespace, attrs);
