@@ -326,6 +326,19 @@ void function(){
 
       })
 
+      it("array change from Array back to undefined, should not throw undefined", function(){
+        var list = new Regular({
+          template: "<div ref=cnt>{#list items as item}<p>{item}</p>{/list}</div>",
+          data: {items: [1]}
+        })
+        expect(nes.all("p", list.$refs.cnt).length).to.equal(1);
+        list.$update("items", undefined);
+        expect(nes.all("p", list.$refs.cnt).length).to.equal(0);
+
+
+
+      })
+
 
         it("item in list should not emit ,init, update or destroy to outerComponent", function(){
         var List = Regular.extend({
@@ -363,17 +376,8 @@ void function(){
         expect(destroyTimes).to.equal(0);
         expect(updateTimes).to.equal(2);
 
-
-
-
       })
-
-
-
     })
-
-
-
   })
 
 }()

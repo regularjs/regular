@@ -33,7 +33,11 @@ walkers.list = function(ast){
   var variable = ast.variable;
 
   function update(newValue, splices){
-    newValue = newValue || [];
+    if(!newValue) {
+      newValue = [];
+      splices = _.equals(newValue, splices);
+    }
+    
     if(!splices || !splices.length) return;
     var cur = placeholder;
     var m = 0, len = newValue.length,

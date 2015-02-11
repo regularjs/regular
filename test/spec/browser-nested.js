@@ -73,31 +73,31 @@ void function(){
       destroy(component, container);
     })
 
-    // it("context of transclude-html should point to outer component", function(){
-    //   var container = document.createElement("div");
-    //   var Component = NameSpace.extend({
-    //     name: "test",
-    //     template: "<p><a>haha</a><r-content></p>"
-    //   })
+    it("context of transclude-html should point to outer component", function(){
+      var container = document.createElement("div");
+      var Component = NameSpace.extend({
+        name: "test",
+        template: "<p><a>haha</a><r-content></p>"
+      })
 
-    //   var i = 0;
-    //   var component = new NameSpace({
-    //     template: "<test on-hello={this.hello}><span on-click={this.hello()}>{name}</span></test>",
-    //     data: {name: "leeluolee"},
-    //     hello: function(){
-    //       i++
-    //     }
-    //   }).$inject(container);
+      var i = 0;
+      var component = new NameSpace({
+        template: "<test on-hello={this.hello}><span on-click={this.hello()}>{name}</span></test>",
+        data: {name: "leeluolee"},
+        hello: function(){
+          i++
+        }
+      }).$inject(container);
 
-    //   dispatchMockEvent(nes.one("span", container), "click");
+      dispatchMockEvent(nes.one("span", container), "click");
 
-    //   expect(i).to.equal(1);
+      expect(i).to.equal(1);
 
-    //   expect(nes.one("p span", container).innerHTML).to.equal("leeluolee");
+      expect(nes.one("p span", container).innerHTML).to.equal("leeluolee");
 
-    //   destroy(component, container);
+      destroy(component, container);
 
-    // })
+    })
 
     it("nested component should get the outer component's data before create the binding", function(){
 

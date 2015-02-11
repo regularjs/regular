@@ -1018,11 +1018,11 @@ _.clone = function clone(obj){
 
 
 _.equals = function(now, old){
-  var type = _.typeOf(now);
-  if(type === 'array'){
+  if( Array.isArray(now) ){
     var splices = ld(now, old||[]);
     return splices;
   }
+  var type = typeof now;
   if(type === 'number' && typeof old === 'number'&& isNaN(now) && isNaN(old)) return true
   return now === old;
 }
@@ -1335,7 +1335,11 @@ walkers.list = function(ast){
   var variable = ast.variable;
 
   function update(newValue, splices){
-    newValue = newValue || [];
+    if(!newValue) {
+      newValue = [];
+      splices = _.equals(newValue, splices);
+    }
+    
     if(!splices || !splices.length) return;
     var cur = placeholder;
     var m = 0, len = newValue.length,
