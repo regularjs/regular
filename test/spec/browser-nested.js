@@ -99,6 +99,10 @@ void function(){
 
     })
 
+    it("transclude-html with list ", function(){
+      
+    })
+
     it("nested component should get the outer component's data before create the binding", function(){
 
       var container = document.createElement("div");
