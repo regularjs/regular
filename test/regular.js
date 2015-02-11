@@ -1517,9 +1517,6 @@ walkers.element = function(ast){
   if(ast.tag === 'svg') var namespace = "svg";
 
 
-  if(children && children.length){
-    group = this.$compile(children, {namespace: namespace, extra: extra });
-  }
 
 
   if(Component){
@@ -1565,7 +1562,7 @@ walkers.element = function(ast){
     if(ast.children){
         config.$body = ast.children;
         config.__getTransclude = function(){
-          return self.$compile(config.$body, { namespace: namespace, extra: extra})
+          return self.$compile(config.$body, { namespace: namespace, extra: extra })
         }
     }
 
@@ -1592,7 +1589,11 @@ walkers.element = function(ast){
     return component;
   }
   else if( ast.tag === 'r-content' && this.__getTransclude ){
-    return this.__getTransclude();
+    return this.__getTransclude(this);
+  }
+  
+  if(children && children.length){
+    group = this.$compile(children, {namespace: namespace, extra: extra });
   }
 
   var element = dom.create(ast.tag, namespace, attrs);
