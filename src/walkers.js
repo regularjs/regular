@@ -66,7 +66,8 @@ walkers.list = function(ast){
         _.extend(data, extra);
         var section = self.$compile(ast.body, {
           extra: data,
-          namespace:namespace
+          namespace:namespace,
+          record: true
         })
         section.data = data;
         // autolink

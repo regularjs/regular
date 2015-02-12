@@ -376,7 +376,27 @@ void function(){
         expect(destroyTimes).to.equal(0);
         expect(updateTimes).to.equal(2);
 
+        component.destroy();
+
       })
+
+
+    it("list in list should not thorw error , when both of them are update", function(){
+      var List = Regular.extend({
+        template: "<div ref=cnt>{#list list1 as it1}<ul>{#list list2 as it2}{it2}{/list}</ul>{/list}</div>",
+        data: {list1:[1], list2: [2]}
+      })
+      var list = new List;
+
+      list.data.list1 = [];
+      list.data.list2 = [];
+      list.$update()
+
+      expect(nes.all('ul',list.$refs.cnt).length).to.equal(0);
+
+      list.destroy();
+
+    })
     })
   })
 
