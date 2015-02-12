@@ -382,6 +382,7 @@ void function(){
 
 
     it("list in list should not thorw error , when both of them are update", function(){
+      // beacuse if not record.
       var List = Regular.extend({
         template: "<div ref=cnt>{#list list1 as it1}<ul>{#list list2 as it2}{it2}{/list}</ul>{/list}</div>",
         data: {list1:[1], list2: [2]}
