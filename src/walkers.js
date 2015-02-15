@@ -245,17 +245,12 @@ walkers.element = function(ast, options){
       $parent: this,
       $outer: options.outer,
       namespace: namespace, 
-      $root: this.$root
-    }
-    if(ast.children){
-      config.$body = ast.children;
-      config.__getTransclude = function(){
-        return self.$compile(config.$body, { outer: this,namespace: namespace, extra: extra })
-      }
+      $root: this.$root,
+      $body: ast.children
     }
 
     var component = new Component(config);
-    if(ref &&  self.$context.$refs) self.$context.$refs[ref] = component;
+    if(ref &&  self.$refs) self.$refs[ref] = component;
     for(var i = 0, len = attrs.length; i < len; i++){
       var attr = attrs[i];
       var value = attr.value||"";
@@ -271,13 +266,13 @@ walkers.element = function(ast, options){
     }
     if(ref){
       component.$on('destroy', function(){
-        if(self.$context.$refs) self.$context.$refs[ref] = null;
+        if(self.$refs) self.$refs[ref] = null;
       })
     }
     return component;
   }
-  else if( ast.tag === 'r-content' && this.__getTransclude ){
-    return this.__getTransclude(this);
+  else if( ast.tag === 'r-content' && this._getTransclude ){
+    return this._getTransclude();
   }
   
   if(children && children.length){
@@ -367,7 +362,7 @@ walkers.attribute = function(ast ,options){
   }else{
     if( name === 'ref'  && value != null && options.fromElement){
       var ref = value.type === 'expression'? value.get(self): value;
-      var refs = this.$context.$refs;
+      var refs = this.$refs;
       if(refs){
         refs[ref] = element
         return {

@@ -467,7 +467,7 @@ _.handleEvent = function(value, type ){
     return function fire(){
       var args = slice.call(arguments)      
       args.unshift(value);
-      self.$emit.apply(self.$context, args);
+      self.$emit.apply(self, args);
       self.$update();
     }
   }

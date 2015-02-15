@@ -57,13 +57,17 @@ var Regular = function(options){
   if(typeof template === 'string') this.template = new Parser(template).parse();
 
   this.computed = handleComputed(this.computed);
-  this.$context = this.$context || this;
   this.$root = this.$root || this;
   // if have events
   if(this.events){
     this.$on(this.events);
   }
-
+  if(this.$body){
+    this._getTransclude = function(){
+      var ctx = this.$parent || this;
+      if(this.$body) return ctx.$compile(this.$body, {namespace: options.namespace, outer: this, extra: options.extra})
+    }
+  }
   this.config && this.config(this.data);
   // handle computed
   if(template){
@@ -74,7 +78,7 @@ var Regular = function(options){
 
   if(!this.$parent) this.$update();
   this.$ready = true;
-  if(this.$context === this) this.$emit("$init");
+  this.$emit("$init");
   if( this.init ) this.init(this.data);
 
   // @TODO: remove, maybe , there is no need to update after init; 
@@ -241,7 +245,7 @@ Regular.implement({
   config: function(){},
   destroy: function(){
     // destroy event wont propgation;
-    if(this.$context === this) this.$emit("$destroy");
+    this.$emit("$destroy");
     this.group && this.group.destroy(true);
     this.group = null;
     this.parentNode = null;
@@ -539,15 +543,13 @@ var handleComputed = (function(){
   // wrap the computed getter;
   function wrapGet(get){
     return function(context){
-      var ctx = context.$context;
-      return get.call(ctx, ctx.data );
+      return get.call(context, context.data );
     }
   }
   // wrap the computed setter;
   function wrapSet(set){
     return function(context, value){
-      var ctx = context.$context;
-      set.call( ctx, value, ctx.data );
+      set.call( context, value, context.data );
       return value;
     }
   }

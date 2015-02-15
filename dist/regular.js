@@ -268,13 +268,17 @@ var Regular = function(options){
   if(typeof template === 'string') this.template = new Parser(template).parse();
 
   this.computed = handleComputed(this.computed);
-  this.$context = this.$context || this;
   this.$root = this.$root || this;
   // if have events
   if(this.events){
     this.$on(this.events);
   }
-
+  if(this.$body){
+    this._getTransclude = function(){
+      var ctx = this.$parent || this;
+      if(this.$body) return ctx.$compile(this.$body, {namespace: options.namespace, outer: this, extra: options.extra})
+    }
+  }
   this.config && this.config(this.data);
   // handle computed
   if(template){
@@ -285,7 +289,7 @@ var Regular = function(options){
 
   if(!this.$parent) this.$update();
   this.$ready = true;
-  if(this.$context === this) this.$emit("$init");
+  this.$emit("$init");
   if( this.init ) this.init(this.data);
 
   // @TODO: remove, maybe , there is no need to update after init; 
@@ -452,7 +456,7 @@ Regular.implement({
   config: function(){},
   destroy: function(){
     // destroy event wont propgation;
-    if(this.$context === this) this.$emit("$destroy");
+    this.$emit("$destroy");
     this.group && this.group.destroy(true);
     this.group = null;
     this.parentNode = null;
@@ -750,15 +754,13 @@ var handleComputed = (function(){
   // wrap the computed getter;
   function wrapGet(get){
     return function(context){
-      var ctx = context.$context;
-      return get.call(ctx, ctx.data );
+      return get.call(context, context.data );
     }
   }
   // wrap the computed setter;
   function wrapSet(set){
     return function(context, value){
-      var ctx = context.$context;
-      set.call( ctx, value, ctx.data );
+      set.call( context, value, context.data );
       return value;
     }
   }
@@ -1261,7 +1263,7 @@ _.handleEvent = function(value, type ){
     return function fire(){
       var args = slice.call(arguments)      
       args.unshift(value);
-      self.$emit.apply(self.$context, args);
+      self.$emit.apply(self, args);
       self.$update();
     }
   }
@@ -1546,17 +1548,12 @@ walkers.element = function(ast, options){
       $parent: this,
       $outer: options.outer,
       namespace: namespace, 
-      $root: this.$root
-    }
-    if(ast.children){
-      config.$body = ast.children;
-      config.__getTransclude = function(){
-        return self.$compile(config.$body, { outer: this,namespace: namespace, extra: extra })
-      }
+      $root: this.$root,
+      $body: ast.children
     }
 
     var component = new Component(config);
-    if(ref &&  self.$context.$refs) self.$context.$refs[ref] = component;
+    if(ref &&  self.$refs) self.$refs[ref] = component;
     for(var i = 0, len = attrs.length; i < len; i++){
       var attr = attrs[i];
       var value = attr.value||"";
@@ -1572,13 +1569,13 @@ walkers.element = function(ast, options){
     }
     if(ref){
       component.$on('destroy', function(){
-        if(self.$context.$refs) self.$context.$refs[ref] = null;
+        if(self.$refs) self.$refs[ref] = null;
       })
     }
     return component;
   }
-  else if( ast.tag === 'r-content' && this.__getTransclude ){
-    return this.__getTransclude(this);
+  else if( ast.tag === 'r-content' && this._getTransclude ){
+    return this._getTransclude();
   }
   
   if(children && children.length){
@@ -1668,7 +1665,7 @@ walkers.attribute = function(ast ,options){
   }else{
     if( name === 'ref'  && value != null && options.fromElement){
       var ref = value.type === 'expression'? value.get(self): value;
-      var refs = this.$context.$refs;
+      var refs = this.$refs;
       if(refs){
         refs[ref] = element
         return {
