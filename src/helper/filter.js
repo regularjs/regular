@@ -42,8 +42,21 @@ f.total = function(array, key){
   return total;
 }
 
-f.sort = function(array, fn){
-  var type = typeof fn; 
-}
+// var basicSortFn = function(a, b){return b - a}
+
+// f.sort = function(array, key, reverse){
+//   var type = typeof key, sortFn; 
+//   switch(type){
+//     case 'function': sortFn = key; break;
+//     case 'string': sortFn = function(a, b){};break;
+//     default:
+//       sortFn = basicSortFn;
+//   }
+//   // need other refernce.
+//   return array.slice().sort(function(a,b){
+//     return reverse? -sortFn(a, b): sortFn(a, b);
+//   })
+//   return array
+// }
 
 

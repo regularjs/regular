@@ -1486,7 +1486,6 @@ walkers['if'] = function(ast, options){
 
 walkers.expression = function(ast){
   var node = document.createTextNode("");
-  ast = this._touchExpr(ast);
   this.$watch(ast, function(newval){
     dom.text(node, "" + (newval == null? "": "" + newval) );
   })
@@ -4405,9 +4404,22 @@ f.total = function(array, key){
   return total;
 }
 
-f.sort = function(array, fn){
-  var type = typeof fn; 
-}
+// var basicSortFn = function(a, b){return b - a}
+
+// f.sort = function(array, key, reverse){
+//   var type = typeof key, sortFn; 
+//   switch(type){
+//     case 'function': sortFn = key; break;
+//     case 'string': sortFn = function(a, b){};break;
+//     default:
+//       sortFn = basicSortFn;
+//   }
+//   // need other refernce.
+//   return array.slice().sort(function(a,b){
+//     return reverse? -sortFn(a, b): sortFn(a, b);
+//   })
+//   return array
+// }
 
 
 
@@ -4852,19 +4864,21 @@ function processAnimate( element, value ){
 
     if( command === EVENT_COMMAND){
       reset(param);
-      if(param === "leave"){
+      if( param === "leave" ){
         element.onleave = seed.start;
-      }else if(param === "enter"){
+        destroies.push( animationDestroy(element) );
+      }else if( param === "enter" ){
         element.onenter = seed.start;
+        destroies.push( animationDestroy(element) );
       }else{
-        // destroy = this._handleEvent( element, param, seed.start );
-        this.$on(param, seed.start)
-        destroy = this.$off.bind(this, param, seed.start);
+        if( ("on" + param) in element){ // if dom have the event , we use dom event
+          console.log('ahah')
+          destroies.push(this._handleEvent( element, param, seed.start ));
+        }else{ // otherwise, we use component event
+          this.$on(param, seed.start);
+          destroies.push(this.$off.bind(this, param, seed.start));
+        }
       }
-
-      // @TODO add
-      destroies.push( destroy? destroy : animationDestroy(element) );
-      destroy = null;
       continue
     }
 
@@ -4893,6 +4907,7 @@ function processAnimate( element, value ){
 
 
 Regular.directive( "r-animation", processAnimate)
+Regular.directive( "r-sequence", processAnimate)
 
 
 });

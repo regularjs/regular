@@ -186,7 +186,6 @@ walkers['if'] = function(ast, options){
 
 walkers.expression = function(ast){
   var node = document.createTextNode("");
-  ast = this._touchExpr(ast);
   this.$watch(ast, function(newval){
     dom.text(node, "" + (newval == null? "": "" + newval) );
   })

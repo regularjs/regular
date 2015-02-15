@@ -268,10 +268,29 @@ void function(){
           toastOver: function(){
             expect(dom.hasClass(element, 'animated')).to.equal(false);
             done()
+            this.destroy();
           }
         });
         processAnimate.link.call(component, element, "on: toast; class: animated; call: this.toastOver()");
         component.$emit("toast");
+        expect(dom.hasClass(element, 'animated')).to.equal(false);
+        dom.nextReflow(function(){
+          expect(dom.hasClass(element, 'animated')).to.equal(true);
+        })
+        component.destroy
+      })
+
+      it("'on: click' add addListener on dom but not component", function(done){
+        var element = document.createElement("div");
+        var component = new Component({
+          toastOver: function($event){
+            expect(dom.hasClass(element, 'animated')).to.equal(false);
+            done()
+            this.destroy();
+          }
+        });
+        processAnimate.link.call(component, element, "on: click ; class: animated; call: this.toastOver($event)");
+        dispatchMockEvent(element, 'click');
         expect(dom.hasClass(element, 'animated')).to.equal(false);
         dom.nextReflow(function(){
           expect(dom.hasClass(element, 'animated')).to.equal(true);
