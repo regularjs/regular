@@ -2787,7 +2787,7 @@ op.attvalue = function(){
         parsed.forEach(function(item){
           if(!item.constant) constant=false;
           // silent the mutiple inteplation
-            body.push(item.body || "'" + item.text + "'");        
+            body.push(item.body || "'" + item.text.replace(/'/g, "\\'") + "'");        
         });
         body = "[" + body.join(",") + "].join('')";
         value = node.expression(body, null, constant);
