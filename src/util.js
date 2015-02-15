@@ -460,7 +460,7 @@ _.handleEvent = function(value, type ){
       self.data.$event = obj;
       var res = evaluate(self);
       if(res === false && obj && obj.preventDefault) obj.preventDefault();
-      delete self.data.$event;
+      self.data.$event = undefined;
       self.$update();
     }
   }else{

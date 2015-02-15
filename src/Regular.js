@@ -269,12 +269,12 @@ Regular.implement({
     if(typeof ast === 'string'){
       ast = new Parser(ast).parse()
     }
-    var preNs = this.__ns__,
-      preExt = this.__ext__,
+    var preExt = this.__ext__,
       record = options.record, 
       records;
-    if(options.namespace) this.__ns__ = options.namespace;
+
     if(options.extra) this.__ext__ = options.extra;
+
     if(record) this._record();
     var group = this._walk(ast, options);
     if(record){
@@ -285,7 +285,6 @@ Regular.implement({
         group.ondestroy = function(){ self.$unwatch(records); }
       }
     }
-    if(options.namespace) this.__ns__ = preNs;
     if(options.extra) this.__ext__ = preExt;
     return group;
   },

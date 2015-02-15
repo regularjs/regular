@@ -215,11 +215,13 @@ var methods = {
   $update: function(){
     this.$set.apply(this, arguments);
     var rootParent = this;
-    while(rootParent){
-      if(!rootParent.$parent) break;
+
+    do{
+      if(rootParent.data.isolate || !rootParent.$parent) break;
       rootParent = rootParent.$parent;
-    }
-    rootParent.$digest()
+    } while(rootParent)
+
+    rootParent.$digest();
   },
   // auto collect watchers for logic-control.
   _record: function(){

@@ -7,25 +7,12 @@ var combine = require('./helper/combine.js');
 
 var walkers = module.exports = {};
 
-walkers.list = function(ast){
+walkers.list = function(ast, options){
 
   var Regular = walkers.Regular;  
   var placeholder = document.createComment("Regular list"),
-    namespace = this.__ns__,
-    extra = this.__ext__;
-  // proxy Component to implement list item, so the behaviar is similar with angular;
-  // var Section =  Regular.extend( { 
-  //   template: ast.body,
-  //   $context: this.$context,
-  //   // proxy the event to $context
-  //   $on: this.$context.$on.bind(this.$context),
-  //   $off: this.$context.$off.bind(this.$context),
-  //   $emit: this.$context.$emit.bind(this.$context)
-  // });
-  // Regular._inheritConfig(Section, this.constructor);
-
-  // var fragment = dom.fragment();
-  // fragment.appendChild(placeholder);
+    namespace = options.namespace,
+    extra = options.extra;
   var self = this;
   var group = new Group();
   group.push(placeholder);
@@ -66,7 +53,7 @@ walkers.list = function(ast){
         _.extend(data, extra);
         var section = self.$compile(ast.body, {
           extra: data,
-          namespace:namespace
+          outer: options.outer,namespace:namespace
         })
         section.data = data;
         // autolink
@@ -92,12 +79,11 @@ walkers.list = function(ast){
   this.$watch(ast.sequence, update, { init: true });
   return group;
 }
-
 // {#include }
-walkers.template = function(ast){
+walkers.template = function(ast, options){
   var content = ast.content, compiled;
   var placeholder = document.createComment('inlcude');
-  var compiled, namespace = this.__ns__, extra = this.__ext__;
+  var compiled, namespace = options.namespace, extra = options.extra;
   // var fragment = dom.fragment();
   // fragment.appendChild(placeholder);
   var group = new Group();
@@ -109,7 +95,7 @@ walkers.template = function(ast){
         compiled.destroy(true); 
         group.children.pop();
       }
-      group.push( compiled =  self.$compile(value, {record: true, namespace: namespace, extra: extra}) ); 
+      group.push( compiled =  self.$compile(value, {record: true, outer: options.outer,namespace: namespace, extra: extra}) ); 
       if(placeholder.parentNode) animate.inject(combine.node(compiled), placeholder, 'before')
     }, {
       init: true
@@ -122,7 +108,7 @@ walkers.template = function(ast){
 // how to resolve this problem
 var ii = 0;
 walkers['if'] = function(ast, options){
-  var self = this, consequent, alternate, extra = this.__ext__;
+  var self = this, consequent, alternate, extra = options.extra;
   if(options && options.element){ // attribute inteplation
     var update = function(nvalue){
       if(!!nvalue){
@@ -142,12 +128,11 @@ walkers['if'] = function(ast, options){
     }
   }
 
-
   var test, consequent, alternate, node;
   var placeholder = document.createComment("Regular if" + ii++);
   var group = new Group();
   group.push(placeholder);
-  var preValue = null, namespace= this.__ns__;
+  var preValue = null, namespace= options.namespace;
 
 
   var update = function (nvalue, old){
@@ -160,7 +145,7 @@ walkers['if'] = function(ast, options){
     }
     if(value){ //true
       if(ast.consequent && ast.consequent.length){
-        consequent = self.$compile( ast.consequent , {record:true, namespace: namespace, extra:extra })
+        consequent = self.$compile( ast.consequent , {record:true, outer: options.outer,namespace: namespace, extra:extra })
         // placeholder.parentNode && placeholder.parentNode.insertBefore( node, placeholder );
         group.push(consequent);
         if(placeholder.parentNode){
@@ -169,7 +154,7 @@ walkers['if'] = function(ast, options){
       }
     }else{ //false
       if(ast.alternate && ast.alternate.length){
-        alternate = self.$compile(ast.alternate, {record:true, namespace: namespace, extra:extra});
+        alternate = self.$compile(ast.alternate, {record:true, outer: options.outer,namespace: namespace, extra:extra});
         group.push(alternate);
         if(placeholder.parentNode){
           animate.inject(combine.node(alternate), placeholder, 'before');
@@ -183,7 +168,7 @@ walkers['if'] = function(ast, options){
 }
 
 
-walkers.expression = function(ast){
+walkers.expression = function(ast, options){
   var node = document.createTextNode("");
   ast = this._touchExpr(ast);
   this.$watch(ast, function(newval){
@@ -191,7 +176,7 @@ walkers.expression = function(ast){
   })
   return node;
 }
-walkers.text = function(ast){
+walkers.text = function(ast, options){
   var node = document.createTextNode(_.convertEntity(ast.text));
   return node;
 }
@@ -203,18 +188,18 @@ var eventReg = /^on-(.+)$/
 /**
  * walkers element (contains component)
  */
-walkers.element = function(ast){
+walkers.element = function(ast, options){
   var attrs = ast.attrs, 
     component, self = this,
     Constructor=this.constructor,
     children = ast.children,
-    namespace = this.__ns__, ref, group, 
-    extra = this.__ext__,
+    namespace = options.namespace, ref, group, 
+    extra = options.extra,
     isolate = 0,
     Component = Constructor.component(ast.tag);
 
 
-  if(ast.tag === 'svg') var namespace = "svg";
+  if(ast.tag === 'svg') namespace = "svg";
 
 
 
@@ -248,22 +233,25 @@ walkers.element = function(ast){
         // 3. stop 1 and 2: composite <-> parent
         // 0. stop nothing (defualt)
         isolate = value.type === 'expression'? value.get(self): parseInt(value || 3, 10);
+        data.isolate = isolate;
       }
+
 
     }
 
     var config = { 
-        data: data, 
-        events: events, 
-        $parent: isolate? null: this, 
-        namespace: namespace, 
-        $root: this.$root
-      }
+      data: data, 
+      events: events, 
+      $parent: this,
+      $outer: options.outer,
+      namespace: namespace, 
+      $root: this.$root
+    }
     if(ast.children){
-        config.$body = ast.children;
-        config.__getTransclude = function(){
-          return self.$compile(config.$body, { namespace: namespace, extra: extra })
-        }
+      config.$body = ast.children;
+      config.__getTransclude = function(){
+        return self.$compile(config.$body, { outer: this,namespace: namespace, extra: extra })
+      }
     }
 
     var component = new Component(config);
@@ -293,7 +281,7 @@ walkers.element = function(ast){
   }
   
   if(children && children.length){
-    group = this.$compile(children, {namespace: namespace, extra: extra });
+    group = this.$compile(children, {outer: options.outer,namespace: namespace, extra: extra });
   }
 
   var element = dom.create(ast.tag, namespace, attrs);
