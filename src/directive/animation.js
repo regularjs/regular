@@ -189,7 +189,6 @@ function processAnimate( element, value ){
         destroies.push( animationDestroy(element) );
       }else{
         if( ("on" + param) in element){ // if dom have the event , we use dom event
-          console.log('ahah')
           destroies.push(this._handleEvent( element, param, seed.start ));
         }else{ // otherwise, we use component event
           this.$on(param, seed.start);

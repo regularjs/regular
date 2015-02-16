@@ -13,6 +13,11 @@ void function(){
   describe("Nested Component", function(){
     var NameSpace = Regular.extend();
     var containerAll = document.createElement("div");
+    var Test = NameSpace.extend({
+      template: "<div><r-content /></div>"
+    })
+
+    NameSpace.component('test', Test);
 
     it("the attribute with plain String will pass to sub_component", function(){
 
@@ -76,13 +81,13 @@ void function(){
     it("context of transclude-html should point to outer component", function(){
       var container = document.createElement("div");
       var Component = NameSpace.extend({
-        name: "test",
+        name: "nested1",
         template: "<p><a>haha</a><r-content></p>"
       })
 
       var i = 0;
       var component = new NameSpace({
-        template: "<test on-hello={this.hello}><span on-click={this.hello()}>{name}</span></test>",
+        template: "<nested1 on-hello={this.hello}><span on-click={this.hello()}>{name}</span></nested1>",
         data: {name: "leeluolee"},
         hello: function(){
           i++
@@ -99,20 +104,101 @@ void function(){
 
     })
 
-    it("transclude-html with list ", function(){
-      
+    it("transclude-html with $body ", function(){
+                  
+
+      var test = new Test({
+        $body: "<p ref=p>{title}</p>",
+        data: {title: 'leeluolee'}
+      })
+      expect(test.$refs.p.innerHTML).to.equal('leeluolee');
+      test.destroy();
     })
+
+
+    it("$outer should point to visual outer component", function(){
+      var TestChild = NameSpace.extend({
+        template: "<p>{title}</p>"
+      })
+      NameSpace.component("test-child", TestChild);
+
+      var  component = new NameSpace({
+        template: 
+          "<test ref=test>\
+            <test-child title={title} ref=child></test-child>\
+            <test-child title={title} ref=child2></test-child>\
+          </test>",
+        data: {title: 'regularjs'}
+      })
+
+
+      expect(component.$refs.child.$outer).to.equal(component.$refs.test);
+
+      component.destroy();
+
+    })
+
+    it("nested intialize step should follow particular sequence", function(){
+      var step = [];
+      var Child = NameSpace.extend({
+        template: "<p><r-content></p>",
+        config: function(data){
+          step.push( "config " + data.step);
+        },
+        init: function(){
+          var data = this.data;
+          step.push("init "+data.step);
+        }
+      })
+      NameSpace.component("child1", Child);
+      NameSpace.component("child2", Child);
+      NameSpace.component("child3", Child);
+      NameSpace.component("child4", Child);
+
+      var  component = new NameSpace({
+        template: 
+          "<div ref=container ><child1 step=child1>\
+            <child2 step=child21></child2>\
+            <child2 step=child22>\
+              <child3 step='child31'>\
+                <child4 step='child41'>{title}</child4>\
+                <child4 step='child42'>{title}</child4>\
+              </child3>\
+              <child3 step='child32'></child3>\
+            </child2>\
+          </child1></div>",
+        data: {title: 'regularjs'}
+      })
+
+      expect(step).to.eql( 
+        ["config child1", 
+          "config child21", "init child21", 
+          "config child22", 
+            "config child31", 
+              "config child41", "init child41", 
+              "config child42", "init child42", 
+            "init child31", 
+            "config child32", "init child32", 
+          "init child22", 
+        "init child1"]
+        )
+
+      component.destroy();
+
+
+    })
+
 
     it("nested component should get the outer component's data before create the binding", function(){
 
       var container = document.createElement("div");
       var Component = NameSpace.extend({
-        name: "test",
+        name: "nest2",
         template: "<p>{user.name.first}</p>"
       })
 
       var component = new NameSpace({
-        template: "<test user={user}></test>",
+        template: "<nest2 user={user}></nest2>",
         data: {user: {name: {first: "Zheng"} } }
       }).$inject(container);
 
@@ -128,13 +214,13 @@ void function(){
       it("on-* should evaluate the Expression when the listener is called", function(){
         var container = document.createElement("div");
         var Component = NameSpace.extend({
-          name: "test",
+          name: "nested3",
           template: "<p on-click={this.$emit('hello')}></p>"
         })
 
         var i =0;
         var component = new NameSpace({
-          template: "<test on-hello={this.hello()} />",
+          template: "<nested3 on-hello={this.hello()} />",
           hello: function(){
             i++
           }
@@ -150,14 +236,14 @@ void function(){
       it("on-*='String' should proxy the listener to outer component", function(){
         var container = document.createElement("div");
         var Component = NameSpace.extend({
-          name: "test",
+          name: "nested4",
           template: "<p on-click={this.$emit('hello', $event)}></p>"
         })
 
         var i =0;
         var type=null;
         var component = new NameSpace({
-          template: "<test on-hello='hello' />",
+          template: "<nested4 on-hello='hello' />",
           init: function(){
             this.$on('hello', function(ev){
               type = ev.type;
@@ -183,13 +269,13 @@ void function(){
     it("isolate = 3 should make the component isolate to/from parent", function(){
       var container = document.createElement("div");
       var Test = NameSpace.extend({
-        name: 'test',
+        name: 'nested5',
         template: "<p>{title}</p>"
       })
 
 
       var component = new NameSpace({
-        template: "<span>{title}</span><test ref=a title={title} isolate></test><test ref=b title={title} isolate=3></test>",
+        template: "<span>{title}</span><nested5 ref=a title={title} isolate></nested5><nested5 ref=b title={title} isolate=3></nested5>",
         data: {title: 'leeluolee'}
       }).$inject(containerAll);
 
@@ -221,11 +307,11 @@ void function(){
     // stop parent ->  component
     it("isolate = 2 should make the component isolate from parent", function(){
       var Test = NameSpace.extend({
-        name: 'test',
+        name: 'nested6',
         template: "<p>{title}</p>"
       })
       var component = new NameSpace({
-        template: "<span>{title}</span><test ref=a title={title} isolate=2></test>",
+        template: "<span>{title}</span><nested6 ref=a title={title} isolate=2></nested6>",
         data: {title: 'leeluolee'}
       }).$inject(containerAll);
       var p1= containerAll.getElementsByTagName("p")[0]
@@ -247,11 +333,11 @@ void function(){
     // stop component -> parent
     it("isolate = 1 should make the component isolate to parent", function(){
       var Test = NameSpace.extend({
-        name: 'test',
+        name: 'nested7',
         template: "<p>{title}</p>"
       })
       var component = new NameSpace({
-        template: "<span>{title}</span><test ref=a title={title} isolate=1></test>",
+        template: "<span>{title}</span><nested7 ref=a title={title} isolate=1></nested7>",
         data: {title: 'leeluolee'}
       }).$inject(containerAll);
       var p1= containerAll.getElementsByTagName("p")[0]
@@ -269,8 +355,6 @@ void function(){
       expect(p1.innerHTML).to.equal("leeluolee3");
       expect(span.innerHTML).to.equal("leeluolee2");
       destroy(component, containerAll);
-    })
-    it("isolate & 1 should make the component isolate to parent", function(){
     })
 })
 

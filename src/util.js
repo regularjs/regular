@@ -460,14 +460,14 @@ _.handleEvent = function(value, type ){
       self.data.$event = obj;
       var res = evaluate(self);
       if(res === false && obj && obj.preventDefault) obj.preventDefault();
-      delete self.data.$event;
+      self.data.$event = undefined;
       self.$update();
     }
   }else{
     return function fire(){
       var args = slice.call(arguments)      
       args.unshift(value);
-      self.$emit.apply(self.$context, args);
+      self.$emit.apply(self, args);
       self.$update();
     }
   }
