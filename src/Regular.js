@@ -68,6 +68,7 @@ var Regular = function(options){
       if(this.$body) return ctx.$compile(this.$body, {namespace: options.namespace, outer: this, extra: options.extra})
     }
   }
+  this.$emit("$config");
   this.config && this.config(this.data);
   // handle computed
   if(template){
