@@ -1,4 +1,5 @@
 var Lexer = require_lib("parser/Lexer.js");
+var config = require_lib("config.js");
 
 /**
  * setup template
@@ -64,6 +65,12 @@ describe("Lexer under mode 1 and 2", function(){
     // mode 2
     expect(l2(input))
       .typeEqual("OPEN,END,TEXT,EXPR_OPEN,IDENT,END,TEXT,CLOSE,EOF");
+
+  })
+
+  it("config should work", function(){
+    config.END = "}}";
+    config.BEGIN = "{{";
 
   })
 
