@@ -362,22 +362,28 @@ void function(){
 
         destroy(component, container);
       })
-      // it("if if combine with attribute should work as expect", function(){
-      //   var container = document.createElement('div');
+      it("if/list combine with attribute should work as expect", function(){
+        var container = document.createElement('div');
 
-      //   var component = new Regular({
-      //     template: "<div {#if test} title='haha' {#if name} title2='haha2' {/if} {/if} class='hello' >haha</div>",
-      //     data: { test: 1 , name: ''}
-      //   }).$inject(container);
-      //   var $node = $("div.hello",container)
-      //   expect($node.attr("title")).to.equal("haha");
-      //   expect($node.attr("title2")).to.equal(undefined);
-      //   component.$update("name", true)
-      //   expect($node.attr("title2")).to.equal("haha2");
+        var component = new Regular({
+          template: "<div ref=a  class='hello' >{#list list as a }<div {#if a.id} title={a.id} {#else} title=0 {/if}>title</div>{/list}</div>",
+          data: { test: 1 , list: [{id: 10}, {id:null}, {id:11}]}
+        }).$inject(container);
+        var node = component.$refs.a;
+        var divs = nes('div', node);
+        expect(divs.length).to.equal(3);
+        expect(divs[2].title).to.equal("11");
+        expect(divs[1].title).to.equal("0");
+        expect(divs[0].title).to.equal("10");
+        // var $node = $(component.$refs.a)
+        // expect($node.attr("title")).to.equal("haha");
+        // expect($node.attr("title2")).to.equal(undefined);
+        // component.$update("name", true)
+        // expect($node.attr("title2")).to.equal("haha2");
 
-      //   destroy(component, container);
+        destroy(component, container);
 
-      // })
+      })
       it("if elseif else combine with attribute should work as expect", function(){
         var container = document.createElement('div');
 

@@ -1604,7 +1604,7 @@ walkers.element = function(ast, options){
     return -1;
   })
   // may distinct with if else
-  var destroies = walkAttributes.call(this, attrs, element, destroies);
+  var destroies = walkAttributes.call(this, attrs, element, extra);
 
 
 
@@ -1640,10 +1640,10 @@ walkers.element = function(ast, options){
   return res;
 }
 
-function walkAttributes(attrs, element){
+function walkAttributes(attrs, element, extra){
   var bindings = []
   for(var i = 0, len = attrs.length; i < len; i++){
-    var binding = this._walk(attrs[i], {element: element, fromElement: true, attrs: attrs})
+    var binding = this._walk(attrs[i], {element: element, fromElement: true, attrs: attrs, extra: extra})
     if(binding) bindings.push(binding);
   }
   return bindings;
