@@ -237,25 +237,34 @@ void function(){
         var container = document.createElement("div");
         var Component = NameSpace.extend({
           name: "nested4",
-          template: "<p on-click={this.$emit('hello', $event)}></p>"
+          template: "<p on-click={this.$emit('hello', $event)}></p><p on-click={this.$emit('nav', 1)} ref=p></p>"
         })
 
         var i =0;
         var type=null;
+        var page = null;
         var component = new NameSpace({
-          template: "<nested4 on-hello='hello' />",
+          template: "<nested4 on-hello='hello' on-nav={this.nav($event)} />",
           init: function(){
             this.$on('hello', function(ev){
               type = ev.type;
               i++;
             })
+          },
+          nav: function(p){
+            page = p
           }
         }).$inject(container);
 
-        dispatchMockEvent(nes.one("p", container), "click");
+        var ps = nes.all("p", container);
+        dispatchMockEvent( ps[0], "click");
 
         expect(i).to.equal(1);
         expect(type).to.equal("click");
+
+        dispatchMockEvent( ps[1], "click");
+
+        expect(page).to.equal(1);
 
         destroy(component, container);
 

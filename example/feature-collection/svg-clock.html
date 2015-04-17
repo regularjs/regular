@@ -5,16 +5,16 @@
 .major-mark { stroke: #555; stroke-width: 2; }
 .hour-hand, .minute-hand { stroke: #333; stroke-width: 2; }
 .second-hand { stroke: #f33; stroke-width: 1; }
- 
+
 </style>
 </head>
 
 <body>
-  
+
 <script type="text/regular" id="clock">
   <svg class="clock" viewBox="0 0 100 100">
     <g transform="translate(50, 50)">
-       <circle class="clock-face" r="48"/>
+       <circle class="clock-face" r="48"/ >
 
       {#list 1..12 as i}
       <line class="major-mark" y1="35" y2="45" transform="rotate({ 360 * i / 12 })"/>
@@ -46,8 +46,7 @@
    }
   }).use('timeout');
 
-  clock = new Clock();
-  clock.$inject(template, 'after');
+  clock = new Clock().$inject(template, 'after');
 
 </script>
 

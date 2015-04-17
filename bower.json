@@ -10,6 +10,7 @@
     "node_modules",
     "bin",
     "test",
+    "example",
     "gulpfile.js",
     "*.json",
     "*.md"
