@@ -53,6 +53,21 @@ describe("Directive", function(){
 
     })
 
+    it('const value should not pass Expression to directive', function(done){
+        var container = document.createElement('div');
+        var tmp  = (+new Date()).toString(36);
+        var Component = Regular.extend({
+          template: "<div constd = {1}></div>"
+        }).directive('constd', function(e, d){
+          expect(d).to.equal(1)
+          done()
+        })
+        var component = new Component({
+          data: {test: 0}
+        }).$inject(container);
+        destroy(component, container);
+    })
+
     it('the expression passed in should touched already ', function(){
       var tmpName = "t-" + Regular.util.uid();
       Regular.directive(tmpName, function(elem, value){

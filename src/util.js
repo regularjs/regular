@@ -43,7 +43,11 @@ _.slice = function(obj, start, end){
 }
 
 _.typeOf = function (o) {
-  return o == null ? String(o) : o2str.call(o).slice(8, -1).toLowerCase();
+  return o == null ? String(o) :o2str.call(o).slice(8, -1).toLowerCase();
+}
+
+_.isExpression = function( expr ){
+  return expr && expr.type === 'expression';
 }
 
 

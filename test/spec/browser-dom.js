@@ -35,6 +35,7 @@ void function(){
       })
     })
 
+
     describe("Event via `on-*`", function(){
       it("trigger simple click event", function(){
         var container = document.createElement('div');

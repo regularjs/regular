@@ -32,9 +32,13 @@ var methods = {
         return equal? false: prev;
       }
     }else{
-      expr = this._touchExpr( parseExpression(expr) );
-      get = expr.get;
-      once = expr.once;
+      if(typeof expr === 'function'){
+        get = expr.bind(this);      
+      }else{
+        expr = this._touchExpr( parseExpression(expr) );
+        get = expr.get;
+        once = expr.once;
+      }
     }
 
     var watcher = {
@@ -137,9 +141,11 @@ var methods = {
 
       var now = watcher.get(this);
       var last = watcher.last;
+      var tnow = _.typeOf(now);
+      var tlast = _.typeOf(last);
       var eq = true;
 
-      if(_.typeOf( now ) === 'object' && watcher.deep){
+      if(tnow === 'object' && watcher.deep){
         if(!watcher.last){
            eq = false;
          }else{

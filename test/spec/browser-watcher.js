@@ -470,6 +470,17 @@ void function(){
       watcher.$digest();
     })
 
+    it("watch accept function", function(done){
+      watcher.$watch( function(){return this.first+":" + this.last}, function(now, old){
+        expect(old).to.equal(undefined)
+        expect(now).to.equal("first:last")
+        done();
+      })
+      watcher.first = "first";
+      watcher.last = "last";
+      watcher.$digest();
+    })
+
     it("watch object deep should checked the key", function(){
       var watcher = new Regular({
         data: {

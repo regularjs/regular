@@ -353,8 +353,12 @@ walkers.attribute = function(ast ,options){
   var name = attr.name,
     value = attr.value || "", directive = Component.directive(name);
 
+  var constant = value.constant;
+
+
   value = this._touchExpr(value);
 
+  if(constant) value = value.get(this);
 
   if(directive && directive.link){
     var binding = directive.link.call(self, element, value, name, options.attrs);
@@ -373,8 +377,8 @@ walkers.attribute = function(ast ,options){
         }
       }
     }
-    if(value.type === 'expression' ){
 
+    if(value.type === 'expression' ){
       this.$watch(value, function(nvalue, old){
         dom.attr(element, name, nvalue);
       }, {init: true});

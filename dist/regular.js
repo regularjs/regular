@@ -840,7 +840,11 @@ _.slice = function(obj, start, end){
 }
 
 _.typeOf = function (o) {
-  return o == null ? String(o) : o2str.call(o).slice(8, -1).toLowerCase();
+  return o == null ? String(o) :o2str.call(o).slice(8, -1).toLowerCase();
+}
+
+_.isExpression = function( expr ){
+  return expr && expr.type === 'expression';
 }
 
 
@@ -1657,8 +1661,12 @@ walkers.attribute = function(ast ,options){
   var name = attr.name,
     value = attr.value || "", directive = Component.directive(name);
 
+  var constant = value.constant;
+
+
   value = this._touchExpr(value);
 
+  if(constant) value = value.get(this);
 
   if(directive && directive.link){
     var binding = directive.link.call(self, element, value, name, options.attrs);
@@ -1677,8 +1685,8 @@ walkers.attribute = function(ast ,options){
         }
       }
     }
-    if(value.type === 'expression' ){
 
+    if(value.type === 'expression' ){
       this.$watch(value, function(nvalue, old){
         dom.attr(element, name, nvalue);
       }, {init: true});
@@ -3508,9 +3516,13 @@ var methods = {
         return equal? false: prev;
       }
     }else{
-      expr = this._touchExpr( parseExpression(expr) );
-      get = expr.get;
-      once = expr.once;
+      if(typeof expr === 'function'){
+        get = expr.bind(this);      
+      }else{
+        expr = this._touchExpr( parseExpression(expr) );
+        get = expr.get;
+        once = expr.once;
+      }
     }
 
     var watcher = {
@@ -3613,9 +3625,11 @@ var methods = {
 
       var now = watcher.get(this);
       var last = watcher.last;
+      var tnow = _.typeOf(now);
+      var tlast = _.typeOf(last);
       var eq = true;
 
-      if(_.typeOf( now ) === 'object' && watcher.deep){
+      if(tnow === 'object' && watcher.deep){
         if(!watcher.last){
            eq = false;
          }else{
