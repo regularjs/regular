@@ -107,7 +107,7 @@ describe("Regular.util", function(){
   })
 
   it('_.equals should works as expect', function(){
-    expect(_.equals([], [1,2])).to.eql([
+    expect(_.diffArray([], [1,2])).to.eql([
       {
         "index": 0,
         "add": 0,
@@ -117,15 +117,15 @@ describe("Regular.util", function(){
         ]
       }
     ])
-    expect(_.equals([1,2], [])).to.eql([
+    expect(_.diffArray([1,2], [])).to.eql([
       { index: 0, add: 2, removed: [] } 
     ]);
-    expect(_.equals([1,2,3], [2])).to.eql([
+    expect(_.diffArray([1,2,3], [2])).to.eql([
       { index: 0, add: 1, removed: [] },
       { index: 2, add: 1, removed: []} 
     ]);
     var a = [1,2,3];
-    expect(_.equals(_.slice(a, 1),[])).to.eql([
+    expect(_.diffArray(_.slice(a, 1),[])).to.eql([
       { index: 0, add: 2, removed: []} 
     ]);
 

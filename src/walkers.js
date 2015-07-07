@@ -19,10 +19,10 @@ walkers.list = function(ast, options){
   var indexName = ast.variable + '_index';
   var variable = ast.variable;
 
-  function update(newValue, splices){
+  function update(newValue, oldValue, splices){
     if(!newValue) {
       newValue = [];
-      splices = _.equals(newValue, splices);
+      splices = _.diffArray(newValue, oldValue);
     }
     
     if(!splices || !splices.length) return;

@@ -480,6 +480,48 @@ void function(){
       watcher.last = "last";
       watcher.$digest();
     })
+    it("watch list [undefined - > [], [] -> undefined]", function(done){
+      var num = 0;
+      var watchid = watcher.$watch( 'list', function(now, old){
+        num++;
+        if(num === 1){
+          expect(old).to.equal(undefined)
+          expect(now).to.eql([])
+        }
+        if(num === 2){
+          expect(old).to.eql([])
+          expect(now).to.eql(undefined)
+          done()
+        }
+      })
+      watcher.data.list = [];
+      watcher.$digest();
+      expect(num).to.equal(1)
+      watcher.data.list = undefined;
+      watcher.$digest();
+    })
+    it("watch list [{} - > [], [] -> {}]", function(done){
+      var num = 0;
+      var watchid = watcher.$watch( 'list', function(now, old){
+        num++;
+        if(num === 2){
+          expect(old).to.eql({})
+          expect(now).to.eql([])
+        }
+        if(num === 3){
+          expect(now).to.eql({})
+          expect(old).to.eql([])
+          done()
+        }
+      })
+
+      watcher.data.list = {};
+      watcher.$digest();
+      watcher.data.list = [];
+      watcher.$digest();
+      watcher.data.list = {};
+      watcher.$digest();
+    })
 
     it("watch object deep should checked the key", function(){
       var watcher = new Regular({

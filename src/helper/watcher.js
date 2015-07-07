@@ -131,66 +131,65 @@ var methods = {
   _checkSingleWatch: function(watcher, i){
     var dirty = false;
     if(!watcher) return;
-    if(watcher.test) { //multi 
+
+    var now, last, tlast, tnow,  eq, diff;
+
+    if(!watcher.test){
+
+      now = watcher.get(this);
+      last = watcher.last;
+      tlast = _.typeOf(last);
+      tnow = _.typeOf(now);
+      eq = true, diff;
+
+      // !Object
+      if( !(tnow === 'object' && tlast==='object' && watcher.deep) ){
+        // Array
+        if( tnow === 'array' && ( tlast=='undefined' || tlast === 'array') ){
+          diff = _.diffArray(now, watcher.last || [])
+          if( tlast !== 'array' || (diff && diff.length) ) dirty = true;
+        }else{
+          eq = _.equals( now, last );
+          if( !eq || watcher.force ){
+            watcher.force = null;
+            dirty = true; 
+          }
+        }
+      }else{
+        for(var j in now){
+          if(last[j] !== now[j]){
+            dirty = true;
+            break;
+          }
+        }
+        if(dirty !== true){
+          for(var n in last){
+            if(last[n] !== now[n]){
+              dirty = true;
+              break;
+            }
+          }
+        }
+      }
+    } else{
+      // @TODO 是否把多重改掉
       var result = watcher.test(this);
       if(result){
         dirty = true;
         watcher.fn.apply(this, result)
       }
-    }else{
-
-      var now = watcher.get(this);
-      var last = watcher.last;
-      var tnow = _.typeOf(now);
-      var tlast = _.typeOf(last);
-      var eq = true;
-
-      if(tnow === 'object' && watcher.deep){
-        if(!watcher.last){
-           eq = false;
-         }else{
-          for(var j in now){
-            if(watcher.last[j] !== now[j]){
-              eq = false;
-              break;
-            }
-          }
-          if(eq !== false){
-            for(var n in last){
-              if(last[n] !== now[n]){
-                eq = false;
-                break;
-              }
-            }
-          }
-        }
-      }else{
-        eq = _.equals(now, watcher.last);
-      }
-      if(eq === false || watcher.force){ // in some case. if undefined, we must force digest.
-        eq = false;
-        watcher.force = null;
-        dirty = true;
-        watcher.fn.call(this, now, watcher.last);
-        if(typeof now !== 'object'|| watcher.deep){
-          watcher.last = _.clone(now);
-        }else{
-          watcher.last = now;
-        }
-      }else{ // if eq == true
-        if( _.typeOf(eq) === 'array' && eq.length ){
-          watcher.last = _.clone(now);
-          watcher.fn.call(this, now, eq);
-          dirty = true;
-        }else{
-          eq = true;
-        }
-      }
-      // @TODO
-      if(dirty && watcher.once) this._watchers.splice(i, 1);
-
-      return dirty;
     }
+    if(dirty && !watcher.test){
+      watcher.fn.call(this, now, last, diff)
+      if(tnow === 'object' && watcher.deep || tnow === 'array'){
+        watcher.last = _.clone(now);
+      }else{
+        watcher.last = now;
+      }
+      if(watcher.once) this._watchers.splice(i, 1);
+    }
+
+    return dirty;
   },
 
   /**

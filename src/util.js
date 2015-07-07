@@ -227,13 +227,12 @@ _.clone = function clone(obj){
 
 
 _.equals = function(now, old){
-  if( Array.isArray(now) ){
-    var splices = ld(now, old||[]);
-    return splices;
-  }
   var type = typeof now;
   if(type === 'number' && typeof old === 'number'&& isNaN(now) && isNaN(old)) return true
   return now === old;
+}
+_.diffArray = function(now, old){
+  return ld(now, old) 
 }
 
 
