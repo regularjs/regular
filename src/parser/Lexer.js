@@ -251,7 +251,7 @@ var rules = {
   TAG_NAME: [/{NAME}/, 'NAME', 'TAG'],
   TAG_UNQ_VALUE: [/[^\{}&"'=><`\r\n\f ]+/, 'UNQ', 'TAG'],
 
-  TAG_OPEN: [/<({NAME})\s*/, function(all, one){
+  TAG_OPEN: [/<({NAME})\s*/, function(all, one){ //"
     return {type: 'TAG_OPEN', value: one}
   }, 'TAG'],
   TAG_CLOSE: [/<\/({NAME})[\r\n\f ]*>/, function(all, one){
@@ -269,14 +269,17 @@ var rules = {
     if(all === '>') this.leave();
     return {type: all, value: all }
   }, 'TAG'],
-  TAG_STRING:  [ /'([^']*)'|"([^"]*)"/, function(all, one, two){ //"'
+  TAG_STRING:  [ /'([^']*)'|"([^"]*)\"/, /*'*/  function(all, one, two){ 
     var value = one || two || "";
 
     return {type: 'STRING', value: value}
   }, 'TAG'],
 
   TAG_SPACE: [/{SPACE}+/, null, 'TAG'],
-  TAG_COMMENT: [/<\!--([^\x00]*?)--\>/, null ,'TAG'],
+  TAG_COMMENT: [/<\!--([^\x00]*?)--\>/, function(all){
+    this.leave()
+    // this.leave('TAG')
+  } ,'TAG'],
 
   // 3. JST
   // -------------------

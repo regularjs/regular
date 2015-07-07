@@ -100,6 +100,20 @@
     remove: function(index){
       this.data.items.splice(index,1); 
     }
+  }).filter({
+    every: {
+      get: function(value, key){
+        return value.filter(function(item){
+          return item[key] 
+        }).length === value.length
+      },
+      set: function(value, key, items){
+        items.forEach(function(item){
+          item[key] = value
+        })
+        return items
+      }
+    }
   })
 
 

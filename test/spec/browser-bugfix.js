@@ -218,6 +218,23 @@ var template = (function(){/*
       destroy(component, container);
     })
 
+    it('bugfix #39', function(){
+      // https://github.com/regularjs/regular/issues/39
+
+      var template = 
+              '<div>\n\
+                <!-- 注释 -->\n\
+                1. <input type="text">\n\
+                2. <input type="text">\n\
+                3. <input type="text">\n\
+              </div>';
+
+      expect(function(){
+        Regular.parse(template);
+      }).to.not.throwException()
+
+    })
+
     describe("svg namespace", function(){
       // need include
       // 1. list
