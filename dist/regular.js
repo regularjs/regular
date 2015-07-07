@@ -1501,6 +1501,7 @@ walkers.element = function(ast, options){
     namespace = options.namespace, ref, group, 
     extra = options.extra,
     isolate = 0,
+    is,
     Component = Constructor.component(ast.tag);
 
 
@@ -1509,7 +1510,7 @@ walkers.element = function(ast, options){
 
 
 
-  if(Component){
+  if(Component || ast.tag === 'r-component'){
     var data = {},events;
     for(var i = 0, len = attrs.length; i < len; i++){
       var attr = attrs[i];
@@ -1517,6 +1518,13 @@ walkers.element = function(ast, options){
       
       var name = attr.name;
       var etest = name.match(eventReg);
+      // @if is r-component . we need to find the target Component
+      if(name === 'is' && !Component){
+        is = value;
+        var componentName = this.$get(value, true);
+        Component = Constructor.component(componentName)
+        if(typeof Component !== 'function') _.log("component " + componentName + " has not registed!", 'error')
+      }
       // bind event proxy
       if(etest){
         events = events || {};
@@ -1540,8 +1548,6 @@ walkers.element = function(ast, options){
         isolate = value.type === 'expression'? value.get(self): parseInt(value || 3, 10);
         data.isolate = isolate;
       }
-
-
     }
 
     var config = { 
@@ -1574,11 +1580,24 @@ walkers.element = function(ast, options){
         if(self.$refs) self.$refs[ref] = null;
       })
     }
+    if(is && is.type === 'expression'  ){
+      // @TODO.    dynamic component????
+      // var ncomponent;
+      // this.$watch(is, function(value){
+      //   // found the new component
+      //   var Component = Constructor.component(value);
+      //   ncomponent = new Component(config);
+      //   ncomponent.$inject(combine.last(component), 'after')
+      //   component.destroy();
+      // })
+      // this.$on('$destroy', function(){
+      //   ncomponent.destroy();
+      // })
+    }
     return component;
-  }
-  else if( ast.tag === 'r-content' && this._getTransclude ){
+  } else if( ast.tag === 'r-content' && this._getTransclude ){
     return this._getTransclude();
-  }
+  } 
   
   if(children && children.length){
     group = this.$compile(children, {outer: options.outer,namespace: namespace, extra: extra });
@@ -3685,7 +3704,10 @@ var methods = {
       }
     }
   },
-  $get: function(expr)  {
+  // 1. expr canbe string or a Expression
+  // 2. detect: if true, if expr is a string will directly return;
+  $get: function(expr, detect)  {
+    if(detect && typeof expr === 'string') return expr;
     return this.$expression(expr).get(this);
   },
   $update: function(){

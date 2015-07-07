@@ -209,7 +209,10 @@ var methods = {
       }
     }
   },
-  $get: function(expr)  {
+  // 1. expr canbe string or a Expression
+  // 2. detect: if true, if expr is a string will directly return;
+  $get: function(expr, detect)  {
+    if(detect && typeof expr === 'string') return expr;
     return this.$expression(expr).get(this);
   },
   $update: function(){
