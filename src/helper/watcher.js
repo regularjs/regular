@@ -146,8 +146,8 @@ var methods = {
       if( !(tnow === 'object' && tlast==='object' && watcher.deep) ){
         // Array
         if( tnow === 'array' && ( tlast=='undefined' || tlast === 'array') ){
-          diff = _.diffArray(now, watcher.last || [])
-          if( tlast !== 'array' || (diff && diff.length) ) dirty = true;
+          eq = _.diffArray(now, watcher.last || [])
+          if( tlast !== 'array' || !eq ) dirty = true;
         }else{
           eq = _.equals( now, last );
           if( !eq || watcher.force ){

@@ -1020,15 +1020,24 @@ _.clone = function clone(obj){
     return obj;
   }
 
-
 _.equals = function(now, old){
   var type = typeof now;
   if(type === 'number' && typeof old === 'number'&& isNaN(now) && isNaN(old)) return true
   return now === old;
 }
 _.diffArray = function(now, old){
-  return ld(now, old) 
+  var nlen = now.length;
+  var olen = old.length;
+  if(nlen !== olen){
+    return false;
+  }
+  for(var i = 0; i < nlen ; i++){
+    if(now[i] !== old[i]) return  false;
+  }
+  return true
+
 }
+
 
 
 //Levenshtein_distance
@@ -1325,34 +1334,34 @@ walkers.list = function(ast, options){
   var variable = ast.variable;
 
   function update(newValue, oldValue, splices){
-    if(!newValue) {
-      newValue = [];
-      splices = _.diffArray(newValue, oldValue);
-    }
+    newValue = newValue || [];
+    oldValue  = oldValue || [];
     
-    if(!splices || !splices.length) return;
     var cur = placeholder;
-    var m = 0, len = newValue.length,
-      mIndex = splices[0].index;
+    var m = 0, len = newValue.length;
 
-    for(var i = 0; i < splices.length; i++){ //init
-      var splice = splices[i];
-      var index = splice.index; // beacuse we use a comment for placeholder
+    var nlen = newValue.length;
+    var olen = oldValue.length;
 
-      for(var k = m; k < index; k++){ // no change
-        var sect = group.get( k + 1 );
-        sect.data[indexName] = k;
+    var mlen = Math.min(nlen, olen);
+
+
+    for(var i =0; i < mlen ; i ++){
+       var sect = group.get( i + 1);
+       sect.data[indexName] = i;
+       sect.data[variable] = newValue[i];
+    }
+    if(nlen < olen){ //need add
+      for(var j = olen-1; j >= nlen; j--){
+        var removed = group.children.splice( j+1 , 1)[0];
+        if(removed){ removed.destroy(true) }
       }
-      for(var j = 0, jlen = splice.removed.length; j< jlen; j++){ //removed
-        var removed = group.children.splice( index + 1, 1)[0];
-        removed.destroy(true);
-      }
-
-      for(var o = index; o < index + splice.add; o++){ //add
+    }else if(nlen > olen){
+      for(var j = olen; j < nlen; j++){
         // prototype inherit
-        var item = newValue[o];
+        var item = newValue[j];
         var data = {};
-        data[indexName] = o;
+        data[indexName] = j;
         data[variable] = item;
 
         _.extend(data, extra);
@@ -1364,21 +1373,13 @@ walkers.list = function(ast, options){
         })
         section.data = data;
         // autolink
-        var insert =  combine.last(group.get(o));
+        var insert =  combine.last(group.get(j));
         if(insert.parentNode){
           animate.inject(combine.node(section),insert, 'after');
         }
-        // insert.parentNode.insertBefore(combine.node(section), insert.nextSibling);
-        group.children.splice( o + 1 , 0, section);
-      }
-      m = index + splice.add - splice.removed.length;
-      m  = m < 0? 0 : m;
 
-    }
-    if(m < len){
-      for(var i = m; i < len; i++){
-        var pair = group.get(i + 1);
-        pair.data[indexName] = i;
+        group.children.splice( j + 1 , 0, section);
+        // insert.parentNode.insertBefore(combine.node(section), insert.nextSibling);
       }
     }
   }
@@ -3630,8 +3631,8 @@ var methods = {
       if( !(tnow === 'object' && tlast==='object' && watcher.deep) ){
         // Array
         if( tnow === 'array' && ( tlast=='undefined' || tlast === 'array') ){
-          diff = _.diffArray(now, watcher.last || [])
-          if( tlast !== 'array' || (diff && diff.length) ) dirty = true;
+          eq = _.diffArray(now, watcher.last || [])
+          if( tlast !== 'array' || !eq ) dirty = true;
         }else{
           eq = _.equals( now, last );
           if( !eq || watcher.force ){
