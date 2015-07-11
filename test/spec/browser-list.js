@@ -398,6 +398,41 @@ void function(){
       list.destroy();
 
     })
+    it("list with else", function(){
+
+
+
+      var List = Regular.extend({
+        template: '<div ref=cnt>{#list list as item}<div>{item}</div>{#else}<p>nothing{list.length}</p>{/list}</div>'
+      })
+
+      var list1 = new List({data: {list: []}})
+      var list2 = new List({data: {list: [1]}})
+
+      expect(nes.all('div',list1.$refs.cnt).length).to.equal(0);
+      var ps = nes.all('p',list1.$refs.cnt)
+      expect(ps.length).to.equal(1);
+      expect(ps[0].innerHTML).to.equal('nothing0')
+
+      expect(nes.all('div',list2.$refs.cnt).length).to.equal(1);
+      var ps = nes.all('p',list2.$refs.cnt)
+      expect(ps.length).to.equal(0);
+
+      list1.$update('list', [1,2,3])
+      expect(nes.all('div',list1.$refs.cnt).length).to.equal(3);
+      var ps = nes.all('p',list1.$refs.cnt)
+      expect(ps.length).to.equal(0);
+
+      list1.$update('list', [])
+      expect(nes.all('div',list1.$refs.cnt).length).to.equal(0);
+      var ps = nes.all('p',list1.$refs.cnt)
+      expect(ps.length).to.equal(1);
+      expect(ps[0].innerHTML).to.equal('nothing0')
+
+      list1.destroy()
+      list2.destroy()
+
+    })
 
     // 即如果全量更新的话， 外部list的属性也应该可以正确响应
     // 

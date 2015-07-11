@@ -18,22 +18,22 @@ walkers.list = function(ast, options){
   group.push(placeholder);
   var indexName = ast.variable + '_index';
   var variable = ast.variable;
+  var alternate = ast.alternate;
 
   function update(newValue, oldValue, splices){
     newValue = newValue || [];
     oldValue  = oldValue || [];
-    
-    var cur = placeholder;
-    var m = 0, len = newValue.length;
 
-    var nlen = newValue.length;
-    var olen = oldValue.length;
-
+    var nlen = newValue.length || 0;
+    var olen = oldValue.length || 0;
     var mlen = Math.min(nlen, olen);
 
-
+    if(olen !== nlen && !olen && group.get(1)){
+      var altGroup = group.children.pop();
+      if(altGroup.destroy)  altGroup.destroy(true);
+    }
     for(var i =0; i < mlen ; i ++){
-       var sect = group.get( i + 1);
+       var sect = group.get(i + 1);
        sect.data[indexName] = i;
        sect.data[variable] = newValue[i];
     }
@@ -66,10 +66,23 @@ walkers.list = function(ast, options){
         if(insert.parentNode){
           animate.inject(combine.node(section),insert, 'after');
         }
-
         group.children.splice( j + 1 , 0, section);
-        // insert.parentNode.insertBefore(combine.node(section), insert.nextSibling);
+
       }
+    }
+    // @ {#list} {#else}
+    if(nlen === 0 && alternate && alternate.length){
+      var section = self.$compile(alternate, {
+        extra: extra,
+        record: true,
+        outer: options.outer,
+        namespace: namespace
+      })
+      group.children.push(section);
+      if(self.$ready){
+        animate.inject(combine.node(section), placeholder, 'after');
+      }
+      
     }
   }
 

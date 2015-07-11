@@ -300,6 +300,7 @@ op.list = function(){
       container.push(this.statement());
     }
   }
+  
   if(ll.value !== 'list') this.error('expect ' + 'list got ' + '/' + ll.value + ' ', ll.pos );
   return node.list(sequence, variable, consequent, alternate);
 }

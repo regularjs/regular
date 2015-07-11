@@ -1044,134 +1044,6 @@ _.diffArray = function(now, old){
 
 
 
-//Levenshtein_distance
-//=================================================
-//1. http://en.wikipedia.org/wiki/Levenshtein_distance
-//2. github.com:polymer/observe-js
-
-var ld = (function(){
-  function equals(a,b){
-    return a === b;
-  }
-  function ld(array1, array2){
-    var n = array1.length;
-    var m = array2.length;
-    var matrix = [];
-    for(var i = 0; i <= n; i++){
-      matrix.push([i]);
-    }
-    for(var j=1;j<=m;j++){
-      matrix[0][j]=j;
-    }
-    for(var i = 1; i <= n; i++){
-      for(var j = 1; j <= m; j++){
-        if(equals(array1[i-1], array2[j-1])){
-          matrix[i][j] = matrix[i-1][j-1];
-        }else{
-          matrix[i][j] = Math.min(
-            matrix[i-1][j]+1, //delete
-            matrix[i][j-1]+1//add
-            )
-        }
-      }
-    }
-    return matrix;
-  }
-  function whole(arr2, arr1) {
-      var matrix = ld(arr1, arr2)
-      var n = arr1.length;
-      var i = n;
-      var m = arr2.length;
-      var j = m;
-      var edits = [];
-      var current = matrix[i][j];
-      while(i>0 || j>0){
-      // the last line
-        if (i === 0) {
-          edits.unshift(3);
-          j--;
-          continue;
-        }
-        // the last col
-        if (j === 0) {
-          edits.unshift(2);
-          i--;
-          continue;
-        }
-        var northWest = matrix[i - 1][j - 1];
-        var west = matrix[i - 1][j];
-        var north = matrix[i][j - 1];
-
-        var min = Math.min(north, west, northWest);
-
-        if (min === west) {
-          edits.unshift(2); //delete
-          i--;
-          current = west;
-        } else if (min === northWest ) {
-          if (northWest === current) {
-            edits.unshift(0); //no change
-          } else {
-            edits.unshift(1); //update
-            current = northWest;
-          }
-          i--;
-          j--;
-        } else {
-          edits.unshift(3); //add
-          j--;
-          current = north;
-        }
-      }
-      var LEAVE = 0;
-      var ADD = 3;
-      var DELELE = 2;
-      var UPDATE = 1;
-      var n = 0;m=0;
-      var steps = [];
-      var step = {index: null, add:0, removed:[]};
-
-      for(var i=0;i<edits.length;i++){
-        if(edits[i] > 0 ){ // NOT LEAVE
-          if(step.index === null){
-            step.index = m;
-          }
-        } else { //LEAVE
-          if(step.index != null){
-            steps.push(step)
-            step = {index: null, add:0, removed:[]};
-          }
-        }
-        switch(edits[i]){
-          case LEAVE:
-            n++;
-            m++;
-            break;
-          case ADD:
-            step.add++;
-            m++;
-            break;
-          case DELELE:
-            step.removed.push(arr1[n])
-            n++;
-            break;
-          case UPDATE:
-            step.add++;
-            step.removed.push(arr1[n])
-            n++;
-            m++;
-            break;
-        }
-      }
-      if(step.index != null){
-        steps.push(step)
-      }
-      return steps
-    }
-    return whole;
-  })();
-
-
 
 _.throttle = function throttle(func, wait){
   var wait = wait || 100;
@@ -1300,7 +1172,6 @@ _.log = function(msg, type){
 
 
 
-
 //http://www.w3.org/html/wg/drafts/html/master/single-page.html#void-elements
 _.isVoidTag = _.makePredicate("area base br col embed hr img input keygen link menuitem meta param source track wbr r-content");
 _.isBooleanAttr = _.makePredicate('selected checked disabled readOnly required open autofocus controls autoplay compact loop defer multiple');
@@ -1336,22 +1207,22 @@ walkers.list = function(ast, options){
   group.push(placeholder);
   var indexName = ast.variable + '_index';
   var variable = ast.variable;
+  var alternate = ast.alternate;
 
   function update(newValue, oldValue, splices){
     newValue = newValue || [];
     oldValue  = oldValue || [];
-    
-    var cur = placeholder;
-    var m = 0, len = newValue.length;
 
-    var nlen = newValue.length;
-    var olen = oldValue.length;
-
+    var nlen = newValue.length || 0;
+    var olen = oldValue.length || 0;
     var mlen = Math.min(nlen, olen);
 
-
+    if(olen !== nlen && !olen && group.get(1)){
+      var altGroup = group.children.pop();
+      if(altGroup.destroy)  altGroup.destroy(true);
+    }
     for(var i =0; i < mlen ; i ++){
-       var sect = group.get( i + 1);
+       var sect = group.get(i + 1);
        sect.data[indexName] = i;
        sect.data[variable] = newValue[i];
     }
@@ -1384,10 +1255,23 @@ walkers.list = function(ast, options){
         if(insert.parentNode){
           animate.inject(combine.node(section),insert, 'after');
         }
-
         group.children.splice( j + 1 , 0, section);
-        // insert.parentNode.insertBefore(combine.node(section), insert.nextSibling);
+
       }
+    }
+    // @ {#list} {#else}
+    if(nlen === 0 && alternate && alternate.length){
+      var section = self.$compile(alternate, {
+        extra: extra,
+        record: true,
+        outer: options.outer,
+        namespace: namespace
+      })
+      group.children.push(section);
+      if(self.$ready){
+        animate.inject(combine.node(section), placeholder, 'after');
+      }
+      
     }
   }
 
@@ -2567,10 +2451,11 @@ module.exports = {
       alternate: alternate
     }
   },
-  list: function(sequence, variable, body){
+  list: function(sequence, variable, body, alternate){
     return {
       type: 'list',
       sequence: sequence,
+      alternate: alternate,
       variable: variable,
       body: body
     }
@@ -2901,6 +2786,7 @@ op.list = function(){
       container.push(this.statement());
     }
   }
+  
   if(ll.value !== 'list') this.error('expect ' + 'list got ' + '/' + ll.value + ' ', ll.pos );
   return node.list(sequence, variable, consequent, alternate);
 }
