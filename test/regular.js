@@ -1162,6 +1162,13 @@ _.once = function(fn){
   }
 }
 
+_.fixObjStr = function(str){
+  if(str.trim().indexOf('{') !== 0){
+    return '{' + str + '}';
+  }
+  return str;
+}
+
 
 
 _.log = function(msg, type){
@@ -4336,6 +4343,9 @@ require("./form.js");
 // **warn**: class inteplation will override this directive 
 
 Regular.directive('r-class', function(elem, value){
+  if(typeof value=== 'string'){
+    value = _.fixObjStr(value)
+  }
   this.$watch(value, function(nvalue){
     var className = ' '+ elem.className.replace(/\s+/g, ' ') +' ';
     for(var i in nvalue) if(nvalue.hasOwnProperty(i)){
@@ -4352,6 +4362,9 @@ Regular.directive('r-class', function(elem, value){
 // **warn**: style inteplation will override this directive 
 
 Regular.directive('r-style', function(elem, value){
+  if(typeof value=== 'string'){
+    value = _.fixObjStr(value)
+  }
   this.$watch(value, function(nvalue){
     for(var i in nvalue) if(nvalue.hasOwnProperty(i)){
       dom.css(elem, i, nvalue[i]);

@@ -498,7 +498,6 @@ describe('other buildin directive', function(){
 
     destroy(component, container)
 
-
   })
   it("r-class can not combine with class inteplation", function(){
     var template = "<div class='{topClass}' r-class={ {'z-show': num < 6, 'z-active': num > 3} }>Please Login</div>" 
@@ -518,6 +517,20 @@ describe('other buildin directive', function(){
     expect($('div', container).hasClass('hello')).to.equal(true);
 
     destroy(component, container);
+
+  })
+  it("r-style, r-class accept unBraced string", function(){
+    var template = "<div ref=cnt r-class=\"'z-show': num < 6, 'z-active': num > 3 \" r-style=\"left: num+'px'\" >Please Login</div>" 
+    var component = new Regular({
+      template: template,
+      data: {num: 2}
+    });
+    var dom = Regular.dom;
+    var div = component.$refs.cnt;
+    expect(dom.hasClass(div, 'z-show' )).to.equal(true);
+    expect(dom.hasClass(div, 'z-active' )).to.equal(false);
+
+    expect(div.style.left).to.equal('2px')
 
   })
   it("r-style should add all property specify in the passed arguments(type Object)", function(){

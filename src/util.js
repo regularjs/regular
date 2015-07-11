@@ -365,6 +365,13 @@ _.once = function(fn){
   }
 }
 
+_.fixObjStr = function(str){
+  if(str.trim().indexOf('{') !== 0){
+    return '{' + str + '}';
+  }
+  return str;
+}
+
 
 
 _.log = function(msg, type){
