@@ -487,7 +487,9 @@ Regular.implement({
         else _.log("the computed '" + path + "' don't define the get function,  get data."+path + " altnately", "error")
       }
   }
-    if(typeof defaults === "undefined" || typeof path == "undefined" ) return undefined;
+    if(typeof defaults === "undefined" || typeof path == "undefined" ){
+      return undefined;
+    }
     return (ext && typeof ext[path] !== 'undefined')? ext[path]: defaults[path];
 
   },

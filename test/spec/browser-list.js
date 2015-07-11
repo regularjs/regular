@@ -398,6 +398,50 @@ void function(){
       list.destroy();
 
     })
+
+    // 即如果全量更新的话， 外部list的属性也应该可以正确响应
+    // 
+    it("ref to outer of list should update correctly", function(){
+      // beacuse if not record.
+      var ListView = Regular.extend({
+        template: "<div ref=cnt>{#list databases as db}<h2>{db.name}</h2>\
+            {#list db.list as query}\
+              <span>{db.name}</span>\
+            {/list}{/list}</div>",
+        config: function(data) {
+          data.databases = [{ list: [1], name: 'hzzhenghaibo' }];
+        }
+      });
+
+      var list = new ListView();
+
+
+
+      // init correctly
+      var h2s = nes.all('h2',list.$refs.cnt);
+      expect(h2s.length).to.equal(1);
+      var spans = nes.all('span',list.$refs.cnt);
+      expect(spans.length).to.equal(1);
+      expect(h2s[0].innerHTML).to.equal('hzzhenghaibo');
+      expect(spans[0].innerHTML).to.equal('hzzhenghaibo');
+
+
+      list.data.databases[0].name = 'leeluolee'
+      list.$update()
+      // changed partial
+      var spans = nes.all('span',list.$refs.cnt);
+      expect(spans.length).to.equal(1);
+      expect(spans[0].innerHTML).to.equal('leeluolee');
+      // whote changed
+
+      list.data.databases = [{list:[1], name: 'luobo'}]
+      list.$update()
+      var spans = nes.all('span',list.$refs.cnt);
+      expect(spans.length).to.equal(1);
+      expect(spans[0].innerHTML).to.equal('luobo');
+
+      list.destroy()
+    })
     })
   })
 

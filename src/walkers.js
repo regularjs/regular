@@ -50,7 +50,10 @@ walkers.list = function(ast, options){
         data[indexName] = j;
         data[variable] = item;
 
-        _.extend(data, extra);
+        if(extra){
+          data = _.createObject(extra, data)
+        }
+        
         var section = self.$compile(ast.body, {
           extra: data,
           namespace:namespace,

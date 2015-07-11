@@ -2,6 +2,8 @@
 var Regular = require_lib("index.js");
 void function(){
 
+
+describe("Filter", function(){
 var Component = Regular.extend();
 
 Component.filter('lowercase', function(value){
@@ -41,8 +43,6 @@ function destroy(component, container){
   component.destroy();
   expect(container.innerHTML).to.equal('');
 }
-
-describe("Filter", function(){
   var container = document.createElement('div')
   it("fitler should works correctly", function(){
     var component = new Component({

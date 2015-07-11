@@ -696,7 +696,9 @@ Regular.implement({
         else _.log("the computed '" + path + "' don't define the get function,  get data."+path + " altnately", "error")
       }
   }
-    if(typeof defaults === "undefined" || typeof path == "undefined" ) return undefined;
+    if(typeof defaults === "undefined" || typeof path == "undefined" ){
+      return undefined;
+    }
     return (ext && typeof ext[path] !== 'undefined')? ext[path]: defaults[path];
 
   },
@@ -1364,7 +1366,10 @@ walkers.list = function(ast, options){
         data[indexName] = j;
         data[variable] = item;
 
-        _.extend(data, extra);
+        if(extra){
+          data = _.createObject(extra, data)
+        }
+        
         var section = self.$compile(ast.body, {
           extra: data,
           namespace:namespace,
