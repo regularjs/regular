@@ -205,6 +205,7 @@ walkers.element = function(ast, options){
     namespace = options.namespace, ref, group, 
     extra = options.extra,
     isolate = 0,
+    is,
     Component = Constructor.component(ast.tag);
 
 
@@ -213,7 +214,7 @@ walkers.element = function(ast, options){
 
 
 
-  if(Component){
+  if(Component || ast.tag === 'r-component'){
     var data = {},events;
     for(var i = 0, len = attrs.length; i < len; i++){
       var attr = attrs[i];
@@ -221,6 +222,13 @@ walkers.element = function(ast, options){
       
       var name = attr.name;
       var etest = name.match(eventReg);
+      // @if is r-component . we need to find the target Component
+      if(name === 'is' && !Component){
+        is = value;
+        var componentName = this.$get(value, true);
+        Component = Constructor.component(componentName)
+        if(typeof Component !== 'function') throw new Error("component " + componentName + " has not registed!");
+      }
       // bind event proxy
       if(etest){
         events = events || {};
@@ -244,8 +252,6 @@ walkers.element = function(ast, options){
         isolate = value.type === 'expression'? value.get(self): parseInt(value || 3, 10);
         data.isolate = isolate;
       }
-
-
     }
 
     var config = { 
@@ -278,11 +284,28 @@ walkers.element = function(ast, options){
         if(self.$refs) self.$refs[ref] = null;
       })
     }
+    if(is && is.type === 'expression'  ){
+      var group = new Group();
+      group.push(component);
+      this.$watch(is, function(value){
+        // found the new component
+        var Component = Constructor.component(value);
+        if(!Component) throw new Error("component " + value + " has not registed!");
+        var ncomponent = new Component(config);
+        var component = group.children.pop();
+        group.push(ncomponent);
+        ncomponent.$inject(combine.last(component), 'after')
+        component.destroy();
+        if(ref){
+          self.$refs[ref] = ncomponent;
+        }
+      }, {sync: true})
+      return group;
+    }
     return component;
-  }
-  else if( ast.tag === 'r-content' && this._getTransclude ){
+  } else if( ast.tag === 'r-content' && this._getTransclude ){
     return this._getTransclude();
-  }
+  } 
   
   if(children && children.length){
     group = this.$compile(children, {outer: options.outer,namespace: namespace, extra: extra });

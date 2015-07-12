@@ -208,6 +208,45 @@ void function(){
 
     })
 
+    it("r-component can register dynamic component", function(){
+     
+      var container = document.createElement("div");
+      var Component2 = NameSpace.extend({
+        name: "nest2",
+        template: "<p>{user.name.first}</p>"
+      })
+
+      var Component3 = NameSpace.extend({
+        name: "nest3",
+        template: "<p>{user.name.first + ':hello'}</p>"
+      })
+
+      var component = new NameSpace({
+
+        template: "<r-component is=nest2 user={user} ref=component />",
+        data: {user: {name: {first: "Zheng"} } }
+      }).$inject(container);
+
+      expect(nes.one("p", container).innerHTML).to.equal("Zheng");
+      expect(component.$refs.component instanceof Component2).to.equal(true);
+
+      destroy(component, container);
+
+      var component = new NameSpace({
+
+        template: "<r-component is={name} user={user} ref=component />",
+        data: {user: {name: {first: "Zheng"} } ,name: 'nest3'}
+      }).$inject(container);
+ 
+      expect(component.$refs.component instanceof Component3).to.equal(true);
+      expect(nes.one("p", container).innerHTML).to.equal("Zheng:hello");
+
+      component.$update('name', 'nest2');
+      expect(component.$refs.component instanceof Component2).to.equal(true);
+      expect(nes.one("p", container).innerHTML).to.equal("Zheng");
+      destroy(component, container);
+    })
+
 
     describe("nested Component with Event", function(){
 
