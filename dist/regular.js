@@ -1523,7 +1523,7 @@ walkers.element = function(ast, options){
         is = value;
         var componentName = this.$get(value, true);
         Component = Constructor.component(componentName)
-        if(typeof Component !== 'function') _.log("component " + componentName + " has not registed!", 'error')
+        if(typeof Component !== 'function') throw new Error("component " + componentName + " has not registed!");
       }
       // bind event proxy
       if(etest){
@@ -1581,18 +1581,22 @@ walkers.element = function(ast, options){
       })
     }
     if(is && is.type === 'expression'  ){
-      // @TODO.    dynamic component????
-      // var ncomponent;
-      // this.$watch(is, function(value){
-      //   // found the new component
-      //   var Component = Constructor.component(value);
-      //   ncomponent = new Component(config);
-      //   ncomponent.$inject(combine.last(component), 'after')
-      //   component.destroy();
-      // })
-      // this.$on('$destroy', function(){
-      //   ncomponent.destroy();
-      // })
+      var group = new Group();
+      group.push(component);
+      this.$watch(is, function(value){
+        // found the new component
+        var Component = Constructor.component(value);
+        if(!Component) throw new Error("component " + value + " has not registed!");
+        var ncomponent = new Component(config);
+        var component = group.children.pop();
+        group.push(ncomponent);
+        ncomponent.$inject(combine.last(component), 'after')
+        component.destroy();
+        if(ref){
+          self.$refs[ref] = ncomponent;
+        }
+      }, {sync: true})
+      return group;
     }
     return component;
   } else if( ast.tag === 'r-content' && this._getTransclude ){
@@ -2177,7 +2181,6 @@ _.extend(Group.prototype, {
   push: function(item){
     this.children.push( item );
   }
-
 })
 
 

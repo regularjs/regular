@@ -216,6 +216,11 @@ void function(){
         template: "<p>{user.name.first}</p>"
       })
 
+      var Component3 = NameSpace.extend({
+        name: "nest3",
+        template: "<p>{user.name.first + ':hello'}</p>"
+      })
+
       var component = new NameSpace({
 
         template: "<r-component is=nest2 user={user} ref=component />",
@@ -230,11 +235,15 @@ void function(){
       var component = new NameSpace({
 
         template: "<r-component is={name} user={user} ref=component />",
-        data: {user: {name: {first: "Zheng"} } ,name: 'nest2'}
+        data: {user: {name: {first: "Zheng"} } ,name: 'nest3'}
       }).$inject(container);
  
-      expect(component.$refs.component instanceof Component2).to.equal(true);
+      expect(component.$refs.component instanceof Component3).to.equal(true);
+      expect(nes.one("p", container).innerHTML).to.equal("Zheng:hello");
 
+      component.$update('name', 'nest2');
+      expect(component.$refs.component instanceof Component2).to.equal(true);
+      expect(nes.one("p", container).innerHTML).to.equal("Zheng");
       destroy(component, container);
     })
 
