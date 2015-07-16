@@ -558,7 +558,7 @@ Regular.implement({
     // todo
   },
   $inject: function(node, position, options){
-    var fragment = combine.node(this);
+    var fragment = combine.node(this.group);
 
     if(node === false) {
       if(!this._fragContainer)  this._fragContainer = dom.fragment();
@@ -568,8 +568,8 @@ Regular.implement({
     if(!node) throw 'injected node is not found';
     if(!fragment) return this;
     dom.inject(fragment, node, position);
-    this.$emit("$inject", node);
     this.parentNode = Array.isArray(fragment)? fragment[0].parentNode: fragment.parentNode;
+    this.$emit("$inject", node);
     return this;
   },
   $mute: function(isMute){
@@ -1510,6 +1510,8 @@ walkers.element = function(ast, options){
 
   var child;
 
+  
+
   if(group && !_.isVoidTag(ast.tag)){
     dom.inject( combine.node(group) , element)
   }
@@ -1750,7 +1752,7 @@ dom.inject = function(node, refer, position){
     var tmp = node;
     node = dom.fragment();
     for(var i = 0,len = tmp.length; i < len ;i++){
-      node.appendChild(tmp[i]);
+      node.appendChild(tmp[i])
     }
   }
 
@@ -3463,9 +3465,10 @@ var methods = {
     if(rlen) this._records[rlen-1].push(uid)
     // init state.
     if(options.init === true){
+      var prephase = this.$phase;
       this.$phase = 'digest';
       this._checkSingleWatch( watcher, this._watchers.length-1 );
-      this.$phase = null;
+      this.$phase = prephase;
     }
     return watcher;
   },
@@ -3585,12 +3588,12 @@ var methods = {
       }
     }
     if(dirty && !watcher.test){
-      watcher.fn.call(this, now, last, diff)
       if(tnow === 'object' && watcher.deep || tnow === 'array'){
         watcher.last = _.clone(now);
       }else{
         watcher.last = now;
       }
+      watcher.fn.call(this, now, last, diff)
       if(watcher.once) this._watchers.splice(i, 1);
     }
 
@@ -3979,7 +3982,6 @@ var combine = module.exports = {
     if(item.group) return combine.node(item.group)
     if(children = item.children){
       if(children.length === 1){
-        
         return combine.node(children[0]);
       }
       var nodes = [];
@@ -3987,7 +3989,7 @@ var combine = module.exports = {
         node = combine.node(children[i]);
         if(Array.isArray(node)){
           nodes.push.apply(nodes, node)
-        }else{
+        }else if(node) {
           nodes.push(node)
         }
       }

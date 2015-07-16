@@ -316,6 +316,8 @@ walkers.element = function(ast, options){
 
   var child;
 
+  
+
   if(group && !_.isVoidTag(ast.tag)){
     dom.inject( combine.node(group) , element)
   }

@@ -14,7 +14,6 @@ var combine = module.exports = {
     if(item.group) return combine.node(item.group)
     if(children = item.children){
       if(children.length === 1){
-        
         return combine.node(children[0]);
       }
       var nodes = [];
@@ -22,7 +21,7 @@ var combine = module.exports = {
         node = combine.node(children[i]);
         if(Array.isArray(node)){
           nodes.push.apply(nodes, node)
-        }else{
+        }else if(node) {
           nodes.push(node)
         }
       }

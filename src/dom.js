@@ -76,7 +76,7 @@ dom.inject = function(node, refer, position){
     var tmp = node;
     node = dom.fragment();
     for(var i = 0,len = tmp.length; i < len ;i++){
-      node.appendChild(tmp[i]);
+      node.appendChild(tmp[i])
     }
   }
 

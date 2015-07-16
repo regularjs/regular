@@ -235,6 +235,40 @@ var template = (function(){/*
 
     })
 
+    it('bugfix #43', function(){
+
+      // 必须加入 if 来触发single check
+      var container = dom.create('div');
+      var Outer = Regular.extend({
+        template: '<a ref=a on-click={this.add()}></a>{#list list as i} {#if i} <inner-43 name={i.name} ></inner-43> {#else} <inner-43 name={i.name} ></inner-43> {/if} {/list}',
+        config:function(data){
+          data.list = data.list || [];
+        },
+        add: function(){
+          this.data.list.push({name: 1});
+        }
+      })
+
+      var Inner = Regular.extend({
+        name: 'inner-43',
+        template: "<div>{name}</div>",
+        config: function(){
+          this.$update();
+        }
+      })
+
+      var outer = new Outer({
+        data: {
+          list: [{name:1}]
+        }
+      }).$inject(container);
+
+      dispatchMockEvent(outer.$refs.a, 'click')
+
+      debugger
+      console.log(container)
+    })
+
     describe("svg namespace", function(){
       // need include
       // 1. list

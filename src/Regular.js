@@ -349,7 +349,7 @@ Regular.implement({
     // todo
   },
   $inject: function(node, position, options){
-    var fragment = combine.node(this);
+    var fragment = combine.node(this.group);
 
     if(node === false) {
       if(!this._fragContainer)  this._fragContainer = dom.fragment();
@@ -359,8 +359,8 @@ Regular.implement({
     if(!node) throw 'injected node is not found';
     if(!fragment) return this;
     dom.inject(fragment, node, position);
-    this.$emit("$inject", node);
     this.parentNode = Array.isArray(fragment)? fragment[0].parentNode: fragment.parentNode;
+    this.$emit("$inject", node);
     return this;
   },
   $mute: function(isMute){

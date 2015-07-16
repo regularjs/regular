@@ -58,9 +58,10 @@ var methods = {
     if(rlen) this._records[rlen-1].push(uid)
     // init state.
     if(options.init === true){
+      var prephase = this.$phase;
       this.$phase = 'digest';
       this._checkSingleWatch( watcher, this._watchers.length-1 );
-      this.$phase = null;
+      this.$phase = prephase;
     }
     return watcher;
   },
@@ -180,12 +181,12 @@ var methods = {
       }
     }
     if(dirty && !watcher.test){
-      watcher.fn.call(this, now, last, diff)
       if(tnow === 'object' && watcher.deep || tnow === 'array'){
         watcher.last = _.clone(now);
       }else{
         watcher.last = now;
       }
+      watcher.fn.call(this, now, last, diff)
       if(watcher.once) this._watchers.splice(i, 1);
     }
 

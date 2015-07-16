@@ -58,20 +58,6 @@ void function(){
       expect(nes.all("div", container2).length).to.equal(1);
       destroy(component, container2)
     })
-    it("component.$inject works on if when use twice", function(){
-      var component = new Regular({
-        template:"{#if test}<div>hello</div><p>name</p>{/if}",
-        data: {test: true}
-      }).$inject(container);
-
-      expect(nes.all("div", container).length).to.equal(1);
-
-      component.$inject(container2)
-
-      expect(container.innerHTML).to.equal("");
-      expect(nes.all("div", container2).length).to.equal(1);
-      destroy(component, container2)
-    })
 
     it("component.$inject works on include when use twice", function(){
       var component = new Regular({
