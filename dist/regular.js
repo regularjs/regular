@@ -560,8 +560,11 @@ Regular.implement({
     // todo
   },
   $inject: function(node, position, options){
-    var fragment = combine.node(this.group);
-
+    var fragment;
+    if(this.group){
+      fragment = combine.node(this.group||[]);
+    }
+    
     if(node === false) {
       if(!this._fragContainer)  this._fragContainer = dom.fragment();
       return this.$inject(this._fragContainer);
