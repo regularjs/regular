@@ -291,8 +291,15 @@ op.list = function(){
   variable = this.match('IDENT').value;
 
   if(this.eat('IDENT', 'by')){
-    track = this.expression();
-    console.log(track)
+    if(this.eat('IDENT',variable + '_index')){
+      track = true;
+    }else{
+      track = this.expression();
+      if(track.constant){
+        // true is means constant, we handle it just like xxx_index.
+        track = true;
+      }
+    }
   }
 
   this.match('END');

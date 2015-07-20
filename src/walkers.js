@@ -4,6 +4,7 @@ var animate = require("./helper/animate.js");
 var Group = require('./group.js');
 var _ = require('./util');
 var combine = require('./helper/combine.js');
+var diffArray = require('./helper/arrayDiff.js');
 
 var walkers = module.exports = {};
 
@@ -19,9 +20,111 @@ walkers.list = function(ast, options){
   var indexName = ast.variable + '_index';
   var variable = ast.variable;
   var alternate = ast.alternate;
-  var track = ast.track;
+  var track = ast.track, keyOf, extraObj;
+  if(track && track !== true){
+    track = this._touchExpr(track);
+    extraObj = _.createObject(extra);
+    keyOf = function( item, index ){
+      extraObj[ variable ] = item;
+      extraObj[ indexName ] = index;
+      return track.get( self, extraObj );
+    }
+  }
+  function removeRange(index, rlen){
+    for(var j = 0; j< rlen; j++){ //removed
+      var removed = group.children.splice( index + 1, 1)[0];
+      removed.destroy(true);
+    }
+  }
+  function addRange(index, end, newValue){
+    for(var o = index; o < end; o++){ //add
+      // prototype inherit
+      var item = newValue[o];
+      var data = {};
+      data[indexName] = o;
+      data[variable] = item;
+
+      data = _.createObject(extra, data);
+      var section = self.$compile(ast.body, {
+        extra: data,
+        namespace:namespace,
+        record: true,
+        outer: options.outer
+      })
+      section.data = data;
+      // autolink
+      var insert =  combine.last(group.get(o));
+      if(insert.parentNode){
+        animate.inject(combine.node(section),insert, 'after');
+      }
+      // insert.parentNode.insertBefore(combine.node(section), insert.nextSibling);
+      group.children.splice( o + 1 , 0, section);
+    }
+  }
+
+  function updateRange(start, end, newValue){
+    for(var k = start; k < end; k++){ // no change
+      var sect = group.get( k + 1 );
+      sect.data[ indexName ] = k;
+      sect.data[ variable ] = newValue[k];
+    }
+  }
 
   function update(newValue, oldValue, splices){
+    if(!newValue) {
+      newValue = [];
+      splices = diffArray(newValue, oldValue);
+    }
+     
+    if(!splices || !splices.length) return;
+    var cur = placeholder;
+    var m = 0, len = newValue.length;
+      
+
+    for(var i = 0; i < splices.length; i++){ //init
+      var splice = splices[i];
+      var index = splice.index; // beacuse we use a comment for placeholder
+      var removed = splice.removed;
+      var add = splice.add;
+      var rlen = removed.length;
+      // for track
+      if( track && rlen && add ){
+        var minar = Math.min(rlen, add);
+        var tIndex = 0;
+        while(tIndex < minar){
+          if( keyOf(newValue[index], index) !== keyOf( removed[0], index ) ){
+            removeRange(index, 1)
+            addRange(index, index+1, newValue)
+          }
+          removed.shift();
+          add--;
+          index++;
+          tIndex++;
+        }
+        rlen = removed.length;
+      }
+
+
+      // update
+      updateRange(m, index, newValue);
+      removeRange( index ,rlen)
+
+      addRange(index, index+add, newValue)
+
+      m = index + add - rlen;
+      m  = m < 0? 0 : m;
+
+    }
+    if(m < len){
+      for(var i = m; i < len; i++){
+        var pair = group.get(i + 1);
+        pair.data[indexName] = i;
+      }
+    }
+  }
+
+  // if the track is constant test.
+  function updateSimple(newValue, oldValue){
     newValue = newValue || [];
     oldValue  = oldValue || [];
     
@@ -33,49 +136,56 @@ walkers.list = function(ast, options){
 
     var mlen = Math.min(nlen, olen);
 
-
-    for(var i =0; i < mlen ; i ++){
-       var sect = group.get( i + 1);
-       sect.data[indexName] = i;
-       sect.data[variable] = newValue[i];
-    }
+    updateRange(0, mlen, newValue)
     if(nlen < olen){ //need add
-      for(var j = olen-1; j >= nlen; j--){
-        var removed = group.children.splice( j+1 , 1)[0];
-        if(removed){ removed.destroy(true) }
-      }
+      removeRange(nlen, olen-nlen);
     }else if(nlen > olen){
-      for(var j = olen; j < nlen; j++){
-        // prototype inherit
-        var item = newValue[j];
-        var data = {};
-        data[indexName] = j;
-        data[variable] = item;
-
-        if(extra){
-          data = _.createObject(extra, data)
-        }
-        
-        var section = self.$compile(ast.body, {
-          extra: data,
-          namespace:namespace,
-          record: true,
-          outer: options.outer
-        })
-        section.data = data;
-        // autolink
-        var insert =  combine.last(group.get(j));
-        if(insert.parentNode){
-          animate.inject(combine.node(section),insert, 'after');
-        }
-
-        group.children.splice( j + 1 , 0, section);
-        // insert.parentNode.insertBefore(combine.node(section), insert.nextSibling);
-      }
+      addRange(olen, nlen, newValue);
     }
   }
 
-  this.$watch(ast.sequence, update, { init: true });
+
+
+
+  // function update(newValue, oldValue, splices){
+
+
+  //   if(nlen < olen){ //need add
+  //     for(var j = olen-1; j >= nlen; j--){
+  //       var removed = group.children.splice( j+1 , 1)[0];
+  //       if(removed){ removed.destroy(true) }
+  //     }
+  //   }else if(nlen > olen){
+  //     for(var j = olen; j < nlen; j++){
+  //       // prototype inherit
+  //       var item = newValue[j];
+  //       var data = {};
+  //       data[indexName] = j;
+  //       data[variable] = item;
+
+  //       if(extra){
+  //         data = _.createObject(extra, data)
+  //       }
+        
+  //       var section = self.$compile(ast.body, {
+  //         extra: data,
+  //         namespace:namespace,
+  //         record: true,
+  //         outer: options.outer
+  //       })
+  //       section.data = data;
+  //       // autolink
+  //       var insert =  combine.last(group.get(j));
+  //       if(insert.parentNode){
+  //         animate.inject(combine.node(section),insert, 'after');
+  //       }
+
+  //       group.children.splice( j + 1 , 0, section);
+  //       // insert.parentNode.insertBefore(combine.node(section), insert.nextSibling);
+  //     }
+  //   }
+  // }
+  this.$watch(ast.sequence, track===true? updateSimple: update, { init: true, indexTrack: track === true });
   return group;
 }
 // {#include }

@@ -468,8 +468,38 @@ void function(){
         var divs2 = nes.all('div', list.$refs.cnt);
 
         expect(divs[0]).to.equal(divs2[0]);
+        expect(divs[0].innerHTML).to.equal('4');
         expect(divs[1]).to.equal(divs2[1]);
+        expect(divs[1].innerHTML).to.equal('5');
         expect(divs[2]).to.equal(divs2[2]);
+        expect(divs[2].innerHTML).to.equal('6');
+
+      })
+      it("list track constant will be consider as same as index", function(){
+        var List = Regular.extend({
+          template: '<div ref=cnt>{#list list as item by 1}\
+            <div>{item.a}</div>{/list}</div>'
+        })
+        var list = new List({
+          data: {
+            list: [{a: 1},{a: 2} , {a: 3}]
+          }
+        })
+
+        var divs = nes.all('div', list.$refs.cnt);
+        list.data.list = [{a: 4},{a: 5} , {a: 6}]
+        list.$update();
+
+        var divs2 = nes.all('div', list.$refs.cnt);
+
+        expect(divs[0]).to.equal(divs2[0]);
+        expect(divs[0].innerHTML).to.equal('4');
+        expect(divs[1]).to.equal(divs2[1]);
+        expect(divs[1].innerHTML).to.equal('5');
+        expect(divs[2]).to.equal(divs2[2]);
+        expect(divs[2].innerHTML).to.equal('6');
+
+
 
       })
 
@@ -496,7 +526,7 @@ void function(){
         expect(divs[2]).to.not.equal(divs2[2]);
       })
 
-      it("list track other expression" , function(){
+      it("list track non-index expression" , function(){
         var List = Regular.extend({
           template: '<div ref=cnt>{#list list as item by item.a}\
             <div>{item.a}</div>{/list}</div>'

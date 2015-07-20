@@ -1,12 +1,21 @@
 
+function simpleDiff(now, old){
+  var nlen = now.length;
+  var olen = old.length;
+  if(nlen !== olen){
+    return true;
+  }
+  for(var i = 0; i < nlen ; i++){
+    if(now[i] !== old[i]) return  true;
+  }
+  return false
+
+}
+
 function equals(a,b){
   return a === b;
 }
-function ld(array1, array2, keyOf){
-  if(typeof keyOf === 'function'){
-    array1 = array1.map(keyOf);
-    array2 = array2.map(keyOf);
-  }
+function ld(array1, array2){
   var n = array1.length;
   var m = array2.length;
   var matrix = [];
@@ -30,8 +39,9 @@ function ld(array1, array2, keyOf){
   }
   return matrix;
 }
-function whole(arr2, arr1, keyOf) {
-  var matrix = ld(arr1, arr2, keyOf)
+function whole(arr2, arr1, indexTrack) {
+  if(indexTrack) return simpleDiff(arr2, arr1);
+  var matrix = ld(arr1, arr2)
   var n = arr1.length;
   var i = n;
   var m = arr2.length;

@@ -130,18 +130,17 @@ describe("Regular.util", function(){
       { index: 0, add: 2, removed: []} 
     ]);
 
-    expect(diffArray([{a:1},{a:3}], [{a:2}, {a:3}], function(item, index){
-      return item.a
-    })).to.eql([
-      { index: 0, add: 1, removed: [{a:2}] }
-    ])
+    expect(diffArray([{a:1},{a:3}], [{a:2}, {a:3}], true)).to.equal(true)
+    expect(diffArray([1,2], [1,2], true)).to.equal(false)
   })
 
+
+
   it('_.equals should works as expect', function(){
-    expect(_.equals(1,2)).to.eql(false)
-    expect(_.equals(1,1)).to.eql(true)
-    expect(_.equals(NaN,NaN)).to.eql(true)
-    expect(_.equals(null,undefined)).to.eql(false)
+    expect(_.equals(1,2)).to.equal(false)
+    expect(_.equals(1,1)).to.equal(true)
+    expect(_.equals(NaN,NaN)).to.equal(true)
+    expect(_.equals(null,undefined)).to.equal(false)
   })
 
   it('_.throttle should works as expect', function(){

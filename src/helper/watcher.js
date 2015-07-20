@@ -1,6 +1,6 @@
 var _ = require('../util.js');
 var parseExpression = require('./parse.js').expression;
-
+var diffArray = require('./arrayDiff.js');
 
 function Watcher(){}
 
@@ -47,9 +47,11 @@ var methods = {
       fn: fn, 
       once: once, 
       force: options.force,
+      // don't use ld to resolve array diff
+      notld: options.indexTrack,
       test: test,
       deep: options.deep,
-      last: options.sync? get(this): undefined
+      last: options.sync? get(this): options.last
     }
     
     this._watchers.push( watcher );
@@ -146,8 +148,8 @@ var methods = {
       if( !(tnow === 'object' && tlast==='object' && watcher.deep) ){
         // Array
         if( tnow === 'array' && ( tlast=='undefined' || tlast === 'array') ){
-          eq = _.diffArray(now, watcher.last || [])
-          if( tlast !== 'array' || !eq ) dirty = true;
+          diff = diffArray(now, watcher.last || [], watcher.notld)
+          if( tlast !== 'array' || diff === true || diff.length ) dirty = true;
         }else{
           eq = _.equals( now, last );
           if( !eq || watcher.force ){
