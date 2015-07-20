@@ -18,6 +18,8 @@ walkers.list = function(ast, options){
   group.push(placeholder);
   var indexName = ast.variable + '_index';
   var variable = ast.variable;
+  var alternate = ast.alternate;
+  var track = ast.track;
 
   function update(newValue, oldValue, splices){
     newValue = newValue || [];

@@ -21,6 +21,7 @@
     "src/helper/event.js",
     "src/helper/animate.js",
     "src/helper/combine.js",
+    "src/helper/arrayDiff.js",
     "src/helper/entities.js",
     "src/helper/filter.js",
     "src/directive/base.js",

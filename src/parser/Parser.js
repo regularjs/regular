@@ -282,13 +282,18 @@ op["if"] = function(tag){
 // {{#list}}
 op.list = function(){
   // sequence can be a list or hash
-  var sequence = this.expression(), variable, ll;
+  var sequence = this.expression(), variable, ll, track;
   var consequent = [], alternate=[];
   var container = consequent;
 
   this.match('IDENT', 'as');
 
   variable = this.match('IDENT').value;
+
+  if(this.eat('IDENT', 'by')){
+    track = this.expression();
+    console.log(track)
+  }
 
   this.match('END');
 
@@ -301,7 +306,7 @@ op.list = function(){
     }
   }
   if(ll.value !== 'list') this.error('expect ' + 'list got ' + '/' + ll.value + ' ', ll.pos );
-  return node.list(sequence, variable, consequent, alternate);
+  return node.list(sequence, variable, consequent, alternate, track);
 }
 
 
