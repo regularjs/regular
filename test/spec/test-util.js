@@ -1,5 +1,6 @@
 var _ = require_lib("util.js");
 var extend = require_lib('helper/extend.js');
+var diffArray = require_lib('helper/arrayDiff.js');
 
 
 
@@ -106,34 +107,40 @@ describe("Regular.util", function(){
     expect(_.extend(c, {b:1,c:2},["c"])).to.eql({a:1,c:2})
   })
 
-  it('_.equals should works as expect', function(){
-    //@TODO
-    // expect(_.diffArray([], [1,2])).to.eql([
-    //   {
-    //     "index": 0,
-    //     "add": 0,
-    //     "removed": [
-    //       1,
-    //       2
-    //     ]
-    //   }
-    // ])
-    // expect(_.diffArray([1,2], [])).to.eql([
-    //   { index: 0, add: 2, removed: [] } 
-    // ]);
-    // expect(_.diffArray([1,2,3], [2])).to.eql([
-    //   { index: 0, add: 1, removed: [] },
-    //   { index: 2, add: 1, removed: []} 
-    // ]);
-    // var a = [1,2,3];
-    // expect(_.diffArray(_.slice(a, 1),[])).to.eql([
-    //   { index: 0, add: 2, removed: []} 
-    // ]);
+  it('diffArray should works as expect', function(){
+    expect(diffArray([], [1,2])).to.eql([
+      {
+        "index": 0,
+        "add": 0,
+        "removed": [
+          1,
+          2
+        ]
+      }
+    ])
+    expect(diffArray([1,2], [])).to.eql([
+      { index: 0, add: 2, removed: [] } 
+    ]);
+    expect(diffArray([1,2,3], [2])).to.eql([
+      { index: 0, add: 1, removed: [] },
+      { index: 2, add: 1, removed: []} 
+    ]);
+    var a = [1,2,3];
+    expect(diffArray(_.slice(a, 1),[])).to.eql([
+      { index: 0, add: 2, removed: []} 
+    ]);
 
-    // expect(_.equals(1,2)).to.eql(false)
-    // expect(_.equals(1,1)).to.eql(true)
-    // expect(_.equals(NaN,NaN)).to.eql(true)
-    // expect(_.equals(null,undefined)).to.eql(false)
+    expect(diffArray([{a:1},{a:3}], [{a:2}, {a:3}], true)).to.equal(true)
+    expect(diffArray([1,2], [1,2], true)).to.equal(false)
+  })
+
+
+
+  it('_.equals should works as expect', function(){
+    expect(_.equals(1,2)).to.equal(false)
+    expect(_.equals(1,1)).to.equal(true)
+    expect(_.equals(NaN,NaN)).to.equal(true)
+    expect(_.equals(null,undefined)).to.equal(false)
   })
 
   it('_.throttle should works as expect', function(){

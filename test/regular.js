@@ -1030,18 +1030,6 @@ _.equals = function(now, old){
   if(type === 'number' && typeof old === 'number'&& isNaN(now) && isNaN(old)) return true
   return now === old;
 }
-_.diffArray = function(now, old){
-  var nlen = now.length;
-  var olen = old.length;
-  if(nlen !== olen){
-    return false;
-  }
-  for(var i = 0; i < nlen ; i++){
-    if(now[i] !== old[i]) return  false;
-  }
-  return true
-
-}
 
 
 
@@ -1201,6 +1189,7 @@ var animate = require("./helper/animate.js");
 var Group = require('./group.js');
 var _ = require('./util');
 var combine = require('./helper/combine.js');
+var diffArray = require('./helper/arrayDiff.js');
 
 var walkers = module.exports = {};
 
@@ -1216,8 +1205,109 @@ walkers.list = function(ast, options){
   var indexName = ast.variable + '_index';
   var variable = ast.variable;
   var alternate = ast.alternate;
+  var track = ast.track, keyOf, extraObj;
+  if(track && track !== true){
+    track = this._touchExpr(track);
+    extraObj = _.createObject(extra);
+    keyOf = function( item, index ){
+      extraObj[ variable ] = item;
+      extraObj[ indexName ] = index;
+      return track.get( self, extraObj );
+    }
+  }
+  function removeRange(index, rlen){
+    for(var j = 0; j< rlen; j++){ //removed
+      var removed = group.children.splice( index + 1, 1)[0];
+      removed.destroy(true);
+    }
+  }
+  function addRange(index, end, newValue){
+    for(var o = index; o < end; o++){ //add
+      // prototype inherit
+      var item = newValue[o];
+      var data = {};
+      data[indexName] = o;
+      data[variable] = item;
 
-  function update(newValue, oldValue, splices){
+      data = _.createObject(extra, data);
+      var section = self.$compile(ast.body, {
+        extra: data,
+        namespace:namespace,
+        record: true,
+        outer: options.outer
+      })
+      section.data = data;
+      // autolink
+      var insert =  combine.last(group.get(o));
+      if(insert.parentNode){
+        animate.inject(combine.node(section),insert, 'after');
+      }
+      // insert.parentNode.insertBefore(combine.node(section), insert.nextSibling);
+      group.children.splice( o + 1 , 0, section);
+    }
+  }
+
+  function updateRange(start, end, newValue){
+    for(var k = start; k < end; k++){ // no change
+      var sect = group.get( k + 1 );
+      sect.data[ indexName ] = k;
+      sect.data[ variable ] = newValue[k];
+    }
+  }
+
+  function updateLD(newValue, oldValue, splices){
+    if(!newValue) {
+      newValue = [];
+      splices = diffArray(newValue, oldValue);
+    }
+     
+    if(!splices || !splices.length) return;
+    var cur = placeholder;
+    var m = 0, len = newValue.length;
+      
+
+    for(var i = 0; i < splices.length; i++){ //init
+      var splice = splices[i];
+      var index = splice.index; // beacuse we use a comment for placeholder
+      var removed = splice.removed;
+      var add = splice.add;
+      var rlen = removed.length;
+      // for track
+      if( track && rlen && add ){
+        var minar = Math.min(rlen, add);
+        var tIndex = 0;
+        while(tIndex < minar){
+          if( keyOf(newValue[index], index) !== keyOf( removed[0], index ) ){
+            removeRange(index, 1)
+            addRange(index, index+1, newValue)
+          }
+          removed.shift();
+          add--;
+          index++;
+          tIndex++;
+        }
+        rlen = removed.length;
+      }
+      // update
+      updateRange(m, index, newValue);
+      removeRange( index ,rlen)
+
+      addRange(index, index+add, newValue)
+
+      m = index + add - rlen;
+      m  = m < 0? 0 : m;
+
+    }
+    if(m < len){
+      for(var i = m; i < len; i++){
+        var pair = group.get(i + 1);
+        pair.data[indexName] = i;
+      }
+    }
+  }
+
+  // if the track is constant test.
+  function updateSimple(newValue, oldValue){
     newValue = newValue || [];
     oldValue  = oldValue || [];
 
@@ -1225,50 +1315,31 @@ walkers.list = function(ast, options){
     var olen = oldValue.length || 0;
     var mlen = Math.min(nlen, olen);
 
-    if(olen !== nlen && !olen && group.get(1)){
+
+    updateRange(0, mlen, newValue)
+    if(nlen < olen){ //need add
+      removeRange(nlen, olen-nlen);
+    }else if(nlen > olen){
+      addRange(olen, nlen, newValue);
+    }
+  }
+
+  function update(newValue, oldValue, splices){
+    var nlen = newValue && newValue.length;
+    var olen = oldValue && oldValue.length;
+    if( !olen && nlen && group.get(1)){
       var altGroup = group.children.pop();
       if(altGroup.destroy)  altGroup.destroy(true);
     }
-    for(var i =0; i < mlen ; i ++){
-       var sect = group.get(i + 1);
-       sect.data[indexName] = i;
-       sect.data[variable] = newValue[i];
-    }
-    if(nlen < olen){ //need add
-      for(var j = olen-1; j >= nlen; j--){
-        var removed = group.children.splice( j+1 , 1)[0];
-        if(removed){ removed.destroy(true) }
-      }
-    }else if(nlen > olen){
-      for(var j = olen; j < nlen; j++){
-        // prototype inherit
-        var item = newValue[j];
-        var data = {};
-        data[indexName] = j;
-        data[variable] = item;
 
-        if(extra){
-          data = _.createObject(extra, data)
-        }
-        
-        var section = self.$compile(ast.body, {
-          extra: data,
-          namespace:namespace,
-          record: true,
-          outer: options.outer
-        })
-        section.data = data;
-        // autolink
-        var insert =  combine.last(group.get(j));
-        if(insert.parentNode){
-          animate.inject(combine.node(section),insert, 'after');
-        }
-        group.children.splice( j + 1 , 0, section);
-
-      }
+    if(track === true){
+      updateSimple(newValue, oldValue, splices)
+    }else{
+      updateLD(newValue, oldValue, splices)
     }
+
     // @ {#list} {#else}
-    if(nlen === 0 && alternate && alternate.length){
+    if( !nlen && alternate && alternate.length){
       var section = self.$compile(alternate, {
         extra: extra,
         record: true,
@@ -1276,14 +1347,14 @@ walkers.list = function(ast, options){
         namespace: namespace
       })
       group.children.push(section);
-      if(self.$ready){
+      if(placeholder.parentNode){
         animate.inject(combine.node(section), placeholder, 'after');
       }
-      
     }
   }
 
-  this.$watch(ast.sequence, update, { init: true });
+
+  this.$watch(ast.sequence, update, { init: true, indexTrack: track === true });
   return group;
 }
 // {#include }
@@ -2483,13 +2554,14 @@ module.exports = {
       alternate: alternate
     }
   },
-  list: function(sequence, variable, body, alternate){
+  list: function(sequence, variable, body, alternate, track){
     return {
       type: 'list',
       sequence: sequence,
       alternate: alternate,
       variable: variable,
-      body: body
+      body: body,
+      track: track
     }
   },
   expression: function( body, setbody, constant ){
@@ -2800,13 +2872,25 @@ op["if"] = function(tag){
 // {{#list}}
 op.list = function(){
   // sequence can be a list or hash
-  var sequence = this.expression(), variable, ll;
+  var sequence = this.expression(), variable, ll, track;
   var consequent = [], alternate=[];
   var container = consequent;
 
   this.match('IDENT', 'as');
 
   variable = this.match('IDENT').value;
+
+  if(this.eat('IDENT', 'by')){
+    if(this.eat('IDENT',variable + '_index')){
+      track = true;
+    }else{
+      track = this.expression();
+      if(track.constant){
+        // true is means constant, we handle it just like xxx_index.
+        track = true;
+      }
+    }
+  }
 
   this.match('END');
 
@@ -2820,7 +2904,7 @@ op.list = function(){
   }
   
   if(ll.value !== 'list') this.error('expect ' + 'list got ' + '/' + ll.value + ' ', ll.pos );
-  return node.list(sequence, variable, consequent, alternate);
+  return node.list(sequence, variable, consequent, alternate, track);
 }
 
 
@@ -3410,7 +3494,7 @@ module.exports = {
 require.register("regularjs/src/helper/watcher.js", function(exports, require, module){
 var _ = require('../util.js');
 var parseExpression = require('./parse.js').expression;
-
+var diffArray = require('./arrayDiff.js');
 
 function Watcher(){}
 
@@ -3457,9 +3541,11 @@ var methods = {
       fn: fn, 
       once: once, 
       force: options.force,
+      // don't use ld to resolve array diff
+      notld: options.indexTrack,
       test: test,
       deep: options.deep,
-      last: options.sync? get(this): undefined
+      last: options.sync? get(this): options.last
     }
     
     this._watchers.push( watcher );
@@ -3557,8 +3643,8 @@ var methods = {
       if( !(tnow === 'object' && tlast==='object' && watcher.deep) ){
         // Array
         if( tnow === 'array' && ( tlast=='undefined' || tlast === 'array') ){
-          eq = _.diffArray(now, watcher.last || [])
-          if( tlast !== 'array' || !eq ) dirty = true;
+          diff = diffArray(now, watcher.last || [], watcher.notld)
+          if( tlast !== 'array' || diff === true || diff.length ) dirty = true;
         }else{
           eq = _.equals( now, last );
           if( !eq || watcher.force ){
@@ -4029,6 +4115,142 @@ var combine = module.exports = {
   }
 
 }
+});
+require.register("regularjs/src/helper/arrayDiff.js", function(exports, require, module){
+
+function simpleDiff(now, old){
+  var nlen = now.length;
+  var olen = old.length;
+  if(nlen !== olen){
+    return true;
+  }
+  for(var i = 0; i < nlen ; i++){
+    if(now[i] !== old[i]) return  true;
+  }
+  return false
+
+}
+
+function equals(a,b){
+  return a === b;
+}
+function ld(array1, array2){
+  var n = array1.length;
+  var m = array2.length;
+  var matrix = [];
+  for(var i = 0; i <= n; i++){
+    matrix.push([i]);
+  }
+  for(var j=1;j<=m;j++){
+    matrix[0][j]=j;
+  }
+  for(var i = 1; i <= n; i++){
+    for(var j = 1; j <= m; j++){
+      if(equals(array1[i-1], array2[j-1])){
+        matrix[i][j] = matrix[i-1][j-1];
+      }else{
+        matrix[i][j] = Math.min(
+          matrix[i-1][j]+1, //delete
+          matrix[i][j-1]+1//add
+          )
+      }
+    }
+  }
+  return matrix;
+}
+function whole(arr2, arr1, indexTrack) {
+  if(indexTrack) return simpleDiff(arr2, arr1);
+  var matrix = ld(arr1, arr2)
+  var n = arr1.length;
+  var i = n;
+  var m = arr2.length;
+  var j = m;
+  var edits = [];
+  var current = matrix[i][j];
+  while(i>0 || j>0){
+  // the last line
+    if (i === 0) {
+      edits.unshift(3);
+      j--;
+      continue;
+    }
+    // the last col
+    if (j === 0) {
+      edits.unshift(2);
+      i--;
+      continue;
+    }
+    var northWest = matrix[i - 1][j - 1];
+    var west = matrix[i - 1][j];
+    var north = matrix[i][j - 1];
+
+    var min = Math.min(north, west, northWest);
+
+    if (min === west) {
+      edits.unshift(2); //delete
+      i--;
+      current = west;
+    } else if (min === northWest ) {
+      if (northWest === current) {
+        edits.unshift(0); //no change
+      } else {
+        edits.unshift(1); //update
+        current = northWest;
+      }
+      i--;
+      j--;
+    } else {
+      edits.unshift(3); //add
+      j--;
+      current = north;
+    }
+  }
+  var LEAVE = 0;
+  var ADD = 3;
+  var DELELE = 2;
+  var UPDATE = 1;
+  var n = 0;m=0;
+  var steps = [];
+  var step = {index: null, add:0, removed:[]};
+
+  for(var i=0;i<edits.length;i++){
+    if(edits[i] > 0 ){ // NOT LEAVE
+      if(step.index === null){
+        step.index = m;
+      }
+    } else { //LEAVE
+      if(step.index != null){
+        steps.push(step)
+        step = {index: null, add:0, removed:[]};
+      }
+    }
+    switch(edits[i]){
+      case LEAVE:
+        n++;
+        m++;
+        break;
+      case ADD:
+        step.add++;
+        m++;
+        break;
+      case DELELE:
+        step.removed.push(arr1[n])
+        n++;
+        break;
+      case UPDATE:
+        step.add++;
+        step.removed.push(arr1[n])
+        n++;
+        m++;
+        break;
+    }
+  }
+  if(step.index != null){
+    steps.push(step)
+  }
+  return steps
+}
+module.exports = whole;
 });
 require.register("regularjs/src/helper/entities.js", function(exports, require, module){
 // http://stackoverflow.com/questions/1354064/how-to-convert-characters-to-html-entities-using-plain-javascript

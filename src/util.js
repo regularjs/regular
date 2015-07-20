@@ -230,18 +230,6 @@ _.equals = function(now, old){
   if(type === 'number' && typeof old === 'number'&& isNaN(now) && isNaN(old)) return true
   return now === old;
 }
-_.diffArray = function(now, old){
-  var nlen = now.length;
-  var olen = old.length;
-  if(nlen !== olen){
-    return false;
-  }
-  for(var i = 0; i < nlen ; i++){
-    if(now[i] !== old[i]) return  false;
-  }
-  return true
-
-}
 
 
 

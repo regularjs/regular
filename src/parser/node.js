@@ -22,13 +22,14 @@ module.exports = {
       alternate: alternate
     }
   },
-  list: function(sequence, variable, body, alternate){
+  list: function(sequence, variable, body, alternate, track){
     return {
       type: 'list',
       sequence: sequence,
       alternate: alternate,
       variable: variable,
-      body: body
+      body: body,
+      track: track
     }
   },
   expression: function( body, setbody, constant ){

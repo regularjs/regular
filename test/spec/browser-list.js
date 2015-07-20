@@ -433,6 +433,41 @@ void function(){
       list2.destroy()
 
     })
+  it("list with else should also works under track mode", function(){
+
+    var List = Regular.extend({
+      template: '<div ref=cnt>{#list list as item by item_index}<div>{item}</div>{#else}<p>nothing{list.length}</p>{/list}</div>'
+    })
+
+    var list1 = new List({data: {list: []}})
+    var list2 = new List({data: {list: [1]}})
+
+    expect(nes.all('div',list1.$refs.cnt).length).to.equal(0);
+    var ps = nes.all('p',list1.$refs.cnt)
+    expect(ps.length).to.equal(1);
+    expect(ps[0].innerHTML).to.equal('nothing0')
+
+    expect(nes.all('div',list2.$refs.cnt).length).to.equal(1);
+    var ps = nes.all('p',list2.$refs.cnt)
+    expect(ps.length).to.equal(0);
+
+    list1.$update('list', [1,2,3])
+    expect(nes.all('div',list1.$refs.cnt).length).to.equal(3);
+    var ps = nes.all('p',list1.$refs.cnt)
+    expect(ps.length).to.equal(0);
+
+    list1.$update('list', [])
+    expect(nes.all('div',list1.$refs.cnt).length).to.equal(0);
+    var ps = nes.all('p',list1.$refs.cnt)
+    expect(ps.length).to.equal(1);
+    expect(ps[0].innerHTML).to.equal('nothing0')
+
+    list1.destroy()
+    list2.destroy()
+
+  })
+
+
 
     // 即如果全量更新的话， 外部list的属性也应该可以正确响应
     // 
@@ -477,7 +512,112 @@ void function(){
 
       list.destroy()
     })
+
+
+    })
+
+    describe("List track", function(){
+
+
+      it("list with track item_index should work as expected", function(){
+        var List = Regular.extend({
+          template: '<div ref=cnt>{#list list as item by item_index}\
+            <div>{item.a}</div>{/list}</div>'
+        })
+
+        var list = new List({
+          data: {
+            list: [{a: 1},{a: 2} , {a: 3}]
+          }
+        })
+        var divs = nes.all('div', list.$refs.cnt);
+
+        list.data.list = [{a: 4},{a: 5} , {a: 6}]
+        list.$update();
+
+        var divs2 = nes.all('div', list.$refs.cnt);
+
+        expect(divs[0]).to.equal(divs2[0]);
+        expect(divs[0].innerHTML).to.equal('4');
+        expect(divs[1]).to.equal(divs2[1]);
+        expect(divs[1].innerHTML).to.equal('5');
+        expect(divs[2]).to.equal(divs2[2]);
+        expect(divs[2].innerHTML).to.equal('6');
+
+      })
+      it("list track constant will be consider as same as index", function(){
+        var List = Regular.extend({
+          template: '<div ref=cnt>{#list list as item by 1}\
+            <div>{item.a}</div>{/list}</div>'
+        })
+        var list = new List({
+          data: {
+            list: [{a: 1},{a: 2} , {a: 3}]
+          }
+        })
+
+        var divs = nes.all('div', list.$refs.cnt);
+        list.data.list = [{a: 4},{a: 5} , {a: 6}]
+        list.$update();
+
+        var divs2 = nes.all('div', list.$refs.cnt);
+
+        expect(divs[0]).to.equal(divs2[0]);
+        expect(divs[0].innerHTML).to.equal('4');
+        expect(divs[1]).to.equal(divs2[1]);
+        expect(divs[1].innerHTML).to.equal('5');
+        expect(divs[2]).to.equal(divs2[2]);
+        expect(divs[2].innerHTML).to.equal('6');
+
+
+
+      })
+
+      it("list with no track should rebuild each group when data changes", function(){
+        var List = Regular.extend({
+          template: '<div ref=cnt>{#list list as item}\
+            <div>{item.a}</div>{/list}</div>'
+        })
+
+        var list = new List({
+          data: {
+            list: [{a: 1},{a: 2} , {a: 3}]
+          }
+        })
+        var divs = nes.all('div', list.$refs.cnt);
+
+        list.data.list = [{a: 4},{a: 5} , {a: 6}]
+        list.$update();
+
+        var divs2 = nes.all('div', list.$refs.cnt);
+
+        expect(divs[0]).to.not.equal(divs2[0]);
+        expect(divs[1]).to.not.equal(divs2[1]);
+        expect(divs[2]).to.not.equal(divs2[2]);
+      })
+
+      it("list track non-index expression" , function(){
+        var List = Regular.extend({
+          template: '<div ref=cnt>{#list list as item by item.a}\
+            <div>{item.a}</div>{/list}</div>'
+        })
+        var list = new List({
+          data: {
+            list: [{a: 1}, {a: 2} , {a: 3}]
+          }
+        })
+        var divs = nes.all('div', list.$refs.cnt);
+
+        list.data.list = [{a: 4},{a: 2} , {a: 6}]
+        list.$update();
+
+        var divs2 = nes.all('div', list.$refs.cnt);
+
+        expect(divs[0]).to.not.equal(divs2[0]);
+        expect(divs[1]).to.equal(divs2[1]);
+        expect(divs[2]).to.not.equal(divs2[2]);
+
+      })
     })
   })
-
 }()
