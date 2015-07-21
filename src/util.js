@@ -241,6 +241,12 @@ _.equals = function(now, old){
   return now === old;
 }
 
+var dash = /-([a-z])/g;
+_.camelCase = function(str){
+  return str.replace(dash, function(all, capture){
+    return capture.toUpperCase();
+  })
+}
 
 
 

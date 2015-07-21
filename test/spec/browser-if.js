@@ -190,7 +190,7 @@ void function(){
       it("if combine with unassigned attribute should work correctly", function(){
         var container = document.createElement('div');
         var component = new Regular({
-          template: "<div {#if test}ng-repeat{/if} class='hello' >haha</div>",
+          template: "<div {#if test}ng-repeat disabled{/if}  class='hello' >haha</div>",
           data: { test: 0 }
         }).$inject(container);
 
@@ -198,7 +198,7 @@ void function(){
         expect($node.length).to.equal(1);
         expect($node.attr("ng-repeat")).to.equal(undefined);
         component.$update("test", 10);
-        expect($node.attr("ng-repeat")).to.equal("");
+        expect($node.attr("ng-repeat")).to.equal('');
         component.$update("test", 0);
         expect($node.attr("ng-repeat")).to.equal(undefined);
         destroy(component, container);
