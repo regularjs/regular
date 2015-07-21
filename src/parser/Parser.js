@@ -207,14 +207,14 @@ op.attvalue = function(){
       return value;
     case "EXPR_OPEN":
       return this.interplation();
-    case "OPEN":
-      if(ll.value === 'inc' || ll.value === 'include'){
-        this.next();
-        return this.inc();
-      }else{
-        this.error('attribute value only support inteplation and {#inc} statement')
-      }
-      break;
+    // case "OPEN":
+    //   if(ll.value === 'inc' || ll.value === 'include'){
+    //     this.next();
+    //     return this.inc();
+    //   }else{
+    //     this.error('attribute value only support inteplation and {#inc} statement')
+    //   }
+    //   break;
     default:
       this.error('Unexpected token: '+ this.la())
   }

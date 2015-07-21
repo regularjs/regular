@@ -1369,7 +1369,6 @@ walkers.list = function(ast, options){
 }
 // {#include } or {#inc template}
 walkers.template = function(ast, options){
-  debugger
   var content = ast.content, compiled;
   var placeholder = document.createComment('inlcude');
   var compiled, namespace = options.namespace, extra = options.extra;
@@ -2811,14 +2810,14 @@ op.attvalue = function(){
       return value;
     case "EXPR_OPEN":
       return this.interplation();
-    case "OPEN":
-      if(ll.value === 'inc' || ll.value === 'include'){
-        this.next();
-        return this.inc();
-      }else{
-        this.error('attribute value only support inteplation and {#inc} statement')
-      }
-      break;
+    // case "OPEN":
+    //   if(ll.value === 'inc' || ll.value === 'include'){
+    //     this.next();
+    //     return this.inc();
+    //   }else{
+    //     this.error('attribute value only support inteplation and {#inc} statement')
+    //   }
+    //   break;
     default:
       this.error('Unexpected token: '+ this.la())
   }

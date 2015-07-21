@@ -174,7 +174,6 @@ walkers.list = function(ast, options){
 }
 // {#include } or {#inc template}
 walkers.template = function(ast, options){
-  debugger
   var content = ast.content, compiled;
   var placeholder = document.createComment('inlcude');
   var compiled, namespace = options.namespace, extra = options.extra;
