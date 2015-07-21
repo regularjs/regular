@@ -404,6 +404,25 @@ void function(){
       expect(span.innerHTML).to.equal("leeluolee2");
       destroy(component, containerAll);
     })
+
+
+
+    it("we can use {#inc trunk } to include trunk whose scope is point to outer", function(){
+      var Test = NameSpace.extend({
+        name: 'nested7',
+        template: "<p>{#inc title}</p>",
+        config: function(data){
+          debugger
+        }
+      })
+      var component = new NameSpace({
+        template: "dadada <span>{title}</span><nested7 \n\
+        title={#inc '<div ref=1 on-click = {title=2}>{title}</div>' } ></nested7>",
+        data: {title: 'leeluolee'}
+      }).$inject(containerAll);
+      debugger
+    })
+    
 })
 
 

@@ -271,12 +271,12 @@ var Regular = function(options){
   if(this.events){
     this.$on(this.events);
   }
-  if(this.$body){
-    this._getTransclude = function(){
-      var ctx = this.$parent || this;
-      if(this.$body) return ctx.$compile(this.$body, {namespace: options.namespace, outer: this, extra: options.extra})
-    }
+  // if(this.$body){
+  this._getTransclude = function(transclude){
+    var ctx = this.$parent || this;
+    if( transclude || this.$body  ) return ctx.$compile(transclude || this.$body, {namespace: options.namespace, outer: this, extra: options.extra})
   }
+  // }
   this.$emit("$config");
   this.config && this.config(this.data);
   // handle computed
@@ -916,34 +916,44 @@ _.makePredicate = function makePredicate(words, prefix) {
 _.trackErrorPos = (function (){
   // linebreak
   var lb = /\r\n|[\n\r\u2028\u2029]/g;
+  var minRange = 20, maxRange = 20;
   function findLine(lines, pos){
     var tmpLen = 0;
     for(var i = 0,len = lines.length; i < len; i++){
       var lineLen = (lines[i] || "").length;
-      if(tmpLen + lineLen > pos) return {num: i, line: lines[i], start: pos - tmpLen};
+
+      if(tmpLen + lineLen > pos) {
+        return {num: i, line: lines[i], start: pos - i - tmpLen , prev:lines[i-1], next: lines[i+1] };
+      }
       // 1 is for the linebreak
-      tmpLen = tmpLen + lineLen + 1;
+      tmpLen = tmpLen + lineLen ;
     }
-    
+  }
+  function formatLine(str,  start, num, target){
+    var len = str.length;
+    var min = start - minRange;
+    if(min < 0) min = 0;
+    var max = start + maxRange;
+    if(max > len) max = len;
+
+    var remain = str.slice(min, max);
+    var prefix = "[" +(num+1) + "] " + (min > 0? ".." : "")
+    var postfix = max < len ? "..": "";
+    var res = prefix + remain + postfix;
+    if(target) res += "\n" + new Array(start-min + prefix.length + 1).join(" ") + "^^^";
+    return res;
   }
   return function(input, pos){
     if(pos > input.length-1) pos = input.length-1;
     lb.lastIndex = 0;
     var lines = input.split(lb);
     var line = findLine(lines,pos);
-    var len = line.line.length;
+    var start = line.start, num = line.num;
 
-    var min = line.start - 10;
-    if(min < 0) min = 0;
+    return (line.prev? formatLine(line.prev, start, num-1 ) + '\n': '' ) + 
+      formatLine(line.line, start, num, true) + '\n' + 
+      (line.next? formatLine(line.next, start, num+1 ) + '\n': '' );
 
-    var max = line.start + 10;
-    if(max > len) max = len;
-
-    var remain = line.line.slice(min, max);
-    var prefix = (line.num+1) + "> " + (min > 0? "..." : "")
-    var postfix = max < len ? "...": "";
-
-    return prefix + remain + postfix + "\n" + new Array(line.start + prefix.length + 1).join(" ") + "^";
   }
 })();
 
@@ -1357,8 +1367,9 @@ walkers.list = function(ast, options){
   this.$watch(ast.sequence, update, { init: true, indexTrack: track === true });
   return group;
 }
-// {#include }
+// {#include } or {#inc template}
 walkers.template = function(ast, options){
+  debugger
   var content = ast.content, compiled;
   var placeholder = document.createComment('inlcude');
   var compiled, namespace = options.namespace, extra = options.extra;
@@ -1466,146 +1477,54 @@ var eventReg = /^on-(.+)$/
  * walkers element (contains component)
  */
 walkers.element = function(ast, options){
-  var attrs = ast.attrs, 
-    component, self = this,
-    Constructor=this.constructor,
+  var attrs = ast.attrs, self = this,
+    Constructor = this.constructor,
     children = ast.children,
-    namespace = options.namespace, ref, group, 
+    namespace = options.namespace, 
     extra = options.extra,
-    isolate = 0,
-    is,
-    Component = Constructor.component(ast.tag);
+    tag = ast.tag,
+    Component = Constructor.component(tag),
+    ref, group, element;
 
-
-  if(ast.tag === 'svg') namespace = "svg";
-
-
-
-
-  if(Component || ast.tag === 'r-component'){
-    var data = {},events;
-    for(var i = 0, len = attrs.length; i < len; i++){
-      var attr = attrs[i];
-      var value = this._touchExpr(attr.value || "");
-      
-      var name = attr.name;
-      var etest = name.match(eventReg);
-      // @if is r-component . we need to find the target Component
-      if(name === 'is' && !Component){
-        is = value;
-        var componentName = this.$get(value, true);
-        Component = Constructor.component(componentName)
-        if(typeof Component !== 'function') throw new Error("component " + componentName + " has not registed!");
-      }
-      // bind event proxy
-      if(etest){
-        events = events || {};
-        events[etest[1]] = _.handleEvent.call(this, value, etest[1]);
-        continue;
-      }
-
-      if(value.type !== 'expression'){
-        data[attr.name] = value;
-      }else{
-        data[attr.name] = value.get(self); 
-      }
-      if( attr.name === 'ref'  && value != null){
-        ref = value.type === 'expression'? value.get(self): value;
-      }
-      if( attr.name === 'isolate'){
-        // 1: stop: composite -> parent
-        // 2. stop: composite <- parent
-        // 3. stop 1 and 2: composite <-> parent
-        // 0. stop nothing (defualt)
-        isolate = value.type === 'expression'? value.get(self): parseInt(value || 3, 10);
-        data.isolate = isolate;
-      }
-    }
-
-    var config = { 
-      data: data, 
-      events: events, 
-      $parent: this,
-      $outer: options.outer,
-      namespace: namespace, 
-      $root: this.$root,
-      $body: ast.children
-    }
-
-    var component = new Component(config);
-    if(ref &&  self.$refs) self.$refs[ref] = component;
-    for(var i = 0, len = attrs.length; i < len; i++){
-      var attr = attrs[i];
-      var value = attr.value||"";
-      if(value.type === 'expression' && attr.name.indexOf('on-')===-1){
-        value = self._touchExpr(value);
-        // use bit operate to control scope
-        if( !(isolate & 2) ) 
-          this.$watch(value, component.$update.bind(component, attr.name))
-        if( value.set && !(isolate & 1 ) ) 
-          // sync the data. it force the component don't trigger attr.name's first dirty echeck
-          component.$watch(attr.name, self.$update.bind(self, value), {sync: true});
-      }
-    }
-    if(ref){
-      component.$on('destroy', function(){
-        if(self.$refs) self.$refs[ref] = null;
-      })
-    }
-    if(is && is.type === 'expression'  ){
-      var group = new Group();
-      group.push(component);
-      this.$watch(is, function(value){
-        // found the new component
-        var Component = Constructor.component(value);
-        if(!Component) throw new Error("component " + value + " has not registed!");
-        var ncomponent = new Component(config);
-        var component = group.children.pop();
-        group.push(ncomponent);
-        ncomponent.$inject(combine.last(component), 'after')
-        component.destroy();
-        if(ref){
-          self.$refs[ref] = ncomponent;
-        }
-      }, {sync: true})
-      return group;
-    }
-    return component;
-  } else if( ast.tag === 'r-content' && this._getTransclude ){
+  if( tag === 'r-content' && this._getTransclude ){
     return this._getTransclude();
   } 
+
+  if(Component || tag === 'r-component'){
+    options.Component = Component;
+    return walkers.component.call(this, ast, options)
+  }
+
+  if(tag === 'svg') namespace = "svg";
+  // @Deprecated: may be removed in next version, use {#inc } instead
   
-  if(children && children.length){
+  if( children && children.length ){
     group = this.$compile(children, {outer: options.outer,namespace: namespace, extra: extra });
   }
 
-  var element = dom.create(ast.tag, namespace, attrs);
-  // context element
+  element = dom.create(tag, namespace, attrs);
 
-  var child;
-
-  
-
-  if(group && !_.isVoidTag(ast.tag)){
+  if(group && !_.isVoidTag(tag)){
     dom.inject( combine.node(group) , element)
   }
 
   // sort before
-  attrs.sort(function(a1, a2){
-    var d1 = Constructor.directive(a1.name),
-      d2 = Constructor.directive(a2.name);
-    if(d1 && d2) return (d2.priority || 1) - (d1.priority || 1);
-    if(d1) return 1;
-    if(d2) return -1;
-    if(a2.name === "type") return 1;
-    return -1;
-  })
+  if(!ast.touched){
+    attrs.sort(function(a1, a2){
+      var d1 = Constructor.directive(a1.name),
+        d2 = Constructor.directive(a2.name);
+      if( d1 && d2 ) return (d2.priority || 1) - (d1.priority || 1);
+      if(d1) return 1;
+      if(d2) return -1;
+      if(a2.name === "type") return 1;
+      return -1;
+    })
+    ast.touched = true;
+  }
   // may distinct with if else
   var destroies = walkAttributes.call(this, attrs, element, extra);
 
-
-
-  var res  = {
+  return {
     type: "element",
     group: group,
     node: function(){
@@ -1634,7 +1553,102 @@ walkers.element = function(ast, options){
       }
     }
   }
-  return res;
+}
+
+walkers.component = function(ast, options){
+  var attrs = ast.attrs, 
+    Component = options.Component,
+    Constructor = this.constructor,
+    isolate, namespace = options.namespace,
+    ref, self = this, is;
+  var data = {}, events;
+  for(var i = 0, len = attrs.length; i < len; i++){
+    var attr = attrs[i];
+    var value = this._touchExpr(attr.value || "");
+    
+    var name = attr.name;
+    var etest = name.match(eventReg);
+    // @if is r-component . we need to find the target Component
+    if(name === 'is' && !Component){
+      is = value;
+      var componentName = this.$get(value, true);
+      Component = Constructor.component(componentName)
+      if(typeof Component !== 'function') throw new Error("component " + componentName + " has not registed!");
+    }
+    // bind event proxy
+    if(etest){
+      events = events || {};
+      events[etest[1]] = _.handleEvent.call(this, value, etest[1]);
+      continue;
+    }
+
+    if(value.type !== 'expression'){
+      data[attr.name] = value;
+    }else{
+      data[attr.name] = value.get(self); 
+    }
+    if( attr.name === 'ref'  && value != null){
+      ref = value.type === 'expression'? value.get(self): value;
+    }
+    if( attr.name === 'isolate'){
+      // 1: stop: composite -> parent
+      // 2. stop: composite <- parent
+      // 3. stop 1 and 2: composite <-> parent
+      // 0. stop nothing (defualt)
+      isolate = value.type === 'expression'? value.get(self): parseInt(value || 3, 10);
+      data.isolate = isolate;
+    }
+  }
+
+  var config = { 
+    data: data, 
+    events: events, 
+    $parent: this,
+    $outer: options.outer,
+    namespace: namespace, 
+    $root: this.$root,
+    $body: ast.children
+  }
+
+  var component = new Component(config);
+  if(ref &&  self.$refs) self.$refs[ref] = component;
+  for(var i = 0, len = attrs.length; i < len; i++){
+    var attr = attrs[i];
+    var value = attr.value||"";
+    if(value.type === 'expression' && attr.name.indexOf('on-')===-1){
+      value = self._touchExpr(value);
+      // use bit operate to control scope
+      if( !(isolate & 2) ) 
+        this.$watch(value, component.$update.bind(component, attr.name))
+      if( value.set && !(isolate & 1 ) ) 
+        // sync the data. it force the component don't trigger attr.name's first dirty echeck
+        component.$watch(attr.name, self.$update.bind(self, value), {sync: true});
+    }
+  }
+  if(ref){
+    component.$on('destroy', function(){
+      if(self.$refs) self.$refs[ref] = null;
+    })
+  }
+  if(is && is.type === 'expression'  ){
+    var group = new Group();
+    group.push(component);
+    this.$watch(is, function(value){
+      // found the new component
+      var Component = Constructor.component(value);
+      if(!Component) throw new Error("component " + value + " has not registed!");
+      var ncomponent = new Component(config);
+      var component = group.children.pop();
+      group.push(ncomponent);
+      ncomponent.$inject(combine.last(component), 'after')
+      component.destroy();
+      if(ref){
+        self.$refs[ref] = ncomponent;
+      }
+    }, {sync: true})
+    return group;
+  }
+  return component;
 }
 
 function walkAttributes(attrs, element, extra){
@@ -2650,7 +2664,7 @@ op.match = function(type, value){
 }
 
 op.error = function(msg, pos){
-  msg =  "Parse Error: " + msg +  ':\n' + _.trackErrorPos(this.input, typeof pos === 'number'? pos: this.ll().pos||0);
+  msg =  "\n【 parse failed 】 " + msg +  ':\n\n' + _.trackErrorPos(this.input, typeof pos === 'number'? pos: this.ll().pos||0);
   throw new Error(msg);
 }
 
@@ -2711,8 +2725,6 @@ op.statement = function(){
       return this.directive();
     case 'EXPR_OPEN':
       return this.interplation();
-    case 'PART_OPEN':
-      return this.template();
     default:
       this.error('Unexpected token: '+ this.la())
   }
@@ -2799,6 +2811,14 @@ op.attvalue = function(){
       return value;
     case "EXPR_OPEN":
       return this.interplation();
+    case "OPEN":
+      if(ll.value === 'inc' || ll.value === 'include'){
+        this.next();
+        return this.inc();
+      }else{
+        this.error('attribute value only support inteplation and {#inc} statement')
+      }
+      break;
     default:
       this.error('Unexpected token: '+ this.la())
   }
@@ -2816,6 +2836,7 @@ op.directive = function(){
   }
 }
 
+
 // {{}}
 op.interplation = function(){
   this.match('EXPR_OPEN');
@@ -2825,7 +2846,7 @@ op.interplation = function(){
 }
 
 // {{~}}
-op.include = function(){
+op.inc = op.include = function(){
   var content = this.expression();
   this.match('END');
   return node.template(content);

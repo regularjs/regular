@@ -62,12 +62,12 @@ var Regular = function(options){
   if(this.events){
     this.$on(this.events);
   }
-  if(this.$body){
-    this._getTransclude = function(){
-      var ctx = this.$parent || this;
-      if(this.$body) return ctx.$compile(this.$body, {namespace: options.namespace, outer: this, extra: options.extra})
-    }
+  // if(this.$body){
+  this._getTransclude = function(transclude){
+    var ctx = this.$parent || this;
+    if( transclude || this.$body  ) return ctx.$compile(transclude || this.$body, {namespace: options.namespace, outer: this, extra: options.extra})
   }
+  // }
   this.$emit("$config");
   this.config && this.config(this.data);
   // handle computed

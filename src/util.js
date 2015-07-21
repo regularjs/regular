@@ -116,34 +116,44 @@ _.makePredicate = function makePredicate(words, prefix) {
 _.trackErrorPos = (function (){
   // linebreak
   var lb = /\r\n|[\n\r\u2028\u2029]/g;
+  var minRange = 20, maxRange = 20;
   function findLine(lines, pos){
     var tmpLen = 0;
     for(var i = 0,len = lines.length; i < len; i++){
       var lineLen = (lines[i] || "").length;
-      if(tmpLen + lineLen > pos) return {num: i, line: lines[i], start: pos - tmpLen};
+
+      if(tmpLen + lineLen > pos) {
+        return {num: i, line: lines[i], start: pos - i - tmpLen , prev:lines[i-1], next: lines[i+1] };
+      }
       // 1 is for the linebreak
-      tmpLen = tmpLen + lineLen + 1;
+      tmpLen = tmpLen + lineLen ;
     }
-    
+  }
+  function formatLine(str,  start, num, target){
+    var len = str.length;
+    var min = start - minRange;
+    if(min < 0) min = 0;
+    var max = start + maxRange;
+    if(max > len) max = len;
+
+    var remain = str.slice(min, max);
+    var prefix = "[" +(num+1) + "] " + (min > 0? ".." : "")
+    var postfix = max < len ? "..": "";
+    var res = prefix + remain + postfix;
+    if(target) res += "\n" + new Array(start-min + prefix.length + 1).join(" ") + "^^^";
+    return res;
   }
   return function(input, pos){
     if(pos > input.length-1) pos = input.length-1;
     lb.lastIndex = 0;
     var lines = input.split(lb);
     var line = findLine(lines,pos);
-    var len = line.line.length;
+    var start = line.start, num = line.num;
 
-    var min = line.start - 10;
-    if(min < 0) min = 0;
+    return (line.prev? formatLine(line.prev, start, num-1 ) + '\n': '' ) + 
+      formatLine(line.line, start, num, true) + '\n' + 
+      (line.next? formatLine(line.next, start, num+1 ) + '\n': '' );
 
-    var max = line.start + 10;
-    if(max > len) max = len;
-
-    var remain = line.line.slice(min, max);
-    var prefix = (line.num+1) + "> " + (min > 0? "..." : "")
-    var postfix = max < len ? "...": "";
-
-    return prefix + remain + postfix + "\n" + new Array(line.start + prefix.length + 1).join(" ") + "^";
   }
 })();
 

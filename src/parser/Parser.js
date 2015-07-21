@@ -60,7 +60,7 @@ op.match = function(type, value){
 }
 
 op.error = function(msg, pos){
-  msg =  "Parse Error: " + msg +  ':\n' + _.trackErrorPos(this.input, typeof pos === 'number'? pos: this.ll().pos||0);
+  msg =  "\n【 parse failed 】 " + msg +  ':\n\n' + _.trackErrorPos(this.input, typeof pos === 'number'? pos: this.ll().pos||0);
   throw new Error(msg);
 }
 
@@ -121,8 +121,6 @@ op.statement = function(){
       return this.directive();
     case 'EXPR_OPEN':
       return this.interplation();
-    case 'PART_OPEN':
-      return this.template();
     default:
       this.error('Unexpected token: '+ this.la())
   }
@@ -209,6 +207,14 @@ op.attvalue = function(){
       return value;
     case "EXPR_OPEN":
       return this.interplation();
+    case "OPEN":
+      if(ll.value === 'inc' || ll.value === 'include'){
+        this.next();
+        return this.inc();
+      }else{
+        this.error('attribute value only support inteplation and {#inc} statement')
+      }
+      break;
     default:
       this.error('Unexpected token: '+ this.la())
   }
@@ -226,6 +232,7 @@ op.directive = function(){
   }
 }
 
+
 // {{}}
 op.interplation = function(){
   this.match('EXPR_OPEN');
@@ -235,7 +242,7 @@ op.interplation = function(){
 }
 
 // {{~}}
-op.include = function(){
+op.inc = op.include = function(){
   var content = this.expression();
   this.match('END');
   return node.template(content);
