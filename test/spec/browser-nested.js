@@ -404,6 +404,40 @@ void function(){
       expect(span.innerHTML).to.equal("leeluolee2");
       destroy(component, containerAll);
     })
+
+
+
+    it("ab-cd-ef should convert to abCdEf when passed to nested component", function(){
+      var Test = NameSpace.extend({
+        name: 'nested',
+        template: "<p>{title}</p>"
+      })
+      var component = new NameSpace({
+        template: "<span>{title}</span><nested ref=a my-title={title} myHome={1}></nested>",
+        data: {title: 'leeluolee'}
+      }).$inject(containerAll);
+
+      expect(component.$refs.a.data.myTitle).to.equal('leeluolee')
+      expect(component.$refs.a.data.myHome).to.equal(1)
+      destroy(component, containerAll);
+    })
+    it("without value, the attr should consider as a Boolean", function(){
+      var Test = NameSpace.extend({
+        name: 'nested',
+        template: "<p>{title}</p>"
+      })
+      var component = new NameSpace({
+        template: "<span>{title}</span><nested ref=a is-disabled is-actived={!title} isOld  isNew={true} normal></nested>",
+        data: {title: 'leeluolee'}
+      }).$inject(containerAll);
+      var data = component.$refs.a.data;
+      destroy(component, containerAll);
+      expect(data.isDisabled).to.equal(true)
+      expect(data.isActived).to.equal(false)
+      expect(data.isOld).to.equal(true)
+      expect(data.isNew).to.equal(true)
+      expect(data.normal).to.equal(true)
+    })
 })
 
 

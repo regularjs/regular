@@ -277,6 +277,7 @@ walkers.text = function(ast, options){
 
 var eventReg = /^on-(.+)$/
 
+
 /**
  * walkers element (contains component)
  */
@@ -295,16 +296,18 @@ walkers.element = function(ast, options){
   if(ast.tag === 'svg') namespace = "svg";
 
 
-
-
   if(Component || ast.tag === 'r-component'){
     var data = {},events;
     for(var i = 0, len = attrs.length; i < len; i++){
       var attr = attrs[i];
-      var value = this._touchExpr(attr.value || "");
+      var value = this._touchExpr(attr.value||true);
+      var name = attr.name
+      if(!attr.event){
+        var etest = name.match(eventReg);
+        // event: 'nav'
+        if(etest) attr.event = etest[1];
+      }
       
-      var name = attr.name;
-      var etest = name.match(eventReg);
       // @if is r-component . we need to find the target Component
       if(name === 'is' && !Component){
         is = value;
@@ -313,26 +316,29 @@ walkers.element = function(ast, options){
         if(typeof Component !== 'function') throw new Error("component " + componentName + " has not registed!");
       }
       // bind event proxy
-      if(etest){
+      var eventName;
+      if(eventName = attr.event){
         events = events || {};
-        events[etest[1]] = _.handleEvent.call(this, value, etest[1]);
+        events[eventName] = _.handleEvent.call(this, value, eventName);
         continue;
+      }else{
+        name = attr.name = _.camelCase(name);
       }
 
       if(value.type !== 'expression'){
-        data[attr.name] = value;
+        data[name] = value;
       }else{
-        data[attr.name] = value.get(self); 
+        data[name] = value.get(self); 
       }
-      if( attr.name === 'ref'  && value != null){
+      if( name === 'ref'  && value != null){
         ref = value.type === 'expression'? value.get(self): value;
       }
-      if( attr.name === 'isolate'){
+      if( name === 'isolate'){
         // 1: stop: composite -> parent
         // 2. stop: composite <- parent
         // 3. stop 1 and 2: composite <-> parent
         // 0. stop nothing (defualt)
-        isolate = value.type === 'expression'? value.get(self): parseInt(value || 3, 10);
+        isolate = value.type === 'expression'? value.get(self): parseInt(value === true? 3: value, 10);
         data.isolate = isolate;
       }
     }
@@ -351,15 +357,16 @@ walkers.element = function(ast, options){
     if(ref &&  self.$refs) self.$refs[ref] = component;
     for(var i = 0, len = attrs.length; i < len; i++){
       var attr = attrs[i];
-      var value = attr.value||"";
-      if(value.type === 'expression' && attr.name.indexOf('on-')===-1){
+      var value = attr.value||true;
+      var name = attr.name;
+      if(value.type === 'expression' && !attr.event){
         value = self._touchExpr(value);
         // use bit operate to control scope
         if( !(isolate & 2) ) 
-          this.$watch(value, component.$update.bind(component, attr.name))
+          this.$watch(value, component.$update.bind(component, name))
         if( value.set && !(isolate & 1 ) ) 
           // sync the data. it force the component don't trigger attr.name's first dirty echeck
-          component.$watch(attr.name, self.$update.bind(self, value), {sync: true});
+          component.$watch(name, self.$update.bind(self, value), {sync: true});
       }
     }
     if(ref){
