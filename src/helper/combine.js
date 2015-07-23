@@ -7,7 +7,7 @@ var combine = module.exports = {
 
   // get the initial dom in object
   node: function(item){
-    var children,node;
+    var children,node, nodes;
     if(item.element) return item.element;
     if(typeof item.node === "function") return item.node();
     if(typeof item.nodeType === "number") return item;
@@ -16,7 +16,7 @@ var combine = module.exports = {
       if(children.length === 1){
         return combine.node(children[0]);
       }
-      var nodes = [];
+      nodes = [];
       for(var i = 0, len = children.length; i < len; i++ ){
         node = combine.node(children[i]);
         if(Array.isArray(node)){
@@ -27,6 +27,26 @@ var combine = module.exports = {
       }
       return nodes;
     }
+  },
+  inject: function(node, pos, group ){
+    if(!group) group = this;
+    if(node === false) {
+      if(!group._fragContainer)  group._fragContainer = dom.fragment();
+      return combine.inject( group._fragContainer, pos, group);
+    }
+    var fragment = combine.node(group.group || group);
+    if(!fragment) return group;
+    if(typeof node === 'string') node = dom.find(node);
+    if(!node) throw 'injected node is not found';
+    dom.inject(fragment, node, pos);
+    // if it is a component
+    if(group.$emit) {
+      group.$emit("$inject", node, pos);
+      group.parentNode = (pos ==='after' || pos === 'before')? node.parentNode : node;
+    }
+
+
+    return group;
   },
 
   // get the last dom in object(for insertion operation)

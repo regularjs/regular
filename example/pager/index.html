@@ -6,23 +6,49 @@
     <link rel="stylesheet" href="pager.css">
     <script src="../../dist/regular.js"></script>
     <script src="pager.js"></script>
+    <script type='text/tpl' id='tpl'>
+      {total}:{current}<button de-click={total = total + 1}>total+1</button>
+      <pager ref='hello' total={Math.floor(total/20)} current={current} title={'<h2>{current + 10000}</h2>'|compile}    />
+      <pager total={this.$refs.hello.data.current+1} current={current}/>&gt;
+    </script>
   </head>
   <body>
+
+
+  <div>
+    {title}
+  </div>
 
     <div id="app"> </div>
 
     <script>
     // //1. nest style
+
+    Regular.filter('compile', function(value){
+      return this.$compile(value)
+    })
     var app = new Regular({
-      template: 
-        "{total}:{current}<button on-click={total = total + 1}>total+1</button>\
-          <pager total={Math.floor(total/20)} current={current}  isolate  />\
-          <pager total={Math.floor(total/20)} current={current}/>",
-      data: {total: 292, current:10},
+      template: '#tpl',
+      data: {total: 1000, current:10},
+      config: function(data){
+        console.log(data)
+      },
       go: function(page){
         this.data.current = page;
       } 
-    } ).$inject("#app");
+    } )
+      app.$inject("#app");
+
+    setTimeout(function(){
+      app.$update('total', 1000)
+      app.$inject(false);
+      setTimeout(function(){
+        app.$inject("#app");
+        app.$refs.hello.data.title.inject(document.body);
+      },1000)
+
+      
+    },100)
 
 
     </script>

@@ -6,16 +6,16 @@ var config = require("./config.js");
 var _ = require('./util');
 var extend = require('./helper/extend.js');
 if(env.browser){
-var combine = require('./helper/combine.js');
-var dom = require("./dom.js");
-var walkers = require('./walkers.js');
-var Group = require('./group.js');
+  var combine = require('./helper/combine.js');
+  var dom = require("./dom.js");
+  var walkers = require('./walkers.js');
+  var Group = require('./group.js');
 }
 var events = require('./helper/event.js');
 var Watcher = require('./helper/watcher.js');
 var parse = require('./helper/parse.js');
 var filter = require('./helper/filter.js');
-var doc = typeof document==='undefined'? {} : document;
+var doc = dom.doc;
 
 
 /**
@@ -342,30 +342,13 @@ Regular.implement({
    *
    * unbind will unbind all relation between two component
    * 
-   * @param  {Regular} component [description]
+   * @param  {Regular} component [descriptionegular
    * @return {This}    this
    */
   $unbind: function(){
     // todo
   },
-  $inject: function(node, position, options){
-    var fragment;
-    if(this.group){
-      fragment = combine.node(this.group||[]);
-    }
-    
-    if(node === false) {
-      if(!this._fragContainer)  this._fragContainer = dom.fragment();
-      return this.$inject(this._fragContainer);
-    }
-    if(typeof node === 'string') node = dom.find(node);
-    if(!node) throw 'injected node is not found';
-    if(!fragment) return this;
-    dom.inject(fragment, node, position);
-    this.parentNode = Array.isArray(fragment)? fragment[0].parentNode: fragment.parentNode;
-    this.$emit("$inject", node);
-    return this;
-  },
+  $inject: combine.inject,
   $mute: function(isMute){
 
     isMute = !!isMute;
@@ -535,6 +518,7 @@ Regular.prototype.inject = function(){
   _.log("use $inject instead of inject", "error");
   return this.$inject.apply(this, arguments);
 }
+
 
 
 // only one builtin filter

@@ -18,7 +18,6 @@ function Parser(input, opts){
   this.input = input;
   this.tokens = new Lexer(input, opts).lex();
   this.pos = 0;
-  this.noComputed =  opts.noComputed;
   this.length = this.tokens.length;
 }
 

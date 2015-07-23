@@ -213,6 +213,7 @@ _.createProto = function(fn, o){
 }
 
 
+
 /**
 clone
 */
@@ -391,6 +392,9 @@ _.isBooleanAttr = _.makePredicate('selected checked disabled readOnly required o
 _.isFalse - function(){return false}
 _.isTrue - function(){return true}
 
+_.isExpr = function(expr){
+  return expr && expr.type === 'expression';
+}
 
 _.assert = function(test, msg){
   if(!test) throw msg;

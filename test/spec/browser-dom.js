@@ -282,20 +282,32 @@ void function(){
         document.body.appendChild(container2);
 
         var component = new Component({
-          template: "<div delegate-click={i = i+1}  >haha</div>",
+          template: "<div ref=a delegate-click={i = i+1}  >haha</div>",
           data: { i: 1 }
         }).$inject( container );
 
         component.$inject( container2 );
 
 
-        dispatchMockEvent(nes.one( 'div', container2 ), "click" );
+        dispatchMockEvent(component.$refs.a, "click" );
 
         expect( component.data.i ).to.equal(2);
 
-        destroy( component, container2 );
+        component.$inject(false);
+        dispatchMockEvent(component.$refs.a, "click" );
+
+        expect( component.data.i ).to.equal(2);
+
+        component.$inject( container2 );
+
+
+        dispatchMockEvent(component.$refs.a, "click" );
+
+        expect( component.data.i ).to.equal(3);
 
         document.body.removeChild( container2 );
+
+        destroy(component, container2)
 
       })
 
@@ -316,6 +328,31 @@ void function(){
 
         expect( component._delegates["click"] ).to.equal( null );
 
+      })
+
+      it('delegate Event should work when the directive is linked after node being injected', function(){
+        var Nested = Regular.extend({
+          name: "nest",
+          template: "{#if show}<div delegate-click='hello'></div>{/if}",
+        })
+
+        var component = new Component({
+          template: "<nest show={show} on-hello={name=1}></nest>",
+          data: { i: 1 }
+        }).$inject( container );
+
+
+        expect( component._delegates ).to.equal(undefined);
+
+        component.$update('show', true);
+
+        expect( component._delegates["click"].length ).to.equal(1);
+        dispatchMockEvent(nes.one( 'div', container ), "click" );
+        expect(component.data.name).to.equal(1);
+
+        destroy( component, container );
+
+        expect( component._delegates["click"] ).to.equal( null );
       })
     })
 

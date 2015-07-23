@@ -217,16 +217,16 @@ var config = require("./config.js");
 var _ = require('./util');
 var extend = require('./helper/extend.js');
 if(env.browser){
-var combine = require('./helper/combine.js');
-var dom = require("./dom.js");
-var walkers = require('./walkers.js');
-var Group = require('./group.js');
+  var combine = require('./helper/combine.js');
+  var dom = require("./dom.js");
+  var walkers = require('./walkers.js');
+  var Group = require('./group.js');
 }
 var events = require('./helper/event.js');
 var Watcher = require('./helper/watcher.js');
 var parse = require('./helper/parse.js');
 var filter = require('./helper/filter.js');
-var doc = typeof document==='undefined'? {} : document;
+var doc = dom.doc;
 
 
 /**
@@ -553,30 +553,13 @@ Regular.implement({
    *
    * unbind will unbind all relation between two component
    * 
-   * @param  {Regular} component [description]
+   * @param  {Regular} component [descriptionegular
    * @return {This}    this
    */
   $unbind: function(){
     // todo
   },
-  $inject: function(node, position, options){
-    var fragment;
-    if(this.group){
-      fragment = combine.node(this.group||[]);
-    }
-    
-    if(node === false) {
-      if(!this._fragContainer)  this._fragContainer = dom.fragment();
-      return this.$inject(this._fragContainer);
-    }
-    if(typeof node === 'string') node = dom.find(node);
-    if(!node) throw 'injected node is not found';
-    if(!fragment) return this;
-    dom.inject(fragment, node, position);
-    this.parentNode = Array.isArray(fragment)? fragment[0].parentNode: fragment.parentNode;
-    this.$emit("$inject", node);
-    return this;
-  },
+  $inject: combine.inject,
   $mute: function(isMute){
 
     isMute = !!isMute;
@@ -746,6 +729,7 @@ Regular.prototype.inject = function(){
   _.log("use $inject instead of inject", "error");
   return this.$inject.apply(this, arguments);
 }
+
 
 
 // only one builtin filter
@@ -1015,6 +999,7 @@ _.createProto = function(fn, o){
 }
 
 
+
 /**
 clone
 */
@@ -1193,6 +1178,9 @@ _.isBooleanAttr = _.makePredicate('selected checked disabled readOnly required o
 _.isFalse - function(){return false}
 _.isTrue - function(){return true}
 
+_.isExpr = function(expr){
+  return expr && expr.type === 'expression';
+}
 
 _.assert = function(test, msg){
   if(!test) throw msg;
@@ -1201,13 +1189,14 @@ _.assert = function(test, msg){
 
 });
 require.register("regularjs/src/walkers.js", function(exports, require, module){
-var node = require("./parser/node.js");
-var dom = require("./dom.js");
-var animate = require("./helper/animate.js");
-var Group = require('./group.js');
-var _ = require('./util');
-var combine = require('./helper/combine.js');
 var diffArray = require('./helper/arrayDiff.js');
+var combine = require('./helper/combine.js');
+var animate = require("./helper/animate.js");
+var node = require("./parser/node.js");
+var Group = require('./group.js');
+var dom = require("./dom.js");
+var _ = require('./util');
+
 
 var walkers = module.exports = {};
 
@@ -1218,13 +1207,12 @@ walkers.list = function(ast, options){
     namespace = options.namespace,
     extra = options.extra;
   var self = this;
-  var group = new Group();
-  group.push(placeholder);
+  var group = new Group([placeholder]);
   var indexName = ast.variable + '_index';
   var variable = ast.variable;
   var alternate = ast.alternate;
   var track = ast.track, keyOf, extraObj;
-  if(track && track !== true){
+  if( track && track !== true ){
     track = this._touchExpr(track);
     extraObj = _.createObject(extra);
     keyOf = function( item, index ){
@@ -1283,7 +1271,6 @@ walkers.list = function(ast, options){
     var cur = placeholder;
     var m = 0, len = newValue.length;
       
-
     for(var i = 0; i < splices.length; i++){ //init
       var splice = splices[i];
       var index = splice.index; // beacuse we use a comment for placeholder
@@ -1370,8 +1357,6 @@ walkers.list = function(ast, options){
       }
     }
   }
-
-
   this.$watch(ast.sequence, update, { init: true, indexTrack: track === true });
   return group;
 }
@@ -1380,10 +1365,7 @@ walkers.template = function(ast, options){
   var content = ast.content, compiled;
   var placeholder = document.createComment('inlcude');
   var compiled, namespace = options.namespace, extra = options.extra;
-  // var fragment = dom.fragment();
-  // fragment.appendChild(placeholder);
-  var group = new Group();
-  group.push(placeholder);
+  var group = new Group([placeholder]);
   if(content){
     var self = this;
     this.$watch(content, function(value){
@@ -1495,109 +1477,6 @@ walkers.element = function(ast, options){
     ref, group, element;
 
   if( tag === 'r-content' && this._getTransclude ){
-// =======
-
-
-
-//   if(Component || ast.tag === 'r-component'){
-//     var data = {},events;
-//     for(var i = 0, len = attrs.length; i < len; i++){
-//       var attr = attrs[i];
-//       var value = this._touchExpr(attr.value||true);
-//       var name = attr.name
-//       if(!attr.event){
-//         var etest = name.match(eventReg);
-//         // event: 'nav'
-//         if(etest) attr.event = etest[1];
-//       }
-      
-//       // @if is r-component . we need to find the target Component
-//       if(name === 'is' && !Component){
-//         is = value;
-//         var componentName = this.$get(value, true);
-//         Component = Constructor.component(componentName)
-//         if(typeof Component !== 'function') throw new Error("component " + componentName + " has not registed!");
-//       }
-//       // bind event proxy
-//       var eventName;
-//       if(eventName = attr.event){
-//         events = events || {};
-//         events[eventName] = _.handleEvent.call(this, value, eventName);
-//         continue;
-//       }else{
-//         name = attr.name = _.camelCase(name);
-//       }
-
-//       if(value.type !== 'expression'){
-//         data[name] = value;
-//       }else{
-//         data[name] = value.get(self); 
-//       }
-//       if( name === 'ref'  && value != null){
-//         ref = value.type === 'expression'? value.get(self): value;
-//       }
-//       if( name === 'isolate'){
-//         // 1: stop: composite -> parent
-//         // 2. stop: composite <- parent
-//         // 3. stop 1 and 2: composite <-> parent
-//         // 0. stop nothing (defualt)
-//         isolate = value.type === 'expression'? value.get(self): parseInt(value === true? 3: value, 10);
-//         data.isolate = isolate;
-//       }
-//     }
-
-//     var config = { 
-//       data: data, 
-//       events: events, 
-//       $parent: this,
-//       $outer: options.outer,
-//       namespace: namespace, 
-//       $root: this.$root,
-//       $body: ast.children
-//     }
-
-//     var component = new Component(config);
-//     if(ref &&  self.$refs) self.$refs[ref] = component;
-//     for(var i = 0, len = attrs.length; i < len; i++){
-//       var attr = attrs[i];
-//       var value = attr.value||true;
-//       var name = attr.name;
-//       if(value.type === 'expression' && !attr.event){
-//         value = self._touchExpr(value);
-//         // use bit operate to control scope
-//         if( !(isolate & 2) ) 
-//           this.$watch(value, component.$update.bind(component, name))
-//         if( value.set && !(isolate & 1 ) ) 
-//           // sync the data. it force the component don't trigger attr.name's first dirty echeck
-//           component.$watch(name, self.$update.bind(self, value), {sync: true});
-//       }
-//     }
-//     if(ref){
-//       component.$on('destroy', function(){
-//         if(self.$refs) self.$refs[ref] = null;
-//       })
-//     }
-//     if(is && is.type === 'expression'  ){
-//       var group = new Group();
-//       group.push(component);
-//       this.$watch(is, function(value){
-//         // found the new component
-//         var Component = Constructor.component(value);
-//         if(!Component) throw new Error("component " + value + " has not registed!");
-//         var ncomponent = new Component(config);
-//         var component = group.children.pop();
-//         group.push(ncomponent);
-//         ncomponent.$inject(combine.last(component), 'after')
-//         component.destroy();
-//         if(ref){
-//           self.$refs[ref] = ncomponent;
-//         }
-//       }, {sync: true})
-//       return group;
-//     }
-//     return component;
-//   } else if( ast.tag === 'r-content' && this._getTransclude ){
-// >>>>>>> component-attribute
     return this._getTransclude();
   } 
 
@@ -1785,14 +1664,15 @@ function walkAttributes(attrs, element, extra){
 }
 
 walkers.attribute = function(ast ,options){
-  var attr = ast;
-  var Component = this.constructor;
-  var self = this;
-  var element = options.element;
-  var name = attr.name,
-    value = attr.value || "", directive = Component.directive(name);
 
+  var attr = ast;
+  var name = attr.name;
+  var value = attr.value || "";
   var constant = value.constant;
+  var Component = this.constructor;
+  var directive = Component.directive(name);
+  var element = options.element;
+  var self = this;
 
 
   value = this._touchExpr(value);
@@ -1803,20 +1683,7 @@ walkers.attribute = function(ast ,options){
     var binding = directive.link.call(self, element, value, name, options.attrs);
     if(typeof binding === 'function') binding = {destroy: binding}; 
     return binding;
-  }else{
-    if( name === 'ref'  && value != null && options.fromElement){
-      var ref = value.type === 'expression'? value.get(self): value;
-      var refs = this.$refs;
-      if(refs){
-        refs[ref] = element
-        return {
-          destroy: function(){
-            refs[ref] = null;
-          }
-        }
-      }
-    }
-
+  } else{
     if(value.type === 'expression' ){
       this.$watch(value, function(nvalue, old){
         dom.attr(element, name, nvalue);
@@ -2296,7 +2163,8 @@ _.extend(Group.prototype, {
   },
   push: function(item){
     this.children.push( item );
-  }
+  },
+  inject: combine.inject
 })
 
 
@@ -2309,8 +2177,14 @@ module.exports = Group;
 require.register("regularjs/src/config.js", function(exports, require, module){
 
 module.exports = {
-'BEGIN': '{',
-'END': '}'
+  'BEGIN': '{',
+  'END': '}'
+}
+});
+require.register("regularjs/src/const.js", function(exports, require, module){
+module.exports = {
+  'COMPONENT_TYPE': 1,
+  'ELEMENT_TYPE': 2
 }
 });
 require.register("regularjs/src/parser/Lexer.js", function(exports, require, module){
@@ -2746,7 +2620,6 @@ function Parser(input, opts){
   this.input = input;
   this.tokens = new Lexer(input, opts).lex();
   this.pos = 0;
-  this.noComputed =  opts.noComputed;
   this.length = this.tokens.length;
 }
 
@@ -4209,7 +4082,7 @@ var combine = module.exports = {
 
   // get the initial dom in object
   node: function(item){
-    var children,node;
+    var children,node, nodes;
     if(item.element) return item.element;
     if(typeof item.node === "function") return item.node();
     if(typeof item.nodeType === "number") return item;
@@ -4218,7 +4091,7 @@ var combine = module.exports = {
       if(children.length === 1){
         return combine.node(children[0]);
       }
-      var nodes = [];
+      nodes = [];
       for(var i = 0, len = children.length; i < len; i++ ){
         node = combine.node(children[i]);
         if(Array.isArray(node)){
@@ -4229,6 +4102,26 @@ var combine = module.exports = {
       }
       return nodes;
     }
+  },
+  inject: function(node, pos, group ){
+    if(!group) group = this;
+    if(node === false) {
+      if(!group._fragContainer)  group._fragContainer = dom.fragment();
+      return combine.inject( group._fragContainer, pos, group);
+    }
+    var fragment = combine.node(group.group || group);
+    if(!fragment) return group;
+    if(typeof node === 'string') node = dom.find(node);
+    if(!node) throw 'injected node is not found';
+    dom.inject(fragment, node, pos);
+    // if it is a component
+    if(group.$emit) {
+      group.$emit("$inject", node, pos);
+      group.parentNode = (pos ==='after' || pos === 'before')? node.parentNode : node;
+    }
+
+
+    return group;
   },
 
   // get the last dom in object(for insertion operation)
@@ -4730,6 +4623,7 @@ var _ = require("../util.js");
 var dom = require("../dom.js");
 var animate = require("../helper/animate.js");
 var Regular = require("../Regular.js");
+var consts = require("../const");
 
 
 
@@ -4737,75 +4631,90 @@ require("./event.js");
 require("./form.js");
 
 
+module.exports = {
 // **warn**: class inteplation will override this directive 
-
-Regular.directive('r-class', function(elem, value){
-  if(typeof value=== 'string'){
-    value = _.fixObjStr(value)
-  }
-  this.$watch(value, function(nvalue){
-    var className = ' '+ elem.className.replace(/\s+/g, ' ') +' ';
-    for(var i in nvalue) if(nvalue.hasOwnProperty(i)){
-      className = className.replace(' ' + i + ' ',' ');
-      if(nvalue[i] === true){
-        className += i+' ';
+  'r-class': function(elem, value){
+    if(typeof value=== 'string'){
+      value = _.fixObjStr(value)
+    }
+    this.$watch(value, function(nvalue){
+      var className = ' '+ elem.className.replace(/\s+/g, ' ') +' ';
+      for(var i in nvalue) if(nvalue.hasOwnProperty(i)){
+        className = className.replace(' ' + i + ' ',' ');
+        if(nvalue[i] === true){
+          className += i+' ';
+        }
       }
+      elem.className = className.trim();
+    },true);
+  },
+  // **warn**: style inteplation will override this directive 
+  'r-style': function(elem, value){
+    if(typeof value=== 'string'){
+      value = _.fixObjStr(value)
     }
-    elem.className = className.trim();
-  },true);
-
-});
-
-// **warn**: style inteplation will override this directive 
-
-Regular.directive('r-style', function(elem, value){
-  if(typeof value=== 'string'){
-    value = _.fixObjStr(value)
-  }
-  this.$watch(value, function(nvalue){
-    for(var i in nvalue) if(nvalue.hasOwnProperty(i)){
-      dom.css(elem, i, nvalue[i]);
-    }
-  },true);
-});
-
-// when expression is evaluate to true, the elem will add display:none
-// Example: <div r-hide={{items.length > 0}}></div>
-
-Regular.directive('r-hide', function(elem, value){
-  var preBool = null, compelete;
-  this.$watch(value, function(nvalue){
-    var bool = !!nvalue;
-    if(bool === preBool) return; 
-    preBool = bool;
-    if(bool){
-      if(elem.onleave){
-        compelete = elem.onleave(function(){
+    this.$watch(value, function(nvalue){
+      for(var i in nvalue) if(nvalue.hasOwnProperty(i)){
+        dom.css(elem, i, nvalue[i]);
+      }
+    },true);
+  },
+  // when expression is evaluate to true, the elem will add display:none
+  // Example: <div r-hide={{items.length > 0}}></div>
+  'r-hide': function(elem, value){
+    var preBool = null, compelete;
+    this.$watch(value, function(nvalue){
+      var bool = !!nvalue;
+      if(bool === preBool) return; 
+      preBool = bool;
+      if(bool){
+        if(elem.onleave){
+          compelete = elem.onleave(function(){
+            elem.style.display = "none"
+            compelete = null;
+          })
+        }else{
           elem.style.display = "none"
-          compelete = null;
+        }
+        
+      }else{
+        if(compelete) compelete();
+        elem.style.display = "";
+        if(elem.onenter){
+          elem.onenter();
+        }
+      }
+    });
+  },
+  'r-html': function(elem, value){
+    this.$watch(value, function(nvalue){
+      nvalue = nvalue || "";
+      dom.html(elem, nvalue)
+    }, {force: true});
+  },
+  'ref': {
+    accept: consts.COMPONENT_TYPE + consts.ELEMENT_TYPE,
+    link: function( elem, value ){
+      var refs = this.$refs || (this.$refs = {});
+      var cval;
+      if(_.isExpr(value)){
+        this.$watch(value, function(nval, oval){
+          cval = nval;
+          if(refs[oval] === elem) refs[oval] = null;
+          if(cval) refs[cval] = elem;
         })
       }else{
-        elem.style.display = "none"
+        refs[cval = value] = elem;
       }
-      
-    }else{
-      if(compelete) compelete();
-      elem.style.display = "";
-      if(elem.onenter){
-        elem.onenter();
+      return function(){
+        refs[cval] = null;
       }
     }
-  });
+  }
+}
 
-});
+Regular.directive(module.exports);
 
-// unescaped inteplation. xss is not be protect
-Regular.directive('r-html', function(elem, value){
-  this.$watch(value, function(nvalue){
-    nvalue = nvalue || "";
-    dom.html(elem, nvalue)
-  }, {force: true});
-});
 
 
 
@@ -5227,22 +5136,6 @@ var Regular = require("../Regular.js");
 
 Regular._addProtoInheritCache("event");
 
-Regular.event("enter", function(elem, fire) {
-  _.log("on-enter will be removed in 0.4.0", "error");
-  function update( ev ) {
-    if ( ev.which === 13 ) {
-      ev.preventDefault();
-      fire(ev);
-    }
-  }
-  dom.on( elem, "keypress", update );
-
-  return function() {
-    dom.off( elem, "keypress", update );
-  }
-})
-
-
 Regular.directive( /^on-\w+$/, function( elem, value, name , attrs) {
   if ( !name || !value ) return;
   var type = name.split("-")[1];
@@ -5252,7 +5145,7 @@ Regular.directive( /^on-\w+$/, function( elem, value, name , attrs) {
 /**
 - $('dx').delegate()
 */
-Regular.directive( /^delegate-\w+$/, function( elem, value, name, attrs ) {
+Regular.directive( /^(delegate|de)-\w+$/, function( elem, value, name ) {
   var root = this.$root;
   var _delegates = root._delegates || ( root._delegates = {} );
   if ( !name || !value ) return;
@@ -5260,23 +5153,26 @@ Regular.directive( /^delegate-\w+$/, function( elem, value, name, attrs ) {
   var fire = _.handleEvent.call(this, value, type);
 
   function delegateEvent(ev){
-    matchParent(ev, _delegates[type]);
+    matchParent(ev, _delegates[type], root.parentNode);
   }
 
   if( !_delegates[type] ){
     _delegates[type] = [];
 
-    root.$on( "$inject", function( newParent ){
-      var preParent = this.parentNode;
-      if( preParent ){
-        dom.off(preParent, type, delegateEvent);
-      }
-      dom.on(newParent, type, delegateEvent);
-    })
-
+    if(root.parentNode){
+      dom.on(root.parentNode, type, delegateEvent);
+    }else{
+      root.$on( "$inject", function( newParent ){
+        var preParent = this.parentNode;
+        if( preParent ){
+          dom.off(preParent, type, delegateEvent);
+        }
+        dom.on(newParent, type, delegateEvent);
+      })
+    }
     root.$on("$destroy", function(){
       if(root.parentNode) dom.off(root.parentNode, type, delegateEvent)
-      root._delegates[type] = null;
+      _delegates[type] = null;
     })
   }
   var delegate = {
@@ -5296,12 +5192,14 @@ Regular.directive( /^delegate-\w+$/, function( elem, value, name, attrs ) {
 });
 
 
-function matchParent(ev , delegates){
-  var target = ev.target;
-  while(target && target !== dom.doc){
+function matchParent(ev , delegates, stop){
+  if(!stop) return;
+  var target = ev.target, pair;
+  while(target && target !== stop){
     for( var i = 0, len = delegates.length; i < len; i++ ){
-      if(delegates[i].element === target){
-        delegates[i].fire(ev);
+      pair = delegates[i];
+      if(pair && pair.element === target){
+        pair.fire(ev)
       }
     }
     target = target.parentNode;

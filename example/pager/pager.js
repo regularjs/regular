@@ -3,6 +3,7 @@ void function(){
     name: 'pager',
     template: 
      "<div class='m-page {clazz}'>\
+          {title}\
          <a  href='javascript:;' delegate-click={ this.nav(current-1)} class='pageprv {current==1? \"z-dis\": \"\"}'>Prev</a>\
           {#if total - 5 > show * 2}\
             <a href='javascript:;' delegate-click={ this.nav(1)} class={current==1? 'z-crt': ''}>1</a>\
