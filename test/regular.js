@@ -272,13 +272,23 @@ var Regular = function(options){
     this.$on(this.events);
   }
   // if(this.$body){
-  this._getTransclude = function(transclude){
-    var ctx = this.$parent || this;
-    if( transclude || this.$body  ) return ctx.$compile(transclude || this.$body, {namespace: options.namespace, outer: this, extra: options.extra})
-  }
+
+  // this._getTransclude = function(transclude){
+  //   var ctx = this.$parent || this;
+  //   if( transclude || this.$body  ) return ctx.$compile(transclude || this.$body, {namespace: options.namespace,  extra: options.extra})
+  // }
   // }
   this.$emit("$config");
   this.config && this.config(this.data);
+  if(this._body && this._body.length){
+    this.$body = this.$parent.$compile(this._body, {
+      outer: this,
+      namespace: options.namespace,
+      extra: options.extra,
+      record: true
+    })
+    this._body = null;
+  }
   // handle computed
   if(template){
     this.group = this.$compile(this.template, {namespace: options.namespace});
@@ -727,7 +737,6 @@ Regular.prototype.inject = function(){
   _.log("use $inject instead of inject", "error");
   return this.$inject.apply(this, arguments);
 }
-
 
 
 // only one builtin filter
@@ -1376,7 +1385,6 @@ walkers.template = function(ast, options){
         group.children.pop();
       }
       group.push( compiled = _.isGroup(value) ? value: self.$compile(value, {record: true, outer: options.outer,namespace: namespace, extra: extra}) ); 
-      debugger
       if(placeholder.parentNode) animate.inject(combine.node(compiled), placeholder, 'before')
     }, {
       init: true
@@ -1479,8 +1487,9 @@ walkers.element = function(ast, options){
     Component = Constructor.component(tag),
     ref, group, element;
 
-  if( tag === 'r-content' && this._getTransclude ){
-    return this._getTransclude();
+  if( tag === 'r-content' ){
+    _.log('r-content is deprecated, use {#inc $body} instead (or `{#include}` as same)', 'error');
+    return this.$body;
   } 
 
   if(Component || tag === 'r-component'){
@@ -1614,13 +1623,16 @@ walkers.component = function(ast, options){
         data: data, 
         events: events, 
         $parent: this,
-        $outer: options.outer,
         namespace: namespace, 
         $root: this.$root,
-        $body: ast.children
+        $outer: options.outer,
+        _body: ast.children
       }
 
+
       var component = new Component(config);
+
+
       if(ref &&  self.$refs) self.$refs[ref] = component;
       for(var i = 0, len = attrs.length; i < len; i++){
         var attr = attrs[i];
@@ -1835,7 +1847,7 @@ dom.find = function(sl){
 dom.inject = function(node, refer, position){
 
   position = position || 'bottom';
-
+  if(!node) return ;
   if(Array.isArray(node)){
     var tmp = node;
     node = dom.fragment();
@@ -4100,6 +4112,7 @@ var combine = module.exports = {
   // get the initial dom in object
   node: function(item){
     var children,node, nodes;
+    if(!item) return;
     if(item.element) return item.element;
     if(typeof item.node === "function") return item.node();
     if(typeof item.nodeType === "number") return item;

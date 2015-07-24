@@ -67,16 +67,74 @@ void function(){
       });
       var container = document.createElement('div');
       var component = new Component({
-        template: "<test-body list={list}><span>{item_index}:{item}</span></test-body>",
+        template: "<test-body list={list}><span>{list.length}:{list[0]}</span></test-body>",
         data: {list: ["hello", "name"]}
       }).$inject(container);
 
+
       var nodes = nes.all("span", container);
-      expect(nodes.length).to.equal(2);
-      expect(nodes[1].innerHTML).to.equal("1:name");
+      expect(nodes.length).to.equal(1);
+      expect(nodes[0].innerHTML).to.equal("2:hello");
       
       destroy(component, container)
 
+    })
+    it("include can pass anything that compiled to Group", function(){
+      var Component = Regular.extend({});
+      var container = Regular.dom.create('div');
+      var Nested = Component.extend({
+        name: 'nested',
+        template: '<div><div class="head">{#inc hd}</div><div class="body">{#inc this.$body}</div><div class="foot">{#inc ft}</div></div>',
+        config: function(data){
+          data.head = 'InnerHEAD'
+          data.foot = 'InnerFoot'
+        }
+      })
+      var component = new Component({
+        template: '<nested hd.cmpl="<p>{head}</p>>" ft={"<p>{foot}</p>"}><strong>{head + foot}</strong></nested>',
+        data: {head: 'OuterHead', foot: 'OuterFoot'}
+      }).$inject(container);
+
+
+
+      var head = nes.one('.head p', container);
+      var foot = nes.one('.foot p', container);
+      var body = nes.one('.body strong', container);
+
+      expect(head.innerHTML).to.equal('OuterHead');
+      expect(foot.innerHTML).to.equal('InnerFoot');
+      expect(body.innerHTML).to.equal('OuterHeadOuterFoot');
+
+      component.$update('head', 'OuterUpdate');
+      expect(head.innerHTML).to.equal('OuterUpdate');
+
+      destroy(component, container)
+    })
+   it("include can pass anything that compiled to Component", function(){
+      var Component = Regular.extend({});
+      var container = Regular.dom.create('div');
+      var Nested = Component.extend({
+        name: 'nested',
+        template: '<div class="nested">Nested</div>',
+        config: function(data){
+          data.head = 'InnerHEAD'
+          data.foot = 'InnerFoot'
+        }
+      })
+
+      var nested = new Nested()
+      var component = new Component({
+        template: '<div>{#inc component}</div>',
+        data: {component: nested }
+      }).$inject(container);
+
+
+
+      var nested = nes.one('.nested', container);
+
+      expect(nested.innerHTML).to.equal('Nested');
+
+      destroy(component, container)
     })
   })
 

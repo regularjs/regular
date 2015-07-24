@@ -14,7 +14,7 @@ void function(){
     var NameSpace = Regular.extend();
     var containerAll = document.createElement("div");
     var Test = NameSpace.extend({
-      template: "<div><r-content /></div>"
+      template: "<div>{#inc this.$body}</div>"
     })
 
     NameSpace.component('test', Test);
@@ -82,7 +82,7 @@ void function(){
       var container = document.createElement("div");
       var Component = NameSpace.extend({
         name: "nested1",
-        template: "<p><a>haha</a><r-content></p>"
+        template: "<p><a>haha</a>{#inc this.$body}</p>"
       })
 
       var i = 0;
@@ -150,10 +150,20 @@ void function(){
           step.push("init "+data.step);
         }
       })
+      var Child2 = NameSpace.extend({
+        template: "<p>{#inc this.$body}</p>",
+        config: function(data){
+          step.push( "config " + data.step);
+        },
+        init: function(){
+          var data = this.data;
+          step.push("init "+data.step);
+        }
+      })
       NameSpace.component("child1", Child);
       NameSpace.component("child2", Child);
-      NameSpace.component("child3", Child);
-      NameSpace.component("child4", Child);
+      NameSpace.component("child3", Child2);
+      NameSpace.component("child4", Child2);
 
       var  component = new NameSpace({
         template: 

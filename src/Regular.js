@@ -63,13 +63,23 @@ var Regular = function(options){
     this.$on(this.events);
   }
   // if(this.$body){
-  this._getTransclude = function(transclude){
-    var ctx = this.$parent || this;
-    if( transclude || this.$body  ) return ctx.$compile(transclude || this.$body, {namespace: options.namespace, outer: this, extra: options.extra})
-  }
+
+  // this._getTransclude = function(transclude){
+  //   var ctx = this.$parent || this;
+  //   if( transclude || this.$body  ) return ctx.$compile(transclude || this.$body, {namespace: options.namespace,  extra: options.extra})
+  // }
   // }
   this.$emit("$config");
   this.config && this.config(this.data);
+  if(this._body && this._body.length){
+    this.$body = this.$parent.$compile(this._body, {
+      outer: this,
+      namespace: options.namespace,
+      extra: options.extra,
+      record: true
+    })
+    this._body = null;
+  }
   // handle computed
   if(template){
     this.group = this.$compile(this.template, {namespace: options.namespace});
@@ -518,7 +528,6 @@ Regular.prototype.inject = function(){
   _.log("use $inject instead of inject", "error");
   return this.$inject.apply(this, arguments);
 }
-
 
 
 // only one builtin filter

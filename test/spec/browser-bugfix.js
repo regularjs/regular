@@ -25,7 +25,6 @@ void function(){
       it("bugfix #10, if svg namespace ", function(){
         //https://github.com/regularjs/regular/issues/10
 
-
         if(Regular.env.svg){ // if support svg
 
           var Bugfix10 = Component.extend({

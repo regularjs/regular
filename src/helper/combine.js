@@ -8,6 +8,7 @@ var combine = module.exports = {
   // get the initial dom in object
   node: function(item){
     var children,node, nodes;
+    if(!item) return;
     if(item.element) return item.element;
     if(typeof item.node === "function") return item.node();
     if(typeof item.nodeType === "number") return item;

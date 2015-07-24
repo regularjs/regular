@@ -71,7 +71,7 @@ dom.find = function(sl){
 dom.inject = function(node, refer, position){
 
   position = position || 'bottom';
-
+  if(!node) return ;
   if(Array.isArray(node)){
     var tmp = node;
     node = dom.fragment();
