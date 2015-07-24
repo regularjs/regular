@@ -183,7 +183,9 @@ walkers.template = function(ast, options){
         group.children.pop();
       }
       group.push( compiled = _.isGroup(value) ? value: self.$compile(value, {record: true, outer: options.outer,namespace: namespace, extra: extra}) ); 
-      if(placeholder.parentNode) animate.inject(combine.node(compiled), placeholder, 'before')
+      if(placeholder.parentNode) {
+        compiled.$inject(placeholder, 'before')
+      }
     }, {
       init: true
     });

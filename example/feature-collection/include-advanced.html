@@ -21,11 +21,11 @@
             <h4 class="modal-title">{#inc title || 'Modal'}</h4>
           </div>
           <div class="modal-body">
-            {#inc this.$body}
+            {#inc  body || this.$body}
           </div>
           <div class="modal-footer">
-            {#if footer} 
-              {#inc footer} 
+            {#if foot} 
+              {#inc foot} 
             {#else}
               <button type="button" class="btn btn-default" on-click={this.confirm(true)}>Confirm</button>
               <button type="button" class="btn btn-default" on-click={this.confirm(false)}>Cancel</button>
@@ -55,12 +55,32 @@
         }
       }
     })
+    Modal.title = Regular.extend({
+      name: 'modal.title',
+      init: function(){
+        this.$outer.data.title = this.$body;
+      }
+    })
+    Modal.body = Regular.extend({
+      name: 'modal.body',
+      init: function(){
+        this.$outer.data.body = this.$body;
+      }
+    })
+    Modal.foot = Regular.extend({
+      name: 'modal.foot',
+      init: function(){
+        this.$outer.data.foot = this.$body;
+      }
+    })
 
     var app = new Regular({
       template: multiline(function(){/*
         <button class='btn' on-click={show = !show}>show</button>
         <input r-model='num' />
-        <modal show={show} autohide={true} title.cmpl='Custom Title <span class="badge" >{num}</span>'>
+        <modal show={show} autohide={true} >
+          <modal.title>Custom Title <span class="badge" >{num}</span> </modal.title>
+          <modal.foot>Custom Title <span class="badge" >{num}</span> <button class='btn btn-primary' on-click={show=false}>CLose it!</button> </modal.foot>
           <nav class="navbar navbar-default">
             <div class="container-fluid">
               <div class="navbar-header">
@@ -77,7 +97,7 @@
         </modal>
       */}),
       data: { "num": 100, show: true }
-    })
+    }).$inject(document.body)
   </script>
 
 </body>
