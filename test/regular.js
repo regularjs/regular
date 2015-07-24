@@ -1179,6 +1179,10 @@ _.isTrue - function(){return true}
 _.isExpr = function(expr){
   return expr && expr.type === 'expression';
 }
+// @TODO: make it more strict
+_.isGroup = function(group){
+  return group.inject || group.$inject;
+}
 
 _.assert = function(test, msg){
   if(!test) throw msg;
@@ -1371,7 +1375,8 @@ walkers.template = function(ast, options){
         compiled.destroy(true); 
         group.children.pop();
       }
-      group.push( compiled =  self.$compile(value, {record: true, outer: options.outer,namespace: namespace, extra: extra}) ); 
+      group.push( compiled = _.isGroup(value) ? value: self.$compile(value, {record: true, outer: options.outer,namespace: namespace, extra: extra}) ); 
+      debugger
       if(placeholder.parentNode) animate.inject(combine.node(compiled), placeholder, 'before')
     }, {
       init: true
@@ -1564,6 +1569,11 @@ walkers.component = function(ast, options){
           // event: 'nav'
           if(etest) attr.event = etest[1];
         }
+
+        // @compile modifier
+        if(attr.mdf === 'cmpl'){
+          value = this.$compile(value, {record: true, namespace:namespace, extra: options.extra, outer: options.outer})
+        }
         
         // @if is r-component . we need to find the target Component
         if(name === 'is' && !Component){
@@ -1616,6 +1626,7 @@ walkers.component = function(ast, options){
         var attr = attrs[i];
         var value = attr.value||true;
         var name = attr.name;
+        // need compiled
         if(value.type === 'expression' && !attr.event){
           value = self._touchExpr(value);
           // use bit operate to control scope
@@ -2549,11 +2560,12 @@ module.exports = {
       children: children
     }
   },
-  attribute: function(name, value){
+  attribute: function(name, value, mdf){
     return {
       type: 'attribute',
       name: name,
-      value: value
+      value: value,
+      mdf: mdf
     }
   },
   "if": function(test, consequent, alternate){
@@ -2751,10 +2763,17 @@ op.xml = function(){
 //  {{#if name}}on-click={{xx}}{{#else}}on-tap={{}}{{/if}}
 
 op.xentity = function(ll){
-  var name = ll.value, value;
+  var name = ll.value, value, modifier;
   if(ll.type === 'NAME'){
-    if( this.eat("=") ) value = this.attvalue();
-    return node.attribute( name, value );
+    //@ only for test
+    if(~name.indexOf('.')){
+      var tmp = name.split('.');
+      name = tmp[0];
+      modifier = tmp[1]
+
+    }
+    if( this.eat("=") ) value = this.attvalue(modifier);
+    return node.attribute( name, value, modifier );
   }else{
     if( name !== 'if') this.error("current version. ONLY RULE #if #else #elseif is valid in tag, the rule #" + name + ' is invalid');
     return this['if'](true);
@@ -2782,7 +2801,7 @@ op.attrs = function(isAttribute){
 // attvalue
 //  : STRING  
 //  | NAME
-op.attvalue = function(){
+op.attvalue = function(mdf){
   var ll = this.ll();
   switch(ll.type){
     case "NAME":
@@ -2790,7 +2809,7 @@ op.attvalue = function(){
     case "STRING":
       this.next();
       var value = ll.value;
-      if(~value.indexOf(config.BEGIN) && ~value.indexOf(config.END)){
+      if(~value.indexOf(config.BEGIN) && ~value.indexOf(config.END) && mdf!=='cmpl'){
         var constant = true;
         var parsed = new Parser(value, { mode: 2 }).parse();
         if(parsed.length === 1 && parsed[0].type === 'expression') return parsed[0];

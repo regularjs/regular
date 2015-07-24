@@ -182,7 +182,8 @@ walkers.template = function(ast, options){
         compiled.destroy(true); 
         group.children.pop();
       }
-      group.push( compiled =  self.$compile(value, {record: true, outer: options.outer,namespace: namespace, extra: extra}) ); 
+      group.push( compiled = _.isGroup(value) ? value: self.$compile(value, {record: true, outer: options.outer,namespace: namespace, extra: extra}) ); 
+      debugger
       if(placeholder.parentNode) animate.inject(combine.node(compiled), placeholder, 'before')
     }, {
       init: true
@@ -375,6 +376,11 @@ walkers.component = function(ast, options){
           // event: 'nav'
           if(etest) attr.event = etest[1];
         }
+
+        // @compile modifier
+        if(attr.mdf === 'cmpl'){
+          value = this.$compile(value, {record: true, namespace:namespace, extra: options.extra, outer: options.outer})
+        }
         
         // @if is r-component . we need to find the target Component
         if(name === 'is' && !Component){
@@ -427,6 +433,7 @@ walkers.component = function(ast, options){
         var attr = attrs[i];
         var value = attr.value||true;
         var name = attr.name;
+        // need compiled
         if(value.type === 'expression' && !attr.event){
           value = self._touchExpr(value);
           // use bit operate to control scope

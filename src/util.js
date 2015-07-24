@@ -395,6 +395,10 @@ _.isTrue - function(){return true}
 _.isExpr = function(expr){
   return expr && expr.type === 'expression';
 }
+// @TODO: make it more strict
+_.isGroup = function(group){
+  return group.inject || group.$inject;
+}
 
 _.assert = function(test, msg){
   if(!test) throw msg;

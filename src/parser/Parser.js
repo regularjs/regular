@@ -151,10 +151,17 @@ op.xml = function(){
 //  {{#if name}}on-click={{xx}}{{#else}}on-tap={{}}{{/if}}
 
 op.xentity = function(ll){
-  var name = ll.value, value;
+  var name = ll.value, value, modifier;
   if(ll.type === 'NAME'){
-    if( this.eat("=") ) value = this.attvalue();
-    return node.attribute( name, value );
+    //@ only for test
+    if(~name.indexOf('.')){
+      var tmp = name.split('.');
+      name = tmp[0];
+      modifier = tmp[1]
+
+    }
+    if( this.eat("=") ) value = this.attvalue(modifier);
+    return node.attribute( name, value, modifier );
   }else{
     if( name !== 'if') this.error("current version. ONLY RULE #if #else #elseif is valid in tag, the rule #" + name + ' is invalid');
     return this['if'](true);
@@ -182,7 +189,7 @@ op.attrs = function(isAttribute){
 // attvalue
 //  : STRING  
 //  | NAME
-op.attvalue = function(){
+op.attvalue = function(mdf){
   var ll = this.ll();
   switch(ll.type){
     case "NAME":
@@ -190,7 +197,7 @@ op.attvalue = function(){
     case "STRING":
       this.next();
       var value = ll.value;
-      if(~value.indexOf(config.BEGIN) && ~value.indexOf(config.END)){
+      if(~value.indexOf(config.BEGIN) && ~value.indexOf(config.END) && mdf!=='cmpl'){
         var constant = true;
         var parsed = new Parser(value, { mode: 2 }).parse();
         if(parsed.length === 1 && parsed[0].type === 'expression') return parsed[0];

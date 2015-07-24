@@ -7,17 +7,26 @@
     <script src="../../dist/regular.js"></script>
     <script src="pager.js"></script>
     <script type='text/tpl' id='tpl'>
-      {total}:{current}<button de-click={total = total + 1}>total+1</button>
-      <pager ref='hello' total={Math.floor(total/20)} current={current} title={'<h2>{current + 10000}</h2>'|compile}    />
-      <pager total={this.$refs.hello.data.current+1} current={current}/>&gt;
+
+
+<div>
+  {#inc $body}
+
+</div>
+
+
+
+<button de-click={total = total + 1}>total+1</button>
+  <pager ref='hello' total={Math.floor(total/20)} current={current} title.cmpl='<div>{total}</div>'  title={} >
+bdajldasjkl
+</pager>
+<pager total={this.$refs.hello.data.current+1} ref='pager2' current={current} title.cmpl='<h2>{current + 10000}</h2>'></pager>
+
+
     </script>
+
   </head>
   <body>
-
-
-  <div>
-    {title}
-  </div>
 
     <div id="app"> </div>
 
@@ -29,7 +38,7 @@
     })
     var app = new Regular({
       template: '#tpl',
-      data: {total: 1000, current:10},
+      data: {total: 100, current:10},
       config: function(data){
         console.log(data)
       },
@@ -37,18 +46,11 @@
         this.data.current = page;
       } 
     } )
-      app.$inject("#app");
+    app.$inject("#app");
 
     setTimeout(function(){
       app.$update('total', 1000)
-      app.$inject(false);
-      setTimeout(function(){
-        app.$inject("#app");
-        app.$refs.hello.data.title.inject(document.body);
-      },1000)
-
-      
-    },100)
+    },1000)
 
 
     </script>
