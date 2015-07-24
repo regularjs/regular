@@ -458,7 +458,7 @@ describe('other buildin directive', function(){
   })
 
   it('r-class should add all property as the class whose propertyValue is evaluated to true', function(){
-    var template = "<div r-class={ {'z-show': num < 6, 'z-active': num > 3} }>Please Login</div>" 
+    var template = "<div r-class={ {'z-show': num < 6, 'z-active': num > 3} } >Please Login</div>" 
 
     var component = new Regular({
       template: template,

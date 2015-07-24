@@ -68,12 +68,6 @@ describe("Lexer under mode 1 and 2", function(){
 
   })
 
-  it("config should work", function(){
-    config.END = "}}";
-    config.BEGIN = "{{";
-
-  })
-
 })
 
 

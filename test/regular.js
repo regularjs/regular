@@ -1164,6 +1164,7 @@ _.fixObjStr = function(str){
 
 
 _.log = function(msg, type){
+  return ""
   if(typeof console !== "undefined")  console[type || "log"](msg);
 }
 
