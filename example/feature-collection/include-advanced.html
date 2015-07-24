@@ -2,17 +2,84 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Include advanced</title>
+  <title>Include advanced </title>
+  <link rel="stylesheet" href="http://getbootstrap.com/dist/css/bootstrap.min.css">
 </head>
 <body>
 
-<script type='text/tpl'>
-  
-</script>
 
-<script>
-  
-</script>
+  <script type='text/tpl' id="modal">
+    <div class="fade in modal" tabindex="-1" role="dialog" style="display:block;">
+      <div class="modal-dialog">
+        <div class="modal-content" role="document">
+          <div class="modal-header">
+            {#if closeBtn}
+            <button class="close" aria-label="Close">
+              <span aria-hidden="true">×</span>
+            </button>
+            {/if}
+            <h4 class="modal-title">{#inc title || 'Modal'}</h4>
+          </div>
+          <div class="modal-body">
+            {#inc this.$body}
+          </div>
+          <div class="modal-footer">
+            {#if footer} 
+              {#inc footer} 
+            {#else}
+              <button type="button" class="btn btn-default" on-click={this.confirm(true)}>Confirm</button>
+              <button type="button" class="btn btn-default" on-click={this.confirm(false)}>Cancel</button>
+            {/if}
+          </div>
+        </div>
+      </div>
+    </div>
+  </script>
+
+  <script src="https://rawgit.com/sindresorhus/multiline/master/browser.js"></script>
+  <script src="https://rawgit.com/regularjs/regular/group/dist/regular.js"></script>
+  <script>
+    var Modal = Regular.extend({
+      name: "modal",
+      template: "#modal",
+      config: function(data){
+        var target = data.target = data.target || document.body;
+        this.$watch('show', function(show){
+          this.$inject(show? target: false)
+        })
+      },
+      confirm: function(accept){
+        this.$emit(accept? 'confirm': 'cancel');
+        if(this.data.autohide){
+          this.$update('show', false)
+        }
+      }
+    })
+
+    var app = new Regular({
+      template: multiline(function(){/*
+        <button class='btn' on-click={show = !show}>show</button>
+        <input r-model='num' />
+        <modal show={show} autohide={true} title.cmpl='Custom Title <span class="badge" >{num}</span>'>
+          <nav class="navbar navbar-default">
+            <div class="container-fluid">
+              <div class="navbar-header">
+                <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+                  <span class="sr-only">Toggle navigation</span>
+                  <span class="icon-bar"></span>
+                  <span class="icon-bar"></span>
+                  <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="#">Brand</a>
+              </div>
+            </div>
+          </nav>
+        </modal>
+      */}),
+      data: { "num": 100, show: true }
+    })
+  </script>
 
 </body>
 </html>
+
