@@ -1387,7 +1387,9 @@ walkers.template = function(ast, options){
         group.children.pop();
       }
       group.push( compiled = _.isGroup(value) ? value: self.$compile(value, {record: true, outer: options.outer,namespace: namespace, extra: extra}) ); 
-      if(placeholder.parentNode) animate.inject(combine.node(compiled), placeholder, 'before')
+      if(placeholder.parentNode) {
+        compiled.$inject(placeholder, 'before')
+      }
     }, {
       init: true
     });
@@ -2175,7 +2177,7 @@ function Group(list){
 }
 
 
-_.extend(Group.prototype, {
+var o = _.extend(Group.prototype, {
   destroy: function(first){
     combine.destroy(this.children, first);
     if(this.ondestroy) this.ondestroy();
@@ -2186,9 +2188,9 @@ _.extend(Group.prototype, {
   },
   push: function(item){
     this.children.push( item );
-  },
-  inject: combine.inject
+  }
 })
+o.inject = o.$inject = combine.inject
 
 
 
@@ -5072,6 +5074,7 @@ Regular.animation({
 // el : the element to process
 // value: the directive value
 function processAnimate( element, value ){
+  var Component = this.constructor;
   value = value.trim();
 
   var composites = value.split(";"), 
@@ -5128,7 +5131,7 @@ function processAnimate( element, value ){
       continue
     }
 
-    var animator =  Regular.animation(command) 
+    var animator =  Component.animation(command) 
     if( animator && seed ){
       seed.push(
         animator.call(this,{
@@ -5138,7 +5141,7 @@ function processAnimate( element, value ){
         })
       )
     }else{
-      throw "you need start with `on` or `event` in r-animation";
+      throw Error( animator? "you should start with `on` or `event` in animation" : ("undefined animator 【" + command +"】" ));
     }
   }
 

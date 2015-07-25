@@ -314,6 +314,17 @@ void function(){
           expect(dom.hasClass(element, 'animated')).to.equal(true);
         })
       })
+      it("undefined aniamtion should not throw error", function(done){
+        var element = document.createElement("div");
+        var component = new Component();
+        var animator = function(){ }
+        Component.animation('hello', animator)
+        expect(Component.animation('hello')).to.equal(animator)
+        expect(function(){
+          processAnimate.link.call(component, element, "on: enter; notfound:;");
+        }).throwError()
+          done();
+      })
     })
 
   })
