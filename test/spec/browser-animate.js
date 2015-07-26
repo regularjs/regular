@@ -23,6 +23,7 @@ void function(){
     var Component = Regular.extend();
     describe("helper.animate ", function(){
       var container = document.createElement("div");
+      var processAnimate = Regular.directive("r-animation");
       before(function(){
         document.body.appendChild( container );
       });
@@ -30,41 +31,45 @@ void function(){
         document.body.removeChild( container );
       });
 
-      // it("animation can triggered by event", function(done){
-      //   var component = new Regular({
-      //     template: "<div r-animation='on:click; class: animated;'></div>"
-      //   }).$inject(container);
+      it("animate.inject is async when on:enter is specified", function(done){
+        var div1 =document.createElement("div");
+        var div2 =document.createElement("div");
+        var component = new Component;
+        processAnimate.link.call(component, div1, "on: enter; class: anim");
 
+        // to judge async or sync
+        var a = 1;
+        animate.inject(div1, div2, 'bottom', function(){
+          a = 2;
+          expect(div2.getElementsByTagName("div")[0]).to.equal(div1);
+          dom.nextReflow(function(){done()})
+        })
+        expect(a).to.equal(1)
 
-      //   var node =  nes.one('div', container)
+      })
+      it("animate.inject is async without on:enter", function(done){
 
-      //   dispatchMockEvent(nes.one('div', container), 'click');
-
-      //   Regular.dom.nextReflow(function(){
-
-      //     expect(node.className ).to.equal("animated");
-
-      //     Regular.dom.nextReflow(function(){
-
-      //       expect(node.className ).to.equal("");
-
-      //       destroy(component, container);
-      //       done();
-      //     })
-      //   })
-
-      it("animate.inject", function(done){
         var div1 =document.createElement("div");
         var div2 =document.createElement("div");
 
+        var a = 1;
         animate.inject(div1, div2, 'bottom', function(){
+          a = 2;
           expect(div2.getElementsByTagName("div")[0]).to.equal(div1);
-          done()
+          dom.nextReflow(function(){done()})
         })
+        expect(a).to.equal(2)
 
       })
 
-      it("animate.inject%animate.remove with callback", function(done){
+      it("animate.remove accept Array", function(){
+        
+      })
+      it("animate.remove accept Array", function(){
+        
+      })
+
+      it("animate.inject&animate.remove with callback", function(done){
         var div1 =document.createElement("div");
         var div2 =document.createElement("div");
         var enter = false;
@@ -72,7 +77,6 @@ void function(){
           enter = true
           cb()
         }
-
         animate.inject(div1, div2, 'bottom', function(){
           expect(div2.getElementsByTagName("div")[0]).to.equal(div1);
           div1.enter = true;
@@ -207,6 +211,20 @@ void function(){
           expect(element.className).to.equal("bouceOut animated");
         })
       })
+      it("animator: class, 4", function(done){
+        var element = document.createElement("div");
+        var klass = Regular.animation("class");
+
+        element.className = "bouceOut animated hello";
+
+        klass({
+          element: element,
+          param: "bouceOut animated,4"})(function(){
+          expect(element.className).to.equal("hello");
+          done();
+        })
+        expect(element.className).to.equal("bouceOut animated hello");
+      })
       it("animator: style", function(done){
         var element = document.createElement("div");
         var style = Regular.animation("style");
@@ -214,16 +232,12 @@ void function(){
           element: element,
           param: "left 10px, right 20px"
         })(function(){
-          done();
           expect(element.style.left).to.equal("10px");
           expect(element.style.right).to.equal("20px");
+          done();
         })
         expect(element.style.left).to.equal("");
         expect(element.style.right).to.equal("");
-        dom.nextReflow(function(){
-          expect(element.style.left).to.equal("10px");
-          expect(element.style.right).to.equal("20px");
-        })
       })
       it("animator: call", function(done){
         var element = document.createElement("div");

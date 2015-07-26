@@ -32,9 +32,6 @@ describe("Lexer under mode 1 and 2", function(){
     expect(l(input_attr_jst)).typeEqual("TAG_OPEN,NAME,=,EXPR_OPEN,IDENT,END,>,TAG_CLOSE,EOF")
 
 
-    // expect(function(){
-    //   l("<<div>")
-    // }).to.throwError();
   })
 
 
@@ -68,11 +65,6 @@ describe("Lexer under mode 1 and 2", function(){
 
   })
 
-  it("config should work", function(){
-    config.END = "}}";
-    config.BEGIN = "{{";
-
-  })
 
 })
 

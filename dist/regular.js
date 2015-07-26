@@ -1477,7 +1477,6 @@ walkers.text = function(ast, options){
 
 var eventReg = /^on-(.+)$/
 
-
 /**
  * walkers element (contains component)
  */
@@ -1492,7 +1491,7 @@ walkers.element = function(ast, options){
     ref, group, element;
 
   if( tag === 'r-content' ){
-    _.log('r-content is deprecated, use {#inc $body} instead (or `{#include}` as same)', 'error');
+    _.log('r-content is deprecated, use {#inc this.$body} instead (`{#include}` as same)', 'error');
     return this.$body;
   } 
 
@@ -2157,12 +2156,12 @@ dom.nextFrame = (function(){
 
 // 3ks for angular's raf  service
 var k;
-dom.nextReflow = function(callback){
-  dom.nextFrame(function(){
+dom.nextReflow = dom.msie? function(callback){
+  return dom.nextFrame(function(){
     k = document.body.offsetWidth;
     callback();
   })
-}
+}: dom.nextFrame;
 
 
 
@@ -3966,6 +3965,17 @@ animate.inject = function( node, refer ,direction, callback ){
  * @return {[type]}            [description]
  */
 animate.remove = function(node, callback){
+  var count = 0;
+  function loop(){
+    count++;
+    if(count === len) callback && callback()
+  }
+  if(Array.isArray(node)){
+    for(var i = 0, len = node.length; i < len ; i++){
+      animate.remove(node[i], loop)
+    }
+    return node;
+  }
   if(node.onleave){
     node.onleave(function(){
       removeDone(node, callback)
@@ -3988,21 +3998,28 @@ animate.startClassAnimate = function ( node, className,  callback, mode ){
     return callback();
   }
 
-  onceAnim = _.once(function onAnimateEnd(){
-    if(tid) clearTimeout(tid);
+  if(mode !== 4){
+    onceAnim = _.once(function onAnimateEnd(){
+      if(tid) clearTimeout(tid);
 
-    if(mode === 2) {
-      dom.delClass(node, activeClassName);
-    }
-    if(mode !== 3){ // mode hold the class
-      dom.delClass(node, className);
-    }
-    dom.off(node, animationEnd, onceAnim)
-    dom.off(node, transitionEnd, onceAnim)
+      if(mode === 2) {
+        dom.delClass(node, activeClassName);
+      }
+      if(mode !== 3){ // mode hold the class
+        dom.delClass(node, className);
+      }
+      dom.off(node, animationEnd, onceAnim)
+      dom.off(node, transitionEnd, onceAnim)
 
-    callback();
+      callback();
 
-  });
+    });
+  }else{
+    onceAnim = _.once(function onAnimateEnd(){
+      if(tid) clearTimeout(tid);
+      callback();
+    });
+  }
   if(mode === 2){ // auto removed
     dom.addClass( node, className );
 
@@ -4016,15 +4033,21 @@ animate.startClassAnimate = function ( node, className,  callback, mode ){
       tid = setTimeout( onceAnim, timeout );
     });
 
-  }else{
+  }else if(mode===4){
+    dom.nextReflow(function(){
+      dom.delClass( node, className );
+      timeout = getMaxTimeout( node );
+      tid = setTimeout( onceAnim, timeout );
+    });
 
+  }else{
     dom.nextReflow(function(){
       dom.addClass( node, className );
       timeout = getMaxTimeout( node );
       tid = setTimeout( onceAnim, timeout );
     });
-
   }
+
 
 
   dom.on( node, animationEnd, onceAnim )
@@ -4110,6 +4133,7 @@ require.register("regularjs/src/helper/combine.js", function(exports, require, m
 // --------------------------------
 
 var dom = require("../dom.js");
+var animate = require("./animate.js");
 
 var combine = module.exports = {
 
@@ -4137,24 +4161,25 @@ var combine = module.exports = {
       return nodes;
     }
   },
-  inject: function(node, pos, group ){
-    if(!group) group = this;
-    if(node === false) {
-      if(!group._fragContainer)  group._fragContainer = dom.fragment();
-      return combine.inject( group._fragContainer, pos, group);
-    }
+  // @TODO remove _gragContainer
+  inject: function(node, pos ){
+    var group = this;
     var fragment = combine.node(group.group || group);
-    if(!fragment) return group;
-    if(typeof node === 'string') node = dom.find(node);
-    if(!node) throw 'injected node is not found';
-    dom.inject(fragment, node, pos);
+    if(node === false) {
+      animate.remove(fragment)
+      return group;
+    }else{
+      if(!fragment) return group;
+      if(typeof node === 'string') node = dom.find(node);
+      if(!node) throw 'injected node is not found';
+      // use animate to animate firstchildren
+      animate.inject(fragment, node, pos);
+    }
     // if it is a component
     if(group.$emit) {
       group.$emit("$inject", node, pos);
       group.parentNode = (pos ==='after' || pos === 'before')? node.parentNode : node;
     }
-
-
     return group;
   },
 

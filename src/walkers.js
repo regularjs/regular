@@ -273,7 +273,6 @@ walkers.text = function(ast, options){
 
 var eventReg = /^on-(.+)$/
 
-
 /**
  * walkers element (contains component)
  */
@@ -288,7 +287,7 @@ walkers.element = function(ast, options){
     ref, group, element;
 
   if( tag === 'r-content' ){
-    _.log('r-content is deprecated, use {#inc $body} instead (or `{#include}` as same)', 'error');
+    _.log('r-content is deprecated, use {#inc this.$body} instead (`{#include}` as same)', 'error');
     return this.$body;
   } 
 

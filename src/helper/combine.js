@@ -2,6 +2,7 @@
 // --------------------------------
 
 var dom = require("../dom.js");
+var animate = require("./animate.js");
 
 var combine = module.exports = {
 
@@ -29,24 +30,25 @@ var combine = module.exports = {
       return nodes;
     }
   },
-  inject: function(node, pos, group ){
-    if(!group) group = this;
-    if(node === false) {
-      if(!group._fragContainer)  group._fragContainer = dom.fragment();
-      return combine.inject( group._fragContainer, pos, group);
-    }
+  // @TODO remove _gragContainer
+  inject: function(node, pos ){
+    var group = this;
     var fragment = combine.node(group.group || group);
-    if(!fragment) return group;
-    if(typeof node === 'string') node = dom.find(node);
-    if(!node) throw 'injected node is not found';
-    dom.inject(fragment, node, pos);
+    if(node === false) {
+      animate.remove(fragment)
+      return group;
+    }else{
+      if(!fragment) return group;
+      if(typeof node === 'string') node = dom.find(node);
+      if(!node) throw 'injected node is not found';
+      // use animate to animate firstchildren
+      animate.inject(fragment, node, pos);
+    }
     // if it is a component
     if(group.$emit) {
       group.$emit("$inject", node, pos);
       group.parentNode = (pos ==='after' || pos === 'before')? node.parentNode : node;
     }
-
-
     return group;
   },
 
