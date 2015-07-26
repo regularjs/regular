@@ -155,6 +155,17 @@ void function(){
       destroy(component, container)
     })
 
+    it("Invalid Lefthand Expression should throw Error" , function(){
+      var component = new Regular({
+        data: {name: 2}
+      })
+
+      expect(function(){
+        component.$get("name + 1 = 3")
+      }).to.throwError();
+
+    })
+
     
 
 

@@ -1,4 +1,5 @@
 var _ = require_lib("util.js");
+var shim = require_lib("helper/shim.js");
 var extend = require_lib('helper/extend.js');
 var diffArray = require_lib('helper/arrayDiff.js');
 
@@ -104,7 +105,7 @@ describe("Regular.util", function(){
     _.extend(c, {a:2})
     expect(c).to.eql({a:1})
 
-    expect(_.extend(c, {b:1,c:2},["c"])).to.eql({a:1,c:2})
+    // expect(_.extend(c, {b:1,c:2},["c"])).to.eql({a:1,c:2})
   })
 
   it('diffArray should works as expect', function(){
@@ -181,15 +182,94 @@ describe("Regular.util", function(){
   })
 
 
-  describe('Error Track should work as expected', function(){
 
-    it("_.trackErrorPos should have no '...' prefix if not slice", function(){
-      expect(_.trackErrorPos("abcdefghi", 1)).to.equal('[1] abcdefghi\n     ^^^\n');
-      expect(_.trackErrorPos("abcdefghi", 2)).to.equal('[1] abcdefghi\n      ^^^\n');
+  it("_.trackErrorPos should have no '...' prefix if not slice", function(){
+    expect(_.trackErrorPos("abcdefghi", 1)).to.equal('[1] abcdefghi\n     ^^^\n');
+    expect(_.trackErrorPos("abcdefghi", 2)).to.equal('[1] abcdefghi\n      ^^^\n');
 
 
+  })
+
+
+  describe("shim should work as expect", function(){
+    var map = {
+      string: {
+        pro: String.prototype,
+        methods: ['trim']
+      },
+      array: {
+        pro: Array.prototype,
+        methods: ['indexOf', 'forEach', 'filter', 'map']
+      },
+      array_static: {
+        pro: Array,
+        methods: ['isArray']
+      },
+      fn: {
+        pro: Function.prototype,
+        methods: ['bind']
+      }
+    }
+    for(var i in map){
+      var pair = map[i];
+      pair.preCache = {};
+      var methods = pair.methods
+      for(var i = 0; i < methods.length ; i++){
+        var method = methods[i];
+        pair.preCache[method] = pair.pro[method];
+        delete pair.pro[method];
+      }
+    }
+    shim();
+    after( function(){
+      // for(var i in map){
+      //   _.extend(map.pro, map.proCache, true);
+      // }
+    })
+
+    it("string.trim", function(){
+      expect('  dada  '.trim()).to.equal('dada')
+    })
+    it("array.indexOf", function(){
+      expect([1,2,3].indexOf(1)).to.equal(0)
+      expect([1,2,3].indexOf(-1)).to.equal(-1)
+    })
+    it("array.forEach", function(){
+      var arr = [1,2,3];
+      var res = "";
+      arr.forEach(function(item, index){
+        res += item + ':'  + index + '-';
+      })
+      expect(res).to.equal('1:0-2:1-3:2-');
+    })
+    it("array.filter", function(){
+      var arr = [3,4,5, 1];
+      var res = arr.filter(function(item, index){
+        return index < 2 || item < 2;
+      })
+      expect(res).to.eql([3,4,1]);
+    })
+    it("array.map", function(){
+      var arr = [3,4,5, 1];
+      var res = arr.map(function(item, index){
+        return item+ index
+      })
+      expect(res).to.eql([3,5,7, 4]);
+    })
+    it("array.isArray", function(){
+      expect(Array.isArray([])).to.equal(true);
+      expect(Array.isArray({})).to.equal(false);
+    })
+    it("function.bind", function(){
+      var fn = function(first, two, three){
+        expect(this.a).to.equal(1)
+        expect(first).to.equal(1)
+        expect(two).to.equal(2)
+        expect(three).to.equal(3)
+      }.bind({a:1}, 1, 2)(3)
     })
   })
+
 
   
 

@@ -100,7 +100,7 @@ Regular.animation({
       evt = tmp[0] || "",
       args = tmp[1]? this.$expression(tmp[1]).get: null;
 
-    if(!evt) throw "you shoud specified a eventname in emit command";
+    if(!evt) throw Error("you shoud specified a eventname in emit command");
 
     var self = this;
     return function(done){
@@ -120,7 +120,7 @@ Regular.animation({
           name = tmp.shift(),
           value = tmp.join(" ");
 
-        if( !name || !value ) throw "invalid style in command: style";
+        if( !name || !value ) throw Error("invalid style in command: style");
         styles[name] = value;
         valid = true;
       }

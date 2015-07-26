@@ -40,7 +40,7 @@ var combine = module.exports = {
     }else{
       if(!fragment) return group;
       if(typeof node === 'string') node = dom.find(node);
-      if(!node) throw 'injected node is not found';
+      if(!node) throw Error('injected node is not found');
       // use animate to animate firstchildren
       animate.inject(fragment, node, pos);
     }

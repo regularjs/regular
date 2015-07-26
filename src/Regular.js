@@ -468,7 +468,7 @@ Regular.implement({
   _f_: function(name){
     var Component = this.constructor;
     var filter = Component.filter(name);
-    if(!filter) throw 'filter ' + name + ' is undefined';
+    if(!filter) throw Error('filter ' + name + ' is undefined');
     return filter;
   },
   // simple accessor get

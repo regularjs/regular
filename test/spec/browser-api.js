@@ -155,6 +155,10 @@ void function(){
       destroy(component, container);
 
     })
+
+    it("component.$mute will mute this component, stop it to digest", function(){
+
+    })
   })
 
 }()

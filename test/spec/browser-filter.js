@@ -184,6 +184,13 @@ function destroy(component, container){
     var expr = Regular.expression("a+1|format")
     expect(expr.setbody).to.equal(false)
   })
+
+  it("undefined filter should throw error", function(){
+    var component = new Regular();
+    expect(function(){
+      component.$set('tmp|undefinedfilter')
+    }).to.throwError();
+  })
   
 })
 

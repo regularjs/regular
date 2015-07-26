@@ -679,7 +679,7 @@ Regular.implement({
   _f_: function(name){
     var Component = this.constructor;
     var filter = Component.filter(name);
-    if(!filter) throw 'filter ' + name + ' is undefined';
+    if(!filter) throw Error('filter ' + name + ' is undefined');
     return filter;
   },
   // simple accessor get
@@ -793,7 +793,7 @@ var handleComputed = (function(){
 
 });
 require.register("regularjs/src/util.js", function(exports, require, module){
-require('./helper/shim.js');
+require('./helper/shim.js')();
 var _  = module.exports;
 var entities = require('./helper/entities.js');
 var slice = [].slice;
@@ -808,6 +808,31 @@ _.uid = (function(){
     return _uid++;
   }
 })();
+
+_.extend = function( o1, o2, override ){
+  // if(_.typeOf(override) === 'array'){
+  //  for(var i = 0, len = override.length; i < len; i++ ){
+  //   var key = override[i];
+  //   o1[key] = o2[key];
+  //  } 
+  // }else{
+  for(var i in o2){
+    if( typeof o1[i] === "undefined" || override === true ){
+      o1[i] = o2[i]
+    }
+  }
+  // }
+  return o1;
+}
+
+_.keys = function(obj){
+  if(Object.keys) return Object.keys(obj);
+  var res = [];
+  for(var i in obj) if(obj.hasOwnProperty(i)){
+    res.push(i);
+  }
+  return res;
+}
 
 _.varName = 'd';
 _.setName = 'p_';
@@ -841,26 +866,6 @@ _.typeOf = function (o) {
   return o == null ? String(o) :o2str.call(o).slice(8, -1).toLowerCase();
 }
 
-_.isExpression = function( expr ){
-  return expr && expr.type === 'expression';
-}
-
-
-_.extend = function( o1, o2, override ){
-  if(_.typeOf(override) === 'array'){
-   for(var i = 0, len = override.length; i < len; i++ ){
-    var key = override[i];
-    o1[key] = o2[key];
-   } 
-  }else{
-    for(var i in o2){
-      if( typeof o1[i] === "undefined" || override === true ){
-        o1[i] = o2[i]
-      }
-    }
-  }
-  return o1;
-}
 
 _.makePredicate = function makePredicate(words, prefix) {
     if (typeof words === "string") {
@@ -980,7 +985,7 @@ _.escapeRegExp = function( str){// Credit: XRegExp 0.6.1 (c) 2007-2008 Steven Le
 };
 
 
-var rEntity = new RegExp("&(" + Object.keys(entities).join('|') + ');', 'gi');
+var rEntity = new RegExp("&(" + _.keys(entities).join('|') + ');', 'gi');
 
 _.convertEntity = function(chr){
 
@@ -1180,6 +1185,7 @@ _.log = function(msg, type){
 
 
 
+
 //http://www.w3.org/html/wg/drafts/html/master/single-page.html#void-elements
 _.isVoidTag = _.makePredicate("area base br col embed hr img input keygen link menuitem meta param source track wbr r-content");
 _.isBooleanAttr = _.makePredicate('selected checked disabled readOnly required open autofocus controls autoplay compact loop defer multiple');
@@ -1195,9 +1201,6 @@ _.isGroup = function(group){
   return group.inject || group.$inject;
 }
 
-_.assert = function(test, msg){
-  if(!test) throw msg;
-}
 
 
 });
@@ -2285,7 +2288,7 @@ lo.lex = function(str){
 }
 
 lo.error = function(msg){
-  throw "Parse Error: " + msg +  ':\n' + _.trackErrorPos(this.input, this.index);
+  throw  Error("Parse Error: " + msg +  ':\n' + _.trackErrorPos(this.input, this.index));
 }
 
 lo._process = function(args, split,str){
@@ -3444,82 +3447,69 @@ function extend(o1, o2 ){
   for(var i in o2) if( o1[i] === undefined){
     o1[i] = o2[i]
   }
+  return o2;
 }
 
-// String proto ;
-extend(String.prototype, {
-  trim: function(){
-    return this.replace(/^\s+|\s+$/g, '');
-  }
-});
+module.exports = function(){
+  // String proto ;
+  extend(String.prototype, {
+    trim: function(){
+      return this.replace(/^\s+|\s+$/g, '');
+    }
+  });
 
 
-// Array proto;
-extend(Array.prototype, {
-  indexOf: function(obj, from){
-    from = from || 0;
-    for (var i = from, len = this.length; i < len; i++) {
-      if (this[i] === obj) return i;
+  // Array proto;
+  extend(Array.prototype, {
+    indexOf: function(obj, from){
+      from = from || 0;
+      for (var i = from, len = this.length; i < len; i++) {
+        if (this[i] === obj) return i;
+      }
+      return -1;
+    },
+    forEach: function(callback, context){
+      for (var i = 0, len = this.length; i < len; i++) {
+        callback.call(context, this[i], i, this);
+      }
+    },
+    filter: function(callback, context){
+      var res = [];
+      for (var i = 0, length = this.length; i < length; i++) {
+        var pass = callback.call(context, this[i], i, this);
+        if(pass) res.push(this[i]);
+      }
+      return res;
+    },
+    map: function(callback, context){
+      var res = [];
+      for (var i = 0, length = this.length; i < length; i++) {
+        res.push(callback.call(context, this[i], i, this));
+      }
+      return res;
     }
-    return -1;
-  },
-  forEach: function(callback, context){
-    for (var i = 0, len = this.length; i < len; i++) {
-      callback.call(context, this[i], i, this);
-    }
-  },
-  filter: function(callback, context){
-    var res = [];
-    for (var i = 0, length = this.length; i < length; i++) {
-      var pass = callback.call(context, this[i], i, this);
-      if(pass) res.push(this[i]);
-    }
-    return res;
-  },
-  map: function(callback, context){
-    var res = [];
-    for (var i = 0, length = this.length; i < length; i++) {
-      res.push(callback.call(context, this[i], i, this));
-    }
-    return res;
-  }
-});
+  });
 
-// Function proto;
-extend(Function.prototype, {
-  bind: function(context){
-    var fn = this;
-    var preArgs = slice.call(arguments, 1);
-    return function(){
-      var args = preArgs.concat(slice.call(arguments));
-      return fn.apply(context, args);
+  // Function proto;
+  extend(Function.prototype, {
+    bind: function(context){
+      var fn = this;
+      var preArgs = slice.call(arguments, 1);
+      return function(){
+        var args = preArgs.concat(slice.call(arguments));
+        return fn.apply(context, args);
+      }
     }
-  }
-})
-
-// Object
-extend(Object, {
-  keys: function(obj){
-    var keys = [];
-    for(var i in obj) if(obj.hasOwnProperty(i)){
-      keys.push(i);
+  })
+  
+  // Array
+  extend(Array, {
+    isArray: function(arr){
+      return tstr.call(arr) === "[object Array]";
     }
-    return keys;
-  } 
-})
+  })
+}
 
-// Date
-extend(Date, {
-  now: function(){
-    return +new Date;
-  }
-})
-// Array
-extend(Array, {
-  isArray: function(arr){
-    return tstr.call(arr) === "[object Array]";
-  }
-})
 
 });
 require.register("regularjs/src/helper/parse.js", function(exports, require, module){
@@ -3646,7 +3636,7 @@ var methods = {
     while(dirty = this._digest()){
 
       if((++n) > 20){ // max loop
-        throw 'there may a circular dependencies reaches' 
+        throw Error('there may a circular dependencies reaches')
       }
     }
     if( n > 0 && this.$emit) this.$emit("$update");
@@ -3804,72 +3794,70 @@ require.register("regularjs/src/helper/event.js", function(exports, require, mod
 // ===============================
 var slice = [].slice, _ = require("../util.js");
 var API = {
-    $on: function(event, fn) {
-        if(typeof event === "object"){
-            for (var i in event) {
-                this.$on(i, event[i]);
-            }
-        }else{
-            // @patch: for list
-            var context = this;
-            var handles = context._handles || (context._handles = {}),
-                calls = handles[event] || (handles[event] = []);
-            calls.push(fn);
-        }
-        return this;
-    },
-    $off: function(event, fn) {
-        var context = this;
-        if(!context._handles) return;
-        if(!event) this._handles = {};
-        var handles = context._handles,
-            calls;
-
-        if (calls = handles[event]) {
-            if (!fn) {
-                handles[event] = [];
-                return context;
-            }
-            for (var i = 0, len = calls.length; i < len; i++) {
-                if (fn === calls[i]) {
-                    calls.splice(i, 1);
-                    return context;
-                }
-            }
-        }
-        return context;
-    },
-    // bubble event
-    $emit: function(event){
-        // @patch: for list
-        var context = this;
-        var handles = context._handles, calls, args, type;
-        if(!event) return;
-        var args = slice.call(arguments, 1);
-        var type = event;
-
-        if(!handles) return context;
-        if(calls = handles[type.slice(1)]){
-            for (var j = 0, len = calls.length; j < len; j++) {
-                calls[j].apply(context, args)
-            }
-        }
-        if (!(calls = handles[type])) return context;
-        for (var i = 0, len = calls.length; i < len; i++) {
-            calls[i].apply(context, args)
-        }
-        // if(calls.length) context.$update();
-        return context;
-    },
-    // capture  event
-    $broadcast: function(){
-        
+  $on: function(event, fn) {
+    if(typeof event === "object"){
+      for (var i in event) {
+        this.$on(i, event[i]);
+      }
+    }else{
+      // @patch: for list
+      var context = this;
+      var handles = context._handles || (context._handles = {}),
+        calls = handles[event] || (handles[event] = []);
+      calls.push(fn);
     }
+    return this;
+  },
+  $off: function(event, fn) {
+    var context = this;
+    if(!context._handles) return;
+    if(!event) this._handles = {};
+    var handles = context._handles,
+      calls;
+
+    if (calls = handles[event]) {
+      if (!fn) {
+        handles[event] = [];
+        return context;
+      }
+      for (var i = 0, len = calls.length; i < len; i++) {
+        if (fn === calls[i]) {
+          calls.splice(i, 1);
+          return context;
+        }
+      }
+    }
+    return context;
+  },
+  // bubble event
+  $emit: function(event){
+    // @patch: for list
+    var context = this;
+    var handles = context._handles, calls, args, type;
+    if(!event) return;
+    var args = slice.call(arguments, 1);
+    var type = event;
+
+    if(!handles) return context;
+    if(calls = handles[type.slice(1)]){
+      for (var j = 0, len = calls.length; j < len; j++) {
+        calls[j].apply(context, args)
+      }
+    }
+    if (!(calls = handles[type])) return context;
+    for (var i = 0, len = calls.length; i < len; i++) {
+      calls[i].apply(context, args)
+    }
+    // if(calls.length) context.$update();
+    return context;
+  },
+  // capture  event
+  $one: function(){
+    
+}
 }
 // container class
-function Event() {
-  if (arguments.length) this.$on.apply(this, arguments);
-}
+function Event() {}
 _.extend(Event.prototype, API)
 
 Event.mixTo = function(obj){
@@ -4171,7 +4159,7 @@ var combine = module.exports = {
     }else{
       if(!fragment) return group;
       if(typeof node === 'string') node = dom.find(node);
-      if(!node) throw 'injected node is not found';
+      if(!node) throw Error('injected node is not found');
       // use animate to animate firstchildren
       animate.inject(fragment, node, pos);
     }
@@ -4858,7 +4846,7 @@ function initText(elem, parsed){
   });
 
   // @TODO to fixed event
-  var handler = function handler(ev){
+  var handler = function (ev){
     var that = this;
     if(ev.type==='cut' || ev.type==='paste'){
       _.nextTick(function(){
@@ -4886,7 +4874,7 @@ function initText(elem, parsed){
   if(parsed.get(self) === undefined && elem.value){
      parsed.set(self, elem.value);
   }
-  return function destroy(){
+  return function (){
     if(dom.msie !== 9 && "oninput" in dom.tNode ){
       elem.removeEventListener("input", handler );
     }else{
@@ -5057,7 +5045,7 @@ Regular.animation({
       evt = tmp[0] || "",
       args = tmp[1]? this.$expression(tmp[1]).get: null;
 
-    if(!evt) throw "you shoud specified a eventname in emit command";
+    if(!evt) throw Error("you shoud specified a eventname in emit command");
 
     var self = this;
     return function(done){
@@ -5077,7 +5065,7 @@ Regular.animation({
           name = tmp.shift(),
           value = tmp.join(" ");
 
-        if( !name || !value ) throw "invalid style in command: style";
+        if( !name || !value ) throw Error("invalid style in command: style");
         styles[name] = value;
         valid = true;
       }

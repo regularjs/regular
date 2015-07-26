@@ -71,7 +71,7 @@ lo.lex = function(str){
 }
 
 lo.error = function(msg){
-  throw "Parse Error: " + msg +  ':\n' + _.trackErrorPos(this.input, this.index);
+  throw  Error("Parse Error: " + msg +  ':\n' + _.trackErrorPos(this.input, this.index));
 }
 
 lo._process = function(args, split,str){
