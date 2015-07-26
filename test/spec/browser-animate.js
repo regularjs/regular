@@ -51,6 +51,8 @@ void function(){
 
         var div1 =document.createElement("div");
         var div2 =document.createElement("div");
+        var component = new Component;
+        processAnimate.link.call(component, div1, "on: click; class: anim");
 
         var a = 1;
         animate.inject(div1, div2, 'bottom', function(){
@@ -61,11 +63,65 @@ void function(){
         expect(a).to.equal(2)
 
       })
+      it("animate.inject accept [Array]", function(done){
 
-      it("animate.remove accept Array", function(){
+        var div1 =document.createElement("div");
+        var div2 =document.createElement("div");
+        var component = new Component;
+        processAnimate.link.call(component, div1, "on: click; class: anim");
+        var a = 1;
+        animate.inject([div1, div2], container, 'bottom', function(){
+          a = 2;
+          expect(container.getElementsByTagName("div")[1]).to.equal(div2);
+          container.innerHTML = "";
+          dom.nextReflow(function(){done()})
+        })
+        expect(a).to.equal(2)
+      })
+
+      it("animate.remove accept Array", function(done){
+        var div1 =document.createElement("div");
+        var div2 =document.createElement("div");
+        animate.inject([div1, div2], container)
+
+        var divs = container.getElementsByTagName("div");
+        expect(divs.length).to.equal(2);
+        animate.remove([div1, div2], function(){
+          var divs = container.getElementsByTagName("div");
+          expect(divs.length).to.equal(0);
+          dom.nextReflow(function(){done()})
+        })
+      })
+      it("animate.remove is sync without on:leave ", function(done){
+        var div1 =document.createElement("div");
+        var div2 =document.createElement("div");
+        var component = new Component;
+        processAnimate.link.call(component, div1, "on: enter; class: anim");
+        dom.inject(div1, div2);
+        expect(div2.firstChild).to.equal(div1);
+        var a = 1;
+        animate.remove(div1, function(){
+          a = 2;
+          expect(div2.firstChild).to.be.an.undefined;
+          dom.nextReflow(function(){done()})
+        })
+        expect(a).to.equal(2);
         
       })
-      it("animate.remove accept Array", function(){
+      it("animate.remove is async without on:leave ", function(done){
+        var div1 =document.createElement("div");
+        var div2 =document.createElement("div");
+        var component = new Component;
+        processAnimate.link.call(component, div1, "on: leave; class: anim");
+        dom.inject([div1, div2], container);
+        expect(container.childNodes.length).to.equal(2);
+        var a = 1;
+        animate.remove([div1, div2], function(){
+          a = 2;
+          expect(container.childNodes.length).to.equal(0);
+          dom.nextReflow(function(){done()})
+        })
+        expect(a).to.equal(1);
         
       })
 
@@ -122,6 +178,16 @@ void function(){
         // will add nextFlow
         expect(dom.hasClass(div1, 'bouceOut')).to.equal(false)
       })
+      it("animate.startClass with no transition in mode 4", function(done){
+        var div = document.createElement("div");
+        div.className = "bouceOut in"
+        animate.startClassAnimate(div, 'bouceOut', function(){
+          expect(div.className).to.equal('in');
+          done()
+        }, 4)
+        // will add nextFlow
+        expect(dom.hasClass(div, 'bouceOut')).to.equal(true)
+      })
       it("animate.startStyle with no transition", function(done){
         var div1 = document.createElement("div");
         animate.startStyleAnimate(div1,{width: '10px',height:"10px"}, function(){
@@ -134,11 +200,6 @@ void function(){
         expect(div1.style.height).to.not.equal("10px")
       })
 
-      // it("animation.event should bind emit", function(done){
-      //   var component = new Component({
-      //     template: "<div r-animation='on: tap; class: animated;'></div>"
-      //   }).$inject(container);
-      // })
     })
 
     describe("Animator", function(){
@@ -150,7 +211,7 @@ void function(){
       after(function(){
         document.body.removeChild( container );
       });
-
+ 
       it("animator: wait", function(done){
         var wait = Regular.animation("wait");
         var complete = false;
