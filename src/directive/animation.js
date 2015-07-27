@@ -224,5 +224,5 @@ function processAnimate( element, value ){
 
 
 Regular.directive( "r-animation", processAnimate)
-Regular.directive( "r-sequence", processAnimate)
+Regular.directive( "r-anim", processAnimate)
 
