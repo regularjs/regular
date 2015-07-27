@@ -3951,6 +3951,7 @@ animate.inject = function( node, refer ,direction, callback ){
  * @return {[type]}            [description]
  */
 animate.remove = function(node, callback){
+  if(!node) throw new Error('node to be removed is undefined')
   var count = 0;
   function loop(){
     count++;
@@ -5167,7 +5168,7 @@ function processAnimate( element, value ){
 
 
 Regular.directive( "r-animation", processAnimate)
-Regular.directive( "r-sequence", processAnimate)
+Regular.directive( "r-anim", processAnimate)
 
 
 });
