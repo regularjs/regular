@@ -21,7 +21,7 @@ void function(){
       var group = component.$compile("<div>{name}</div>")
       component.$update();
       group.inject(container)
-      expect(container.innerHTML).to.equal('<div>hello</div>')
+      expect(container.innerHTML.toLowerCase()).to.equal('<div>hello</div>')
       group.destroy(true);
       expect(container.innerHTML).to.equal('')
       done()
@@ -33,7 +33,7 @@ void function(){
       var group = component.$compile("<div>{name}</div>")
       component.$update();
       group.inject(container)
-      expect(container.innerHTML).to.equal('<div>hello</div>')
+      expect(container.innerHTML.toLowerCase()).to.equal('<div>hello</div>')
       group.inject(false)
       expect(container.innerHTML).to.equal('');
       group.destroy(true);
@@ -149,7 +149,10 @@ void function(){
       var component = new Regular({
         template:"<div>hello</div><p>name</p>"
       }).$inject(container);
-      expect(container.innerHTML).to.equal('<div>hello</div><p>name</p>');
+
+      expect(container.childNodes.length).to.equal(2);
+      expect(container.childNodes[0].innerHTML).to.equal('hello');
+
       component.$inject(false);
       expect(container.innerHTML).to.equal('');
       destroy(component, container);

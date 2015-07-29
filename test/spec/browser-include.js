@@ -8,6 +8,7 @@ void function(){
   }
 
   describe("Dynamic include", function(){
+    var Component = Regular.extend();
     it("#include should compile value at runtime correctly", function(){
       var container = document.createElement('div');
       var component = new Regular({
@@ -71,9 +72,8 @@ void function(){
         data: {list: ["hello", "name"]}
       }).$inject(container);
 
-
       var nodes = nes.all("span", container);
-      expect(nodes.length).to.equal(1);
+      expect(nodes.length).to.equal(2);
       expect(nodes[0].innerHTML).to.equal("2:hello");
       
       destroy(component, container)
@@ -108,34 +108,62 @@ void function(){
       component.$update('head', 'OuterUpdate');
       expect(head.innerHTML).to.equal('OuterUpdate');
 
+
       destroy(component, container)
     })
-   it("include can pass anything that compiled to Component", function(){
-      var Component = Regular.extend({});
+
+   it("group switch twice works as expect", function(){
       var container = Regular.dom.create('div');
       var Nested = Component.extend({
         name: 'nested',
-        template: '<div class="nested">Nested</div>',
+        template: '<div>{head}</div>',
         config: function(data){
           data.head = 'InnerHEAD'
           data.foot = 'InnerFoot'
         }
       })
-
-      var nested = new Nested()
       var component = new Component({
-        template: '<div>{#inc component}</div>',
-        data: {component: nested }
+        template: '<div class="body">{#inc body || this.$refs.nested.$body}</div><nested ref=nested ><strong>InnerBody</strong></nested>',
+        data: {head: 'OuterHead'}
       }).$inject(container);
 
+      var body = nes.one('.body strong', container);
+
+      expect(body.innerHTML).to.equal('InnerBody')
+      component.$update('body', '<strong>OuterBody</strong>')
+      var body = nes.one('.body strong', container);
+      component.$update('body', null)
+      var body = nes.one('.body strong', container);
+      expect(body.innerHTML).to.equal('InnerBody')
+    
+   })
+   // @REMOVE supoort for {#inc component}
+   // it("include can pass anything that compiled to Component", function(){
+   //    var Component = Regular.extend({});
+   //    var container = Regular.dom.create('div');
+   //    var Nested = Component.extend({
+   //      name: 'nested',
+   //      template: '<div class="nested">Nested</div>',
+   //      config: function(data){
+   //        data.head = 'InnerHEAD'
+   //        data.foot = 'InnerFoot'
+   //      }
+   //    })
+
+   //    var nested = new Nested()
+   //    var component = new Component({
+   //      template: '<div>{#inc component}</div>',
+   //      data: {component: nested }
+   //    }).$inject(container);
 
 
-      var nested = nes.one('.nested', container);
 
-      expect(nested.innerHTML).to.equal('Nested');
+   //    var nested = nes.one('.nested', container);
 
-      destroy(component, container)
-    })
+   //    expect(nested.innerHTML).to.equal('Nested');
+
+   //    destroy(component, container)
+   //  })
   })
 
 }()

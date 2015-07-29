@@ -333,7 +333,7 @@ void function(){
       it('delegate Event should work when the directive is linked after node being injected', function(){
         var Nested = Regular.extend({
           name: "nest",
-          template: "{#if show}<div delegate-click='hello'></div>{/if}",
+          template: "{#if show}<div delegate-click='hello'></div>{/if}"
         })
 
         var component = new Component({

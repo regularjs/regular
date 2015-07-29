@@ -406,4 +406,8 @@ _.isGroup = function(group){
   return group.inject || group.$inject;
 }
 
+_.getCompileFn = function(source, ctx, options){
+  return ctx.$compile.bind(ctx,source, options)
+}
+
 

@@ -72,7 +72,7 @@ var Regular = function(options){
   this.$emit("$config");
   this.config && this.config(this.data);
   if(this._body && this._body.length){
-    this.$body = this.$parent.$compile(this._body, {
+    this.$body = _.getCompileFn(this._body, this.$parent, {
       outer: this,
       namespace: options.namespace,
       extra: options.extra,

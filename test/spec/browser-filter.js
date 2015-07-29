@@ -23,7 +23,7 @@ Component.filter("format",function(value, format){
      'mm': function(date){ return fix(date.getMinutes())}
    }
 
-   var trunk = new RegExp(Object.keys(maps).join('|'),'g');
+   var trunk = new RegExp(Regular.util.keys(maps).join('|'),'g');
    
    return function(value, format){
     
