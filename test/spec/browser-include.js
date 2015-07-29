@@ -159,6 +159,34 @@ void function(){
       destroy(component, container)
     
    })
+   it("data.body is inner outer $body, if combine with {#inc body || this.$body} should not throw error during digest", function(){
+      var container = Regular.dom.create('div');
+      var Modal = Regular.extend({
+        name: 'modal',
+        // if body is exsits , this.$body will be destroied
+        template: '<div>{#inc body || this.$body}</div>'
+      })
+
+      Modal.body = Regular.extend({
+        name: 'modal.body',
+
+        init: function(){
+          // this.$outer point to modal
+          this.$outer.data['body'] = this.$body;
+        }
+      })
+
+      var component = new Regular({
+        template: '<div class="body"><modal><modal.body><p>{name}</p></modal.body></modal></div>{#list [1] as item}<nested ref=nested ><strong>{item}</strong></nested>{/list}',
+        data: {name: 'hzzhenghaibo'}
+      }).$inject(container);
+
+      var body = nes.one('.body p', container);
+
+      expect(body.innerHTML).to.equal('hzzhenghaibo')
+      destroy(component, container)
+    
+   })
    // @REMOVE supoort for {#inc component}
    // it("include can pass anything that compiled to Component", function(){
    //    var Component = Regular.extend({});

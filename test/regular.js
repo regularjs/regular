@@ -242,7 +242,7 @@ var Regular = function(definition, options){
 
   definition = definition || {};
   options = options || {};
-  
+
   definition.data = definition.data || {};
   definition.computed = definition.computed || {};
   definition.events = definition.events || {};
@@ -1680,6 +1680,7 @@ walkers.component = function(ast, options){
       group.push(ncomponent);
       ncomponent.$inject(combine.last(component), 'after')
       component.destroy();
+      // @TODO  if component changed , we need update ref
       if(ref){
         self.$refs[ref] = ncomponent;
       }
@@ -3667,7 +3668,7 @@ var methods = {
     children = this._children;
     if(children && children.length){
       for(var m = 0, mlen = children.length; m < mlen; m++){
-        if(children[m]._digest()) dirty = true;
+        if(children[m] && children[m]._digest()) dirty = true;
       }
     }
     return dirty;

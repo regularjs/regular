@@ -33,7 +33,7 @@ var Regular = function(definition, options){
 
   definition = definition || {};
   options = options || {};
-  
+
   definition.data = definition.data || {};
   definition.computed = definition.computed || {};
   definition.events = definition.events || {};

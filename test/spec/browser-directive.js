@@ -692,6 +692,7 @@ describe("refs attribute", function(){
     destroy(component, container);
   })
   it("ref updated when value update:[component]", function(){
+    
     Component.extend({
       name: 'nested'
     })

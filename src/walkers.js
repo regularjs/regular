@@ -476,6 +476,7 @@ walkers.component = function(ast, options){
       group.push(ncomponent);
       ncomponent.$inject(combine.last(component), 'after')
       component.destroy();
+      // @TODO  if component changed , we need update ref
       if(ref){
         self.$refs[ref] = ncomponent;
       }

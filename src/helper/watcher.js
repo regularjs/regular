@@ -125,7 +125,7 @@ var methods = {
     children = this._children;
     if(children && children.length){
       for(var m = 0, mlen = children.length; m < mlen; m++){
-        if(children[m]._digest()) dirty = true;
+        if(children[m] && children[m]._digest()) dirty = true;
       }
     }
     return dirty;
