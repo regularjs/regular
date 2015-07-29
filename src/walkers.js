@@ -370,7 +370,7 @@ walkers.component = function(ast, options){
   for(var i = 0, len = attrs.length; i < len; i++){
     var attr = attrs[i];
     // consider disabled   equlasto  disabled={true}
-    var value = this._touchExpr(attr.value===undefined? true: attr.value);
+    var value = this._touchExpr(attr.value === undefined? true: attr.value);
     if(value.constant) value = attr.value = value.get(this);
     if(attr.value && attr.value.constant === true){
       value = value.get(this);
@@ -415,7 +415,7 @@ walkers.component = function(ast, options){
       data[name] = value.get(self); 
     }
     if( name === 'ref'  && value != null){
-      ref = value.type === 'expression'? value.get(self): value;
+      ref = value
     }
     if( name === 'isolate'){
       // 1: stop: composite -> parent
@@ -427,20 +427,27 @@ walkers.component = function(ast, options){
     }
   }
 
-  var config = { 
+  var definition = { 
     data: data, 
     events: events, 
     $parent: this,
-    namespace: namespace, 
     $root: this.$root,
     $outer: options.outer,
     _body: ast.children
   }
+  var options = {
+    namespace: namespace, 
+    extra: options.extra
+  }
 
 
-  var component = new Component(config);
+  var component = new Component(definition, options), reflink;
 
 
+  if(ref && this.$refs){
+    reflink = Component.directive('ref').link
+    this.$on('$destroy', reflink.call(this, component, ref) )
+  }
   if(ref &&  self.$refs) self.$refs[ref] = component;
   for(var i = 0, len = attrs.length; i < len; i++){
     var attr = attrs[i];
@@ -457,11 +464,6 @@ walkers.component = function(ast, options){
         component.$watch(name, self.$update.bind(self, value), {sync: true});
     }
   }
-  if(ref){
-    component.$on('destroy', function(){
-      if(self.$refs) self.$refs[ref] = null;
-    })
-  }
   if(is && is.type === 'expression'  ){
     var group = new Group();
     group.push(component);
@@ -469,7 +471,7 @@ walkers.component = function(ast, options){
       // found the new component
       var Component = Constructor.component(value);
       if(!Component) throw new Error("component " + value + " has not registed!");
-      var ncomponent = new Component(config);
+      var ncomponent = new Component(definition);
       var component = group.children.pop();
       group.push(ncomponent);
       ncomponent.$inject(combine.last(component), 'after')

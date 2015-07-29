@@ -26,20 +26,22 @@ var doc = dom.doc;
 * @constructor
 * @param {Object} options specification of the component
 */
-var Regular = function(options){
+var Regular = function(definition, options){
   var prevRunning = env.isRunning;
   env.isRunning = true;
   var node, template;
 
+  definition = definition || {};
   options = options || {};
-  options.data = options.data || {};
-  options.computed = options.computed || {};
-  options.events = options.events || {};
-  if(this.data) _.extend(options.data, this.data);
-  if(this.computed) _.extend(options.computed, this.computed);
-  if(this.events) _.extend(options.events, this.events);
+  
+  definition.data = definition.data || {};
+  definition.computed = definition.computed || {};
+  definition.events = definition.events || {};
+  if(this.data) _.extend(definition.data, this.data);
+  if(this.computed) _.extend(definition.computed, this.computed);
+  if(this.events) _.extend(definition.events, this.events);
 
-  _.extend(this, options, true);
+  _.extend(this, definition, true);
   if(this.$parent){
      this.$parent._append(this);
   }
@@ -62,13 +64,6 @@ var Regular = function(options){
   if(this.events){
     this.$on(this.events);
   }
-  // if(this.$body){
-
-  // this._getTransclude = function(transclude){
-  //   var ctx = this.$parent || this;
-  //   if( transclude || this.$body  ) return ctx.$compile(transclude || this.$body, {namespace: options.namespace,  extra: options.extra})
-  // }
-  // }
   this.$emit("$config");
   this.config && this.config(this.data);
   if(this._body && this._body.length){

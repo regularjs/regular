@@ -136,6 +136,28 @@ void function(){
       var body = nes.one('.body strong', container);
       expect(body.innerHTML).to.equal('InnerBody')
     
+      destroy(component, container)
+   })
+   it("extra should pass to Component", function(){
+      var container = Regular.dom.create('div');
+      var Nested = Component.extend({
+        name: 'nested',
+        template: '<div>{head}</div>',
+        config: function(data){
+          data.head = 'InnerHEAD'
+          data.foot = 'InnerFoot'
+        }
+      })
+
+      var component = new Component({
+        template: '<div class="body">{#inc this.$refs.nested.$body}</div>{#list [1] as item}<nested ref=nested ><strong>{item}</strong></nested>{/list}'
+      }).$inject(container);
+
+      var body = nes.one('.body strong', container);
+
+      expect(body.innerHTML).to.equal('1')
+      destroy(component, container)
+    
    })
    // @REMOVE supoort for {#inc component}
    // it("include can pass anything that compiled to Component", function(){

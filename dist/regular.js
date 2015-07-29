@@ -237,20 +237,22 @@ var doc = dom.doc;
 * @constructor
 * @param {Object} options specification of the component
 */
-var Regular = function(options){
+var Regular = function(definition, options){
   var prevRunning = env.isRunning;
   env.isRunning = true;
   var node, template;
 
+  definition = definition || {};
   options = options || {};
-  options.data = options.data || {};
-  options.computed = options.computed || {};
-  options.events = options.events || {};
-  if(this.data) _.extend(options.data, this.data);
-  if(this.computed) _.extend(options.computed, this.computed);
-  if(this.events) _.extend(options.events, this.events);
+  
+  definition.data = definition.data || {};
+  definition.computed = definition.computed || {};
+  definition.events = definition.events || {};
+  if(this.data) _.extend(definition.data, this.data);
+  if(this.computed) _.extend(definition.computed, this.computed);
+  if(this.events) _.extend(definition.events, this.events);
 
-  _.extend(this, options, true);
+  _.extend(this, definition, true);
   if(this.$parent){
      this.$parent._append(this);
   }
@@ -273,13 +275,6 @@ var Regular = function(options){
   if(this.events){
     this.$on(this.events);
   }
-  // if(this.$body){
-
-  // this._getTransclude = function(transclude){
-  //   var ctx = this.$parent || this;
-  //   if( transclude || this.$body  ) return ctx.$compile(transclude || this.$body, {namespace: options.namespace,  extra: options.extra})
-  // }
-  // }
   this.$emit("$config");
   this.config && this.config(this.data);
   if(this._body && this._body.length){
@@ -1581,7 +1576,7 @@ walkers.component = function(ast, options){
   for(var i = 0, len = attrs.length; i < len; i++){
     var attr = attrs[i];
     // consider disabled   equlasto  disabled={true}
-    var value = this._touchExpr(attr.value===undefined? true: attr.value);
+    var value = this._touchExpr(attr.value === undefined? true: attr.value);
     if(value.constant) value = attr.value = value.get(this);
     if(attr.value && attr.value.constant === true){
       value = value.get(this);
@@ -1626,7 +1621,7 @@ walkers.component = function(ast, options){
       data[name] = value.get(self); 
     }
     if( name === 'ref'  && value != null){
-      ref = value.type === 'expression'? value.get(self): value;
+      ref = value
     }
     if( name === 'isolate'){
       // 1: stop: composite -> parent
@@ -1638,20 +1633,27 @@ walkers.component = function(ast, options){
     }
   }
 
-  var config = { 
+  var definition = { 
     data: data, 
     events: events, 
     $parent: this,
-    namespace: namespace, 
     $root: this.$root,
     $outer: options.outer,
     _body: ast.children
   }
+  var options = {
+    namespace: namespace, 
+    extra: options.extra
+  }
 
 
-  var component = new Component(config);
+  var component = new Component(definition, options), reflink;
 
 
+  if(ref && this.$refs){
+    reflink = Component.directive('ref').link
+    this.$on('$destroy', reflink.call(this, component, ref) )
+  }
   if(ref &&  self.$refs) self.$refs[ref] = component;
   for(var i = 0, len = attrs.length; i < len; i++){
     var attr = attrs[i];
@@ -1668,11 +1670,6 @@ walkers.component = function(ast, options){
         component.$watch(name, self.$update.bind(self, value), {sync: true});
     }
   }
-  if(ref){
-    component.$on('destroy', function(){
-      if(self.$refs) self.$refs[ref] = null;
-    })
-  }
   if(is && is.type === 'expression'  ){
     var group = new Group();
     group.push(component);
@@ -1680,7 +1677,7 @@ walkers.component = function(ast, options){
       // found the new component
       var Component = Constructor.component(value);
       if(!Component) throw new Error("component " + value + " has not registed!");
-      var ncomponent = new Component(config);
+      var ncomponent = new Component(definition);
       var component = group.children.pop();
       group.push(ncomponent);
       ncomponent.$inject(combine.last(component), 'after')
@@ -2843,7 +2840,7 @@ op.attvalue = function(mdf){
       if(~value.indexOf(config.BEGIN) && ~value.indexOf(config.END) && mdf!=='cmpl'){
         var constant = true;
         var parsed = new Parser(value, { mode: 2 }).parse();
-        if(parsed.length === 1 && parsed[0].type === 'expression') return parsed[0];
+        // if(parsed.length === 1 && parsed[0].type === 'expression') return parsed[0];
         var body = [];
         parsed.forEach(function(item){
           if(!item.constant) constant=false;
