@@ -178,10 +178,12 @@ walkers.template = function(ast, options){
   if(content){
     var self = this;
     this.$watch(content, function(value){
-      if( compiled = group.get(1)){
-        compiled.destroy(true); 
+      var removed = group.get(1), type= typeof value;
+      if( removed){
+        removed.destroy(true); 
         group.children.pop();
       }
+      if(!value) return;
       group.push( compiled = (typeof value === 'function') ? value(): self.$compile(value, {record: true, outer: options.outer,namespace: namespace, extra: extra}) ); 
       if(placeholder.parentNode) {
         compiled.$inject(placeholder, 'before')
