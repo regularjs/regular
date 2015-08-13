@@ -71,14 +71,18 @@ walkers.list = function(ast, options){
   }
 
   function updateLD(newValue, oldValue, splices){
-    if(!newValue) {
-      newValue = [];
-      splices = diffArray(newValue, oldValue);
-    }
-     
-    if(!splices || !splices.length) return;
+    if(!oldValue) oldValue = [];
+    if(!newValue) newValue = [];
+
+
     var cur = placeholder;
     var m = 0, len = newValue.length;
+
+    if(!splices && (len !==0 || oldValue.length !==0)  ){
+      splices = diffArray(newValue, oldValue);
+    }
+
+    if(!splices || !splices.length) return;
       
     for(var i = 0; i < splices.length; i++){ //init
       var splice = splices[i];

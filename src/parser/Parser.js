@@ -200,7 +200,7 @@ op.attvalue = function(mdf){
       if(~value.indexOf(config.BEGIN) && ~value.indexOf(config.END) && mdf!=='cmpl'){
         var constant = true;
         var parsed = new Parser(value, { mode: 2 }).parse();
-        // if(parsed.length === 1 && parsed[0].type === 'expression') return parsed[0];
+        if(parsed.length === 1 && parsed[0].type === 'expression') return parsed[0];
         var body = [];
         parsed.forEach(function(item){
           if(!item.constant) constant=false;

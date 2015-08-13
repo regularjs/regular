@@ -156,12 +156,15 @@ void function(){
       component.$inject(false);
       expect(container.innerHTML).to.equal('');
       destroy(component, container);
+    })
+    it("directly inject component to false, won't throw Error", function(){
+
+      var component = new Regular({
+        template:"<div>hello</div><p>name</p>"
+      }).$inject(false);
 
     })
 
-    it("component.$mute will mute this component, stop it to digest", function(){
-
-    })
   })
 
 }()
