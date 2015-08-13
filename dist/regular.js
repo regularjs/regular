@@ -1239,7 +1239,7 @@ walkers.list = function(ast, options){
   function removeRange(index, rlen){
     for(var j = 0; j< rlen; j++){ //removed
       var removed = group.children.splice( index + 1, 1)[0];
-      removed.destroy(true);
+      if(removed) removed.destroy(true);
     }
   }
   function addRange(index, end, newValue){
