@@ -23,6 +23,7 @@ void function(){
     var Component = Regular.extend();
     describe("helper.animate ", function(){
       var container = document.createElement("div");
+      var processAnimate = Regular.directive("r-animation");
       before(function(){
         document.body.appendChild( container );
       });
@@ -30,41 +31,101 @@ void function(){
         document.body.removeChild( container );
       });
 
-      // it("animation can triggered by event", function(done){
-      //   var component = new Regular({
-      //     template: "<div r-animation='on:click; class: animated;'></div>"
-      //   }).$inject(container);
-
-
-      //   var node =  nes.one('div', container)
-
-      //   dispatchMockEvent(nes.one('div', container), 'click');
-
-      //   Regular.dom.nextReflow(function(){
-
-      //     expect(node.className ).to.equal("animated");
-
-      //     Regular.dom.nextReflow(function(){
-
-      //       expect(node.className ).to.equal("");
-
-      //       destroy(component, container);
-      //       done();
-      //     })
-      //   })
-
-      it("animate.inject", function(done){
+      it("animate.inject is async when on:enter is specified", function(done){
         var div1 =document.createElement("div");
         var div2 =document.createElement("div");
+        var component = new Component;
+        processAnimate.link.call(component, div1, "on: enter; class: anim");
 
+        // to judge async or sync
+        var a = 1;
         animate.inject(div1, div2, 'bottom', function(){
+          a = 2;
           expect(div2.getElementsByTagName("div")[0]).to.equal(div1);
-          done()
+          dom.nextReflow(function(){done()})
         })
+        expect(a).to.equal(1)
 
       })
+      it("animate.inject is async without on:enter", function(done){
 
-      it("animate.inject%animate.remove with callback", function(done){
+        var div1 =document.createElement("div");
+        var div2 =document.createElement("div");
+        var component = new Component;
+        processAnimate.link.call(component, div1, "on: click; class: anim");
+
+        var a = 1;
+        animate.inject(div1, div2, 'bottom', function(){
+          a = 2;
+          expect(div2.getElementsByTagName("div")[0]).to.equal(div1);
+          dom.nextReflow(function(){done()})
+        })
+        expect(a).to.equal(2)
+
+      })
+      it("animate.inject accept [Array]", function(done){
+
+        var div1 =document.createElement("div");
+        var div2 =document.createElement("div");
+        var component = new Component;
+        processAnimate.link.call(component, div1, "on: click; class: anim");
+        var a = 1;
+        animate.inject([div1, div2], container, 'bottom', function(){
+          a = 2;
+          expect(container.getElementsByTagName("div")[1]).to.equal(div2);
+          container.innerHTML = "";
+          dom.nextReflow(function(){done()})
+        })
+        expect(a).to.equal(2)
+      })
+
+      it("animate.remove accept Array", function(done){
+        var div1 =document.createElement("div");
+        var div2 =document.createElement("div");
+        animate.inject([div1, div2], container)
+
+        var divs = container.getElementsByTagName("div");
+        expect(divs.length).to.equal(2);
+        animate.remove([div1, div2], function(){
+          var divs = container.getElementsByTagName("div");
+          expect(divs.length).to.equal(0);
+          dom.nextReflow(function(){done()})
+        })
+      })
+      it("animate.remove is sync without on:leave ", function(done){
+        var div1 =document.createElement("div");
+        var div2 =document.createElement("div");
+        var component = new Component;
+        processAnimate.link.call(component, div1, "on: enter; class: anim");
+        dom.inject(div1, div2);
+        expect(div2.firstChild).to.equal(div1);
+        var a = 1;
+        animate.remove(div1, function(){
+          a = 2;
+          expect(div2.firstChild).to.be.an.undefined;
+          dom.nextReflow(function(){done()})
+        })
+        expect(a).to.equal(2);
+        
+      })
+      it("animate.remove is async without on:leave ", function(done){
+        var div1 =document.createElement("div");
+        var div2 =document.createElement("div");
+        var component = new Component;
+        processAnimate.link.call(component, div1, "on: leave; class: anim");
+        dom.inject([div1, div2], container);
+        expect(container.childNodes.length).to.equal(2);
+        var a = 1;
+        animate.remove([div1, div2], function(){
+          a = 2;
+          expect(container.childNodes.length).to.equal(0);
+          dom.nextReflow(function(){done()})
+        })
+        expect(a).to.equal(1);
+        
+      })
+
+      it("animate.inject&animate.remove with callback", function(done){
         var div1 =document.createElement("div");
         var div2 =document.createElement("div");
         var enter = false;
@@ -72,7 +133,6 @@ void function(){
           enter = true
           cb()
         }
-
         animate.inject(div1, div2, 'bottom', function(){
           expect(div2.getElementsByTagName("div")[0]).to.equal(div1);
           div1.enter = true;
@@ -118,6 +178,16 @@ void function(){
         // will add nextFlow
         expect(dom.hasClass(div1, 'bouceOut')).to.equal(false)
       })
+      it("animate.startClass with no transition in mode 4", function(done){
+        var div = document.createElement("div");
+        div.className = "bouceOut in"
+        animate.startClassAnimate(div, 'bouceOut', function(){
+          expect(div.className).to.equal('in');
+          done()
+        }, 4)
+        // will add nextFlow
+        expect(dom.hasClass(div, 'bouceOut')).to.equal(true)
+      })
       it("animate.startStyle with no transition", function(done){
         var div1 = document.createElement("div");
         animate.startStyleAnimate(div1,{width: '10px',height:"10px"}, function(){
@@ -130,11 +200,6 @@ void function(){
         expect(div1.style.height).to.not.equal("10px")
       })
 
-      // it("animation.event should bind emit", function(done){
-      //   var component = new Component({
-      //     template: "<div r-animation='on: tap; class: animated;'></div>"
-      //   }).$inject(container);
-      // })
     })
 
     describe("Animator", function(){
@@ -146,7 +211,7 @@ void function(){
       after(function(){
         document.body.removeChild( container );
       });
-
+ 
       it("animator: wait", function(done){
         var wait = Regular.animation("wait");
         var complete = false;
@@ -207,6 +272,20 @@ void function(){
           expect(element.className).to.equal("bouceOut animated");
         })
       })
+      it("animator: class, 4", function(done){
+        var element = document.createElement("div");
+        var klass = Regular.animation("class");
+
+        element.className = "bouceOut animated hello";
+
+        klass({
+          element: element,
+          param: "bouceOut animated,4"})(function(){
+          expect(element.className).to.equal("hello");
+          done();
+        })
+        expect(element.className).to.equal("bouceOut animated hello");
+      })
       it("animator: style", function(done){
         var element = document.createElement("div");
         var style = Regular.animation("style");
@@ -214,16 +293,12 @@ void function(){
           element: element,
           param: "left 10px, right 20px"
         })(function(){
-          done();
           expect(element.style.left).to.equal("10px");
           expect(element.style.right).to.equal("20px");
+          done();
         })
         expect(element.style.left).to.equal("");
         expect(element.style.right).to.equal("");
-        dom.nextReflow(function(){
-          expect(element.style.left).to.equal("10px");
-          expect(element.style.right).to.equal("20px");
-        })
       })
       it("animator: call", function(done){
         var element = document.createElement("div");
@@ -313,6 +388,17 @@ void function(){
         dom.nextReflow(function(){
           expect(dom.hasClass(element, 'animated')).to.equal(true);
         })
+      })
+      it("undefined aniamtion should not throw error", function(done){
+        var element = document.createElement("div");
+        var component = new Component();
+        var animator = function(){ }
+        Component.animation('hello', animator)
+        expect(Component.animation('hello')).to.equal(animator)
+        expect(function(){
+          processAnimate.link.call(component, element, "on: enter; notfound:;");
+        }).throwError()
+          done();
       })
     })
 

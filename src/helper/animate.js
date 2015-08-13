@@ -84,6 +84,18 @@ animate.inject = function( node, refer ,direction, callback ){
  * @return {[type]}            [description]
  */
 animate.remove = function(node, callback){
+  if(!node) throw new Error('node to be removed is undefined')
+  var count = 0;
+  function loop(){
+    count++;
+    if(count === len) callback && callback()
+  }
+  if(Array.isArray(node)){
+    for(var i = 0, len = node.length; i < len ; i++){
+      animate.remove(node[i], loop)
+    }
+    return node;
+  }
   if(node.onleave){
     node.onleave(function(){
       removeDone(node, callback)
@@ -106,21 +118,28 @@ animate.startClassAnimate = function ( node, className,  callback, mode ){
     return callback();
   }
 
-  onceAnim = _.once(function onAnimateEnd(){
-    if(tid) clearTimeout(tid);
+  if(mode !== 4){
+    onceAnim = _.once(function onAnimateEnd(){
+      if(tid) clearTimeout(tid);
 
-    if(mode === 2) {
-      dom.delClass(node, activeClassName);
-    }
-    if(mode !== 3){ // mode hold the class
-      dom.delClass(node, className);
-    }
-    dom.off(node, animationEnd, onceAnim)
-    dom.off(node, transitionEnd, onceAnim)
+      if(mode === 2) {
+        dom.delClass(node, activeClassName);
+      }
+      if(mode !== 3){ // mode hold the class
+        dom.delClass(node, className);
+      }
+      dom.off(node, animationEnd, onceAnim)
+      dom.off(node, transitionEnd, onceAnim)
 
-    callback();
+      callback();
 
-  });
+    });
+  }else{
+    onceAnim = _.once(function onAnimateEnd(){
+      if(tid) clearTimeout(tid);
+      callback();
+    });
+  }
   if(mode === 2){ // auto removed
     dom.addClass( node, className );
 
@@ -134,15 +153,21 @@ animate.startClassAnimate = function ( node, className,  callback, mode ){
       tid = setTimeout( onceAnim, timeout );
     });
 
-  }else{
+  }else if(mode===4){
+    dom.nextReflow(function(){
+      dom.delClass( node, className );
+      timeout = getMaxTimeout( node );
+      tid = setTimeout( onceAnim, timeout );
+    });
 
+  }else{
     dom.nextReflow(function(){
       dom.addClass( node, className );
       timeout = getMaxTimeout( node );
       tid = setTimeout( onceAnim, timeout );
     });
-
   }
+
 
 
   dom.on( node, animationEnd, onceAnim )

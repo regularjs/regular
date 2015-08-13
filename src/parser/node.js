@@ -7,11 +7,12 @@ module.exports = {
       children: children
     }
   },
-  attribute: function(name, value){
+  attribute: function(name, value, mdf){
     return {
       type: 'attribute',
       name: name,
-      value: value
+      value: value,
+      mdf: mdf
     }
   },
   "if": function(test, consequent, alternate){

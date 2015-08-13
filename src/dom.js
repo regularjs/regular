@@ -71,7 +71,7 @@ dom.find = function(sl){
 dom.inject = function(node, refer, position){
 
   position = position || 'bottom';
-
+  if(!node) return ;
   if(Array.isArray(node)){
     var tmp = node;
     node = dom.fragment();
@@ -377,12 +377,12 @@ dom.nextFrame = (function(){
 
 // 3ks for angular's raf  service
 var k;
-dom.nextReflow = function(callback){
-  dom.nextFrame(function(){
+dom.nextReflow = dom.msie? function(callback){
+  return dom.nextFrame(function(){
     k = document.body.offsetWidth;
     callback();
   })
-}
+}: dom.nextFrame;
 
 
 

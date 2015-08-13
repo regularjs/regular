@@ -272,9 +272,19 @@ describe("Watcher-System", function(){
     component.$update("name", "leeluolee");
     expect(component.hello).to.equal("leeluolee");
 
+
     component.destroy();
   })
 
+  it("digest will throw Error when watching dynamic 【Object】 without deep", function(){
+    var component = new Regular();
+    // every time call hello,  a new Object will be return
+    component.hello = function(){return {}}
+    component.$watch('this.hello()', function(){})
+    expect(function(){
+      component.$update()
+    }).to.throwError();
+  })
 
 
   it("$watch should accpect [Expression] param", function(){
@@ -548,6 +558,14 @@ void function(){
       watcher.$digest();
       expect(trigger).to.equal(1);
       expect(trigger2).to.equal(3);
+      watcher.data.obj.key = 2;
+      watcher.$digest();
+      expect(trigger).to.equal(1);
+      expect(trigger2).to.equal(4);
+      delete watcher.data.obj.name;
+      watcher.$digest();
+      expect(trigger).to.equal(1);
+      expect(trigger2).to.equal(5);
     })
 
   })

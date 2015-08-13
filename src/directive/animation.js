@@ -100,7 +100,7 @@ Regular.animation({
       evt = tmp[0] || "",
       args = tmp[1]? this.$expression(tmp[1]).get: null;
 
-    if(!evt) throw "you shoud specified a eventname in emit command";
+    if(!evt) throw Error("you shoud specified a eventname in emit command");
 
     var self = this;
     return function(done){
@@ -120,7 +120,7 @@ Regular.animation({
           name = tmp.shift(),
           value = tmp.join(" ");
 
-        if( !name || !value ) throw "invalid style in command: style";
+        if( !name || !value ) throw Error("invalid style in command: style");
         styles[name] = value;
         valid = true;
       }
@@ -142,6 +142,7 @@ Regular.animation({
 // el : the element to process
 // value: the directive value
 function processAnimate( element, value ){
+  var Component = this.constructor;
   value = value.trim();
 
   var composites = value.split(";"), 
@@ -198,7 +199,7 @@ function processAnimate( element, value ){
       continue
     }
 
-    var animator =  Regular.animation(command) 
+    var animator =  Component.animation(command) 
     if( animator && seed ){
       seed.push(
         animator.call(this,{
@@ -208,7 +209,7 @@ function processAnimate( element, value ){
         })
       )
     }else{
-      throw "you need start with `on` or `event` in r-animation";
+      throw Error( animator? "you should start with `on` or `event` in animation" : ("undefined animator 【" + command +"】" ));
     }
   }
 
@@ -223,5 +224,5 @@ function processAnimate( element, value ){
 
 
 Regular.directive( "r-animation", processAnimate)
-Regular.directive( "r-sequence", processAnimate)
+Regular.directive( "r-anim", processAnimate)
 

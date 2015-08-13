@@ -23,7 +23,7 @@ Component.filter("format",function(value, format){
      'mm': function(date){ return fix(date.getMinutes())}
    }
 
-   var trunk = new RegExp(Object.keys(maps).join('|'),'g');
+   var trunk = new RegExp(Regular.util.keys(maps).join('|'),'g');
    
    return function(value, format){
     
@@ -183,6 +183,13 @@ function destroy(component, container){
   it(" LeftHandExpression is setable with filter", function(){
     var expr = Regular.expression("a+1|format")
     expect(expr.setbody).to.equal(false)
+  })
+
+  it("undefined filter should throw error", function(){
+    var component = new Regular();
+    expect(function(){
+      component.$set('tmp|undefinedfilter')
+    }).to.throwError();
   })
   
 })

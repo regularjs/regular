@@ -664,6 +664,64 @@ describe("refs attribute", function(){
     destroy(component, container);
     expect(component.$refs).to.equal(null);
   })
+  it("ref updated when value update:[element]", function(){
+    var component = new Component({
+      template: "<div ref={name} id='100'></div>{#list items as item}<div ref='{name}{item}'>{item}</div>{/list}",
+      data: {
+        name: "haha",
+        items: [1,2,3]
+      }
+    })
+
+    expect(component.$refs.haha.id).to.equal('100')
+    component.$update('name', 'hehe')
+    expect(component.$refs.hehe.id).to.equal('100')
+    expect(component.$refs.haha==null).to.true
+
+    expect(component.$refs.hehe1.innerHTML).to.equal('1')
+    expect(component.$refs.hehe2.innerHTML).to.equal('2')
+    expect(component.$refs.hehe3.innerHTML).to.equal('3')
+
+    component.$update('items', [2,3,4, 5])
+
+    expect(component.$refs.hehe2.innerHTML).to.equal('2')
+    expect(component.$refs.hehe3.innerHTML).to.equal('3')
+    expect(component.$refs.hehe4.innerHTML).to.equal('4')
+    expect(component.$refs.hehe5.innerHTML).to.equal('5')
+
+    destroy(component, container);
+  })
+  it("ref updated when value update:[component]", function(){
+    
+    Component.extend({
+      name: 'nested'
+    })
+    var component = new Component({
+      template: "<nested ref={name} id='100'></nested>{#list items as item}<nested ref='{name}{item}' value='{item}'></nested>{/list}",
+      data: {
+        name: "haha",
+        items: [1,2,3]
+      }
+    })
+
+    expect(component.$refs.haha.data.id).to.equal('100')
+    component.$update('name', 'hehe')
+    expect(component.$refs.hehe.data.id).to.equal('100')
+    expect(component.$refs.haha==null).to.true
+
+    expect(component.$refs.hehe1.data.value).to.equal(1)
+    expect(component.$refs.hehe2.data.value).to.equal(2)
+    expect(component.$refs.hehe3.data.value).to.equal(3)
+
+    component.$update('items', [2,3,4, 5])
+
+    expect(component.$refs.hehe2.data.value).to.equal(2)
+    expect(component.$refs.hehe3.data.value).to.equal(3)
+    expect(component.$refs.hehe4.data.value).to.equal(4)
+    expect(component.$refs.hehe5.data.value).to.equal(5)
+
+    destroy(component, container);
+  })
 })
 
 

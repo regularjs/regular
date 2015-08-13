@@ -102,7 +102,7 @@ var methods = {
     while(dirty = this._digest()){
 
       if((++n) > 20){ // max loop
-        throw 'there may a circular dependencies reaches' 
+        throw Error('there may a circular dependencies reaches')
       }
     }
     if( n > 0 && this.$emit) this.$emit("$update");
@@ -125,7 +125,7 @@ var methods = {
     children = this._children;
     if(children && children.length){
       for(var m = 0, mlen = children.length; m < mlen; m++){
-        if(children[m]._digest()) dirty = true;
+        if(children[m] && children[m]._digest()) dirty = true;
       }
     }
     return dirty;

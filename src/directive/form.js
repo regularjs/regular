@@ -70,7 +70,7 @@ function initText(elem, parsed){
   });
 
   // @TODO to fixed event
-  var handler = function handler(ev){
+  var handler = function (ev){
     var that = this;
     if(ev.type==='cut' || ev.type==='paste'){
       _.nextTick(function(){
@@ -98,7 +98,7 @@ function initText(elem, parsed){
   if(parsed.get(self) === undefined && elem.value){
      parsed.set(self, elem.value);
   }
-  return function destroy(){
+  return function (){
     if(dom.msie !== 9 && "oninput" in dom.tNode ){
       elem.removeEventListener("input", handler );
     }else{

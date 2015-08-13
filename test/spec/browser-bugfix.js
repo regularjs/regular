@@ -25,7 +25,6 @@ void function(){
       it("bugfix #10, if svg namespace ", function(){
         //https://github.com/regularjs/regular/issues/10
 
-
         if(Regular.env.svg){ // if support svg
 
           var Bugfix10 = Component.extend({
@@ -424,6 +423,50 @@ var template = (function(){/*
       // @TODO: 
 
     })
+    it('bugfix : #list null->undefined', function(){
+
+      // 必须加入 if 来触发single check
+      var Outer = Regular.extend({
+        template: '<div ref=div>{#list list as item}<div>{item}</div>{/list}</div>',
+        config:function(data){
+          data.list = null;
+        }
+      })
+
+
+      var outer = new Outer({}).$inject(container);
+
+      outer.$update('list', null);
+      outer.$update('list', undefined);
+
+      expect(nes.all('div', outer.$refs.div).length).to.equal(0)
+
+      outer.destroy();
+
+    })
+    it('bugfix : #list [1]->null', function(){
+
+      // 必须加入 if 来触发single check
+      var Outer = Regular.extend({
+        template: '<div ref=div>{#list list as item}<div>{item}</div>{/list}</div>',
+        config:function(data){
+          data.list = null;
+        }
+      })
+
+
+      var outer = new Outer({}).$inject(container);
+
+      outer.$update('list', [1]);
+      expect(nes.all('div', outer.$refs.div).length).to.equal(1)
+      outer.$update('list', undefined);
+
+      expect(nes.all('div', outer.$refs.div).length).to.equal(0)
+
+      outer.destroy();
+
+    })
+
 
   })
 

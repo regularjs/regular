@@ -1,4 +1,4 @@
-require('./helper/shim.js');
+require('./helper/shim.js')();
 var _  = module.exports;
 var entities = require('./helper/entities.js');
 var slice = [].slice;
@@ -13,6 +13,31 @@ _.uid = (function(){
     return _uid++;
   }
 })();
+
+_.extend = function( o1, o2, override ){
+  // if(_.typeOf(override) === 'array'){
+  //  for(var i = 0, len = override.length; i < len; i++ ){
+  //   var key = override[i];
+  //   o1[key] = o2[key];
+  //  } 
+  // }else{
+  for(var i in o2){
+    if( typeof o1[i] === "undefined" || override === true ){
+      o1[i] = o2[i]
+    }
+  }
+  // }
+  return o1;
+}
+
+_.keys = function(obj){
+  if(Object.keys) return Object.keys(obj);
+  var res = [];
+  for(var i in obj) if(obj.hasOwnProperty(i)){
+    res.push(i);
+  }
+  return res;
+}
 
 _.varName = 'd';
 _.setName = 'p_';
@@ -46,26 +71,6 @@ _.typeOf = function (o) {
   return o == null ? String(o) :o2str.call(o).slice(8, -1).toLowerCase();
 }
 
-_.isExpression = function( expr ){
-  return expr && expr.type === 'expression';
-}
-
-
-_.extend = function( o1, o2, override ){
-  if(_.typeOf(override) === 'array'){
-   for(var i = 0, len = override.length; i < len; i++ ){
-    var key = override[i];
-    o1[key] = o2[key];
-   } 
-  }else{
-    for(var i in o2){
-      if( typeof o1[i] === "undefined" || override === true ){
-        o1[i] = o2[i]
-      }
-    }
-  }
-  return o1;
-}
 
 _.makePredicate = function makePredicate(words, prefix) {
     if (typeof words === "string") {
@@ -185,7 +190,7 @@ _.escapeRegExp = function( str){// Credit: XRegExp 0.6.1 (c) 2007-2008 Steven Le
 };
 
 
-var rEntity = new RegExp("&(" + Object.keys(entities).join('|') + ');', 'gi');
+var rEntity = new RegExp("&(" + _.keys(entities).join('|') + ');', 'gi');
 
 _.convertEntity = function(chr){
 
@@ -385,6 +390,7 @@ _.log = function(msg, type){
 
 
 
+
 //http://www.w3.org/html/wg/drafts/html/master/single-page.html#void-elements
 _.isVoidTag = _.makePredicate("area base br col embed hr img input keygen link menuitem meta param source track wbr r-content");
 _.isBooleanAttr = _.makePredicate('selected checked disabled readOnly required open autofocus controls autoplay compact loop defer multiple');
@@ -395,8 +401,13 @@ _.isTrue - function(){return true}
 _.isExpr = function(expr){
   return expr && expr.type === 'expression';
 }
-
-_.assert = function(test, msg){
-  if(!test) throw msg;
+// @TODO: make it more strict
+_.isGroup = function(group){
+  return group.inject || group.$inject;
 }
+
+_.getCompileFn = function(source, ctx, options){
+  return ctx.$compile.bind(ctx,source, options)
+}
+
 
