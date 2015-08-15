@@ -1183,7 +1183,7 @@ _.log = function(msg, type){
 
 //http://www.w3.org/html/wg/drafts/html/master/single-page.html#void-elements
 _.isVoidTag = _.makePredicate("area base br col embed hr img input keygen link menuitem meta param source track wbr r-content");
-_.isBooleanAttr = _.makePredicate('selected checked disabled readOnly required open autofocus controls autoplay compact loop defer multiple');
+_.isBooleanAttr = _.makePredicate('selected checked disabled readonly required open autofocus controls autoplay compact loop defer multiple');
 
 _.isFalse - function(){return false}
 _.isTrue - function(){return true}
@@ -1499,7 +1499,7 @@ walkers.element = function(ast, options){
     ref, group, element;
 
   if( tag === 'r-content' ){
-    _.log('r-content is deprecated, use {#inc this.$body} instead (`{#include}` as same)', 'error');
+    _.log('r-content is deprecated, use {#inc this.$body} instead (`{#include}` as same)', 'warn');
     return this.$body && this.$body();
   } 
 
