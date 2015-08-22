@@ -16,10 +16,10 @@
 
 ## Features
 
-- __String-based templates__ make it flexible to build your component.
-- __data-binding__ based on dirty-check: the Angular-like experience also makes sense to regularjs
-- __self-contained and well encapsulation__, make it more easily integrated with other frameworks
-- __composite component__ , using component as "custom elements".
+- __String-based templates__ make it flexible to build your component;
+- __data-binding__ based on dirty-check: the Angular-like experience also makes sense to regularjs;
+- __self-contained and well-defined encapsulation__ makes it more easily integrated with other frameworks;
+- __composite components__: components can be used as "custom elements";
 - __directive, filter, event and animation...__  all you need is provided out of box with __concise API__.
 
 
@@ -162,13 +162,13 @@ var Regular = require('regularjs/regular');
 
 
 
-### Directly download
+### Direct download
 
 1. [regular.js](https://rawgit.com/regularjs/regular/master/dist/regular.js)
 2. [regular.min.js](https://rawgit.com/regularjs/regular/master/dist/regular.min.js)
 
 
-## Who are using ?
+## Who are using?
 
 1. [NetEase](https://github.com/NetEase): the operator of the famous website [www.163.com](http://www.163.com).
 
