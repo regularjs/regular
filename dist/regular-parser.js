@@ -58,10 +58,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	var Parser = __webpack_require__(1)
 	var Lexer = __webpack_require__(2)
 
-	exports.parse = function(str, stringify){
-	  var ast = new Parser(str).parse();
-	  return stringify === false? ast : JSON.stringify(ast);
-	}
 
 
 
@@ -70,10 +66,13 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(3);
-	var node = __webpack_require__(4);
+
+	var config = __webpack_require__(4);
+	var node = __webpack_require__(5);
 	var Lexer = __webpack_require__(2);
 	var varName = _.varName;
 	var ctxName = _.ctxName;
+	var extName = _.extName;
 	var isPath = _.makePredicate("STRING IDENT NUMBER");
 	var isKeyWord = _.makePredicate("true false undefined null this Array Date JSON Math NaN RegExp decodeURI decodeURIComponent encodeURI encodeURIComponent parseFloat parseInt Object");
 
@@ -261,14 +260,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	    case "STRING":
 	      this.next();
 	      var value = ll.value;
-	      if(~value.indexOf('{{')){
+	      if(~value.indexOf(config.BEGIN) && ~value.indexOf(config.END)){
 	        var constant = true;
 	        var parsed = new Parser(value, { mode: 2 }).parse();
 	        if(parsed.length === 1 && parsed[0].type === 'expression') return parsed[0];
 	        var body = [];
 	        parsed.forEach(function(item){
 	          if(!item.constant) constant=false;
-	          body.push(item.body || "'" + item.text + "'");
+	          // silent the mutiple inteplation
+	            body.push(item.body || "'" + item.text + "'");        
 	        });
 	        body = "[" + body.join(",") + "].join('')";
 	        value = node.expression(body, null, constant);
@@ -367,7 +367,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      container.push(this.statement());
 	    }
 	  }
-	  if(ll.value !== 'list') this.error('expect ' + '{{/list}} got ' + '{{/' + ll.value + '}}', ll.pos );
+	  if(ll.value !== 'list') this.error('expect ' + 'list got ' + '/' + ll.value + ' ', ll.pos );
 	  return node.list(sequence, variable, consequent, alternate);
 	}
 
@@ -400,23 +400,40 @@ return /******/ (function(modules) { // webpackBootstrap
 	op.filter = function(){
 	  var left = this.assign();
 	  var ll = this.eat('|');
-	  var buffer, attr;
-	  if(ll){
-	    buffer = [
-	      "(function(){", 
-	          "var ", attr = "_f_", "=", left.get, ";"]
-	    do{
+	  var buffer = [], setBuffer, prefix,
+	    attr = "t", 
+	    set = left.set, get, 
+	    tmp = "";
 
-	      buffer.push(attr + " = "+ctxName+"._f_('" + this.match('IDENT').value+ "')(" + attr) ;
+	  if(ll){
+	    if(set) setBuffer = [];
+
+	    prefix = "(function(" + attr + "){";
+
+	    do{
+	      tmp = attr + " = " + ctxName + "._f_('" + this.match('IDENT').value+ "' ).get.call( "+_.ctxName +"," + attr ;
 	      if(this.eat(':')){
-	        buffer.push(", "+ this.arguments("|").join(",") + ");")
+	        tmp +=", "+ this.arguments("|").join(",") + ");"
 	      }else{
-	        buffer.push(');');
+	        tmp += ');'
 	      }
+	      buffer.push(tmp);
+	      setBuffer && setBuffer.unshift( tmp.replace(" ).get.call", " ).set.call") );
 
 	    }while(ll = this.eat('|'));
-	    buffer.push("return " + attr + "})()");
-	    return this.getset(buffer.join(""));
+	    buffer.push("return " + attr );
+	    setBuffer && setBuffer.push("return " + attr);
+
+	    get =  prefix + buffer.join("") + "})("+left.get+")";
+	    // we call back to value.
+	    if(setBuffer){
+	      // change _ss__(name, _p_) to _s__(name, filterFn(_p_));
+	      set = set.replace(_.setName, 
+	        prefix + setBuffer.join("") + "})("+　_.setName　+")" );
+
+	    }
+	    // the set function is depend on the filter definition. if it have set method, the set will work
+	    return this.getset(get, set);
 	  }
 	  return left;
 	}
@@ -427,7 +444,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  var left = this.condition(), ll;
 	  if(ll = this.eat(['=', '+=', '-=', '*=', '/=', '%='])){
 	    if(!left.set) this.error('invalid lefthand expression in assignment expression');
-	    return this.getset( left.set.replace("_p_", this.condition().get).replace("'='", "'"+ll.type+"'"), left.set);
+	    return this.getset( left.set.replace( "," + _.setName, "," + this.condition().get ).replace("'='", "'"+ll.type+"'"), left.set);
 	    // return this.getset('(' + left.get + ll.type  + this.condition().get + ')', left.set);
 	  }
 	  return left;
@@ -556,8 +573,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	// member [ expression ]
 	// member . ident  
 
-	op.member = function(base, last, pathes){
-	  var ll, path;
+	op.member = function(base, last, pathes, prevBase){
+	  var ll, path, extValue;
+
 
 	  var onlySimpleAccessor = false;
 	  if(!base){ //first
@@ -567,7 +585,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	      pathes = [];
 	      pathes.push( path );
 	      last = path;
-	      base = ctxName + "._sg_('" + path + "', " + varName + "['" + path + "'])";
+	      extValue = extName + "." + path
+	      base = ctxName + "._sg_('" + path + "', " + varName + ", " + extName + ")";
 	      onlySimpleAccessor = true;
 	    }else{ //Primative Type
 	      if(path.get === 'this'){
@@ -591,14 +610,26 @@ return /******/ (function(modules) { // webpackBootstrap
 	      case '.':
 	          // member(object, property, computed)
 	        var tmpName = this.match('IDENT').value;
+	        prevBase = base;
+	        if( this.la() !== "(" ){ 
+	          base = ctxName + "._sg_('" + tmpName + "', " + base + ")";
+	        }else{
 	          base += "['" + tmpName + "']";
-	        return this.member( base, tmpName, pathes );
+	        }
+	        return this.member( base, tmpName, pathes,  prevBase);
 	      case '[':
 	          // member(object, property, computed)
 	        path = this.assign();
-	        base += "[" + path.get + "]";
+	        prevBase = base;
+	        if( this.la() !== "(" ){ 
+	        // means function call, we need throw undefined error when call function
+	        // and confirm that the function call wont lose its context
+	          base = ctxName + "._sg_(" + path.get + ", " + base + ")";
+	        }else{
+	          base += "[" + path.get + "]";
+	        }
 	        this.match(']')
-	        return this.member(base, path, pathes);
+	        return this.member(base, path, pathes, prevBase);
 	      case '(':
 	        // call(callee, args)
 	        var args = this.arguments().join(',');
@@ -610,8 +641,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	  if( pathes && pathes.length ) this.depend.push( pathes );
 	  var res =  {get: base};
 	  if(last){
-	    if(onlySimpleAccessor) res.set = ctxName + "._ss_('" + path + "'," + _.setName + "," + _.varName + ", '=')";
-	    else res.set = base + '=' + _.setName;
+	    res.set = ctxName + "._ss_(" + 
+	        (last.get? last.get : "'"+ last + "'") + 
+	        ","+ _.setName + ","+ 
+	        (prevBase?prevBase:_.varName) + 
+	        ", '=', "+ ( onlySimpleAccessor? 1 : 0 ) + ")";
+	  
 	  }
 	  return res;
 	}
@@ -696,12 +731,17 @@ return /******/ (function(modules) { // webpackBootstrap
 	// [ assign[,assign]*]
 	op.array = function(){
 	  var code = [this.match('[').type], item;
-	  while(item = this.assign()){
-	    code.push(item.get);
-	    if(this.eat(',')) code.push(",");
-	    else break;
+	  if( this.eat("]") ){
+
+	     code.push("]");
+	  } else {
+	    while(item = this.assign()){
+	      code.push(item.get);
+	      if(this.eat(',')) code.push(",");
+	      else break;
+	    }
+	    code.push(this.match(']').type);
 	  }
-	  code.push(this.match(']').type);
 	  return {get: code.join("")};
 	}
 
@@ -731,7 +771,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(3);
-	var config = __webpack_require__(5);
+	var config = __webpack_require__(4);
 
 	// some custom tag  will conflict with the Lexer progress
 	var conflictTag = {"}": "{", "]": "["}, map1, map2;
@@ -760,12 +800,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	    this.markEnd = config.END;
 	  }
 
-
 	  this.input = (input||"").trim();
 	  this.opts = opts || {};
 	  this.map = this.opts.mode !== 2?  map1: map2;
 	  this.states = ["INIT"];
-	  if(this.opts.state) this.states.push( this.opts.state );
+	  if(opts && opts.expression){
+	     this.states.push("JST");
+	     this.expression = true;
+	  }
 	}
 
 	var lo = Lexer.prototype
@@ -979,7 +1021,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  // 2. TAG
 	  // --------------------
 	  TAG_NAME: [/{NAME}/, 'NAME', 'TAG'],
-	  TAG_UNQ_VALUE: [/[^&"'=><`\r\n\f ]+/, 'UNQ', 'TAG'],
+	  TAG_UNQ_VALUE: [/[^\{}&"'=><`\r\n\f ]+/, 'UNQ', 'TAG'],
 
 	  TAG_OPEN: [/<({NAME})\s*/, function(all, one){
 	    return {type: 'TAG_OPEN', value: one}
@@ -1017,8 +1059,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	      value: name
 	    }
 	  }, 'JST'],
-	  JST_LEAVE: [/{END}/, function(){
+	  JST_LEAVE: [/{END}/, function(all){
+	    if(this.markEnd === all && this.expression) return {type: this.markEnd, value: this.markEnd};
 	    if(!this.markEnd || !this.marks ){
+	      this.firstEnterStart = false;
 	      this.leave('JST');
 	      return {type: 'END'}
 	    }else{
@@ -1038,17 +1082,20 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }, 'JST'],
 	  JST_EXPR_OPEN: ['{BEGIN}',function(all, one){
 	    if(all === this.markStart){
-	      if(this.marks){
-	        return {type: this.markStart, value: this.markStart };
+	      if(this.expression) return { type: this.markStart, value: this.markStart };
+	      if(this.firstEnterStart || this.marks){
+	        this.marks++
+	        this.firstEnterStart = false;
+	        return { type: this.markStart, value: this.markStart };
 	      }else{
-	        this.marks++;
+	        this.firstEnterStart = true;
 	      }
 	    }
-	    var escape = one === '=';
 	    return {
 	      type: 'EXPR_OPEN',
-	      escape: escape
+	      escape: false
 	    }
+
 	  }, 'JST'],
 	  JST_IDENT: ['{IDENT}', 'IDENT', 'JST'],
 	  JST_SPACE: [/[ \r\n\f]+/, null, 'JST'],
@@ -1073,8 +1120,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = Lexer;
 
 
-
-
 /***/ },
 /* 3 */
 /***/ function(module, exports, __webpack_require__) {
@@ -1095,9 +1140,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }
 	})();
 
-	_.varName = '_d_';
-	_.setName = '_p_';
-	_.ctxName = '_c_';
+	_.varName = 'd';
+	_.setName = 'p_';
+	_.ctxName = 'c';
+	_.extName = 'e';
 
 	_.rWord = /^[\$\w]+$/;
 	_.rSimpleAccessor = /^[\$\w]+(\.[\$\w]+)*$/;
@@ -1110,10 +1156,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 
-	var prefix =  "var " + _.ctxName + "=context.$context||context;" + "var " + _.varName + "=context.data;";
-
-
-	_.host = "data";
+	_.prefix = "var " + _.varName + "=" + _.ctxName + ".data;" +  _.extName  + "=" + _.extName + "||'';";
 
 
 	_.slice = function(obj, start, end){
@@ -1126,7 +1169,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 	_.typeOf = function (o) {
-	  return o == null ? String(o) : ({}).toString.call(o).slice(8, -1).toLowerCase();
+	  return o == null ? String(o) : o2str.call(o).slice(8, -1).toLowerCase();
 	}
 
 
@@ -1523,25 +1566,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	  };
 	}
 
-	// setup the raw Expression
-	_.touchExpression = function(expr){
-	  if(expr.type === 'expression'){
-	    if(!expr.get){
-	      expr.get = new Function("context", prefix + "return (" + expr.body + ")");
-	      expr.body = null;
-	      if(expr.setbody){
-	        expr.set = function(ctx, value){
-	          if(expr.setbody){
-	            expr.set = new Function('context', _.setName ,  prefix + expr.setbody);
-	            expr.setbody = null;
-	          }
-	          return expr.set(ctx, value);
-	        }
-	      }
-	    }
-	  }
-	  return expr;
-	}
+	// // setup the raw Expression
+	// _.touchExpression = function(expr){
+	//   if(expr.type === 'expression'){
+	//   }
+	//   return expr;
+	// }
 
 
 	// handle the same logic on component's `on-*` and element's `on-*`
@@ -1579,11 +1609,6 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 
-
-
-
-
-
 	_.log = function(msg, type){
 	  if(typeof console !== "undefined")  console[type || "log"](msg);
 	}
@@ -1603,17 +1628,21 @@ return /******/ (function(modules) { // webpackBootstrap
 	  if(!test) throw msg;
 	}
 
-
-
-	_.defineProperty = function(){
-	  
-	}
-
 	
 	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
 
 /***/ },
 /* 4 */
+/***/ function(module, exports, __webpack_require__) {
+
+	
+	module.exports = {
+	'BEGIN': '{',
+	'END': '}'
+	}
+
+/***/ },
+/* 5 */
 /***/ function(module, exports, __webpack_require__) {
 
 	module.exports = {
@@ -1670,16 +1699,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }
 	}
 
-
-/***/ },
-/* 5 */
-/***/ function(module, exports, __webpack_require__) {
-
-	
-	module.exports = {
-	'BEGIN': '{{',
-	'END': '}}'
-	}
 
 /***/ },
 /* 6 */

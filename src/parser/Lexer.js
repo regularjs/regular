@@ -28,12 +28,14 @@ function Lexer(input, opts){
     this.markEnd = config.END;
   }
 
-
   this.input = (input||"").trim();
   this.opts = opts || {};
   this.map = this.opts.mode !== 2?  map1: map2;
   this.states = ["INIT"];
-  if(this.opts.state) this.states.push( this.opts.state );
+  if(opts && opts.expression){
+     this.states.push("JST");
+     this.expression = true;
+  }
 }
 
 var lo = Lexer.prototype
@@ -247,9 +249,9 @@ var rules = {
   // 2. TAG
   // --------------------
   TAG_NAME: [/{NAME}/, 'NAME', 'TAG'],
-  TAG_UNQ_VALUE: [/[^&"'=><`\r\n\f ]+/, 'UNQ', 'TAG'],
+  TAG_UNQ_VALUE: [/[^\{}&"'=><`\r\n\f ]+/, 'UNQ', 'TAG'],
 
-  TAG_OPEN: [/<({NAME})\s*/, function(all, one){
+  TAG_OPEN: [/<({NAME})\s*/, function(all, one){ //"
     return {type: 'TAG_OPEN', value: one}
   }, 'TAG'],
   TAG_CLOSE: [/<\/({NAME})[\r\n\f ]*>/, function(all, one){
@@ -267,14 +269,17 @@ var rules = {
     if(all === '>') this.leave();
     return {type: all, value: all }
   }, 'TAG'],
-  TAG_STRING:  [ /'([^']*)'|"([^"]*)"/, function(all, one, two){ //"'
+  TAG_STRING:  [ /'([^']*)'|"([^"]*)\"/, /*'*/  function(all, one, two){ 
     var value = one || two || "";
 
     return {type: 'STRING', value: value}
   }, 'TAG'],
 
   TAG_SPACE: [/{SPACE}+/, null, 'TAG'],
-  TAG_COMMENT: [/<\!--([^\x00]*?)--\>/, null ,'TAG'],
+  TAG_COMMENT: [/<\!--([^\x00]*?)--\>/, function(all){
+    this.leave()
+    // this.leave('TAG')
+  } ,'TAG'],
 
   // 3. JST
   // -------------------
@@ -285,8 +290,10 @@ var rules = {
       value: name
     }
   }, 'JST'],
-  JST_LEAVE: [/{END}/, function(){
+  JST_LEAVE: [/{END}/, function(all){
+    if(this.markEnd === all && this.expression) return {type: this.markEnd, value: this.markEnd};
     if(!this.markEnd || !this.marks ){
+      this.firstEnterStart = false;
       this.leave('JST');
       return {type: 'END'}
     }else{
@@ -306,17 +313,20 @@ var rules = {
   }, 'JST'],
   JST_EXPR_OPEN: ['{BEGIN}',function(all, one){
     if(all === this.markStart){
-      if(this.marks){
-        return {type: this.markStart, value: this.markStart };
+      if(this.expression) return { type: this.markStart, value: this.markStart };
+      if(this.firstEnterStart || this.marks){
+        this.marks++
+        this.firstEnterStart = false;
+        return { type: this.markStart, value: this.markStart };
       }else{
-        this.marks++;
+        this.firstEnterStart = true;
       }
     }
-    var escape = one === '=';
     return {
       type: 'EXPR_OPEN',
-      escape: escape
+      escape: false
     }
+
   }, 'JST'],
   JST_IDENT: ['{IDENT}', 'IDENT', 'JST'],
   JST_SPACE: [/[ \r\n\f]+/, null, 'JST'],
@@ -339,5 +349,3 @@ Lexer.setup();
 
 
 module.exports = Lexer;
-
-

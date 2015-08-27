@@ -16,7 +16,7 @@ void function(){
     })
     it("component.$inject should use twice", function(){
       var component = new Regular({
-        template:"{{hello}}<div>hello</div><p>name</p>"
+        template:"{hello}<div>hello</div><p>name</p>"
       }).$inject(container);
       expect(nes.all("p,div",container).length).to.equal(2);
 
@@ -30,7 +30,7 @@ void function(){
 
     it("component.$inject works on list when use twice", function(){
       var component = new Regular({
-        template:"{{#list items as item}}<div>hello</div>{{/list}}",
+        template:"{#list items as item}<div>hello</div>{/list}",
         data: {items: [1]}
       }).$inject(container);
 
@@ -46,7 +46,7 @@ void function(){
 
     it("component.$inject works on if when use twice", function(){
       var component = new Regular({
-        template:"{{#if test}}<div>hello</div><p>name</p>{{/if}}",
+        template:"{#if test}<div>hello</div><p>name</p>{/if}",
         data: {test: true}
       }).$inject(container);
 
@@ -60,7 +60,7 @@ void function(){
     })
     it("component.$inject works on if when use twice", function(){
       var component = new Regular({
-        template:"{{#if test}}<div>hello</div><p>name</p>{{/if}}",
+        template:"{#if test}<div>hello</div><p>name</p>{/if}",
         data: {test: true}
       }).$inject(container);
 
@@ -76,7 +76,7 @@ void function(){
     it("component.$inject works on include when use twice", function(){
       var component = new Regular({
 
-        template:"{{#include template}}",
+        template:"{#include template}",
 
         data: { template: "<div></div>" }
 

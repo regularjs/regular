@@ -2,24 +2,24 @@ void function(){
   window.Pager = Regular.extend({
     name: 'pager',
     template: 
-     "<div class='m-page {{clazz}}'>\
-         <a  href='javascript:;' delegate-click={{ this.nav(current-1)}} class='pageprv {{current==1? \"z-dis\": \"\"}}'>上一页</a>\
-          {{#if total - 5 > show * 2}}\
-            <a href='javascript:;' delegate-click={{ this.nav(1)}} class={{current==1? 'z-crt': ''}}>1</a>\
-            {{#if begin > 2}}<i>...</i>{{/if}}\
-            {{#list begin..end as i}}\
-            <a href='javascript:;'delegate-click={{ this.nav(i)}} class={{current==i? 'z-crt': ''}} >{{i}}</a>\
-            {{/list}}\
-            {{#if (end < total-1)}}\
+     "<div class='m-page {clazz}'>\
+         <a  href='javascript:;' delegate-click={ this.nav(current-1)} class='pageprv {current==1? \"z-dis\": \"\"}'>Prev</a>\
+          {#if total - 5 > show * 2}\
+            <a href='javascript:;' delegate-click={ this.nav(1)} class={current==1? 'z-crt': ''}>1</a>\
+            {#if begin > 2}<i>...</i>{/if}\
+            {#list begin..end as i}\
+            <a href='javascript:;'delegate-click={ this.nav(i)} class={current==i? 'z-crt': ''} >{i}</a>\
+            {/list}\
+            {#if (end < total-1)}\
              <i>...</i>\
-            {{/if}}\
-           <a href='javascript:;' delegate-click={{this.nav(total)}} class={{current==total? 'z-crt':''}}>{{total}}</a>\
-          {{#else}}\
-            {{#list 1..total as i}}\
-              <a href='javascript:;' delegate-click={{ this.nav(i)}}  class={{current==i? 'z-crt': ''}}>{{i}}</a>\
-            {{/list}}\
-          {{/if}}\
-        <a href='javascript:;' delegate-click={{this.nav(current + 1)}}  class='pagenxt {{current == total? \"z-dis\": \"\"}}'>下一页</a>\
+            {/if}\
+           <a href='javascript:;' delegate-click={this.nav(total)} class={current==total? 'z-crt':''}>{total}</a>\
+          {#else}\
+            {#list 1..total as i}\
+              <a href='javascript:;' delegate-click={ this.nav(i)}  class={current==i? 'z-crt': ''}>{i}</a>\
+            {/list}\
+          {/if}\
+        <a href='javascript:;' delegate-click={this.nav(current + 1)}  class='pagenxt {current == total? \"z-dis\": \"\"}'>Next</a>\
       </div>",
     // before init
     config: function(data){

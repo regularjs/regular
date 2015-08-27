@@ -6,8 +6,9 @@ function Watcher(){}
 
 var methods = {
   $watch: function(expr, fn, options){
-    var get, once, test, rlen; //records length
+    var get, once, test, rlen, extra = this.__ext__; //records length
     if(!this._watchers) this._watchers = [];
+
     options = options || {};
     if(options === true){
        options = { deep: true }
@@ -16,13 +17,13 @@ var methods = {
     if(Array.isArray(expr)){
       var tests = [];
       for(var i = 0,len = expr.length; i < len; i++){
-          tests.push(parseExpression(expr[i]).get) 
+          tests.push(this.$expression(expr[i]).get)
       }
       var prev = [];
       test = function(context){
         var equal = true;
         for(var i =0, len = tests.length; i < len; i++){
-          var splice = tests[i](context);
+          var splice = tests[i](context, extra);
           if(!_.equals(splice, prev[i])){
              equal = false;
              prev[i] = _.clone(splice);
@@ -31,9 +32,13 @@ var methods = {
         return equal? false: prev;
       }
     }else{
-      expr = this.$expression? this.$expression(expr) : parseExpression(expr);
-      get = expr.get;
-      once = expr.once || expr.constant;
+      if(typeof expr === 'function'){
+        get = expr.bind(this);      
+      }else{
+        expr = this._touchExpr( parseExpression(expr) );
+        get = expr.get;
+        once = expr.once;
+      }
     }
 
     var watcher = {
@@ -43,7 +48,8 @@ var methods = {
       once: once, 
       force: options.force,
       test: test,
-      deep: options.deep
+      deep: options.deep,
+      last: options.sync? get(this): undefined
     }
     
     this._watchers.push( watcher );
@@ -56,9 +62,10 @@ var methods = {
       this._checkSingleWatch( watcher, this._watchers.length-1 );
       this.$phase = null;
     }
-    return uid;
+    return watcher;
   },
   $unwatch: function(uid){
+    uid = uid.uid || uid;
     if(!this._watchers) this._watchers = [];
     if(Array.isArray(uid)){
       for(var i =0, len = uid.length; i < len; i++){
@@ -75,6 +82,9 @@ var methods = {
       }
     }
   },
+  $expression: function(value){
+    return this._touchExpr(parseExpression(value))
+  },
   /**
    * the whole digest loop ,just like angular, it just a dirty-check loop;
    * @param  {String} path  now regular process a pure dirty-check loop, but in parse phase, 
@@ -83,7 +93,7 @@ var methods = {
    */
 
   $digest: function(){
-    if(this.$phase === 'digest') return;
+    if(this.$phase === 'digest' || this._mute) return;
     this.$phase = 'digest';
     var dirty = false, n =0;
     while(dirty = this._digest()){
@@ -121,64 +131,65 @@ var methods = {
   _checkSingleWatch: function(watcher, i){
     var dirty = false;
     if(!watcher) return;
-    if(watcher.test) { //multi 
+
+    var now, last, tlast, tnow,  eq, diff;
+
+    if(!watcher.test){
+
+      now = watcher.get(this);
+      last = watcher.last;
+      tlast = _.typeOf(last);
+      tnow = _.typeOf(now);
+      eq = true, diff;
+
+      // !Object
+      if( !(tnow === 'object' && tlast==='object' && watcher.deep) ){
+        // Array
+        if( tnow === 'array' && ( tlast=='undefined' || tlast === 'array') ){
+          eq = _.diffArray(now, watcher.last || [])
+          if( tlast !== 'array' || !eq ) dirty = true;
+        }else{
+          eq = _.equals( now, last );
+          if( !eq || watcher.force ){
+            watcher.force = null;
+            dirty = true; 
+          }
+        }
+      }else{
+        for(var j in now){
+          if(last[j] !== now[j]){
+            dirty = true;
+            break;
+          }
+        }
+        if(dirty !== true){
+          for(var n in last){
+            if(last[n] !== now[n]){
+              dirty = true;
+              break;
+            }
+          }
+        }
+      }
+    } else{
+      // @TODO 是否把多重改掉
       var result = watcher.test(this);
       if(result){
         dirty = true;
         watcher.fn.apply(this, result)
       }
-    }else{
-
-      var now = watcher.get(this);
-      var last = watcher.last;
-      var eq = true;
-
-      if(_.typeOf( now ) === 'object' && watcher.deep){
-        if(!watcher.last){
-           eq = false;
-         }else{
-          for(var j in now){
-            if(watcher.last[j] !== now[j]){
-              eq = false;
-              break;
-            }
-          }
-          if(eq !== false){
-            for(var n in last){
-              if(last[n] !== now[n]){
-                eq = false;
-                break;
-              }
-            }
-          }
-        }
-      }else{
-        eq = _.equals(now, watcher.last);
-      }
-      if(eq === false || watcher.force){ // in some case. if undefined, we must force digest.
-        eq = false;
-        watcher.force = null;
-        dirty = true;
-        watcher.fn.call(this, now, watcher.last);
-        if(typeof now !== 'object'|| watcher.deep){
-          watcher.last = _.clone(now);
-        }else{
-          watcher.last = now;
-        }
-      }else{ // if eq == true
-        if( _.typeOf(eq) === 'array' && eq.length ){
-          watcher.last = _.clone(now);
-          watcher.fn.call(this, now, eq);
-          dirty = true;
-        }else{
-          eq = true;
-        }
-      }
-      // @TODO
-      if(dirty && watcher.once) this._watchers.splice(i, 1);
-
-      return dirty;
     }
+    if(dirty && !watcher.test){
+      watcher.fn.call(this, now, last, diff)
+      if(tnow === 'object' && watcher.deep || tnow === 'array'){
+        watcher.last = _.clone(now);
+      }else{
+        watcher.last = now;
+      }
+      if(watcher.once) this._watchers.splice(i, 1);
+    }
+
+    return dirty;
   },
 
   /**
@@ -188,23 +199,34 @@ var methods = {
    * @param  {Whatever} value optional, when path is Function, the value is ignored
    * @return {this}     this 
    */
-  $update: function(path, value){
+  $set: function(path, value){
     if(path != null){
       var type = _.typeOf(path);
       if( type === 'string' || path.type === 'expression' ){
-        path = parseExpression(path);
+        path = this.$expression(path);
         path.set(this, value);
       }else if(type === 'function'){
         path.call(this, this.data);
       }else{
         for(var i in path) {
-          if(path.hasOwnProperty(i)){
-            this.data[i] = path[i];
-          }
+          this.$set(i, path[i])
         }
       }
     }
-    if(this.$root) this.$root.$digest()
+  },
+  $get: function(expr)  {
+    return this.$expression(expr).get(this);
+  },
+  $update: function(){
+    this.$set.apply(this, arguments);
+    var rootParent = this;
+
+    do{
+      if(rootParent.data.isolate || !rootParent.$parent) break;
+      rootParent = rootParent.$parent;
+    } while(rootParent)
+
+    rootParent.$digest();
   },
   // auto collect watchers for logic-control.
   _record: function(){

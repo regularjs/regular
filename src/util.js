@@ -14,9 +14,10 @@ _.uid = (function(){
   }
 })();
 
-_.varName = '_d_';
-_.setName = '_p_';
-_.ctxName = '_c_';
+_.varName = 'd';
+_.setName = 'p_';
+_.ctxName = 'c';
+_.extName = 'e';
 
 _.rWord = /^[\$\w]+$/;
 _.rSimpleAccessor = /^[\$\w]+(\.[\$\w]+)*$/;
@@ -29,10 +30,7 @@ _.nextTick = typeof setImmediate === 'function'?
 
 
 
-var prefix =  "var " + _.ctxName + "=context.$context||context;" + "var " + _.varName + "=context.data;";
-
-
-_.host = "data";
+_.prefix = "var " + _.varName + "=" + _.ctxName + ".data;" +  _.extName  + "=" + _.extName + "||'';";
 
 
 _.slice = function(obj, start, end){
@@ -45,7 +43,11 @@ _.slice = function(obj, start, end){
 }
 
 _.typeOf = function (o) {
-  return o == null ? String(o) : ({}).toString.call(o).slice(8, -1).toLowerCase();
+  return o == null ? String(o) :o2str.call(o).slice(8, -1).toLowerCase();
+}
+
+_.isExpression = function( expr ){
+  return expr && expr.type === 'expression';
 }
 
 
@@ -223,144 +225,24 @@ _.clone = function clone(obj){
     return obj;
   }
 
-
 _.equals = function(now, old){
-  var type = _.typeOf(now);
-  if(type === 'array'){
-    var splices = ld(now, old||[]);
-    return splices;
-  }
+  var type = typeof now;
   if(type === 'number' && typeof old === 'number'&& isNaN(now) && isNaN(old)) return true
   return now === old;
 }
-
-
-//Levenshtein_distance
-//=================================================
-//1. http://en.wikipedia.org/wiki/Levenshtein_distance
-//2. github.com:polymer/observe-js
-
-var ld = (function(){
-  function equals(a,b){
-    return a === b;
+_.diffArray = function(now, old){
+  var nlen = now.length;
+  var olen = old.length;
+  if(nlen !== olen){
+    return false;
   }
-  function ld(array1, array2){
-    var n = array1.length;
-    var m = array2.length;
-    var matrix = [];
-    for(var i = 0; i <= n; i++){
-      matrix.push([i]);
-    }
-    for(var j=1;j<=m;j++){
-      matrix[0][j]=j;
-    }
-    for(var i = 1; i <= n; i++){
-      for(var j = 1; j <= m; j++){
-        if(equals(array1[i-1], array2[j-1])){
-          matrix[i][j] = matrix[i-1][j-1];
-        }else{
-          matrix[i][j] = Math.min(
-            matrix[i-1][j]+1, //delete
-            matrix[i][j-1]+1//add
-            )
-        }
-      }
-    }
-    return matrix;
+  for(var i = 0; i < nlen ; i++){
+    if(now[i] !== old[i]) return  false;
   }
-  function whole(arr2, arr1) {
-      var matrix = ld(arr1, arr2)
-      var n = arr1.length;
-      var i = n;
-      var m = arr2.length;
-      var j = m;
-      var edits = [];
-      var current = matrix[i][j];
-      while(i>0 || j>0){
-      // the last line
-        if (i === 0) {
-          edits.unshift(3);
-          j--;
-          continue;
-        }
-        // the last col
-        if (j === 0) {
-          edits.unshift(2);
-          i--;
-          continue;
-        }
-        var northWest = matrix[i - 1][j - 1];
-        var west = matrix[i - 1][j];
-        var north = matrix[i][j - 1];
+  return true
 
-        var min = Math.min(north, west, northWest);
+}
 
-        if (min === west) {
-          edits.unshift(2); //delete
-          i--;
-          current = west;
-        } else if (min === northWest ) {
-          if (northWest === current) {
-            edits.unshift(0); //no change
-          } else {
-            edits.unshift(1); //update
-            current = northWest;
-          }
-          i--;
-          j--;
-        } else {
-          edits.unshift(3); //add
-          j--;
-          current = north;
-        }
-      }
-      var LEAVE = 0;
-      var ADD = 3;
-      var DELELE = 2;
-      var UPDATE = 1;
-      var n = 0;m=0;
-      var steps = [];
-      var step = {index: null, add:0, removed:[]};
-
-      for(var i=0;i<edits.length;i++){
-        if(edits[i] > 0 ){ // NOT LEAVE
-          if(step.index === null){
-            step.index = m;
-          }
-        } else { //LEAVE
-          if(step.index != null){
-            steps.push(step)
-            step = {index: null, add:0, removed:[]};
-          }
-        }
-        switch(edits[i]){
-          case LEAVE:
-            n++;
-            m++;
-            break;
-          case ADD:
-            step.add++;
-            m++;
-            break;
-          case DELELE:
-            step.removed.push(arr1[n])
-            n++;
-            break;
-          case UPDATE:
-            step.add++;
-            step.removed.push(arr1[n])
-            n++;
-            m++;
-            break;
-        }
-      }
-      if(step.index != null){
-        steps.push(step)
-      }
-      return steps
-    }
-    return whole;
-  })();
 
 
 
@@ -442,25 +324,12 @@ _.cache = function(max){
   };
 }
 
-// setup the raw Expression
-_.touchExpression = function(expr){
-  if(expr.type === 'expression'){
-    if(!expr.get){
-      expr.get = new Function("context", prefix + "return (" + expr.body + ")");
-      expr.body = null;
-      if(expr.setbody){
-        expr.set = function(ctx, value){
-          if(expr.setbody){
-            expr.set = new Function('context', _.setName ,  prefix + expr.setbody);
-            expr.setbody = null;
-          }
-          return expr.set(ctx, value);
-        }
-      }
-    }
-  }
-  return expr;
-}
+// // setup the raw Expression
+// _.touchExpression = function(expr){
+//   if(expr.type === 'expression'){
+//   }
+//   return expr;
+// }
 
 
 // handle the same logic on component's `on-*` and element's `on-*`
@@ -475,14 +344,14 @@ _.handleEvent = function(value, type ){
       self.data.$event = obj;
       var res = evaluate(self);
       if(res === false && obj && obj.preventDefault) obj.preventDefault();
-      delete self.data.$event;
+      self.data.$event = undefined;
       self.$update();
     }
   }else{
     return function fire(){
       var args = slice.call(arguments)      
       args.unshift(value);
-      self.$emit.apply(self.$context, args);
+      self.$emit.apply(self, args);
       self.$update();
     }
   }
@@ -496,17 +365,18 @@ _.once = function(fn){
   }
 }
 
-
-
-
-
+_.fixObjStr = function(str){
+  if(str.trim().indexOf('{') !== 0){
+    return '{' + str + '}';
+  }
+  return str;
+}
 
 
 
 _.log = function(msg, type){
   if(typeof console !== "undefined")  console[type || "log"](msg);
 }
-
 
 
 
@@ -520,11 +390,5 @@ _.isTrue - function(){return true}
 
 _.assert = function(test, msg){
   if(!test) throw msg;
-}
-
-
-
-_.defineProperty = function(){
-  
 }
 

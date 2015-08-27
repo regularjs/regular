@@ -1,6 +1,6 @@
 {
   "name": "regularjs",
-  "version": "0.2.12",
+  "version": "0.3.1",
   "main": "src/index.js",
   "scripts": [
     "src/Regular.js",
@@ -22,6 +22,7 @@
     "src/helper/animate.js",
     "src/helper/combine.js",
     "src/helper/entities.js",
+    "src/helper/filter.js",
     "src/directive/base.js",
     "src/directive/form.js",
     "src/directive/animation.js",

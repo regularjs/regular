@@ -8,7 +8,8 @@ var Regular = require("../Regular.js");
 
 Regular._addProtoInheritCache("event");
 
-Regular.event( "enter" , function(elem, fire) {
+Regular.event("enter", function(elem, fire) {
+  _.log("on-enter will be removed in 0.4.0", "error");
   function update( ev ) {
     if ( ev.which === 13 ) {
       ev.preventDefault();

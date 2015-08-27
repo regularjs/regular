@@ -14,15 +14,53 @@ void function(){
 
 
   var container = document.createElement("div");   
+  describe("bugbush for paopao.163.com", function(){
+    it("void array literal should works", function(){
+      expect(function(){
+        var component = new Component({
+          template: "{#if []}{hello.name.first}{/if}",
+          data: {hello: {name: { first: "haha"} } }
+        })
+      }).to.not.throwException();
+
+    })
+    it("number in element nearto { should not throwException", function(){
+
+      expect(function(){
+        var component = new Component({
+          template: "<div {#if true}x = 1{/if}>1</div>",
+          data: {}
+        })
+      }).to.not.throwException();
+    })
+
+    it("customer event should also trigger the digest", function(){
+      Component.event("drag", function(element, fire){
+        Regular.dom.on(element, "click", function(){
+          fire({hello:1})
+        })
+      })
+
+      var component = new Component({
+        template: "{#list 1..1 as i}<div ref=first on-drag={name=2}>{name}</div>{/list}"
+      }).$inject(container);
+
+      dispatchMockEvent(component.$refs.first, 'click');
+      expect(component.$refs.first.innerHTML).to.equal("2");
+      destroy(component,container);
+      
+    })
+
+  })
+
   describe("Bugfix", function(){
     it("bugfix #4", function(){
 
-      var Demo = Component.extend({name: "demo", template: "<input r-model = 'demo.name' title={{demo.name}}>"})
-      var DemoApp = Component.extend({template: "{{#list demos as demo}}<demo demo={{demo}}/>{{/list}}"});
+      var Demo = Component.extend({name: "demo", template: "<input r-model = 'demo.name' title={demo.name}>"})
+      var DemoApp = Component.extend({template: "{#list demos as demo}<demo demo={demo}/>{demos.length}{/list}"});
       var component = new DemoApp({ 
-        data: {demos: [{name:1}] }
+        data: { demos: [{name:1}] }
       }).$inject(container);
-
       expect(nes.one("input", container).value).to.equal("1");
       destroy(component, container)
     })
@@ -33,7 +71,7 @@ void function(){
         var Bugfix6 = Component.extend({
           template: 
             '<div></div>\
-             <svg><circle on-click={{width+=2}} on-click={{circle+=2}} cx="{{width}}" cy="{{height}}" r="{{circle}}" fill="#fefefe" stroke="#333" stroke-width="4" ></circle></svg>'
+             <svg><circle on-click={width+=2} on-click={circle+=2} cx="{width}" cy="{height}" r="{circle}" fill="#fefefe" stroke="#333" stroke-width="4" ></circle></svg>'
         })
         var component = new Bugfix6({ 
           data: { 
@@ -62,19 +100,18 @@ void function(){
     })
 
   it("should destroy clear when have non parentNode", function(){
-    var list = "{{#list 1..3 as num}}{{num}}{{/list}}"
+    var list = "{#list 1..3 as num}{num}{/list}"
     var component = new Regular({
       template: list
     }).$inject(container);
     expect(container.innerHTML.slice(-3)).to.equal("123")
     destroy(component, container);
   })
-
     it("bugfix #12, item in list destroy all $context's event", function(){
       var list =
-        "{{#list todos as todo}}" + 
-          "<div class='a-{{todo_index}}'>{{todo.content}}</div>" + 
-        "{{/list}}";
+        "{#list todos as todo}" + 
+          "<div class='a-{todo_index}'>{todo.content}</div>" + 
+        "{/list}";
 
       var num =0;
       var component = new Regular({
@@ -108,7 +145,7 @@ void function(){
     it("bugfix #13, subComponentUpdate force outerComponent $update when initialize", function(){
       // we need force __checkOnece enter digest phase
       var Modal = Regular.extend({
-        template: '{{#include this.content}}'
+        template: '{#include this.content}'
       });
 
       var Input = Regular.extend({
@@ -161,7 +198,7 @@ var template = (function(){/*
       // 'iexcl':161, 
       // 'cent':162, 
 
-      var template =  "<p>&cent;</p><p>{{text}}</p>"
+      var template =  "<p>&cent;</p><p>{text}</p>"
       var Component = Regular.extend({
         template: template
       });
@@ -179,6 +216,23 @@ var template = (function(){/*
       expect(dom.text(ps[1])).to.equal("&lt;");
 
       destroy(component, container);
+    })
+
+    it('bugfix #39', function(){
+      // https://github.com/regularjs/regular/issues/39
+
+      var template = 
+              '<div>\n\
+                <!-- 注释 -->\n\
+                1. <input type="text">\n\
+                2. <input type="text">\n\
+                3. <input type="text">\n\
+              </div>';
+
+      expect(function(){
+        Regular.parse(template);
+      }).to.not.throwException()
+
     })
 
     describe("svg namespace", function(){
@@ -200,13 +254,13 @@ var template = (function(){/*
               '<div></div>\
                <svg viewBox="0 0 100 100">\
                <line y1="100" y2="100" stroke="#fff"/>\
-               {{#if test==1}}\
+               {#if test==1}\
                  <line y1="10" y2="90" stroke="#0f0"/>\
-               {{#elseif test==2}}\
+               {#elseif test==2}\
                  <line y1="20" y2="90" stroke="#f00"/>\
-               {{#else}}\
+               {#else}\
                  <line y1="30" y2="90" stroke="#f00"/>\
-               {{/if}}\
+               {/if}\
               </svg>'
           })
           var component = new Bugfix10({
@@ -258,9 +312,9 @@ var template = (function(){/*
               '<div></div>\
                <svg viewBox="0 0 100 100">\
                <line y1="100" y2="100" stroke="#fff"/>\
-               {{#list list as item}}\
-                 <line y1="{{item_index}}" y2="90" stroke="#0f0"/>\
-               {{/list}}\
+               {#list list as item}\
+                 <line y1="{item_index}" y2="90" stroke="#0f0"/>\
+               {/list}\
               </svg>'
           })
           var component = new Bugfix10({
@@ -303,7 +357,7 @@ var template = (function(){/*
               '<div></div>\
                <svg viewBox="0 0 100 100">\
                <line y1="100" y2="100" stroke="#fff"/>\
-               {{#include template}}\
+               {#include template}\
               </svg>'
           })
           var component = new Bugfix10({
@@ -334,6 +388,7 @@ var template = (function(){/*
           destroy(component, container)
         }
       })
+
     })
   })
 

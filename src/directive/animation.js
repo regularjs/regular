@@ -86,7 +86,7 @@ Regular.animation({
     }
   },
   "call": function(step){
-    var fn = Regular.expression(step.param).get, self = this;
+    var fn = this.$expression(step.param).get, self = this;
     return function(done){
       // _.log(step.param, 'call')
       fn(self);
@@ -96,13 +96,19 @@ Regular.animation({
   },
   "emit": function(step){
     var param = step.param;
+    var tmp = param.split(","),
+      evt = tmp[0] || "",
+      args = tmp[1]? this.$expression(tmp[1]).get: null;
+
+    if(!evt) throw "you shoud specified a eventname in emit command";
+
     var self = this;
     return function(done){
-      self.$emit(param, step);
+      self.$emit(evt, args? args(self) : undefined);
       done();
     }
   },
-  // style: left {{10}}pxkk,
+  // style: left {10}px,
   style: function(step){
     var styles = {}, 
       param = step.param,
@@ -153,8 +159,8 @@ function processAnimate( element, value ){
 
   function animationDestroy(element){
     return function(){
-      element.onenter = undefined;
-      element.onleave = undefined;
+      delete element.onenter;
+      delete element.onleave;
     } 
   }
 
@@ -175,16 +181,20 @@ function processAnimate( element, value ){
 
     if( command === EVENT_COMMAND){
       reset(param);
-      if(param === "leave"){
+      if( param === "leave" ){
         element.onleave = seed.start;
-      }else if(param === "enter"){
+        destroies.push( animationDestroy(element) );
+      }else if( param === "enter" ){
         element.onenter = seed.start;
+        destroies.push( animationDestroy(element) );
       }else{
-        destroy = this._handleEvent( element, param, seed.start );
+        if( ("on" + param) in element){ // if dom have the event , we use dom event
+          destroies.push(this._handleEvent( element, param, seed.start ));
+        }else{ // otherwise, we use component event
+          this.$on(param, seed.start);
+          destroies.push(this.$off.bind(this, param, seed.start));
+        }
       }
-
-      destroies.push( destroy? destroy : animationDestroy(element) );
-      destroy = null;
       continue
     }
 
@@ -213,5 +223,5 @@ function processAnimate( element, value ){
 
 
 Regular.directive( "r-animation", processAnimate)
-
+Regular.directive( "r-sequence", processAnimate)
 

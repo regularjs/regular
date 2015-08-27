@@ -8,6 +8,7 @@
 // ---
 // license: MIT-style license. http://mootools.net
 
+
 var dom = module.exports;
 var env = require("./env.js");
 var _ = require("./util");
@@ -177,7 +178,9 @@ dom.attr = function(node, name, value){
 dom.on = function(node, type, handler){
   var types = type.split(' ');
   handler.real = function(ev){
-    handler.call(node, new Event(ev));
+    var $event = new Event(ev);
+    $event.origin = node;
+    handler.call(node, $event);
   }
   types.forEach(function(type){
     type = fixEventName(node, type);
@@ -332,14 +335,14 @@ function Event(ev){
 _.extend(Event.prototype, {
   immediateStop: _.isFalse,
   stop: function(){
-    this.preventDefault().stopPropgation();
+    this.preventDefault().stopPropagation();
   },
   preventDefault: function(){
     if (this.event.preventDefault) this.event.preventDefault();
     else this.event.returnValue = false;
     return this;
   },
-  stopPropgation: function(){
+  stopPropagation: function(){
     if (this.event.stopPropagation) this.event.stopPropagation();
     else this.event.cancelBubble = true;
     return this;

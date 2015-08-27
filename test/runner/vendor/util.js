@@ -68,4 +68,3 @@ var dispatchMockEvent = (function(){
       }
     }
 })();
-

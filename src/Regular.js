@@ -1,17 +1,21 @@
 
+var env = require('./env.js');
 var Lexer = require("./parser/Lexer.js");
 var Parser = require("./parser/Parser.js");
-var dom = require("./dom.js");
 var config = require("./config.js");
-var Group = require('./group.js');
 var _ = require('./util');
 var extend = require('./helper/extend.js');
-var Event = require('./helper/event.js');
+if(env.browser){
 var combine = require('./helper/combine.js');
+var dom = require("./dom.js");
+var walkers = require('./walkers.js');
+var Group = require('./group.js');
+}
+var events = require('./helper/event.js');
 var Watcher = require('./helper/watcher.js');
 var parse = require('./helper/parse.js');
+var filter = require('./helper/filter.js');
 var doc = typeof document==='undefined'? {} : document;
-var env = require('./env.js');
 
 
 /**
@@ -30,8 +34,11 @@ var Regular = function(options){
   options = options || {};
   options.data = options.data || {};
   options.computed = options.computed || {};
+  options.events = options.events || {};
   if(this.data) _.extend(options.data, this.data);
   if(this.computed) _.extend(options.computed, this.computed);
+  if(this.events) _.extend(options.events, this.events);
+
   _.extend(this, options, true);
   if(this.$parent){
      this.$parent._append(this);
@@ -41,8 +48,8 @@ var Regular = function(options){
 
   template = this.template;
 
-  // template is a string (len < 40). we will find it container first
-  if((typeof template === 'string' && template.length < 40) && (node = dom.find(template))) {
+  // template is a string (len < 16). we will find it container first
+  if((typeof template === 'string' && template.length < 16) && (node = dom.find(template))) {
     template = node.innerHTML;
   }
   // if template is a xml
@@ -50,14 +57,18 @@ var Regular = function(options){
   if(typeof template === 'string') this.template = new Parser(template).parse();
 
   this.computed = handleComputed(this.computed);
-  this.$context = this.$context || this;
   this.$root = this.$root || this;
   // if have events
   if(this.events){
     this.$on(this.events);
-    this.events = null;
   }
-
+  if(this.$body){
+    this._getTransclude = function(){
+      var ctx = this.$parent || this;
+      if(this.$body) return ctx.$compile(this.$body, {namespace: options.namespace, outer: this, extra: options.extra})
+    }
+  }
+  this.$emit("$config");
   this.config && this.config(this.data);
   // handle computed
   if(template){
@@ -66,9 +77,9 @@ var Regular = function(options){
   }
 
 
-  if(this.$root === this) this.$update();
+  if(!this.$parent) this.$update();
   this.$ready = true;
-  if(this.$context === this) this.$emit("$init");
+  this.$emit("$init");
   if( this.init ) this.init(this.data);
 
   // @TODO: remove, maybe , there is no need to update after init; 
@@ -79,8 +90,7 @@ var Regular = function(options){
 }
 
 
-var walkers = require('./walkers.js');
-walkers.Regular = Regular;
+walkers && (walkers.Regular = Regular);
 
 
 // description
@@ -90,19 +100,18 @@ _.extend(Regular, {
   // private data stuff
   _directives: { __regexp__:[] },
   _plugins: {},
-  _exprCache:{},
-  _running: false,
-  _config: config,
-  _protoInheritCache: ['use', 'directive'] ,
+  _protoInheritCache: [ 'directive', 'use'] ,
   __after__: function(supr, o) {
 
     var template;
     this.__after__ = supr.__after__;
 
+    // use name make the component global.
     if(o.name) Regular.component(o.name, this);
+    // this.prototype.template = dom.initTemplate(o)
     if(template = o.template){
       var node, name;
-      if( typeof template === 'string' && template.length < 20 && ( node = dom.find( template )) ){
+      if( typeof template === 'string' && template.length < 16 && ( node = dom.find( template )) ){
         template = node.innerHTML;
         if(name = dom.attr(node, 'name')) Regular.component(name, this);
       }
@@ -180,18 +189,16 @@ _.extend(Regular, {
     if(needGenLexer) Lexer.setup();
   },
   expression: parse.expression,
-  parse: parse.parse,
-
   Parser: Parser,
   Lexer: Lexer,
-
-  _addProtoInheritCache: function(name){
+  _addProtoInheritCache: function(name, transform){
     if( Array.isArray( name ) ){
       return name.forEach(Regular._addProtoInheritCache);
     }
     var cacheKey = "_" + name + "s"
     Regular._protoInheritCache.push(name)
     Regular[cacheKey] = {};
+    if(Regular[name]) return;
     Regular[name] = function(key, cfg){
       var cache = this[cacheKey];
 
@@ -202,7 +209,7 @@ _.extend(Regular, {
         return this;
       }
       if(cfg == null) return cache[key];
-      cache[key] = cfg;
+      cache[key] = transform? transform(cfg) : cfg;
       return this;
     }
   },
@@ -224,10 +231,14 @@ _.extend(Regular, {
 
 extend(Regular);
 
-Regular._addProtoInheritCache(["filter", "component"])
+Regular._addProtoInheritCache("component")
+
+Regular._addProtoInheritCache("filter", function(cfg){
+  return typeof cfg === "function"? {get: cfg}: cfg;
+})
 
 
-Event.mixTo(Regular);
+events.mixTo(Regular);
 Watcher.mixTo(Regular);
 
 Regular.implement({
@@ -235,7 +246,7 @@ Regular.implement({
   config: function(){},
   destroy: function(){
     // destroy event wont propgation;
-    if(this.$context === this) this.$emit("$destroy");
+    this.$emit("$destroy");
     this.group && this.group.destroy(true);
     this.group = null;
     this.parentNode = null;
@@ -263,10 +274,12 @@ Regular.implement({
     if(typeof ast === 'string'){
       ast = new Parser(ast).parse()
     }
-    var preNs = this.__ns__,
+    var preExt = this.__ext__,
       record = options.record, 
       records;
-    if(options.namespace) this.__ns__ = options.namespace;
+
+    if(options.extra) this.__ext__ = options.extra;
+
     if(record) this._record();
     var group = this._walk(ast, options);
     if(record){
@@ -277,7 +290,7 @@ Regular.implement({
         group.ondestroy = function(){ self.$unwatch(records); }
       }
     }
-    if(options.namespace) this.__ns__ = preNs;
+    if(options.extra) this.__ext__ = preExt;
     return group;
   },
 
@@ -335,17 +348,30 @@ Regular.implement({
   $unbind: function(){
     // todo
   },
-  $get: function(expr){
-    return parse.expression(expr).get(this);
-  },
-  $inject: function(node, position){
+  $inject: function(node, position, options){
     var fragment = combine.node(this);
+
+    if(node === false) {
+      if(!this._fragContainer)  this._fragContainer = dom.fragment();
+      return this.$inject(this._fragContainer);
+    }
     if(typeof node === 'string') node = dom.find(node);
     if(!node) throw 'injected node is not found';
-    if(!fragment) return;
+    if(!fragment) return this;
     dom.inject(fragment, node, position);
     this.$emit("$inject", node);
     this.parentNode = Array.isArray(fragment)? fragment[0].parentNode: fragment.parentNode;
+    return this;
+  },
+  $mute: function(isMute){
+
+    isMute = !!isMute;
+
+    var needupdate = isMute === false && this._mute;
+
+    this._mute = !!isMute;
+
+    if(needupdate) this.$update();
     return this;
   },
   // private bind logic
@@ -396,7 +422,6 @@ Regular.implement({
   },
   _append: function(component){
     this._children.push(component);
-    component.$root = this.$root;
     component.$parent = this;
   },
   _handleEvent: function(elem, type, value, attrs){
@@ -413,32 +438,68 @@ Regular.implement({
       dom.off(elem, type, fire);
     }
   },
+  // 1. 用来处理exprBody -> Function
+  // 2. list里的循环
+  _touchExpr: function(expr){
+    var  rawget, ext = this.__ext__, touched = {};
+    if(expr.type !== 'expression' || expr.touched) return expr;
+    rawget = expr.get || (expr.get = new Function(_.ctxName, _.extName , _.prefix+ "return (" + expr.body + ")"));
+    touched.get = !ext? rawget: function(context){
+      return rawget(context, ext)
+    }
+
+    if(expr.setbody && !expr.set){
+      var setbody = expr.setbody;
+      expr.set = function(ctx, value, ext){
+        expr.set = new Function(_.ctxName, _.setName , _.extName, _.prefix + setbody);          
+        return expr.set(ctx, value, ext);
+      }
+      expr.setbody = null;
+    }
+    if(expr.set){
+      touched.set = !ext? expr.set : function(ctx, value){
+        return expr.set(ctx, value, ext);
+      }
+    }
+    _.extend(touched, {
+      type: 'expression',
+      touched: true,
+      once: expr.once || expr.constant
+    })
+    return touched
+  },
   // find filter
   _f_: function(name){
     var Component = this.constructor;
     var filter = Component.filter(name);
-    if(typeof filter !== 'function') throw 'filter ' + name + 'is undefined';
+    if(!filter) throw 'filter ' + name + ' is undefined';
     return filter;
   },
   // simple accessor get
-  _sg_:function(path, defaults){
-    var computed = this.computed,
-      computedProperty = computed[path];
-    if(computedProperty){
-      if(computedProperty.get)  return computedProperty.get(this);
-      else _.log("the computed '" + path + "' don't define the get function,  get data."+path + " altnately", "error")
+  _sg_:function(path, defaults, ext){
+    if(typeof ext !== 'undefined'){
+      // if(path === "demos")  debugger
+      var computed = this.computed,
+        computedProperty = computed[path];
+      if(computedProperty){
+        if(computedProperty.type==='expression' && !computedProperty.get) this._touchExpr(computedProperty);
+        if(computedProperty.get)  return computedProperty.get(this);
+        else _.log("the computed '" + path + "' don't define the get function,  get data."+path + " altnately", "error")
+      }
+  }
+    if(typeof defaults === "undefined" || typeof path == "undefined" ){
+      return undefined;
     }
-    return defaults;
+    return (ext && typeof ext[path] !== 'undefined')? ext[path]: defaults[path];
 
   },
   // simple accessor set
-  _ss_:function(path, value, data, op){
+  _ss_:function(path, value, data , op, computed){
     var computed = this.computed,
-      op = op || "=",
-      computedProperty = computed[path],
-      prev;
+      op = op || "=", prev, 
+      computedProperty = computed? computed[path]:null;
 
-    if(op!== '='){
+    if(op !== '='){
       prev = computedProperty? computedProperty.get(this): data[path];
       switch(op){
         case "+=":
@@ -457,8 +518,7 @@ Regular.implement({
           value = prev % value;
           break;
       }
-    }  
-
+    }
     if(computedProperty) {
       if(computedProperty.set) return computedProperty.set(this, value);
       else _.log("the computed '" + path + "' don't define the set function,  assign data."+path + " altnately", "error" )
@@ -468,7 +528,15 @@ Regular.implement({
   }
 });
 
-Regular.prototype.inject = Regular.prototype.$inject;
+Regular.prototype.inject = function(){
+  _.log("use $inject instead of inject", "error");
+  return this.$inject.apply(this, arguments);
+}
+
+
+// only one builtin filter
+
+Regular.filter(filter);
 
 module.exports = Regular;
 
@@ -478,15 +546,13 @@ var handleComputed = (function(){
   // wrap the computed getter;
   function wrapGet(get){
     return function(context){
-      var ctx = context.$context;
-      return get.call(ctx, ctx.data );
+      return get.call(context, context.data );
     }
   }
   // wrap the computed setter;
   function wrapSet(set){
     return function(context, value){
-      var ctx = context.$context;
-      set.call( ctx, value, ctx.data );
+      set.call( context, value, context.data );
       return value;
     }
   }

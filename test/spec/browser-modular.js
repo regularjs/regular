@@ -1,10 +1,7 @@
 void function(){
   var Regular = require_lib('index.js');
 
-  function reset(){
-    Regular._events = {}
-    Regular._filters = {}
-  }
+  function reset(){}
   
   function destroy(component, container){
     component.destroy();
@@ -14,6 +11,7 @@ void function(){
   describe("test Regular's modular mechanism", function(){
 
     describe("Regular definition" , function(){
+
       it("should preparse template in Regular.extend", function(){
         var Component = Regular.extend({
           template: "aa",
@@ -26,10 +24,11 @@ void function(){
         expect(Component.prototype.computed.len.type).to.equal("expression");
 
       })
+
       it("should accepet [Element] as the template", function(){
         var templateNode = document.createElement("div");
         
-        templateNode.innerHTML = "<div>{{hello}}</div>";
+        templateNode.innerHTML = "<div>{hello}</div>";
         var Component = Regular.extend({
           template: templateNode
         });
@@ -71,7 +70,7 @@ void function(){
 
       it('filter should ioslated to Parent', function(){
         Parent.filter('foo', foo);
-        expect(Children.filter('foo')).to.equal(foo)
+        expect(Children.filter('foo').get).to.equal(foo)
         expect(Root.filter('foo')).to.equal(undefined)
       });
       it('directive should ioslated to Parent', function(){
@@ -120,7 +119,7 @@ void function(){
         var parent = new Parent();
         Parent.use(SomePlugin)
         expect(parent.foo1).to.equal(foo1);
-        expect(Children.filter('foo2')).to.equal(foo2)
+        expect(Children.filter('foo2').get).to.equal(foo2)
         expect(Root.filter('foo2')).to.equal(undefined)
       });
 
@@ -137,6 +136,30 @@ void function(){
 
         expect(component.some).to.equal(hello);
       })
+      it('data, events, computed, should merged throw extend and initialize', function(){
+        reset();
+        var Component = Regular.extend({
+          data: {a:1},
+          events: {b:1},
+          computed: {c: "a+b"}
+        }).implement({
+          data: {a: 2, b:1},
+          events: {c: 1},
+          computed: {c: "a-b"}
+        })
+
+        var component =  new Component({
+          data: {a: 3,b:2},
+          computed: {c: "a*b"}
+        })
+
+        expect(component.events.c).to.equal(1);
+        expect(component.events.b).to.equal(1);
+        expect(component.data.a).to.equal(3);
+        expect(component.data.b).to.equal(2);
+        expect(component.$get("c")).to.equal(6);
+
+      })
     })
 
   });
@@ -145,7 +168,7 @@ void function(){
 
 describe("Some buildin plugin", function(){
   var Component = Regular.extend({
-    template: "<div>{{this.name}}</div>"
+    template: "<div>{ this.name}</div>"
   }).use("timeout");
 
   it("timeout's $timeout should update when time is out", function(done){
@@ -188,6 +211,5 @@ describe("Some buildin plugin", function(){
 })
 
 }();
-
 
 

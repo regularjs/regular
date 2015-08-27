@@ -17,22 +17,22 @@ var before_mocha = require('./test/before_mocha.js');
 var pkg;
 
 try{
-  pkg = JSON.parse(fs.readFileSync('./package.json', 'utf8'))
-  pkg_bower = JSON.parse(fs.readFileSync('./bower.json', 'utf8'))
-  pkg_component = JSON.parse(fs.readFileSync('./component.json', 'utf8'))
+  pkg = require('./package.json')
+  pkg_bower = require('./bower.json')
+  pkg_component = require('./component.json')
 }catch(e){}
 
-gulp.task('node', function() {
-  return gulp.src('src/node.js')
-    .pipe(webpack({
-      output: {
-        filename: 'regular-parser.js',
-        libraryTarget: "umd"
-      }
-    }
-    ))
-    .pipe(gulp.dest('dist/'));
-});
+// gulp.task('node', function() {
+//   return gulp.src('src/node.js')
+//     .pipe(webpack({
+//       output: {
+//         filename: 'regular-parser.js',
+//         libraryTarget: "umd"
+//       }
+//     }
+//     ))
+//     .pipe(gulp.dest('dist/'));
+// });
 
 gulp.task('default', ['test'], function() {});
 
@@ -105,7 +105,7 @@ gulp.task('karma', function (done) {
 
 
 // build after jshint
-gulp.task('build',["jshint", 'node'], function(){
+gulp.task('build',["jshint"], function(){
   // form minify    
   gulp.src('./component.json')
     .pipe(component.scripts({
@@ -149,7 +149,7 @@ gulp.task('v', function(fn){
 
 
 // watch file then build
-gulp.task('dev', function(){
+gulp.task('dev', ['build'], function(){
   gulp.watch(['component.json', 'src/**/*.js'], ['build'])
   // var puer = spawn('puer', ["--no-reload"], {})
   // puer.stdout.on('data', function (data) {

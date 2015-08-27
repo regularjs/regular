@@ -45,7 +45,7 @@ describe("Computed Property", function(){
 
   it("define get/set computed property should works as expect", function(){
     var Component = Regular.extend({
-      template: "<div>{{fullname}}</div>",
+      template: "<div>{fullname}</div>",
       computed: {
         fullname: {
           get: function(data){
@@ -81,7 +81,7 @@ describe("Computed Property", function(){
 
   it("computed property in intialize will merge/override the setting on Component.extend", function(){
     var Component = Regular.extend({
-      template: "<div>{{fullname}}</div><div>{{hello}}</div>",
+      template: "<div>{fullname}</div><div>{hello}</div>",
       computed: {
         fullname: {
           get: function(data){
@@ -130,10 +130,9 @@ describe("Computed Property", function(){
 })
 describe("Expression", function(){
   function run_expr(expr, context){
-    return expect(Regular.expression(expr).get(context));
+    return expect(context.$expression(expr).get(context));
   }
   describe("compiled expression", function(){
-
     var context = new Regular({
       data: {
         a: 2,
@@ -243,11 +242,14 @@ describe("Expression", function(){
         var component = new Regular({data: {a: 1}});
         component.$get("a+=1");
         expect(component.data.a).to.equal(2);
-        
-        expect(component.$get("a-=1")).to.equal(1);
-        expect(component.$get("a*=100")).to.equal(100);
-        expect(component.$get("a/=2")).to.equal(50);
-        expect(component.$get("a%=3")).to.equal(2);
+        component.$get("a-=1")
+        expect(component.data.a).to.equal(1);
+        component.$get("a*=100")
+        expect(component.data.a).to.equal(100);
+        component.$get("a/=2")
+        expect(component.data.a).to.equal(50);
+        component.$get("a%=3")
+        expect(component.data.a).to.equal(2);
       })
     })
   })
@@ -320,14 +322,14 @@ describe("Watcher-System", function(){
   it("$bind should connect two component", function(){
     var container = document.createElement("div");
     var component = new Component({
-      template: "<div class='name'>{{name}}</div><div class='age'>{{age}}</div>",
+      template: "<div class='name'>{name}</div><div class='age'>{age}</div>",
       data: {
         name: "leeluolee",
         age: 10
       }
     }).$inject(container);
     var component2 = new Component({
-      template: "<div class='user-name'>{{user.name}}</div><div class='user-age'>{{user.age}}</div>",
+      template: "<div class='user-name'>{user.name}</div><div class='user-age'>{user.age}</div>",
       data: {user: {}}
     }).$inject(container);
 
@@ -361,7 +363,7 @@ describe("Watcher-System", function(){
   it("bind once should works on interpolation", function(){
     var container = document.createElement("div");
     var component = new Component({
-      template: "<div class='name'>{{ @(name) }}</div><div class='age'>{{age}}</div>",
+      template: "<div class='name'>{ @(name) }</div><div class='age'>{age}</div>",
       data: {
         name: "leeluolee",
         age: 10
@@ -378,7 +380,7 @@ describe("Watcher-System", function(){
   it("bind once should works on list", function(){
     var container = document.createElement("div");
     var component = new Component({
-      template: "{{#list @(todos) as todo}}<p>{{todo}}</p>{{/list}}",
+      template: "{#list @(todos) as todo}<p>{todo}</p>{/list}",
       data: {
         todos: ["name", "name2"]
       }
@@ -398,7 +400,7 @@ describe("Watcher-System", function(){
   it("bind once should works on if", function(){
     var container = document.createElement("div");
     var component = new Component({
-      template: "{{#if @(test) }}<p>haha</p>{{#else}}<a></a>{{/if}}",
+      template: "{#if @(test) }<p>haha</p>{#else}<a></a>{/if}",
       data: {test: true}
     }).$inject(container);
 
@@ -465,6 +467,59 @@ void function(){
 
       watcher.data.str = "haha";
       watcher.data.array = [1,2];
+      watcher.$digest();
+    })
+
+    it("watch accept function", function(done){
+      watcher.$watch( function(){return this.first+":" + this.last}, function(now, old){
+        expect(old).to.equal(undefined)
+        expect(now).to.equal("first:last")
+        done();
+      })
+      watcher.first = "first";
+      watcher.last = "last";
+      watcher.$digest();
+    })
+    it("watch list [undefined - > [], [] -> undefined]", function(done){
+      var num = 0;
+      var watchid = watcher.$watch( 'list', function(now, old){
+        num++;
+        if(num === 1){
+          expect(old).to.equal(undefined)
+          expect(now).to.eql([])
+        }
+        if(num === 2){
+          expect(old).to.eql([])
+          expect(now).to.eql(undefined)
+          done()
+        }
+      })
+      watcher.data.list = [];
+      watcher.$digest();
+      expect(num).to.equal(1)
+      watcher.data.list = undefined;
+      watcher.$digest();
+    })
+    it("watch list [{} - > [], [] -> {}]", function(done){
+      var num = 0;
+      var watchid = watcher.$watch( 'list', function(now, old){
+        num++;
+        if(num === 2){
+          expect(old).to.eql({})
+          expect(now).to.eql([])
+        }
+        if(num === 3){
+          expect(now).to.eql({})
+          expect(old).to.eql([])
+          done()
+        }
+      })
+
+      watcher.data.list = {};
+      watcher.$digest();
+      watcher.data.list = [];
+      watcher.$digest();
+      watcher.data.list = {};
       watcher.$digest();
     })
 

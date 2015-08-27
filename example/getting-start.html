@@ -13,6 +13,13 @@
 </script>
 <!-- include regular.js -->
 <script src="../dist/regular.js"></script>
+<script src="https://rawgit.com/flatiron/director/master/build/director.js"></script>
+
+<ul>
+     <li><a href="#/author">#/author</a></li>
+     <li><a href="#/books/books">#/books</a></li>
+     <li><a href="#/books/view/1">#/books/view/1</a></li>
+   </ul>
 
 
 <!-- Define your Own Component -->
@@ -31,6 +38,47 @@ var LoginApp = Regular.extend({
 
 var application = new LoginApp().inject('#app');
 // you can also inject the component at other position, for example `inject('#app', 'bottom' | 'top' | 'after' | 'before')`, the default is 'bottom'
+
+
+
+var author = function () { console.log("author"); };
+var books = function () { console.log("books"); };
+var viewBook = function (bookId) {
+  console.log("viewBook: bookId is populated: " + bookId);
+};
+
+var routes = {
+  '/author': author,
+  '/books' :{
+    books:function(){
+      console.log('hahaha')
+    },
+  },
+  "/:id/books": function(){
+    console.log(arguments, "haha")
+  },
+  '/books/:bookId': viewBook,
+  'notfound': function(){
+
+  }
+};
+
+var router = Router(routes).configure({
+  after: function(){
+    console.log(arguments, 'after')
+  },
+  before: function(){
+    console.log(arguments, 'before')
+  },
+  notfound: function(){
+    console.log(arguments, 'notfound')
+  }
+});
+
+router.init();
+
+
+
 
 </script>
 
