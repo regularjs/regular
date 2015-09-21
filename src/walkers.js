@@ -293,7 +293,7 @@ walkers.element = function(ast, options){
     ref, group, element;
 
   if( tag === 'r-content' ){
-    _.log('r-content is deprecated, use {#inc this.$body} instead (`{#include}` as same)', 'error');
+    _.log('r-content is deprecated, use {#inc this.$body} instead (`{#include}` as same)', 'warn');
     return this.$body && this.$body();
   } 
 

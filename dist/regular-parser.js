@@ -1618,7 +1618,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	//http://www.w3.org/html/wg/drafts/html/master/single-page.html#void-elements
 	_.isVoidTag = _.makePredicate("area base br col embed hr img input keygen link menuitem meta param source track wbr r-content");
-	_.isBooleanAttr = _.makePredicate('selected checked disabled readOnly required open autofocus controls autoplay compact loop defer multiple');
+	_.isBooleanAttr = _.makePredicate('selected checked disabled readonly required open autofocus controls autoplay compact loop defer multiple');
 
 	_.isFalse - function(){return false}
 	_.isTrue - function(){return true}
