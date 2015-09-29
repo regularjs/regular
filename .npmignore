@@ -1,0 +1,6 @@
+docs/
+example/
+scripts/
+test/
+coverage/
+gulpfile.js
