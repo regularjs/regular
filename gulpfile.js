@@ -27,7 +27,7 @@ try{
 
 require('./scripts/release')(gulp);
 
-gulp.task('default', ['test'], function() {});
+gulp.task('default', ['watch'], function() {});
 
 
 //one could also externalize common config into a separate file,
@@ -142,19 +142,8 @@ gulp.task('v', function(fn){
 
 
 // watch file then build
-gulp.task('dev', ['build'], function(){
+gulp.task('watch', ['build'], function(){
   gulp.watch(['component.json', 'src/**/*.js'], ['build'])
-  // var puer = spawn('puer', ["--no-reload"], {})
-  // puer.stdout.on('data', function (data) {
-  //   console.log(""+ data);
-  // });
-  // puer.stderr.on('data', function (data) {
-  //   console.log('stderr: ' + data);
-  // });
-
-  // puer.on('close', function (code) {
-  //   console.log('puer test compelete!');
-  // });
 
 })
 

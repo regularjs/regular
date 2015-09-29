@@ -415,6 +415,42 @@ void function(){
       destroy(component, containerAll);
     })
 
+    it("component with (isolate &2) should stop digest phase from parent", function(){
+      var Test = NameSpace.extend({
+        name: 'nested7',
+        template: "<p>{title}</p>",
+        config: function(){
+          this.num = 0;
+        },
+        _digest: function(){
+          this.num++;
+          return this.supr();
+        }
+
+      })
+      var component = new NameSpace({
+        template: "<span>{title}</span>\
+          <nested7 ref=a title={title} isolate=3></nested7>\
+          <nested7 ref=b title={title} isolate=2></nested7>\
+          <nested7 ref=c title={title} isolate=1></nested7>\
+          <nested7 ref=d title={title} ></nested7>",
+        data: {title: 'leeluolee'}
+      });
+
+      expect(component.$refs.a.num).to.equal(2);
+      expect(component.$refs.b.num).to.equal(2);
+      expect(component.$refs.c.num).to.equal(2);
+      expect(component.$refs.d.num).to.equal(2);
+
+      component.$update('title', 'hello')
+
+      expect(component.$refs.a.num).to.equal(2);
+      expect(component.$refs.b.num).to.equal(2);
+      expect(component.$refs.c.num).to.equal(4);
+      expect(component.$refs.d.num).to.equal(4);
+
+    })
+
 
 
     it("ab-cd-ef should convert to abCdEf when passed to nested component", function(){

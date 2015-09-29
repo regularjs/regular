@@ -356,6 +356,41 @@ void function(){
       })
     })
 
+    describe("dom.element should work as expect", function(){
+      var Nested = Regular.extend({
+        name: "nest",
+        template: "{#if !show}<div id='hide'>HIDE</div>{/if}"
+      })
+      var component = new Regular({
+        template: "<nest show={show}></nest>{#if show}<div id='show'>SHOW</div>{/if}\
+                  {#list nodes as node}<div class='list'>list{node_index}</div>{/list}",
+        data: {
+          show: false,
+          nodes: [1,2,3]
+        }
+      })
+      it("dom.element basic", function(){
+        component.$update('show', false);
+        expect(dom.element(component).innerHTML).to.equal('HIDE')
+        var all = dom.element(component, true);
+        expect(all.length).to.equal(4)
+        expect(all[1].className).to.equal('list')
+        expect(all[2].innerHTML).to.equal('list1')
+      })
+      it("dom.element is changed with its content", function(){
+        component.data.nodes = [1,2]
+        component.$update('show', true)
+        expect(dom.element(component).innerHTML).to.equal('SHOW')
+        var all = dom.element(component, true);
+        expect(all.length).to.equal(3)
+        expect(all[1].innerHTML).to.equal('list0')
+        expect(all[2].innerHTML).to.equal('list1')
+      })
+
+    })
+
+    
+
 
   })
 

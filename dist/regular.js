@@ -1,6 +1,6 @@
 /**
 @author	leeluolee
-@version	0.3.1
+@version	0.4.0
 @homepage	http://regularjs.github.io
 */
 ;(function(){
@@ -1642,7 +1642,7 @@ walkers.component = function(ast, options){
   var definition = { 
     data: data, 
     events: events, 
-    $parent: this,
+    $parent: (isolate & 2)? null: this,
     $root: this.$root,
     $outer: options.outer,
     _body: ast.children
@@ -1670,7 +1670,9 @@ walkers.component = function(ast, options){
       value = self._touchExpr(value);
       // use bit operate to control scope
       if( !(isolate & 2) ) 
-        this.$watch(value, component.$update.bind(component, name))
+        this.$watch(value, (function(name, val){
+          this.data[name] = val;
+        }).bind(component, name))
       if( value.set && !(isolate & 1 ) ) 
         // sync the data. it force the component don't trigger attr.name's first dirty echeck
         component.$watch(name, self.$update.bind(self, value), {sync: true});
@@ -1866,6 +1868,7 @@ dom.find = function(sl){
   }
   if(sl.indexOf('#')!==-1) return document.getElementById( sl.slice(1) );
 }
+
 
 dom.inject = function(node, refer, position){
 
@@ -3661,8 +3664,7 @@ var methods = {
   },
   // private digest logic
   _digest: function(){
-    // if(this.context) return this.context.$digest();
-    // if(this.$emit) this.$emit('digest');
+
     var watchers = this._watchers;
     var dirty = false, children, watcher, watcherDirty;
     if(watchers && watchers.length){
@@ -3676,7 +3678,9 @@ var methods = {
     children = this._children;
     if(children && children.length){
       for(var m = 0, mlen = children.length; m < mlen; m++){
-        if(children[m] && children[m]._digest()) dirty = true;
+        var child = children[m];
+        
+        if(child && child._digest()) dirty = true;
       }
     }
     return dirty;
@@ -4217,6 +4221,23 @@ var combine = module.exports = {
     }
   }
 
+}
+
+
+// @TODO: need move to dom.js
+dom.element = function( component, all ){
+  if(!component) return !all? null: [];
+  var nodes = combine.node( component );
+  if( nodes.nodeType === 1 ) return all? [nodes]: nodes;
+  var elements = [];
+  for(var i = 0; i<nodes.length ;i++){
+    var node = nodes[i];
+    if( node && node.nodeType === 1){
+      if(!all) return node;
+      elements.push(node);
+    } 
+  }
+  return elements
 }
 });
 require.register("regularjs/src/helper/arrayDiff.js", function(exports, require, module){

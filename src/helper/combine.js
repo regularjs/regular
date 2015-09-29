@@ -81,3 +81,20 @@ var combine = module.exports = {
   }
 
 }
+
+
+// @TODO: need move to dom.js
+dom.element = function( component, all ){
+  if(!component) return !all? null: [];
+  var nodes = combine.node( component );
+  if( nodes.nodeType === 1 ) return all? [nodes]: nodes;
+  var elements = [];
+  for(var i = 0; i<nodes.length ;i++){
+    var node = nodes[i];
+    if( node && node.nodeType === 1){
+      if(!all) return node;
+      elements.push(node);
+    } 
+  }
+  return elements
+}

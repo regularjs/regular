@@ -110,8 +110,7 @@ var methods = {
   },
   // private digest logic
   _digest: function(){
-    // if(this.context) return this.context.$digest();
-    // if(this.$emit) this.$emit('digest');
+
     var watchers = this._watchers;
     var dirty = false, children, watcher, watcherDirty;
     if(watchers && watchers.length){
@@ -125,7 +124,9 @@ var methods = {
     children = this._children;
     if(children && children.length){
       for(var m = 0, mlen = children.length; m < mlen; m++){
-        if(children[m] && children[m]._digest()) dirty = true;
+        var child = children[m];
+        
+        if(child && child._digest()) dirty = true;
       }
     }
     return dirty;

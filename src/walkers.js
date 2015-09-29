@@ -436,7 +436,7 @@ walkers.component = function(ast, options){
   var definition = { 
     data: data, 
     events: events, 
-    $parent: this,
+    $parent: (isolate & 2)? null: this,
     $root: this.$root,
     $outer: options.outer,
     _body: ast.children
@@ -464,7 +464,9 @@ walkers.component = function(ast, options){
       value = self._touchExpr(value);
       // use bit operate to control scope
       if( !(isolate & 2) ) 
-        this.$watch(value, component.$update.bind(component, name))
+        this.$watch(value, (function(name, val){
+          this.data[name] = val;
+        }).bind(component, name))
       if( value.set && !(isolate & 1 ) ) 
         // sync the data. it force the component don't trigger attr.name's first dirty echeck
         component.$watch(name, self.$update.bind(self, value), {sync: true});
