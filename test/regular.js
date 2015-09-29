@@ -684,7 +684,7 @@ Regular.implement({
       if(computedProperty){
         if(computedProperty.type==='expression' && !computedProperty.get) this._touchExpr(computedProperty);
         if(computedProperty.get)  return computedProperty.get(this);
-        else _.log("the computed '" + path + "' don't define the get function,  get data."+path + " altnately", "error")
+        else _.log("the computed '" + path + "' don't define the get function,  get data."+path + " altnately", "warn")
       }
   }
     if(typeof defaults === "undefined" || typeof path == "undefined" ){
@@ -721,7 +721,7 @@ Regular.implement({
     }
     if(computedProperty) {
       if(computedProperty.set) return computedProperty.set(this, value);
-      else _.log("the computed '" + path + "' don't define the set function,  assign data."+path + " altnately", "error" )
+      else _.log("the computed '" + path + "' don't define the set function,  assign data."+path + " altnately", "warn" )
     }
     data[path] = value;
     return value;
@@ -1181,7 +1181,7 @@ _.log = function(msg, type){
 
 //http://www.w3.org/html/wg/drafts/html/master/single-page.html#void-elements
 _.isVoidTag = _.makePredicate("area base br col embed hr img input keygen link menuitem meta param source track wbr r-content");
-_.isBooleanAttr = _.makePredicate('selected checked disabled readOnly required open autofocus controls autoplay compact loop defer multiple');
+_.isBooleanAttr = _.makePredicate('selected checked disabled readonly required open autofocus controls autoplay compact loop defer multiple');
 
 _.isFalse - function(){return false}
 _.isTrue - function(){return true}
@@ -1497,7 +1497,7 @@ walkers.element = function(ast, options){
     ref, group, element;
 
   if( tag === 'r-content' ){
-    _.log('r-content is deprecated, use {#inc this.$body} instead (`{#include}` as same)', 'error');
+    _.log('r-content is deprecated, use {#inc this.$body} instead (`{#include}` as same)', 'warn');
     return this.$body && this.$body();
   } 
 

@@ -475,7 +475,7 @@ Regular.implement({
       if(computedProperty){
         if(computedProperty.type==='expression' && !computedProperty.get) this._touchExpr(computedProperty);
         if(computedProperty.get)  return computedProperty.get(this);
-        else _.log("the computed '" + path + "' don't define the get function,  get data."+path + " altnately", "error")
+        else _.log("the computed '" + path + "' don't define the get function,  get data."+path + " altnately", "warn")
       }
   }
     if(typeof defaults === "undefined" || typeof path == "undefined" ){
@@ -512,7 +512,7 @@ Regular.implement({
     }
     if(computedProperty) {
       if(computedProperty.set) return computedProperty.set(this, value);
-      else _.log("the computed '" + path + "' don't define the set function,  assign data."+path + " altnately", "error" )
+      else _.log("the computed '" + path + "' don't define the set function,  assign data."+path + " altnately", "warn" )
     }
     data[path] = value;
     return value;
