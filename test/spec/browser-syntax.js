@@ -166,6 +166,18 @@ void function(){
 
     })
 
+    it("#44: <div>></div> should not throw error", function(){
+
+      expect(function(){ 
+        new Regular({template: '<div>></div>'}) 
+      }) .to.not.throwError();
+      expect(function(){ 
+        new Regular({template: '<div>><</div>'}) 
+      }) .to.not.throwError();
+
+    })
+
+
     
 
 

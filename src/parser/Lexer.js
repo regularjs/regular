@@ -239,12 +239,12 @@ var rules = {
     if(all) return {type: 'TEXT', value: all}
   }],
 
-  ENTER_TAG: [/[^\x00<>]*?(?=<)/, function(all){ 
+  ENTER_TAG: [/[^\x00]*?(?=<[\w\/\!])/, function(all){ 
     this.enter('TAG');
     if(all) return {type: 'TEXT', value: all}
   }],
 
-  TEXT: [/[^\x00]+/, 'TEXT'],
+  TEXT: [/[^\x00]+/, 'TEXT' ],
 
   // 2. TAG
   // --------------------

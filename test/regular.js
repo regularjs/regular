@@ -2474,12 +2474,12 @@ var rules = {
     if(all) return {type: 'TEXT', value: all}
   }],
 
-  ENTER_TAG: [/[^\x00<>]*?(?=<)/, function(all){ 
+  ENTER_TAG: [/[^\x00]*?(?=<[\w\/\!])/, function(all){ 
     this.enter('TAG');
     if(all) return {type: 'TEXT', value: all}
   }],
 
-  TEXT: [/[^\x00]+/, 'TEXT'],
+  TEXT: [/[^\x00]+/, 'TEXT' ],
 
   // 2. TAG
   // --------------------
@@ -3972,7 +3972,7 @@ animate.inject = function( node, refer ,direction, callback ){
  * @return {[type]}            [description]
  */
 animate.remove = function(node, callback){
-  if(!node) throw new Error('node to be removed is undefined')
+  if(!node) return;
   var count = 0;
   function loop(){
     count++;
