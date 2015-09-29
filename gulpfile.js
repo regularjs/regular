@@ -16,23 +16,16 @@ var through = require('through2');
 var before_mocha = require('./test/before_mocha.js');
 var pkg;
 
+
+
 try{
   pkg = require('./package.json')
   pkg_bower = require('./bower.json')
   pkg_component = require('./component.json')
 }catch(e){}
 
-// gulp.task('node', function() {
-//   return gulp.src('src/node.js')
-//     .pipe(webpack({
-//       output: {
-//         filename: 'regular-parser.js',
-//         libraryTarget: "umd"
-//       }
-//     }
-//     ))
-//     .pipe(gulp.dest('dist/'));
-// });
+
+require('./scripts/release')(gulp);
 
 gulp.task('default', ['test'], function() {});
 
