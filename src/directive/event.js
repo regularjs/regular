@@ -34,12 +34,12 @@ Regular.directive( /^(delegate|de)-\w+$/, function( elem, value, name ) {
     if(root.parentNode){
       dom.on(root.parentNode, type, delegateEvent);
     }else{
-      root.$on( "$inject", function( newParent ){
-        var preParent = this.parentNode;
+      root.$on( "$inject", function( node, position, preParent ){
+        var newParent = this.parentNode;
         if( preParent ){
           dom.off(preParent, type, delegateEvent);
         }
-        dom.on(newParent, type, delegateEvent);
+        if(newParent) dom.on(this.parentNode, type, delegateEvent);
       })
     }
     root.$on("$destroy", function(){

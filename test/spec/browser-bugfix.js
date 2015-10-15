@@ -470,5 +470,43 @@ var template = (function(){/*
 
   })
 
+  describe("Milestones v0.4.1", function(){
+    it("#53 nested component with delegate-event and [postion:after or before ] bug", function( done ){
+      var after = document.createElement('div');
+      after.setAttribute('id',1)
+      container.appendChild(after);
+      var dom =Regular.dom;
+      var i =0;
+      var Nested = Regular.extend({
+        name: 'transclude',
+        template: "{#inc this.$body}"
+      })
+      var Nested2 = Regular.extend({
+        name: "nest2",
+        template: "<div><a id='a' de-click={this.hello()} ></a></div>",
+        hello: function(){
+          i++
+        }
+      })
+      var component = new Component({
+        template: "{#list this.list as i } <transclude> <nest2 isolate ></nest2> </transclude> {/list}",
+        list: ['1']
+      }).$inject( after, 'before' );
+
+
+        
+
+
+      dispatchMockEvent(dom.element(component).firstChild, 'click');
+      dom.remove(after);
+      expect(i).to.equal(1);
+      destroy( component, container );
+      done()
+
+
+
+    })
+  })
+
 
 }();

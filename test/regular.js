@@ -4185,8 +4185,10 @@ var combine = module.exports = {
     }
     // if it is a component
     if(group.$emit) {
-      group.$emit("$inject", node, pos);
-      group.parentNode = (pos ==='after' || pos === 'before')? node.parentNode : node;
+      var preParent = group.parentNode;
+      var newParent = (pos ==='after' || pos === 'before')? node.parentNode : node;
+      group.parentNode = newParent;
+      group.$emit("$inject", node, pos, preParent);
     }
     return group;
   },
@@ -4235,8 +4237,12 @@ dom.element = function( component, all ){
       elements.push(node);
     } 
   }
-  return elements
+  return !all? elements[0]: elements;
 }
+
+
+
+
 });
 require.register("regularjs/src/helper/arrayDiff.js", function(exports, require, module){
 
@@ -5247,12 +5253,12 @@ Regular.directive( /^(delegate|de)-\w+$/, function( elem, value, name ) {
     if(root.parentNode){
       dom.on(root.parentNode, type, delegateEvent);
     }else{
-      root.$on( "$inject", function( newParent ){
-        var preParent = this.parentNode;
+      root.$on( "$inject", function( node, position, preParent ){
+        var newParent = this.parentNode;
         if( preParent ){
           dom.off(preParent, type, delegateEvent);
         }
-        dom.on(newParent, type, delegateEvent);
+        if(newParent) dom.on(this.parentNode, type, delegateEvent);
       })
     }
     root.$on("$destroy", function(){

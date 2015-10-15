@@ -46,8 +46,10 @@ var combine = module.exports = {
     }
     // if it is a component
     if(group.$emit) {
-      group.$emit("$inject", node, pos);
-      group.parentNode = (pos ==='after' || pos === 'before')? node.parentNode : node;
+      var preParent = group.parentNode;
+      var newParent = (pos ==='after' || pos === 'before')? node.parentNode : node;
+      group.parentNode = newParent;
+      group.$emit("$inject", node, pos, preParent);
     }
     return group;
   },
@@ -96,5 +98,8 @@ dom.element = function( component, all ){
       elements.push(node);
     } 
   }
-  return elements
+  return !all? elements[0]: elements;
 }
+
+
+
