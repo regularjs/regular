@@ -196,7 +196,7 @@ function processAnimate( element, value ){
           destroies.push(this.$off.bind(this, param, seed.start));
         }
       }
-      continue
+      continue;
     }
 
     var animator =  Component.animation(command) 
