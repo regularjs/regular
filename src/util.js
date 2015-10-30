@@ -190,12 +190,17 @@ _.escapeRegExp = function( str){// Credit: XRegExp 0.6.1 (c) 2007-2008 Steven Le
 };
 
 
-var rEntity = new RegExp("&(" + _.keys(entities).join('|') + ');', 'gi');
+var rEntity = new RegExp("&(?:(#x[0-9a-fA-F]+)|(#[0-9]+)|(" + _.keys(entities).join('|') + '));', 'gi');
 
 _.convertEntity = function(chr){
 
-  return ("" + chr).replace(rEntity, function(all, capture){
-    return String.fromCharCode(entities[capture])
+  return ("" + chr).replace(rEntity, function(all, hex, dec, capture){
+    var charCode;
+    if( dec ) charCode = parseInt( dec.slice(1), 10 );
+    else if( hex ) charCode = parseInt( hex.slice(2), 16 );
+    else charCode = entities[capture]
+
+    return String.fromCharCode( charCode )
   });
 
 }

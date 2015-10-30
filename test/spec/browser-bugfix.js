@@ -372,6 +372,7 @@ var template = (function(){/*
       destroy(component, container);
     })
 
+
     it('bugfix #39', function(){
       // https://github.com/regularjs/regular/issues/39
 
@@ -506,6 +507,27 @@ var template = (function(){/*
 
 
     })
+  })
+
+  it('bugfix #50', function(){
+    // https://github.com/regularjs/regular/issues/50
+    var template =  "<p>&#x02A9D;</p><p>&#10909;</p><p>{text}</p>"
+    var Component = Regular.extend({
+      template: template
+    });
+
+
+    var component = new Component().$inject(container);
+
+    var ps = nes.all('p' ,container);
+
+
+    expect(dom.text(ps[0])).to.equal(String.fromCharCode(10909));
+    expect(dom.text(ps[1])).to.equal(String.fromCharCode(10909));
+
+    destroy(component, container)
+
+
   })
 
 

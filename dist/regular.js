@@ -216,17 +216,18 @@ var Parser = require("./parser/Parser.js");
 var config = require("./config.js");
 var _ = require('./util');
 var extend = require('./helper/extend.js');
+var combine = {};
 if(env.browser){
-  var combine = require('./helper/combine.js');
   var dom = require("./dom.js");
   var walkers = require('./walkers.js');
   var Group = require('./group.js');
+  var doc = dom.doc;
+  combine = require('./helper/combine.js');
 }
 var events = require('./helper/event.js');
 var Watcher = require('./helper/watcher.js');
 var parse = require('./helper/parse.js');
 var filter = require('./helper/filter.js');
-var doc = dom.doc;
 
 
 /**
@@ -980,12 +981,17 @@ _.escapeRegExp = function( str){// Credit: XRegExp 0.6.1 (c) 2007-2008 Steven Le
 };
 
 
-var rEntity = new RegExp("&(" + _.keys(entities).join('|') + ');', 'gi');
+var rEntity = new RegExp("&(?:(#x[0-9a-fA-F]+)|(#[0-9]+)|(" + _.keys(entities).join('|') + '));', 'gi');
 
 _.convertEntity = function(chr){
 
-  return ("" + chr).replace(rEntity, function(all, capture){
-    return String.fromCharCode(entities[capture])
+  return ("" + chr).replace(rEntity, function(all, hex, dec, capture){
+    var charCode;
+    if( dec ) charCode = parseInt( dec.slice(1), 10 );
+    else if( hex ) charCode = parseInt( hex.slice(2), 16 );
+    else charCode = entities[capture]
+
+    return String.fromCharCode( charCode )
   });
 
 }

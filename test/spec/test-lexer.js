@@ -1,6 +1,8 @@
 var Lexer = require_lib("parser/Lexer.js");
 var config = require_lib("config.js");
 
+var Regular = require_lib("index.js");
+
 /**
  * setup template
  */
@@ -59,6 +61,7 @@ describe("Lexer under mode 1 and 2", function(){
     expect(l(input))
       .typeEqual("OPEN,END,TAG_OPEN,NAME,=,NAME,>,EXPR_OPEN,IDENT,END,TAG_CLOSE,CLOSE,EOF");
 
+
     // mode 2
     expect(l2(input))
       .typeEqual("OPEN,END,TEXT,EXPR_OPEN,IDENT,END,TEXT,CLOSE,EOF");
@@ -67,5 +70,14 @@ describe("Lexer under mode 1 and 2", function(){
 
 })
 
+describe("Regular.parse", function(){
+  it("Regular.parse should work in nodejs", function(){
+    var content = Regular.parse("{title}");
+    expect(content).to.eql([ { type: 'expression',
+    body: 'c._sg_(\'title\', d, e)',
+    constant: false,
+    setbody: 'c._ss_(\'title\',p_,d, \'=\', 1)' } ])
+  })
+})
 
 

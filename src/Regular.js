@@ -5,17 +5,18 @@ var Parser = require("./parser/Parser.js");
 var config = require("./config.js");
 var _ = require('./util');
 var extend = require('./helper/extend.js');
+var combine = {};
 if(env.browser){
-  var combine = require('./helper/combine.js');
   var dom = require("./dom.js");
   var walkers = require('./walkers.js');
   var Group = require('./group.js');
+  var doc = dom.doc;
+  combine = require('./helper/combine.js');
 }
 var events = require('./helper/event.js');
 var Watcher = require('./helper/watcher.js');
 var parse = require('./helper/parse.js');
 var filter = require('./helper/filter.js');
-var doc = dom.doc;
 
 
 /**
