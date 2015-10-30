@@ -494,14 +494,14 @@ var template = (function(){/*
         list: ['1']
       }).$inject( after, 'before' );
 
-
+      document.body.appendChild(container);
         
-
 
       dispatchMockEvent(dom.element(component).firstChild, 'click');
       dom.remove(after);
       expect(i).to.equal(1);
       destroy( component, container );
+      document.body.removeChild(container);
       done()
 
 
