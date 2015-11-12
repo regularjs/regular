@@ -1,6 +1,6 @@
 /**
 @author	leeluolee
-@version	0.4.0
+@version	0.4.1
 @homepage	http://regularjs.github.io
 */
 
@@ -226,6 +226,7 @@ var events = require('./helper/event.js');
 var Watcher = require('./helper/watcher.js');
 var parse = require('./helper/parse.js');
 var filter = require('./helper/filter.js');
+var zone = require('zone.js')
 
 
 /**

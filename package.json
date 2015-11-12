@@ -47,5 +47,8 @@
     "mocha": "~1.18.2",
     "through2": "~0.4.1",
     "yargs": "^3.26.0"
+  },
+  "dependencies": {
+    "zone.js": "^0.5.8"
   }
 }
