@@ -2511,7 +2511,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	var macro = {
 	  'NAME': /(?:[:_A-Za-z][-\.:_0-9A-Za-z]*)/,
 	  'IDENT': /[\$_A-Za-z][_0-9A-Za-z\$]*/,
-	  'SPACE': /[\r\n\f ]/
+	  'SPACE': /[\r\n\t\f ]/
 	}
 
 
@@ -2559,6 +2559,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    split = this.map[state] 
 	    test = split.TRUNK.exec(str);
 	    if(!test){
+	      debugger
 	      this.error('Unrecoginized Token');
 	    }
 	    mlen = test[0].length;
@@ -2753,12 +2754,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	  // 2. TAG
 	  // --------------------
 	  TAG_NAME: [/{NAME}/, 'NAME', 'TAG'],
-	  TAG_UNQ_VALUE: [/[^\{}&"'=><`\r\n\f ]+/, 'UNQ', 'TAG'],
+	  TAG_UNQ_VALUE: [/[^\{}&"'=><`\r\n\f\t ]+/, 'UNQ', 'TAG'],
 
 	  TAG_OPEN: [/<({NAME})\s*/, function(all, one){ //"
 	    return {type: 'TAG_OPEN', value: one}
 	  }, 'TAG'],
-	  TAG_CLOSE: [/<\/({NAME})[\r\n\f ]*>/, function(all, one){
+	  TAG_CLOSE: [/<\/({NAME})[\r\n\f\t ]*>/, function(all, one){
 	    this.leave();
 	    return {type: 'TAG_CLOSE', value: one }
 	  }, 'TAG'],

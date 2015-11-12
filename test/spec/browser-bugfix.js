@@ -322,12 +322,16 @@ it("should destroy clear when have non parentNode", function(){
     destroy(component, container);
   })
   it("bugfix #11, 换行导致模板无法解析", function(){
-    
-var template = (function(){/*
-<input type="text"  class="form-control"
-                               id="username" name="username" value="">
-*/}).toString().match(/\/\*([\s\S]*)\*\//)[1];
+var template = '<input type="text"  class="form-control" \
+  id="username" name="username" value="">';
 
+
+    try{
+
+    console.log(new Regular.Lexer(template).lex().map(function(t){return t.type}));
+    }catch(e){
+      console.log(e)
+    }
     var Component = Regular.extend({
       template: template
     });
