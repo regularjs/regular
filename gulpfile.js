@@ -21,8 +21,22 @@ var pkg;
 try{
   pkg = require('./package.json')
   pkg_bower = require('./bower.json')
-  pkg_component = require('./component.json')
 }catch(e){}
+
+var wpConfig = {
+  output: {
+    filename: "regular.js",
+    library: "Regular",
+    libraryTarget: "umd"
+  }
+
+}
+
+var testConfig = {
+  output: {
+    filename: "dom.bundle.js"
+  }
+}
 
 
 require('./scripts/release')(gulp);
@@ -100,28 +114,27 @@ gulp.task('karma', function (done) {
 // build after jshint
 gulp.task('build',["jshint"], function(){
   // form minify    
-  gulp.src('./component.json')
-    .pipe(component.scripts({
-      standalone: 'Regular',
-      name: 'regular'
-    }))
+  gulp.src('./src/index.js')
+    .pipe(webpack(wpConfig))
     .pipe(wrap(signatrue))
-    .pipe(gulp.dest('dist'))
+    .pipe(gulp.dest('./dist'))
     .pipe(wrap(mini))
     .pipe(uglify())
-    .pipe(gulp.dest('dist'))
-    .on('error', function(err){
-      console.log(err)
+    .pipe(gulp.dest('./dist'))
+    .on("error", function(err){
+      throw err
     })
 
-  // for test
-  gulp.src('./component.json')
-    .pipe(component.scripts({
-      name: 'regular'
-    }))
-    .pipe(wrap(signatrue))
-    .pipe(gulp.dest('test'))
 
+})
+
+gulp.task('testbundle',  function(){
+  gulp.src("test/test.exports.js")
+    .pipe(webpack(testConfig))
+    .pipe(gulp.dest('test/runner'))
+    .on("error", function(err){
+      throw err
+    })
 })
 
 
@@ -129,11 +142,9 @@ gulp.task('build',["jshint"], function(){
 gulp.task('v', function(fn){
   var version = process.argv[3].replace('-',"");
   pkg.version = version
-  pkg_component.version = version
   pkg_bower.version = version
   try{
     fs.writeFileSync('./package.json', JSON.stringify(pkg, null, 2), 'utf8');           
-    fs.writeFileSync('./component.json', JSON.stringify(pkg_component, null, 2), 'utf8');
     fs.writeFileSync('./bower.json', JSON.stringify(pkg_bower, null, 2), 'utf8');
   }catch(e){
     console.error('update version faild' + e.message)
@@ -141,14 +152,10 @@ gulp.task('v', function(fn){
 })
 
 
-// watch file then build
-gulp.task('watch', ['build'], function(){
-  gulp.watch(['component.json', 'src/**/*.js'], ['build'])
 
-})
-
-gulp.task('dev-test', function(){
-  gulp.watch(['src/**/*.js', 'test/spec/**/*.js'], ['build','mocha'])
+gulp.task('watch', ["build", 'testbundle'], function(){
+  gulp.watch(['src/**/*.js'], ['build']);
+  gulp.watch(['test/spec/*.js', 'src/**/*.js'], ['testbundle'])
 })
 
 

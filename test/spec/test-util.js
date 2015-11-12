@@ -1,8 +1,7 @@
-var _ = require_lib("util.js");
-var shim = require_lib("helper/shim.js");
-var extend = require_lib('helper/extend.js');
-var diffArray = require_lib('helper/arrayDiff.js');
-
+var _ = require("../../src/util.js");
+var shim = require("../../src/helper/shim.js");
+var extend = require("../../src/helper/extend.js");
+var diffArray = require("../../src/helper/arrayDiff.js");
 
 
 
@@ -269,8 +268,5 @@ describe("Regular.util", function(){
       }.bind({a:1}, 1, 2)(3)
     })
   })
-
-
-  
 
 })

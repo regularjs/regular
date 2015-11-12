@@ -1,7 +1,6 @@
 
 
-var Regular = require_lib("index.js");
-void function(){
+var Regular = require("../../src/index.js");
 
 function destroy(component, container){
   component.destroy();
@@ -739,7 +738,6 @@ describe('the atrributeValue with the string type is valid in most buildin direc
 })
 
 
-}();
 
 
 

@@ -8,33 +8,15 @@
 <body>
   <div id="mocha"></div>
   <div id="test"></div>
-  <script src="../regular.js"></script>
   <script src="vendor/jquery.js"></script>
   <script src="vendor/nes.js"></script>
   <script src="vendor/expect.js"></script>
   <script src="vendor/mocha.js"></script>
   <script src="vendor/util.js"></script>
-  <script src="../karma.js"></script>
   <script> 
-
   mocha.setup('bdd'); 
   </script>
-  <script src="../spec/browser-syntax.js"></script>
-  <script src="../spec/browser-bugfix.js"></script>
-  <script src="../spec/browser-animate.js"></script>
-  <script src="../spec/browser-dom.js"></script>
-  <script src="../spec/browser-api.js"></script>
-  <script src="../spec/browser-modular.js"></script>
-  <script src="../spec/browser-list.js"></script>
-  <script src="../spec/browser-if.js"></script>
-  <script src="../spec/browser-include.js"></script>
-  <script src="../spec/browser-directive.js"></script>
-  <script src="../spec/browser-filter.js"></script>
-  <script src="../spec/browser-watcher.js"></script>
-  <script src="../spec/browser-nested.js"></script>
-  <script src="../spec/test-util.js"></script>
-  <script src="../spec/test-event.js"></script>
-  <script src="../spec/test-lexer.js"></script>
+  <script src="./dom.bundle.js"></script>
   <script>
     mocha.checkLeaks();
     mocha.globals(['terminator']);
@@ -44,6 +26,24 @@
 </body>
 </html>
 
+<!-- 
+
+  // <script src="../spec/browser-syntax.js"></script>
+  // <script src="../spec/browser-bugfix.js"></script>
+  // <script src="../spec/browser-animate.js"></script>
+  // <script src="../spec/browser-dom.js"></script>
+  // <script src="../spec/browser-api.js"></script>
+  // <script src="../spec/browser-modular.js"></script>
+  // <script src="../spec/browser-list.js"></script>
+  // <script src="../spec/browser-if.js"></script>
+  // <script src="../spec/browser-include.js"></script>
+  // <script src="../spec/browser-directive.js"></script>
+  // <script src="../spec/browser-filter.js"></script>
+  // <script src="../spec/browser-watcher.js"></script>
+  // <script src="../spec/browser-nested.js"></script>
+  // <script src="../spec/test-util.js"></script>
+  // <script src="../spec/test-event.js"></script>
+ -->
 
 
 

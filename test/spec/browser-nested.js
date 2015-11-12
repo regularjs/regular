@@ -1,7 +1,5 @@
 
-
-void function(){
-  var Regular = require_lib("index.js");
+  var Regular = require("../../src/index.js");
   var Component = Regular.extend();
 
   function destroy(component, container){
@@ -487,4 +485,3 @@ void function(){
 })
 
 
-}()
