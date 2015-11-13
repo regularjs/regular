@@ -1,4 +1,6 @@
+var expect = require('expect.js');
 var Event = require("../../src/helper/event.js");
+
 
 
 describe("EventEmitter", function(){

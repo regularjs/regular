@@ -1,3 +1,4 @@
+var expect = require('expect.js');
 
 
 var dom = require("../../src/dom.js");

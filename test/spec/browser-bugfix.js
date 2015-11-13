@@ -1,3 +1,4 @@
+var expect = require('expect.js');
 
 var Regular = require("../../src/index.js");
 var dom = Regular.dom;
@@ -325,23 +326,13 @@ it("should destroy clear when have non parentNode", function(){
 var template = '<input type="text"  class="form-control" \
   id="username" name="username" value="">';
 
-
-    try{
-
-    console.log(new Regular.Lexer(template).lex().map(function(t){return t.type}));
-    }catch(e){
-      console.log(e)
-    }
     var Component = Regular.extend({
       template: template
     });
 
-
     var component = new Component().$inject(container);
 
     expect(nes.all('input' ,container).length).to.equal(1)
-
-
 
     destroy(component, container);
   })

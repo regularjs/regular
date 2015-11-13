@@ -5,7 +5,6 @@ var _ = require('./src/util.js');
 var gulp = require('gulp');
 var spawn = require('child_process').spawn;
 var shell = require('gulp-shell');
-var component = require('gulp-component');
 var istanbul = require('gulp-istanbul');
 var jshint = require('gulp-jshint');
 var webpack = require('gulp-webpack');
@@ -13,7 +12,6 @@ var mocha = require('gulp-mocha');
 var uglify = require('gulp-uglify');
 var gutil = require('gulp-util');
 var through = require('through2');
-var before_mocha = require('./test/before_mocha.js');
 var pkg;
 
 
@@ -50,14 +48,11 @@ var karmaCommonConf = {
   browsers: ['Chrome', 'Firefox', 'IE', 'IE9', 'IE8', 'IE7', 'PhantomJS'],
   frameworks: ['mocha'],
   files: [
-    'test/regular.js',
-    'test/karma.js',
     'test/runner/vendor/expect.js',
     'test/runner/vendor/jquery.js',
     'test/runner/vendor/nes.js',
     'test/runner/vendor/util.js',
-    'test/spec/test-*.js',
-    'test/spec/browser-*.js'
+    'test/runner/dom.bundle.js'
   ],
   client: {
     mocha: {ui: 'bdd'}
@@ -170,7 +165,7 @@ gulp.task('jshint', function(){
 })
 
 gulp.task('cover', function(cb){
-  before_mocha.dirty();
+  
   gulp.src(['src/**/*.js'])
     .pipe(istanbul()) // Covering files
     .on('end', function () {
@@ -181,25 +176,10 @@ gulp.task('cover', function(cb){
     });
 })
 
-gulp.task('test', ['jshint','mocha', 'karma'])
+gulp.task('test', ['jshint', 'karma'])
 
 // for travis
 gulp.task('travis', ['jshint' ,'build','mocha',  'karma']);
-
-gulp.task('mocha', function() {
-
-  before_mocha.dirty();
-
-  return gulp.src(['test/spec/test-*.js'])
-    .pipe(mocha({reporter: 'spec' }) )
-    .on('error', function(){
-      gutil.log.apply(this, arguments);
-      console.log('\u0007');
-    })
-    .on('end', function(){
-      before_mocha.clean();
-    });
-});
 
 
 gulp.task('casper', function(){

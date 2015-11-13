@@ -1,3 +1,4 @@
+var expect = require('expect.js');
 // contains basic dom && event specs
 var dom = require("../../src/dom.js");
 var Regular = require("../../src/index.js");

@@ -1,3 +1,4 @@
+var expect = require('expect.js');
 var Lexer = require("../../src/parser/Lexer.js");
 var config = require("../../src/config.js");
 
