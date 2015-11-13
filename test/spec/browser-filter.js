@@ -1,6 +1,6 @@
+var expect = require('expect.js');
 
-var Regular = require_lib("index.js");
-void function(){
+var Regular = require("../../src/index.js");
 
 
 describe("Filter", function(){
@@ -194,4 +194,3 @@ function destroy(component, container){
   
 })
 
-}()

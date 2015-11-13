@@ -2,7 +2,6 @@
   ![regularjs](http://regularjs.github.io/image/regular-icon-100.png)
 </a>
 
-> <strong>After version 0.3.0: in Regularjs, the default TAG is changed from `{{}}` to the cleaner`{}`</strong>. However you can use `Regular.config({BEGIN:'{{', END: '}}'})` if the old syntax is needed.
 
 # Regularjs
 
@@ -12,6 +11,10 @@
 > Regularjs is a __living template engine__ that helps us to create data-driven components.
 
 
+
+
+* __[✨中文指南 ](http://regularjs.github.io/guide/zh/index.html)__
+* __[✨中文API ](http://regularjs.github.io/reference/?api-zh)__
 
 
 ## Features

@@ -1,7 +1,8 @@
-var Lexer = require_lib("parser/Lexer.js");
-var config = require_lib("config.js");
+var expect = require('expect.js');
+var Lexer = require("../../src/parser/Lexer.js");
+var config = require("../../src/config.js");
 
-var Regular = require_lib("index.js");
+var Regular = require("../../src/index.js");
 
 /**
  * setup template

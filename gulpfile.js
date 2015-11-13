@@ -5,7 +5,6 @@ var _ = require('./src/util.js');
 var gulp = require('gulp');
 var spawn = require('child_process').spawn;
 var shell = require('gulp-shell');
-var component = require('gulp-component');
 var istanbul = require('gulp-istanbul');
 var jshint = require('gulp-jshint');
 var webpack = require('gulp-webpack');
@@ -13,7 +12,6 @@ var mocha = require('gulp-mocha');
 var uglify = require('gulp-uglify');
 var gutil = require('gulp-util');
 var through = require('through2');
-var before_mocha = require('./test/before_mocha.js');
 var pkg;
 
 
@@ -21,8 +19,22 @@ var pkg;
 try{
   pkg = require('./package.json')
   pkg_bower = require('./bower.json')
-  pkg_component = require('./component.json')
 }catch(e){}
+
+var wpConfig = {
+  output: {
+    filename: "regular.js",
+    library: "Regular",
+    libraryTarget: "umd"
+  }
+
+}
+
+var testConfig = {
+  output: {
+    filename: "dom.bundle.js"
+  }
+}
 
 
 require('./scripts/release')(gulp);
@@ -36,14 +48,11 @@ var karmaCommonConf = {
   browsers: ['Chrome', 'Firefox', 'IE', 'IE9', 'IE8', 'IE7', 'PhantomJS'],
   frameworks: ['mocha'],
   files: [
-    'test/regular.js',
-    'test/karma.js',
     'test/runner/vendor/expect.js',
     'test/runner/vendor/jquery.js',
     'test/runner/vendor/nes.js',
     'test/runner/vendor/util.js',
-    'test/spec/test-*.js',
-    'test/spec/browser-*.js'
+    'test/runner/dom.bundle.js'
   ],
   client: {
     mocha: {ui: 'bdd'}
@@ -100,28 +109,27 @@ gulp.task('karma', function (done) {
 // build after jshint
 gulp.task('build',["jshint"], function(){
   // form minify    
-  gulp.src('./component.json')
-    .pipe(component.scripts({
-      standalone: 'Regular',
-      name: 'regular'
-    }))
+  gulp.src('./src/index.js')
+    .pipe(webpack(wpConfig))
     .pipe(wrap(signatrue))
-    .pipe(gulp.dest('dist'))
+    .pipe(gulp.dest('./dist'))
     .pipe(wrap(mini))
     .pipe(uglify())
-    .pipe(gulp.dest('dist'))
-    .on('error', function(err){
-      console.log(err)
+    .pipe(gulp.dest('./dist'))
+    .on("error", function(err){
+      throw err
     })
 
-  // for test
-  gulp.src('./component.json')
-    .pipe(component.scripts({
-      name: 'regular'
-    }))
-    .pipe(wrap(signatrue))
-    .pipe(gulp.dest('test'))
 
+})
+
+gulp.task('testbundle',  function(){
+  gulp.src("test/test.exports.js")
+    .pipe(webpack(testConfig))
+    .pipe(gulp.dest('test/runner'))
+    .on("error", function(err){
+      throw err
+    })
 })
 
 
@@ -129,11 +137,9 @@ gulp.task('build',["jshint"], function(){
 gulp.task('v', function(fn){
   var version = process.argv[3].replace('-',"");
   pkg.version = version
-  pkg_component.version = version
   pkg_bower.version = version
   try{
     fs.writeFileSync('./package.json', JSON.stringify(pkg, null, 2), 'utf8');           
-    fs.writeFileSync('./component.json', JSON.stringify(pkg_component, null, 2), 'utf8');
     fs.writeFileSync('./bower.json', JSON.stringify(pkg_bower, null, 2), 'utf8');
   }catch(e){
     console.error('update version faild' + e.message)
@@ -141,14 +147,10 @@ gulp.task('v', function(fn){
 })
 
 
-// watch file then build
-gulp.task('watch', ['build'], function(){
-  gulp.watch(['component.json', 'src/**/*.js'], ['build'])
 
-})
-
-gulp.task('dev-test', function(){
-  gulp.watch(['src/**/*.js', 'test/spec/**/*.js'], ['build','mocha'])
+gulp.task('watch', ["build", 'testbundle'], function(){
+  gulp.watch(['src/**/*.js'], ['build']);
+  gulp.watch(['test/spec/*.js', 'src/**/*.js'], ['testbundle'])
 })
 
 
@@ -163,7 +165,7 @@ gulp.task('jshint', function(){
 })
 
 gulp.task('cover', function(cb){
-  before_mocha.dirty();
+  
   gulp.src(['src/**/*.js'])
     .pipe(istanbul()) // Covering files
     .on('end', function () {
@@ -174,25 +176,10 @@ gulp.task('cover', function(cb){
     });
 })
 
-gulp.task('test', ['jshint','mocha', 'karma'])
+gulp.task('test', ['jshint', 'karma'])
 
 // for travis
 gulp.task('travis', ['jshint' ,'build','mocha',  'karma']);
-
-gulp.task('mocha', function() {
-
-  before_mocha.dirty();
-
-  return gulp.src(['test/spec/test-*.js'])
-    .pipe(mocha({reporter: 'spec' }) )
-    .on('error', function(){
-      gutil.log.apply(this, arguments);
-      console.log('\u0007');
-    })
-    .on('end', function(){
-      before_mocha.clean();
-    });
-});
 
 
 gulp.task('casper', function(){

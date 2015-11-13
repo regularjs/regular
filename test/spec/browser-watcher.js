@@ -1,6 +1,6 @@
-var Regular = require_lib("index.js");
-
-void function(){
+var expect = require('expect.js');
+var Regular = require("../../src/index.js");
+var parse = require("../../src/helper/parse");
 
 var Component = Regular.extend();
 
@@ -430,147 +430,141 @@ describe("Watcher-System", function(){
 })
 
 
-}();
 
-void function(){
-  var Regular = require_lib('index.js');
-  var parse = require_lib("helper/parse");
-  describe("component.watcher", function(){
+describe("component.watcher", function(){
+  var watcher = new Regular({
+    data: {
+      str: 'hehe',
+      obj: {},
+      array: []
+    }
+  });
+
+  it('it should watch once when have @(str) ', function(){
+    var trigger = 0;
+    var trigger2 =0;
+    watcher.$watch('@(str)', function(){
+      trigger++;
+    })
+    watcher.$watch('str', function(){
+      trigger2++;
+    })
+    watcher.data.str = 'haha'
+    watcher.$digest();
+    watcher.data.str = 'heihei'
+    watcher.$digest();
+    expect(trigger).to.equal(1);
+    expect(trigger2).to.equal(2);
+
+  } )
+
+  it("beacuse of cache passed same expr should return the same expression", function(){
+    var expr = parse.expression("a+b");
+    var expr2 = parse.expression("a+b");
+    expect(expr === expr2).to.equal(true);
+  })
+
+  it("watch accept multi binding ", function(done){
+    watcher.$watch(["str", "array.length"], function(str, len){
+      expect(str).to.equal("haha")
+      expect(len).to.equal(2)
+      done();
+    })
+
+    watcher.data.str = "haha";
+    watcher.data.array = [1,2];
+    watcher.$digest();
+  })
+
+  it("watch accept function", function(done){
+    watcher.$watch( function(){return this.first+":" + this.last}, function(now, old){
+      expect(old).to.equal(undefined)
+      expect(now).to.equal("first:last")
+      done();
+    })
+    watcher.first = "first";
+    watcher.last = "last";
+    watcher.$digest();
+  })
+  it("watch list [undefined - > [], [] -> undefined]", function(done){
+    var num = 0;
+    var watchid = watcher.$watch( 'list', function(now, old){
+      num++;
+      if(num === 1){
+        expect(old).to.equal(undefined)
+        expect(now).to.eql([])
+      }
+      if(num === 2){
+        expect(old).to.eql([])
+        expect(now).to.eql(undefined)
+        done()
+      }
+    })
+    watcher.data.list = [];
+    watcher.$digest();
+    expect(num).to.equal(1)
+    watcher.data.list = undefined;
+    watcher.$digest();
+  })
+  it("watch list [{} - > [], [] -> {}]", function(done){
+    var num = 0;
+    var watchid = watcher.$watch( 'list', function(now, old){
+      num++;
+      if(num === 2){
+        expect(old).to.eql({})
+        expect(now).to.eql([])
+      }
+      if(num === 3){
+        expect(now).to.eql({})
+        expect(old).to.eql([])
+        done()
+      }
+    })
+
+    watcher.data.list = {};
+    watcher.$digest();
+    watcher.data.list = [];
+    watcher.$digest();
+    watcher.data.list = {};
+    watcher.$digest();
+  })
+
+  it("watch object deep should checked the key", function(){
     var watcher = new Regular({
       data: {
         str: 'hehe',
         obj: {},
         array: []
       }
-    });
-
-    it('it should watch once when have @(str) ', function(){
-      var trigger = 0;
-      var trigger2 =0;
-      watcher.$watch('@(str)', function(){
-        trigger++;
-      })
-      watcher.$watch('str', function(){
-        trigger2++;
-      })
-      watcher.data.str = 'haha'
-      watcher.$digest();
-      watcher.data.str = 'heihei'
-      watcher.$digest();
-      expect(trigger).to.equal(1);
-      expect(trigger2).to.equal(2);
-
-    } )
-
-    it("beacuse of cache passed same expr should return the same expression", function(){
-      var expr = parse.expression("a+b");
-      var expr2 = parse.expression("a+b");
-      expect(expr === expr2).to.equal(true);
     })
 
-    it("watch accept multi binding ", function(done){
-      watcher.$watch(["str", "array.length"], function(str, len){
-        expect(str).to.equal("haha")
-        expect(len).to.equal(2)
-        done();
-      })
-
-      watcher.data.str = "haha";
-      watcher.data.array = [1,2];
-      watcher.$digest();
+    var trigger = 0;
+    var trigger2 = 0;
+    watcher.$watch("obj", function(){
+      trigger++;
     })
+    watcher.$watch("obj", function(){
+      trigger2++;
+    }, true)
 
-    it("watch accept function", function(done){
-      watcher.$watch( function(){return this.first+":" + this.last}, function(now, old){
-        expect(old).to.equal(undefined)
-        expect(now).to.equal("first:last")
-        done();
-      })
-      watcher.first = "first";
-      watcher.last = "last";
-      watcher.$digest();
-    })
-    it("watch list [undefined - > [], [] -> undefined]", function(done){
-      var num = 0;
-      var watchid = watcher.$watch( 'list', function(now, old){
-        num++;
-        if(num === 1){
-          expect(old).to.equal(undefined)
-          expect(now).to.eql([])
-        }
-        if(num === 2){
-          expect(old).to.eql([])
-          expect(now).to.eql(undefined)
-          done()
-        }
-      })
-      watcher.data.list = [];
-      watcher.$digest();
-      expect(num).to.equal(1)
-      watcher.data.list = undefined;
-      watcher.$digest();
-    })
-    it("watch list [{} - > [], [] -> {}]", function(done){
-      var num = 0;
-      var watchid = watcher.$watch( 'list', function(now, old){
-        num++;
-        if(num === 2){
-          expect(old).to.eql({})
-          expect(now).to.eql([])
-        }
-        if(num === 3){
-          expect(now).to.eql({})
-          expect(old).to.eql([])
-          done()
-        }
-      })
-
-      watcher.data.list = {};
-      watcher.$digest();
-      watcher.data.list = [];
-      watcher.$digest();
-      watcher.data.list = {};
-      watcher.$digest();
-    })
-
-    it("watch object deep should checked the key", function(){
-      var watcher = new Regular({
-        data: {
-          str: 'hehe',
-          obj: {},
-          array: []
-        }
-      })
-
-      var trigger = 0;
-      var trigger2 = 0;
-      watcher.$watch("obj", function(){
-        trigger++;
-      })
-      watcher.$watch("obj", function(){
-        trigger2++;
-      }, true)
-
-      watcher.$digest();
-      watcher.data.obj.name = 1;
-      watcher.$digest();
-      watcher.data.obj.name = 2;
-      watcher.$digest();
-      expect(trigger).to.equal(1);
-      expect(trigger2).to.equal(3);
-      watcher.data.obj.key = 2;
-      watcher.$digest();
-      expect(trigger).to.equal(1);
-      expect(trigger2).to.equal(4);
-      delete watcher.data.obj.name;
-      watcher.$digest();
-      expect(trigger).to.equal(1);
-      expect(trigger2).to.equal(5);
-    })
-
+    watcher.$digest();
+    watcher.data.obj.name = 1;
+    watcher.$digest();
+    watcher.data.obj.name = 2;
+    watcher.$digest();
+    expect(trigger).to.equal(1);
+    expect(trigger2).to.equal(3);
+    watcher.data.obj.key = 2;
+    watcher.$digest();
+    expect(trigger).to.equal(1);
+    expect(trigger2).to.equal(4);
+    delete watcher.data.obj.name;
+    watcher.$digest();
+    expect(trigger).to.equal(1);
+    expect(trigger2).to.equal(5);
   })
 
-}()
+})
 
 
 

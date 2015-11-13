@@ -1,3 +1,4 @@
+
 var ao = expect.Assertion.prototype;
 
 
@@ -13,18 +14,6 @@ ao.typeEqual = function(list){
   return this;
 }
 
-
-expect.template = (function(){
-  var cache = {};
-  return {
-    get: function(name){
-      return cache[name];
-    },
-    set: function(fn){
-      return (cache[fn.name] = fn.toString().match(/\/\*([\s\S]*)\*\//)[1].trim())
-    }
-  }
-})()
 
 
 var dispatchMockEvent = (function(){
@@ -68,3 +57,10 @@ var dispatchMockEvent = (function(){
       }
     }
 })();
+
+
+if(typeof global!=='undefined'){
+  global.dispatchEvent = dispatchEvent
+}else if(typeof window !== 'undefined'){
+  window.dispatchEvent = dispatchEvent;
+}
