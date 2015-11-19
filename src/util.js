@@ -354,20 +354,23 @@ _.handleEvent = function(value, type ){
   if(value.type === 'expression'){ // if is expression, go evaluated way
     evaluate = value.get;
   }
+
   if(evaluate){
     return function fire(obj){
-      self.data.$event = obj;
-      var res = evaluate(self);
-      if(res === false && obj && obj.preventDefault) obj.preventDefault();
-      self.data.$event = undefined;
-      self.$update();
+      self.$update(function(data){
+        data.$event = obj;
+        var res = evaluate(this);
+        if( res === false && obj && obj.preventDefault ) obj.preventDefault();
+        data.$event = undefined;
+      })
     }
   }else{
     return function fire(){
       var args = slice.call(arguments)      
-      args.unshift(value);
-      self.$emit.apply(self, args);
-      self.$update();
+      self.$update(function(){
+        args.unshift(value);
+        self.$emit.apply(self, args);
+      })
     }
   }
 }

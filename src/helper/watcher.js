@@ -14,10 +14,10 @@ var methods = {
        options = { deep: true }
     }
     var uid = _.uid('w_');
-    if(Array.isArray(expr)){
+    if( Array.isArray(expr) ){
       var tests = [];
       for(var i = 0,len = expr.length; i < len; i++){
-          tests.push(this.$expression(expr[i]).get)
+        tests.push(this.$expression(expr[i]).get)
       }
       var prev = [];
       test = function(context){
@@ -225,15 +225,25 @@ var methods = {
     return this.$expression(expr).get(this);
   },
   $update: function(){
-    this.$set.apply(this, arguments);
-    var rootParent = this;
+    var self =  this;
+    this._zone.run(function(){
+      var rootParent = self;
 
-    do{
-      if(rootParent.data.isolate || !rootParent.$parent) break;
-      rootParent = rootParent.$parent;
-    } while(rootParent)
+      do{
+        if(rootParent.data.isolate || !rootParent.$parent) break;
+        rootParent = rootParent.$parent;
+      } while(rootParent)
 
-    rootParent.$digest();
+
+      var prephase =rootParent.$phase;
+      rootParent.$phase = 'digest'
+
+      this.$set.apply(self, arguments);
+
+      rootParent.$phase = prephase;
+
+      rootParent.$digest();
+    })
   },
   // auto collect watchers for logic-control.
   _record: function(){

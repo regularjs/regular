@@ -17,7 +17,6 @@ var events = require('./helper/event.js');
 var Watcher = require('./helper/watcher.js');
 var parse = require('./helper/parse.js');
 var filter = require('./helper/filter.js');
-var zone = require('zone.js')
 
 
 /**
@@ -30,11 +29,22 @@ var zone = require('zone.js')
 */
 var Regular = function(definition, options){
   var prevRunning = env.isRunning;
+  var self = this;
   env.isRunning = true;
   var node, template;
 
   definition = definition || {};
   options = options || {};
+
+  if(typeof zone !== 'undefined') this._zone = zone.fork({
+    beforeTask: function () {
+      self.$pahse = 'digest';
+    },
+    afterTask: function () {
+      self.$pahse = null;
+      self.$digest();
+    }
+  })
 
   definition.data = definition.data || {};
   definition.computed = definition.computed || {};
