@@ -564,6 +564,61 @@ describe("component.watcher", function(){
     expect(trigger2).to.equal(5);
   })
 
+  it('$digest in $update should be ignored', function(){
+    var i = 0;
+    var Component = Regular.extend({
+      data: {
+        'title':2
+      },
+      template: "<div ref=div on-click={this.click()}>{title}</div>",
+      _digest: function(){
+        i++;
+        return this.supr()
+      },
+      click: function(){
+        this.data.title='1';
+        this.show();
+        this.$update();
+      },
+      show: function(){
+        this.$update();
+      }
+    })
+
+    var comp = new Component();
+
+    expect(i).to.equal(1);
+    expect(comp.$refs.div.innerHTML). to.equal('2')
+
+    dispatchMockEvent(comp.$refs.div, 'click');
+
+    expect(i).to.equal(3);
+
+  })
+
+  it("$watch list should pass the newarray  and old array", function(){
+     var watcher = new Regular({
+      data:{
+        list: [1,2]
+      }
+     });
+     var i=0;
+
+     watcher.$watch('list', function(nList, oList, splice){
+      expect(splice).to.equal(true);
+      i++;
+     })
+     watcher.$watch('list', function(nList, oList, splice){
+      expect(splice).to.not.equal(undefined);
+      i++;
+     },{
+      diffArray: true
+     })
+
+     watcher.$update('list', [1,2,3])
+     expect(i). to.equal(2);
+  })
+
 })
 
 

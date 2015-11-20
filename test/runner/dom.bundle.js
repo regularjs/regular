@@ -1011,13 +1011,13 @@
 	      var klass = Regular.animation("class");
 	      klass({
 	        element: element,
-	        param: "bouceOut animated"})(function(){
+	        param: "bouceout animated"})(function(){
 	        expect(element.className).to.equal("");
 	        done();
 	      })
 
 	      dom.nextReflow(function(){
-	        expect(element.className).to.equal("bouceOut animated");
+	        expect(element.className).to.equal("bouceout animated");
 	      })
 	    })
 	    it("animator: class,2", function(done){
@@ -1026,17 +1026,17 @@
 
 	      klass({
 	        element: element,
-	        param: "bouceOut animated,2"})(function(){
+	        param: "bouceout animated,2"})(function(){
 	        expect(element.className).to.equal("");
 	        done();
 	      })
 
-	      expect(element.className).to.equal("bouceOut animated");
+	      expect(element.className).to.equal("bouceout animated");
 
 	      dom.nextReflow(function(){
-	        expect(dom.hasClass(element, "bouceOut-active")).to.equal(true);
+	        expect(dom.hasClass(element, "bouceout-active")).to.equal(true);
 	        expect(dom.hasClass(element, "animated-active")).to.equal(true);
-	        expect(dom.hasClass(element, "bouceOut")).to.equal(true);
+	        expect(dom.hasClass(element, "bouceout")).to.equal(true);
 	        expect(dom.hasClass(element, "animated")).to.equal(true);
 	      })
 
@@ -2348,7 +2348,7 @@
 	          $destroy: function(){
 	            destroyTimes++
 	          },
-	          update: function(){
+	          $update: function(){
 	            updateTimes++
 	          }
 	        }
@@ -2356,7 +2356,7 @@
 
 	      expect(initTimes).to.equal(1);
 	      expect(destroyTimes).to.equal(0);
-	      expect(updateTimes).to.equal(1);
+	      // expect(updateTimes).to.equal(1);
 
 	      component.$update(function(data){
 	        data.items.pop();
@@ -2364,7 +2364,7 @@
 	      
 	      expect(initTimes).to.equal(1);
 	      expect(destroyTimes).to.equal(0);
-	      expect(updateTimes).to.equal(2);
+	      expect(updateTimes).to.equal(1);
 
 	      component.destroy();
 
@@ -4221,7 +4221,7 @@
 
 	var expect = __webpack_require__(26);
 	var Regular = __webpack_require__(16);
-	var parse = __webpack_require__(21);
+	var parse = __webpack_require__(22);
 
 	var Component = Regular.extend();
 
@@ -4785,6 +4785,61 @@
 	    expect(trigger2).to.equal(5);
 	  })
 
+	  it('$digest in $update should be ignored', function(){
+	    var i = 0;
+	    var Component = Regular.extend({
+	      data: {
+	        'title':2
+	      },
+	      template: "<div ref=div on-click={this.click()}>{title}</div>",
+	      _digest: function(){
+	        i++;
+	        return this.supr()
+	      },
+	      click: function(){
+	        this.data.title='1';
+	        this.show();
+	        this.$update();
+	      },
+	      show: function(){
+	        this.$update();
+	      }
+	    })
+
+	    var comp = new Component();
+
+	    expect(i).to.equal(1);
+	    expect(comp.$refs.div.innerHTML). to.equal('2')
+
+	    dispatchMockEvent(comp.$refs.div, 'click');
+
+	    expect(i).to.equal(3);
+
+	  })
+
+	  it("$watch list should pass the newarray  and old array", function(){
+	     var watcher = new Regular({
+	      data:{
+	        list: [1,2]
+	      }
+	     });
+	     var i=0;
+
+	     watcher.$watch('list', function(nList, oList, splice){
+	      expect(splice).to.equal(true);
+	      i++;
+	     })
+	     watcher.$watch('list', function(nList, oList, splice){
+	      expect(splice).to.not.equal(undefined);
+	      i++;
+	     },{
+	      diffArray: true
+	     })
+
+	     watcher.$update('list', [1,2,3])
+	     expect(i). to.equal(2);
+	  })
+
 	})
 
 
@@ -5213,6 +5268,7 @@
 	      destroy(component, containerAll);
 	    })
 
+	    //@TODO
 	    it("component with (isolate &2) should stop digest phase from parent", function(){
 	      var Test = NameSpace.extend({
 	        name: 'nested7',
@@ -5235,15 +5291,15 @@
 	        data: {title: 'leeluolee'}
 	      });
 
-	      expect(component.$refs.a.num).to.equal(2);
-	      expect(component.$refs.b.num).to.equal(2);
+	      expect(component.$refs.a.num).to.equal(1);
+	      expect(component.$refs.b.num).to.equal(1);
 	      expect(component.$refs.c.num).to.equal(2);
 	      expect(component.$refs.d.num).to.equal(2);
 
 	      component.$update('title', 'hello')
 
-	      expect(component.$refs.a.num).to.equal(2);
-	      expect(component.$refs.b.num).to.equal(2);
+	      expect(component.$refs.a.num).to.equal(1);
+	      expect(component.$refs.b.num).to.equal(1);
 	      expect(component.$refs.c.num).to.equal(4);
 	      expect(component.$refs.d.num).to.equal(4);
 
@@ -5293,9 +5349,9 @@
 
 	var expect = __webpack_require__(26);
 	var _ = __webpack_require__(18);
-	var shim = __webpack_require__(22);
-	var extend = __webpack_require__(23);
-	var diffArray = __webpack_require__(24);
+	var shim = __webpack_require__(23);
+	var extend = __webpack_require__(24);
+	var diffArray = __webpack_require__(25);
 
 
 
@@ -5402,7 +5458,7 @@
 	  })
 
 	  it('diffArray should works as expect', function(){
-	    expect(diffArray([], [1,2])).to.eql([
+	    expect(diffArray([], [1,2], true)).to.eql([
 	      {
 	        "index": 0,
 	        "add": 0,
@@ -5412,20 +5468,20 @@
 	        ]
 	      }
 	    ])
-	    expect(diffArray([1,2], [])).to.eql([
+	    expect(diffArray([1,2], [], true)).to.eql([
 	      { index: 0, add: 2, removed: [] } 
 	    ]);
-	    expect(diffArray([1,2,3], [2])).to.eql([
+	    expect(diffArray([1,2,3], [2], true)).to.eql([
 	      { index: 0, add: 1, removed: [] },
 	      { index: 2, add: 1, removed: []} 
 	    ]);
 	    var a = [1,2,3];
-	    expect(diffArray(_.slice(a, 1),[])).to.eql([
+	    expect(diffArray(_.slice(a, 1),[], true)).to.eql([
 	      { index: 0, add: 2, removed: []} 
 	    ]);
 
-	    expect(diffArray([{a:1},{a:3}], [{a:2}, {a:3}], true)).to.equal(true)
-	    expect(diffArray([1,2], [1,2], true)).to.equal(false)
+	    expect(diffArray([{a:1},{a:3}], [{a:2}, {a:3}])).to.equal(true)
+	    expect(diffArray([1,2], [1,2])).to.equal(false)
 	  })
 
 
@@ -5571,7 +5627,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var expect = __webpack_require__(26);
-	var Event = __webpack_require__(25);
+	var Event = __webpack_require__(21);
 
 
 
@@ -6113,10 +6169,9 @@
 	})();
 
 	// 3ks for angular's raf  service
-	var k;
 	dom.nextReflow = dom.msie? function(callback){
 	  return dom.nextFrame(function(){
-	    k = document.body.offsetWidth;
+	    var k = document.body.offsetWidth;
 	    callback();
 	  })
 	}: dom.nextFrame;
@@ -6129,7 +6184,7 @@
 /* 18 */
 /***/ function(module, exports, __webpack_require__) {
 
-	/* WEBPACK VAR INJECTION */(function(global) {__webpack_require__(22)();
+	/* WEBPACK VAR INJECTION */(function(global) {__webpack_require__(23)();
 	var _  = module.exports;
 	var entities = __webpack_require__(30);
 	var slice = [].slice;
@@ -6487,18 +6542,20 @@
 	  }
 	  if(evaluate){
 	    return function fire(obj){
-	      self.data.$event = obj;
-	      var res = evaluate(self);
-	      if(res === false && obj && obj.preventDefault) obj.preventDefault();
-	      self.data.$event = undefined;
-	      self.$update();
+	      self.$update(function(){
+	        var data = this.data;
+	        data.$event = obj;
+	        var res = evaluate(self);
+	        if(res === false && obj && obj.preventDefault) obj.preventDefault();
+	        data.$event = undefined;
+	      })
+
 	    }
 	  }else{
 	    return function fire(){
 	      var args = slice.call(arguments)      
 	      args.unshift(value);
 	      self.$emit.apply(self, args);
-	      self.$update();
 	    }
 	  }
 	}
@@ -6919,6 +6976,86 @@
 /* 21 */
 /***/ function(module, exports, __webpack_require__) {
 
+	// simplest event emitter 60 lines
+	// ===============================
+	var slice = [].slice, _ = __webpack_require__(18);
+	var API = {
+	  $on: function(event, fn) {
+	    if(typeof event === "object"){
+	      for (var i in event) {
+	        this.$on(i, event[i]);
+	      }
+	    }else{
+	      // @patch: for list
+	      var context = this;
+	      var handles = context._handles || (context._handles = {}),
+	        calls = handles[event] || (handles[event] = []);
+	      calls.push(fn);
+	    }
+	    return this;
+	  },
+	  $off: function(event, fn) {
+	    var context = this;
+	    if(!context._handles) return;
+	    if(!event) this._handles = {};
+	    var handles = context._handles,
+	      calls;
+
+	    if (calls = handles[event]) {
+	      if (!fn) {
+	        handles[event] = [];
+	        return context;
+	      }
+	      for (var i = 0, len = calls.length; i < len; i++) {
+	        if (fn === calls[i]) {
+	          calls.splice(i, 1);
+	          return context;
+	        }
+	      }
+	    }
+	    return context;
+	  },
+	  // bubble event
+	  $emit: function(event){
+	    // @patch: for list
+	    var context = this;
+	    var handles = context._handles, calls, args, type;
+	    if(!event) return;
+	    var args = slice.call(arguments, 1);
+	    var type = event;
+
+	    if(!handles) return context;
+	    if(calls = handles[type.slice(1)]){
+	      for (var j = 0, len = calls.length; j < len; j++) {
+	        calls[j].apply(context, args)
+	      }
+	    }
+	    if (!(calls = handles[type])) return context;
+	    for (var i = 0, len = calls.length; i < len; i++) {
+	      calls[i].apply(context, args)
+	    }
+	    // if(calls.length) context.$update();
+	    return context;
+	  },
+	  // capture  event
+	  $one: function(){
+	    
+	}
+	}
+	// container class
+	function Event() {}
+	_.extend(Event.prototype, API)
+
+	Event.mixTo = function(obj){
+	  obj = typeof obj === "function" ? obj.prototype : obj;
+	  _.extend(obj, API)
+	}
+	module.exports = Event;
+
+/***/ },
+/* 22 */
+/***/ function(module, exports, __webpack_require__) {
+
 	var exprCache = __webpack_require__(27).exprCache;
 	var _ = __webpack_require__(18);
 	var Parser = __webpack_require__(34);
@@ -6938,7 +7075,7 @@
 
 
 /***/ },
-/* 22 */
+/* 23 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// shim for es5
@@ -7015,7 +7152,7 @@
 
 
 /***/ },
-/* 23 */
+/* 24 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// (c) 2010-2014 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
@@ -7101,7 +7238,7 @@
 
 
 /***/ },
-/* 24 */
+/* 25 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
@@ -7145,8 +7282,8 @@
 	  }
 	  return matrix;
 	}
-	function whole(arr2, arr1, indexTrack) {
-	  if(indexTrack) return simpleDiff(arr2, arr1);
+	function whole(arr2, arr1, diffArray) {
+	  if(!diffArray) return simpleDiff(arr2, arr1);
 	  var matrix = ld(arr1, arr2)
 	  var n = arr1.length;
 	  var i = n;
@@ -7238,86 +7375,6 @@
 	  return steps
 	}
 	module.exports = whole;
-
-/***/ },
-/* 25 */
-/***/ function(module, exports, __webpack_require__) {
-
-	// simplest event emitter 60 lines
-	// ===============================
-	var slice = [].slice, _ = __webpack_require__(18);
-	var API = {
-	  $on: function(event, fn) {
-	    if(typeof event === "object"){
-	      for (var i in event) {
-	        this.$on(i, event[i]);
-	      }
-	    }else{
-	      // @patch: for list
-	      var context = this;
-	      var handles = context._handles || (context._handles = {}),
-	        calls = handles[event] || (handles[event] = []);
-	      calls.push(fn);
-	    }
-	    return this;
-	  },
-	  $off: function(event, fn) {
-	    var context = this;
-	    if(!context._handles) return;
-	    if(!event) this._handles = {};
-	    var handles = context._handles,
-	      calls;
-
-	    if (calls = handles[event]) {
-	      if (!fn) {
-	        handles[event] = [];
-	        return context;
-	      }
-	      for (var i = 0, len = calls.length; i < len; i++) {
-	        if (fn === calls[i]) {
-	          calls.splice(i, 1);
-	          return context;
-	        }
-	      }
-	    }
-	    return context;
-	  },
-	  // bubble event
-	  $emit: function(event){
-	    // @patch: for list
-	    var context = this;
-	    var handles = context._handles, calls, args, type;
-	    if(!event) return;
-	    var args = slice.call(arguments, 1);
-	    var type = event;
-
-	    if(!handles) return context;
-	    if(calls = handles[type.slice(1)]){
-	      for (var j = 0, len = calls.length; j < len; j++) {
-	        calls[j].apply(context, args)
-	      }
-	    }
-	    if (!(calls = handles[type])) return context;
-	    for (var i = 0, len = calls.length; i < len; i++) {
-	      calls[i].apply(context, args)
-	    }
-	    // if(calls.length) context.$update();
-	    return context;
-	  },
-	  // capture  event
-	  $one: function(){
-	    
-	}
-	}
-	// container class
-	function Event() {}
-	_.extend(Event.prototype, API)
-
-	Event.mixTo = function(obj){
-	  obj = typeof obj === "function" ? obj.prototype : obj;
-	  _.extend(obj, API)
-	}
-	module.exports = Event;
 
 /***/ },
 /* 26 */
@@ -8648,7 +8705,7 @@
 	var Parser = __webpack_require__(34);
 	var config = __webpack_require__(28);
 	var _ = __webpack_require__(18);
-	var extend = __webpack_require__(23);
+	var extend = __webpack_require__(24);
 	var combine = {};
 	if(env.browser){
 	  var dom = __webpack_require__(17);
@@ -8657,9 +8714,9 @@
 	  var doc = dom.doc;
 	  combine = __webpack_require__(19);
 	}
-	var events = __webpack_require__(25);
+	var events = __webpack_require__(21);
 	var Watcher = __webpack_require__(38);
-	var parse = __webpack_require__(21);
+	var parse = __webpack_require__(22);
 	var filter = __webpack_require__(39);
 
 
@@ -10970,7 +11027,7 @@
 /* 36 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var diffArray = __webpack_require__(24);
+	var diffArray = __webpack_require__(25);
 	var combine = __webpack_require__(19);
 	var animate = __webpack_require__(20);
 	var node = __webpack_require__(43);
@@ -11051,7 +11108,7 @@
 	    var m = 0, len = newValue.length;
 
 	    if(!splices && (len !==0 || oldValue.length !==0)  ){
-	      splices = diffArray(newValue, oldValue);
+	      splices = diffArray(newValue, oldValue, true);
 	    }
 
 	    if(!splices || !splices.length) return;
@@ -11098,6 +11155,7 @@
 
 	  // if the track is constant test.
 	  function updateSimple(newValue, oldValue){
+
 	    newValue = newValue || [];
 	    oldValue  = oldValue || [];
 
@@ -11142,7 +11200,7 @@
 	      }
 	    }
 	  }
-	  this.$watch(ast.sequence, update, { init: true, indexTrack: track === true });
+	  this.$watch(ast.sequence, update, { init: true, diffArray: track !== true });
 	  return group;
 	}
 	// {#include } or {#inc template}
@@ -11239,7 +11297,7 @@
 	  var node = document.createTextNode("");
 	  this.$watch(ast, function(newval){
 	    dom.text(node, "" + (newval == null? "": "" + newval) );
-	  })
+	  },{init: true})
 	  return node;
 	}
 	walkers.text = function(ast, options){
@@ -11559,8 +11617,8 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(18);
-	var parseExpression = __webpack_require__(21).expression;
-	var diffArray = __webpack_require__(24);
+	var parseExpression = __webpack_require__(22).expression;
+	var diffArray = __webpack_require__(25);
 
 	function Watcher(){}
 
@@ -11608,7 +11666,7 @@
 	      once: once, 
 	      force: options.force,
 	      // don't use ld to resolve array diff
-	      notld: options.indexTrack,
+	      diffArray: options.diffArray,
 	      test: test,
 	      deep: options.deep,
 	      last: options.sync? get(this): options.last
@@ -11710,7 +11768,7 @@
 	      if( !(tnow === 'object' && tlast==='object' && watcher.deep) ){
 	        // Array
 	        if( tnow === 'array' && ( tlast=='undefined' || tlast === 'array') ){
-	          diff = diffArray(now, watcher.last || [], watcher.notld)
+	          diff = diffArray(now, watcher.last || [], watcher.diffArray)
 	          if( tlast !== 'array' || diff === true || diff.length ) dirty = true;
 	        }else{
 	          eq = _.equals( now, last );
@@ -11785,15 +11843,21 @@
 	    return this.$expression(expr).get(this);
 	  },
 	  $update: function(){
-	    this.$set.apply(this, arguments);
 	    var rootParent = this;
-
 	    do{
 	      if(rootParent.data.isolate || !rootParent.$parent) break;
 	      rootParent = rootParent.$parent;
 	    } while(rootParent)
 
+	    var prephase =rootParent.$phase;
+	    rootParent.$phase = 'digest'
+
+	    this.$set.apply(this, arguments);
+
+	    rootParent.$phase = prephase
+
 	    rootParent.$digest();
+	    return this;
 	  },
 	  // auto collect watchers for logic-control.
 	  _record: function(){
@@ -12223,8 +12287,8 @@
 	 */
 
 	var base64 = __webpack_require__(48)
-	var ieee754 = __webpack_require__(47)
-	var isArray = __webpack_require__(46)
+	var ieee754 = __webpack_require__(46)
+	var isArray = __webpack_require__(47)
 
 	exports.Buffer = Buffer
 	exports.SlowBuffer = Buffer
@@ -13290,45 +13354,6 @@
 /* 46 */
 /***/ function(module, exports, __webpack_require__) {
 
-	
-	/**
-	 * isArray
-	 */
-
-	var isArray = Array.isArray;
-
-	/**
-	 * toString
-	 */
-
-	var str = Object.prototype.toString;
-
-	/**
-	 * Whether or not the given `val`
-	 * is an array.
-	 *
-	 * example:
-	 *
-	 *        isArray([]);
-	 *        // > true
-	 *        isArray(arguments);
-	 *        // > false
-	 *        isArray('');
-	 *        // > false
-	 *
-	 * @param {mixed} val
-	 * @return {bool}
-	 */
-
-	module.exports = isArray || function (val) {
-	  return !! val && '[object Array]' == str.call(val);
-	};
-
-
-/***/ },
-/* 47 */
-/***/ function(module, exports, __webpack_require__) {
-
 	exports.read = function(buffer, offset, isLE, mLen, nBytes) {
 	  var e, m,
 	      eLen = nBytes * 8 - mLen - 1,
@@ -13412,6 +13437,45 @@
 	  for (; eLen > 0; buffer[offset + i] = e & 0xff, i += d, e /= 256, eLen -= 8);
 
 	  buffer[offset + i - d] |= s * 128;
+	};
+
+
+/***/ },
+/* 47 */
+/***/ function(module, exports, __webpack_require__) {
+
+	
+	/**
+	 * isArray
+	 */
+
+	var isArray = Array.isArray;
+
+	/**
+	 * toString
+	 */
+
+	var str = Object.prototype.toString;
+
+	/**
+	 * Whether or not the given `val`
+	 * is an array.
+	 *
+	 * example:
+	 *
+	 *        isArray([]);
+	 *        // > true
+	 *        isArray(arguments);
+	 *        // > false
+	 *        isArray('');
+	 *        // > false
+	 *
+	 * @param {mixed} val
+	 * @return {bool}
+	 */
+
+	module.exports = isArray || function (val) {
+	  return !! val && '[object Array]' == str.call(val);
 	};
 
 

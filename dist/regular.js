@@ -1081,10 +1081,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	})();
 
 	// 3ks for angular's raf  service
-	var k;
 	dom.nextReflow = dom.msie? function(callback){
 	  return dom.nextFrame(function(){
-	    k = document.body.offsetWidth;
+	    var k = document.body.offsetWidth;
 	    callback();
 	  })
 	}: dom.nextFrame;
@@ -1455,18 +1454,20 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }
 	  if(evaluate){
 	    return function fire(obj){
-	      self.data.$event = obj;
-	      var res = evaluate(self);
-	      if(res === false && obj && obj.preventDefault) obj.preventDefault();
-	      self.data.$event = undefined;
-	      self.$update();
+	      self.$update(function(){
+	        var data = this.data;
+	        data.$event = obj;
+	        var res = evaluate(self);
+	        if(res === false && obj && obj.preventDefault) obj.preventDefault();
+	        data.$event = undefined;
+	      })
+
 	    }
 	  }else{
 	    return function fire(){
 	      var args = slice.call(arguments)      
 	      args.unshift(value);
 	      self.$emit.apply(self, args);
-	      self.$update();
 	    }
 	  }
 	}
@@ -1995,7 +1996,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var m = 0, len = newValue.length;
 
 	    if(!splices && (len !==0 || oldValue.length !==0)  ){
-	      splices = diffArray(newValue, oldValue);
+	      splices = diffArray(newValue, oldValue, true);
 	    }
 
 	    if(!splices || !splices.length) return;
@@ -2042,6 +2043,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	  // if the track is constant test.
 	  function updateSimple(newValue, oldValue){
+
 	    newValue = newValue || [];
 	    oldValue  = oldValue || [];
 
@@ -2086,7 +2088,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      }
 	    }
 	  }
-	  this.$watch(ast.sequence, update, { init: true, indexTrack: track === true });
+	  this.$watch(ast.sequence, update, { init: true, diffArray: track !== true });
 	  return group;
 	}
 	// {#include } or {#inc template}
@@ -2183,7 +2185,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  var node = document.createTextNode("");
 	  this.$watch(ast, function(newval){
 	    dom.text(node, "" + (newval == null? "": "" + newval) );
-	  })
+	  },{init: true})
 	  return node;
 	}
 	walkers.text = function(ast, options){
@@ -3917,7 +3919,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      once: once, 
 	      force: options.force,
 	      // don't use ld to resolve array diff
-	      notld: options.indexTrack,
+	      diffArray: options.diffArray,
 	      test: test,
 	      deep: options.deep,
 	      last: options.sync? get(this): options.last
@@ -4019,7 +4021,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      if( !(tnow === 'object' && tlast==='object' && watcher.deep) ){
 	        // Array
 	        if( tnow === 'array' && ( tlast=='undefined' || tlast === 'array') ){
-	          diff = diffArray(now, watcher.last || [], watcher.notld)
+	          diff = diffArray(now, watcher.last || [], watcher.diffArray)
 	          if( tlast !== 'array' || diff === true || diff.length ) dirty = true;
 	        }else{
 	          eq = _.equals( now, last );
@@ -4094,15 +4096,21 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return this.$expression(expr).get(this);
 	  },
 	  $update: function(){
-	    this.$set.apply(this, arguments);
 	    var rootParent = this;
-
 	    do{
 	      if(rootParent.data.isolate || !rootParent.$parent) break;
 	      rootParent = rootParent.$parent;
 	    } while(rootParent)
 
+	    var prephase =rootParent.$phase;
+	    rootParent.$phase = 'digest'
+
+	    this.$set.apply(this, arguments);
+
+	    rootParent.$phase = prephase
+
 	    rootParent.$digest();
+	    return this;
 	  },
 	  // auto collect watchers for logic-control.
 	  _record: function(){
@@ -5121,8 +5129,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }
 	  return matrix;
 	}
-	function whole(arr2, arr1, indexTrack) {
-	  if(indexTrack) return simpleDiff(arr2, arr1);
+	function whole(arr2, arr1, diffArray) {
+	  if(!diffArray) return simpleDiff(arr2, arr1);
 	  var matrix = ld(arr1, arr2)
 	  var n = arr1.length;
 	  var i = n;

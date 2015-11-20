@@ -356,18 +356,20 @@ _.handleEvent = function(value, type ){
   }
   if(evaluate){
     return function fire(obj){
-      self.data.$event = obj;
-      var res = evaluate(self);
-      if(res === false && obj && obj.preventDefault) obj.preventDefault();
-      self.data.$event = undefined;
-      self.$update();
+      self.$update(function(){
+        var data = this.data;
+        data.$event = obj;
+        var res = evaluate(self);
+        if(res === false && obj && obj.preventDefault) obj.preventDefault();
+        data.$event = undefined;
+      })
+
     }
   }else{
     return function fire(){
       var args = slice.call(arguments)      
       args.unshift(value);
       self.$emit.apply(self, args);
-      self.$update();
     }
   }
 }

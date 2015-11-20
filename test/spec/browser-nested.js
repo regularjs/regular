@@ -414,6 +414,7 @@ var expect = require('expect.js');
       destroy(component, containerAll);
     })
 
+    //@TODO
     it("component with (isolate &2) should stop digest phase from parent", function(){
       var Test = NameSpace.extend({
         name: 'nested7',
@@ -436,15 +437,15 @@ var expect = require('expect.js');
         data: {title: 'leeluolee'}
       });
 
-      expect(component.$refs.a.num).to.equal(2);
-      expect(component.$refs.b.num).to.equal(2);
+      expect(component.$refs.a.num).to.equal(1);
+      expect(component.$refs.b.num).to.equal(1);
       expect(component.$refs.c.num).to.equal(2);
       expect(component.$refs.d.num).to.equal(2);
 
       component.$update('title', 'hello')
 
-      expect(component.$refs.a.num).to.equal(2);
-      expect(component.$refs.b.num).to.equal(2);
+      expect(component.$refs.a.num).to.equal(1);
+      expect(component.$refs.b.num).to.equal(1);
       expect(component.$refs.c.num).to.equal(4);
       expect(component.$refs.d.num).to.equal(4);
 

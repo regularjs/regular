@@ -48,7 +48,7 @@ var methods = {
       once: once, 
       force: options.force,
       // don't use ld to resolve array diff
-      notld: options.indexTrack,
+      diffArray: options.diffArray,
       test: test,
       deep: options.deep,
       last: options.sync? get(this): options.last
@@ -150,7 +150,7 @@ var methods = {
       if( !(tnow === 'object' && tlast==='object' && watcher.deep) ){
         // Array
         if( tnow === 'array' && ( tlast=='undefined' || tlast === 'array') ){
-          diff = diffArray(now, watcher.last || [], watcher.notld)
+          diff = diffArray(now, watcher.last || [], watcher.diffArray)
           if( tlast !== 'array' || diff === true || diff.length ) dirty = true;
         }else{
           eq = _.equals( now, last );
@@ -225,15 +225,21 @@ var methods = {
     return this.$expression(expr).get(this);
   },
   $update: function(){
-    this.$set.apply(this, arguments);
     var rootParent = this;
-
     do{
       if(rootParent.data.isolate || !rootParent.$parent) break;
       rootParent = rootParent.$parent;
     } while(rootParent)
 
+    var prephase =rootParent.$phase;
+    rootParent.$phase = 'digest'
+
+    this.$set.apply(this, arguments);
+
+    rootParent.$phase = prephase
+
     rootParent.$digest();
+    return this;
   },
   // auto collect watchers for logic-control.
   _record: function(){

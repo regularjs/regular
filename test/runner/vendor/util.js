@@ -59,8 +59,8 @@ var dispatchMockEvent = (function(){
 })();
 
 
-if(typeof global!=='undefined'){
-  global.dispatchEvent = dispatchEvent
-}else if(typeof window !== 'undefined'){
-  window.dispatchEvent = dispatchEvent;
+if(typeof window!=='undefined'){
+  window.dispatchMockEvent = dispatchMockEvent
+}else if(typeof global !== 'undefined'){
+  global.dispatchMockEvent = dispatchMockEvent;
 }
