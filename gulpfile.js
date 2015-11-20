@@ -179,7 +179,7 @@ gulp.task('cover', function(cb){
 gulp.task('test', ['jshint', 'karma'])
 
 // for travis
-gulp.task('travis', ['jshint' ,'build','mocha',  'karma']);
+gulp.task('travis', ['jshint' ,'build',  'karma']);
 
 
 gulp.task('casper', function(){
