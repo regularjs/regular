@@ -717,7 +717,7 @@
 
 	})
 
-	describe("Milestones v0.4.1", function(){
+	describe("Milestones v0.4.*", function(){
 	  it("#53 nested component with delegate-event and [postion:after or before ] bug", function( done ){
 	    var after = document.createElement('div');
 	    after.setAttribute('id',1)
@@ -752,6 +752,15 @@
 
 
 
+	  })
+
+	  it("r-hide={true} should not throwException", function(){
+
+	    expect(function(){
+	      var component = new Regular({
+	        template: "<div r-hide={true} ></div>"
+	      })
+	    }).to.not.throwException();
 	  })
 	})
 
@@ -6163,9 +6172,10 @@
 	})();
 
 	// 3ks for angular's raf  service
+	var k
 	dom.nextReflow = dom.msie? function(callback){
 	  return dom.nextFrame(function(){
-	    var k = document.body.offsetWidth;
+	    k = document.body.offsetWidth;
 	    callback();
 	  })
 	}: dom.nextFrame;
@@ -6552,7 +6562,9 @@
 	    return function fire(){
 	      var args = slice.call(arguments)      
 	      args.unshift(value);
-	      self.$emit.apply(self, args);
+	      self.$update(function(){
+	        self.$emit.apply(self, args);
+	      })
 	    }
 	  }
 	}
@@ -9632,28 +9644,32 @@
 	  // Example: <div r-hide={{items.length > 0}}></div>
 	  'r-hide': function(elem, value){
 	    var preBool = null, compelete;
-	    this.$watch(value, function(nvalue){
-	      var bool = !!nvalue;
-	      if(bool === preBool) return; 
-	      preBool = bool;
-	      if(bool){
-	        if(elem.onleave){
-	          compelete = elem.onleave(function(){
+	    if( _.isExpr(value) || typeof value === "string"){
+	      this.$watch(value, function(nvalue){
+	        var bool = !!nvalue;
+	        if(bool === preBool) return; 
+	        preBool = bool;
+	        if(bool){
+	          if(elem.onleave){
+	            compelete = elem.onleave(function(){
+	              elem.style.display = "none"
+	              compelete = null;
+	            })
+	          }else{
 	            elem.style.display = "none"
-	            compelete = null;
-	          })
+	          }
+	          
 	        }else{
-	          elem.style.display = "none"
+	          if(compelete) compelete();
+	          elem.style.display = "";
+	          if(elem.onenter){
+	            elem.onenter();
+	          }
 	        }
-	        
-	      }else{
-	        if(compelete) compelete();
-	        elem.style.display = "";
-	        if(elem.onenter){
-	          elem.onenter();
-	        }
-	      }
-	    });
+	      });
+	    }else if(!!value){
+	      elem.style.display = "none";
+	    }
 	  },
 	  'r-html': function(elem, value){
 	    this.$watch(value, function(nvalue){

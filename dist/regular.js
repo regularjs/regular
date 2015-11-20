@@ -1,6 +1,6 @@
 /**
 @author	leeluolee
-@version	0.4.1
+@version	0.4.2
 @homepage	http://regularjs.github.io
 */
 (function webpackUniversalModuleDefinition(root, factory) {
@@ -1082,9 +1082,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	})();
 
 	// 3ks for angular's raf  service
+	var k
 	dom.nextReflow = dom.msie? function(callback){
 	  return dom.nextFrame(function(){
-	    var k = document.body.offsetWidth;
+	    k = document.body.offsetWidth;
 	    callback();
 	  })
 	}: dom.nextFrame;
@@ -1471,7 +1472,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return function fire(){
 	      var args = slice.call(arguments)      
 	      args.unshift(value);
-	      self.$emit.apply(self, args);
+	      self.$update(function(){
+	        self.$emit.apply(self, args);
+	      })
 	    }
 	  }
 	}
@@ -1584,28 +1587,32 @@ return /******/ (function(modules) { // webpackBootstrap
 	  // Example: <div r-hide={{items.length > 0}}></div>
 	  'r-hide': function(elem, value){
 	    var preBool = null, compelete;
-	    this.$watch(value, function(nvalue){
-	      var bool = !!nvalue;
-	      if(bool === preBool) return; 
-	      preBool = bool;
-	      if(bool){
-	        if(elem.onleave){
-	          compelete = elem.onleave(function(){
+	    if( _.isExpr(value) || typeof value === "string"){
+	      this.$watch(value, function(nvalue){
+	        var bool = !!nvalue;
+	        if(bool === preBool) return; 
+	        preBool = bool;
+	        if(bool){
+	          if(elem.onleave){
+	            compelete = elem.onleave(function(){
+	              elem.style.display = "none"
+	              compelete = null;
+	            })
+	          }else{
 	            elem.style.display = "none"
-	            compelete = null;
-	          })
+	          }
+	          
 	        }else{
-	          elem.style.display = "none"
+	          if(compelete) compelete();
+	          elem.style.display = "";
+	          if(elem.onenter){
+	            elem.onenter();
+	          }
 	        }
-	        
-	      }else{
-	        if(compelete) compelete();
-	        elem.style.display = "";
-	        if(elem.onenter){
-	          elem.onenter();
-	        }
-	      }
-	    });
+	      });
+	    }else if(!!value){
+	      elem.style.display = "none";
+	    }
 	  },
 	  'r-html': function(elem, value){
 	    this.$watch(value, function(nvalue){
