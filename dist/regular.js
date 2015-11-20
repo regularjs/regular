@@ -1820,8 +1820,8 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	  function animationDestroy(element){
 	    return function(){
-	      delete element.onenter;
-	      delete element.onleave;
+	      element.onenter = null;
+	      element.onleave = null;
 	    } 
 	  }
 
