@@ -143,7 +143,7 @@ animate.startClassAnimate = function ( node, className,  callback, mode ){
   if(mode === 2){ // auto removed
     dom.addClass( node, className );
 
-    activeClassName = className.split(/\s+/).map(function(name){
+    activeClassName = _.map(className.split(/\s+/), function(name){
        return name + '-active';
     }).join(" ");
 

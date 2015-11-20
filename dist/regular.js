@@ -87,6 +87,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 
+
 /***/ },
 /* 1 */
 /***/ function(module, exports, __webpack_require__) {
@@ -1097,6 +1098,9 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(global) {__webpack_require__(19)();
+
+
+
 	var _  = module.exports;
 	var entities = __webpack_require__(20);
 	var slice = [].slice;
@@ -1488,10 +1492,19 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 
+	_.map= function(array, callback){
+	  var res = [];
+	  for (var i = 0, len = array.length; i < len; i++) {
+	    res.push(callback(array[i], i));
+	  }
+	  return res;
+	}
 
-	_.log = function(msg, type){
+	function log(msg, type){
 	  if(typeof console !== "undefined")  console[type || "log"](msg);
 	}
+
+	_.log = log;
 
 
 
@@ -1514,6 +1527,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	_.getCompileFn = function(source, ctx, options){
 	  return ctx.$compile.bind(ctx,source, options)
 	}
+
+
+
 
 
 	
@@ -4238,6 +4254,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  return o2;
 	}
 
+
 	module.exports = function(){
 	  // String proto ;
 	  extend(String.prototype, {
@@ -4256,24 +4273,54 @@ return /******/ (function(modules) { // webpackBootstrap
 	      }
 	      return -1;
 	    },
-	    forEach: function(callback, context){
-	      for (var i = 0, len = this.length; i < len; i++) {
-	        callback.call(context, this[i], i, this);
+	    // polyfill from MDN 
+	    // https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Array/forEach
+	    forEach: function(callback, ctx){
+	      var k = 0;
+
+	      // 1. Let O be the result of calling ToObject passing the |this| value as the argument.
+	      var O = Object(this);
+
+	      var len = O.length >>> 0; 
+
+	      if ( typeof callback !== "function" ) {
+	        throw new TypeError( callback + " is not a function" );
+	      }
+
+	      // 7. Repeat, while k < len
+	      while( k < len ) {
+
+	        var kValue;
+
+	        if ( k in O ) {
+
+	          kValue = O[ k ];
+
+	          callback.call( ctx, kValue, k, O );
+	        }
+	        k++;
 	      }
 	    },
-	    filter: function(callback, context){
+	    // @deprecated
+	    //  will be removed at 0.5.0
+	    filter: function(fun, context){
+
+	      var t = Object(this);
+	      var len = t.length >>> 0;
+	      if (typeof fun !== "function")
+	        throw new TypeError();
+
 	      var res = [];
-	      for (var i = 0, length = this.length; i < length; i++) {
-	        var pass = callback.call(context, this[i], i, this);
-	        if(pass) res.push(this[i]);
+	      for (var i = 0; i < len; i++)
+	      {
+	        if (i in t)
+	        {
+	          var val = t[i];
+	          if (fun.call(context, val, i, t))
+	            res.push(val);
+	        }
 	      }
-	      return res;
-	    },
-	    map: function(callback, context){
-	      var res = [];
-	      for (var i = 0, length = this.length; i < length; i++) {
-	        res.push(callback.call(context, this[i], i, this));
-	      }
+
 	      return res;
 	    }
 	  });
@@ -4714,7 +4761,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  if(mode === 2){ // auto removed
 	    dom.addClass( node, className );
 
-	    activeClassName = className.split(/\s+/).map(function(name){
+	    activeClassName = _.map(className.split(/\s+/), function(name){
 	       return name + '-active';
 	    }).join(" ");
 

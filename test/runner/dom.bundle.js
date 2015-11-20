@@ -783,7 +783,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var Regular = __webpack_require__(16);
-	var animate = __webpack_require__(20);
+	var animate = __webpack_require__(19);
 	var dom = __webpack_require__(17);
 
 	function destroy(component, container){
@@ -1596,7 +1596,7 @@
 
 	var expect = __webpack_require__(26);
 	var Regular = __webpack_require__(16);
-	var combine = __webpack_require__(19);
+	var combine = __webpack_require__(20);
 	function destroy(component, container){
 	  component.destroy();
 	  expect(container.innerHTML).to.equal('');
@@ -4221,7 +4221,7 @@
 
 	var expect = __webpack_require__(26);
 	var Regular = __webpack_require__(16);
-	var parse = __webpack_require__(22);
+	var parse = __webpack_require__(21);
 
 	var Component = Regular.extend();
 
@@ -5349,9 +5349,9 @@
 
 	var expect = __webpack_require__(26);
 	var _ = __webpack_require__(18);
-	var shim = __webpack_require__(23);
-	var extend = __webpack_require__(24);
-	var diffArray = __webpack_require__(25);
+	var shim = __webpack_require__(22);
+	var extend = __webpack_require__(23);
+	var diffArray = __webpack_require__(24);
 
 
 
@@ -5548,7 +5548,7 @@
 	      },
 	      array: {
 	        pro: Array.prototype,
-	        methods: ['indexOf', 'forEach', 'filter', 'map']
+	        methods: ['indexOf', 'forEach', 'filter']
 	      },
 	      array_static: {
 	        pro: Array,
@@ -5598,13 +5598,6 @@
 	      })
 	      expect(res).to.eql([3,4,1]);
 	    })
-	    it("array.map", function(){
-	      var arr = [3,4,5, 1];
-	      var res = arr.map(function(item, index){
-	        return item+ index
-	      })
-	      expect(res).to.eql([3,5,7, 4]);
-	    })
 	    it("array.isArray", function(){
 	      expect(Array.isArray([])).to.equal(true);
 	      expect(Array.isArray({})).to.equal(false);
@@ -5627,7 +5620,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var expect = __webpack_require__(26);
-	var Event = __webpack_require__(21);
+	var Event = __webpack_require__(25);
 
 
 
@@ -5783,6 +5776,7 @@
 	  var ast = new Parser(str).parse();
 	  return !options.stringify? ast : JSON.stringify(ast);
 	}
+
 
 
 
@@ -6184,7 +6178,10 @@
 /* 18 */
 /***/ function(module, exports, __webpack_require__) {
 
-	/* WEBPACK VAR INJECTION */(function(global) {__webpack_require__(23)();
+	/* WEBPACK VAR INJECTION */(function(global) {__webpack_require__(22)();
+
+
+
 	var _  = module.exports;
 	var entities = __webpack_require__(30);
 	var slice = [].slice;
@@ -6576,10 +6573,19 @@
 	}
 
 
+	_.map= function(array, callback){
+	  var res = [];
+	  for (var i = 0, len = array.length; i < len; i++) {
+	    res.push(callback(array[i], i));
+	  }
+	  return res;
+	}
 
-	_.log = function(msg, type){
+	function log(msg, type){
 	  if(typeof console !== "undefined")  console[type || "log"](msg);
 	}
+
+	_.log = log;
 
 
 
@@ -6604,122 +6610,14 @@
 	}
 
 
+
+
+
 	
 	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
 
 /***/ },
 /* 19 */
-/***/ function(module, exports, __webpack_require__) {
-
-	// some nested  operation in ast 
-	// --------------------------------
-
-	var dom = __webpack_require__(17);
-	var animate = __webpack_require__(20);
-
-	var combine = module.exports = {
-
-	  // get the initial dom in object
-	  node: function(item){
-	    var children,node, nodes;
-	    if(!item) return;
-	    if(item.element) return item.element;
-	    if(typeof item.node === "function") return item.node();
-	    if(typeof item.nodeType === "number") return item;
-	    if(item.group) return combine.node(item.group)
-	    if(children = item.children){
-	      if(children.length === 1){
-	        return combine.node(children[0]);
-	      }
-	      nodes = [];
-	      for(var i = 0, len = children.length; i < len; i++ ){
-	        node = combine.node(children[i]);
-	        if(Array.isArray(node)){
-	          nodes.push.apply(nodes, node)
-	        }else if(node) {
-	          nodes.push(node)
-	        }
-	      }
-	      return nodes;
-	    }
-	  },
-	  // @TODO remove _gragContainer
-	  inject: function(node, pos ){
-	    var group = this;
-	    var fragment = combine.node(group.group || group);
-	    if(node === false) {
-	      animate.remove(fragment)
-	      return group;
-	    }else{
-	      if(!fragment) return group;
-	      if(typeof node === 'string') node = dom.find(node);
-	      if(!node) throw Error('injected node is not found');
-	      // use animate to animate firstchildren
-	      animate.inject(fragment, node, pos);
-	    }
-	    // if it is a component
-	    if(group.$emit) {
-	      var preParent = group.parentNode;
-	      var newParent = (pos ==='after' || pos === 'before')? node.parentNode : node;
-	      group.parentNode = newParent;
-	      group.$emit("$inject", node, pos, preParent);
-	    }
-	    return group;
-	  },
-
-	  // get the last dom in object(for insertion operation)
-	  last: function(item){
-	    var children = item.children;
-
-	    if(typeof item.last === "function") return item.last();
-	    if(typeof item.nodeType === "number") return item;
-
-	    if(children && children.length) return combine.last(children[children.length - 1]);
-	    if(item.group) return combine.last(item.group);
-
-	  },
-
-	  destroy: function(item, first){
-	    if(!item) return;
-	    if(Array.isArray(item)){
-	      for(var i = 0, len = item.length; i < len; i++ ){
-	        combine.destroy(item[i], first);
-	      }
-	    }
-	    var children = item.children;
-	    if(typeof item.destroy === "function") return item.destroy(first);
-	    if(typeof item.nodeType === "number" && first)  dom.remove(item);
-	    if(children && children.length){
-	      combine.destroy(children, true);
-	      item.children = null;
-	    }
-	  }
-
-	}
-
-
-	// @TODO: need move to dom.js
-	dom.element = function( component, all ){
-	  if(!component) return !all? null: [];
-	  var nodes = combine.node( component );
-	  if( nodes.nodeType === 1 ) return all? [nodes]: nodes;
-	  var elements = [];
-	  for(var i = 0; i<nodes.length ;i++){
-	    var node = nodes[i];
-	    if( node && node.nodeType === 1){
-	      if(!all) return node;
-	      elements.push(node);
-	    } 
-	  }
-	  return !all? elements[0]: elements;
-	}
-
-
-
-
-
-/***/ },
-/* 20 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(18);
@@ -6867,7 +6765,7 @@
 	  if(mode === 2){ // auto removed
 	    dom.addClass( node, className );
 
-	    activeClassName = className.split(/\s+/).map(function(name){
+	    activeClassName = _.map(className.split(/\s+/), function(name){
 	       return name + '-active';
 	    }).join(" ");
 
@@ -6973,87 +6871,118 @@
 	module.exports = animate;
 
 /***/ },
-/* 21 */
+/* 20 */
 /***/ function(module, exports, __webpack_require__) {
 
-	// simplest event emitter 60 lines
-	// ===============================
-	var slice = [].slice, _ = __webpack_require__(18);
-	var API = {
-	  $on: function(event, fn) {
-	    if(typeof event === "object"){
-	      for (var i in event) {
-	        this.$on(i, event[i]);
-	      }
-	    }else{
-	      // @patch: for list
-	      var context = this;
-	      var handles = context._handles || (context._handles = {}),
-	        calls = handles[event] || (handles[event] = []);
-	      calls.push(fn);
-	    }
-	    return this;
-	  },
-	  $off: function(event, fn) {
-	    var context = this;
-	    if(!context._handles) return;
-	    if(!event) this._handles = {};
-	    var handles = context._handles,
-	      calls;
+	// some nested  operation in ast 
+	// --------------------------------
 
-	    if (calls = handles[event]) {
-	      if (!fn) {
-	        handles[event] = [];
-	        return context;
+	var dom = __webpack_require__(17);
+	var animate = __webpack_require__(19);
+
+	var combine = module.exports = {
+
+	  // get the initial dom in object
+	  node: function(item){
+	    var children,node, nodes;
+	    if(!item) return;
+	    if(item.element) return item.element;
+	    if(typeof item.node === "function") return item.node();
+	    if(typeof item.nodeType === "number") return item;
+	    if(item.group) return combine.node(item.group)
+	    if(children = item.children){
+	      if(children.length === 1){
+	        return combine.node(children[0]);
 	      }
-	      for (var i = 0, len = calls.length; i < len; i++) {
-	        if (fn === calls[i]) {
-	          calls.splice(i, 1);
-	          return context;
+	      nodes = [];
+	      for(var i = 0, len = children.length; i < len; i++ ){
+	        node = combine.node(children[i]);
+	        if(Array.isArray(node)){
+	          nodes.push.apply(nodes, node)
+	        }else if(node) {
+	          nodes.push(node)
 	        }
 	      }
+	      return nodes;
 	    }
-	    return context;
 	  },
-	  // bubble event
-	  $emit: function(event){
-	    // @patch: for list
-	    var context = this;
-	    var handles = context._handles, calls, args, type;
-	    if(!event) return;
-	    var args = slice.call(arguments, 1);
-	    var type = event;
+	  // @TODO remove _gragContainer
+	  inject: function(node, pos ){
+	    var group = this;
+	    var fragment = combine.node(group.group || group);
+	    if(node === false) {
+	      animate.remove(fragment)
+	      return group;
+	    }else{
+	      if(!fragment) return group;
+	      if(typeof node === 'string') node = dom.find(node);
+	      if(!node) throw Error('injected node is not found');
+	      // use animate to animate firstchildren
+	      animate.inject(fragment, node, pos);
+	    }
+	    // if it is a component
+	    if(group.$emit) {
+	      var preParent = group.parentNode;
+	      var newParent = (pos ==='after' || pos === 'before')? node.parentNode : node;
+	      group.parentNode = newParent;
+	      group.$emit("$inject", node, pos, preParent);
+	    }
+	    return group;
+	  },
 
-	    if(!handles) return context;
-	    if(calls = handles[type.slice(1)]){
-	      for (var j = 0, len = calls.length; j < len; j++) {
-	        calls[j].apply(context, args)
+	  // get the last dom in object(for insertion operation)
+	  last: function(item){
+	    var children = item.children;
+
+	    if(typeof item.last === "function") return item.last();
+	    if(typeof item.nodeType === "number") return item;
+
+	    if(children && children.length) return combine.last(children[children.length - 1]);
+	    if(item.group) return combine.last(item.group);
+
+	  },
+
+	  destroy: function(item, first){
+	    if(!item) return;
+	    if(Array.isArray(item)){
+	      for(var i = 0, len = item.length; i < len; i++ ){
+	        combine.destroy(item[i], first);
 	      }
 	    }
-	    if (!(calls = handles[type])) return context;
-	    for (var i = 0, len = calls.length; i < len; i++) {
-	      calls[i].apply(context, args)
+	    var children = item.children;
+	    if(typeof item.destroy === "function") return item.destroy(first);
+	    if(typeof item.nodeType === "number" && first)  dom.remove(item);
+	    if(children && children.length){
+	      combine.destroy(children, true);
+	      item.children = null;
 	    }
-	    // if(calls.length) context.$update();
-	    return context;
-	  },
-	  // capture  event
-	  $one: function(){
-	    
-	}
-	}
-	// container class
-	function Event() {}
-	_.extend(Event.prototype, API)
+	  }
 
-	Event.mixTo = function(obj){
-	  obj = typeof obj === "function" ? obj.prototype : obj;
-	  _.extend(obj, API)
 	}
-	module.exports = Event;
+
+
+	// @TODO: need move to dom.js
+	dom.element = function( component, all ){
+	  if(!component) return !all? null: [];
+	  var nodes = combine.node( component );
+	  if( nodes.nodeType === 1 ) return all? [nodes]: nodes;
+	  var elements = [];
+	  for(var i = 0; i<nodes.length ;i++){
+	    var node = nodes[i];
+	    if( node && node.nodeType === 1){
+	      if(!all) return node;
+	      elements.push(node);
+	    } 
+	  }
+	  return !all? elements[0]: elements;
+	}
+
+
+
+
 
 /***/ },
-/* 22 */
+/* 21 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var exprCache = __webpack_require__(27).exprCache;
@@ -7075,7 +7004,7 @@
 
 
 /***/ },
-/* 23 */
+/* 22 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// shim for es5
@@ -7088,6 +7017,7 @@
 	  }
 	  return o2;
 	}
+
 
 	module.exports = function(){
 	  // String proto ;
@@ -7107,24 +7037,54 @@
 	      }
 	      return -1;
 	    },
-	    forEach: function(callback, context){
-	      for (var i = 0, len = this.length; i < len; i++) {
-	        callback.call(context, this[i], i, this);
+	    // polyfill from MDN 
+	    // https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Array/forEach
+	    forEach: function(callback, ctx){
+	      var k = 0;
+
+	      // 1. Let O be the result of calling ToObject passing the |this| value as the argument.
+	      var O = Object(this);
+
+	      var len = O.length >>> 0; 
+
+	      if ( typeof callback !== "function" ) {
+	        throw new TypeError( callback + " is not a function" );
+	      }
+
+	      // 7. Repeat, while k < len
+	      while( k < len ) {
+
+	        var kValue;
+
+	        if ( k in O ) {
+
+	          kValue = O[ k ];
+
+	          callback.call( ctx, kValue, k, O );
+	        }
+	        k++;
 	      }
 	    },
-	    filter: function(callback, context){
+	    // @deprecated
+	    //  will be removed at 0.5.0
+	    filter: function(fun, context){
+
+	      var t = Object(this);
+	      var len = t.length >>> 0;
+	      if (typeof fun !== "function")
+	        throw new TypeError();
+
 	      var res = [];
-	      for (var i = 0, length = this.length; i < length; i++) {
-	        var pass = callback.call(context, this[i], i, this);
-	        if(pass) res.push(this[i]);
+	      for (var i = 0; i < len; i++)
+	      {
+	        if (i in t)
+	        {
+	          var val = t[i];
+	          if (fun.call(context, val, i, t))
+	            res.push(val);
+	        }
 	      }
-	      return res;
-	    },
-	    map: function(callback, context){
-	      var res = [];
-	      for (var i = 0, length = this.length; i < length; i++) {
-	        res.push(callback.call(context, this[i], i, this));
-	      }
+
 	      return res;
 	    }
 	  });
@@ -7152,7 +7112,7 @@
 
 
 /***/ },
-/* 24 */
+/* 23 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// (c) 2010-2014 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
@@ -7238,7 +7198,7 @@
 
 
 /***/ },
-/* 25 */
+/* 24 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
@@ -7375,6 +7335,86 @@
 	  return steps
 	}
 	module.exports = whole;
+
+/***/ },
+/* 25 */
+/***/ function(module, exports, __webpack_require__) {
+
+	// simplest event emitter 60 lines
+	// ===============================
+	var slice = [].slice, _ = __webpack_require__(18);
+	var API = {
+	  $on: function(event, fn) {
+	    if(typeof event === "object"){
+	      for (var i in event) {
+	        this.$on(i, event[i]);
+	      }
+	    }else{
+	      // @patch: for list
+	      var context = this;
+	      var handles = context._handles || (context._handles = {}),
+	        calls = handles[event] || (handles[event] = []);
+	      calls.push(fn);
+	    }
+	    return this;
+	  },
+	  $off: function(event, fn) {
+	    var context = this;
+	    if(!context._handles) return;
+	    if(!event) this._handles = {};
+	    var handles = context._handles,
+	      calls;
+
+	    if (calls = handles[event]) {
+	      if (!fn) {
+	        handles[event] = [];
+	        return context;
+	      }
+	      for (var i = 0, len = calls.length; i < len; i++) {
+	        if (fn === calls[i]) {
+	          calls.splice(i, 1);
+	          return context;
+	        }
+	      }
+	    }
+	    return context;
+	  },
+	  // bubble event
+	  $emit: function(event){
+	    // @patch: for list
+	    var context = this;
+	    var handles = context._handles, calls, args, type;
+	    if(!event) return;
+	    var args = slice.call(arguments, 1);
+	    var type = event;
+
+	    if(!handles) return context;
+	    if(calls = handles[type.slice(1)]){
+	      for (var j = 0, len = calls.length; j < len; j++) {
+	        calls[j].apply(context, args)
+	      }
+	    }
+	    if (!(calls = handles[type])) return context;
+	    for (var i = 0, len = calls.length; i < len; i++) {
+	      calls[i].apply(context, args)
+	    }
+	    // if(calls.length) context.$update();
+	    return context;
+	  },
+	  // capture  event
+	  $one: function(){
+	    
+	}
+	}
+	// container class
+	function Event() {}
+	_.extend(Event.prototype, API)
+
+	Event.mixTo = function(obj){
+	  obj = typeof obj === "function" ? obj.prototype : obj;
+	  _.extend(obj, API)
+	}
+	module.exports = Event;
 
 /***/ },
 /* 26 */
@@ -8705,18 +8745,18 @@
 	var Parser = __webpack_require__(34);
 	var config = __webpack_require__(28);
 	var _ = __webpack_require__(18);
-	var extend = __webpack_require__(24);
+	var extend = __webpack_require__(23);
 	var combine = {};
 	if(env.browser){
 	  var dom = __webpack_require__(17);
 	  var walkers = __webpack_require__(36);
 	  var Group = __webpack_require__(37);
 	  var doc = dom.doc;
-	  combine = __webpack_require__(19);
+	  combine = __webpack_require__(20);
 	}
-	var events = __webpack_require__(21);
+	var events = __webpack_require__(25);
 	var Watcher = __webpack_require__(38);
-	var parse = __webpack_require__(22);
+	var parse = __webpack_require__(21);
 	var filter = __webpack_require__(39);
 
 
@@ -9550,7 +9590,7 @@
 	// Regular
 	var _ = __webpack_require__(18);
 	var dom = __webpack_require__(17);
-	var animate = __webpack_require__(20);
+	var animate = __webpack_require__(19);
 	var Regular = __webpack_require__(29);
 	var consts = __webpack_require__(40);
 
@@ -9661,7 +9701,7 @@
 
 	var // packages
 	  _ = __webpack_require__(18),
-	 animate = __webpack_require__(20),
+	 animate = __webpack_require__(19),
 	 dom = __webpack_require__(17),
 	 Regular = __webpack_require__(29);
 
@@ -11027,9 +11067,9 @@
 /* 36 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var diffArray = __webpack_require__(25);
-	var combine = __webpack_require__(19);
-	var animate = __webpack_require__(20);
+	var diffArray = __webpack_require__(24);
+	var combine = __webpack_require__(20);
+	var animate = __webpack_require__(19);
 	var node = __webpack_require__(43);
 	var Group = __webpack_require__(37);
 	var dom = __webpack_require__(17);
@@ -11583,7 +11623,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(18);
-	var combine = __webpack_require__(19)
+	var combine = __webpack_require__(20)
 
 	function Group(list){
 	  this.children = list || [];
@@ -11617,8 +11657,8 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(18);
-	var parseExpression = __webpack_require__(22).expression;
-	var diffArray = __webpack_require__(25);
+	var parseExpression = __webpack_require__(21).expression;
+	var diffArray = __webpack_require__(24);
 
 	function Watcher(){}
 

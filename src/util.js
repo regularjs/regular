@@ -1,4 +1,7 @@
 require('./helper/shim.js')();
+
+
+
 var _  = module.exports;
 var entities = require('./helper/entities.js');
 var slice = [].slice;
@@ -390,10 +393,19 @@ _.fixObjStr = function(str){
 }
 
 
+_.map= function(array, callback){
+  var res = [];
+  for (var i = 0, len = array.length; i < len; i++) {
+    res.push(callback(array[i], i));
+  }
+  return res;
+}
 
-_.log = function(msg, type){
+function log(msg, type){
   if(typeof console !== "undefined")  console[type || "log"](msg);
 }
+
+_.log = log;
 
 
 
@@ -416,5 +428,8 @@ _.isGroup = function(group){
 _.getCompileFn = function(source, ctx, options){
   return ctx.$compile.bind(ctx,source, options)
 }
+
+
+
 
 

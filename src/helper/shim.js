@@ -9,6 +9,7 @@ function extend(o1, o2 ){
   return o2;
 }
 
+
 module.exports = function(){
   // String proto ;
   extend(String.prototype, {
@@ -27,24 +28,54 @@ module.exports = function(){
       }
       return -1;
     },
-    forEach: function(callback, context){
-      for (var i = 0, len = this.length; i < len; i++) {
-        callback.call(context, this[i], i, this);
+    // polyfill from MDN 
+    // https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Array/forEach
+    forEach: function(callback, ctx){
+      var k = 0;
+
+      // 1. Let O be the result of calling ToObject passing the |this| value as the argument.
+      var O = Object(this);
+
+      var len = O.length >>> 0; 
+
+      if ( typeof callback !== "function" ) {
+        throw new TypeError( callback + " is not a function" );
+      }
+
+      // 7. Repeat, while k < len
+      while( k < len ) {
+
+        var kValue;
+
+        if ( k in O ) {
+
+          kValue = O[ k ];
+
+          callback.call( ctx, kValue, k, O );
+        }
+        k++;
       }
     },
-    filter: function(callback, context){
+    // @deprecated
+    //  will be removed at 0.5.0
+    filter: function(fun, context){
+
+      var t = Object(this);
+      var len = t.length >>> 0;
+      if (typeof fun !== "function")
+        throw new TypeError();
+
       var res = [];
-      for (var i = 0, length = this.length; i < length; i++) {
-        var pass = callback.call(context, this[i], i, this);
-        if(pass) res.push(this[i]);
+      for (var i = 0; i < len; i++)
+      {
+        if (i in t)
+        {
+          var val = t[i];
+          if (fun.call(context, val, i, t))
+            res.push(val);
+        }
       }
-      return res;
-    },
-    map: function(callback, context){
-      var res = [];
-      for (var i = 0, length = this.length; i < length; i++) {
-        res.push(callback.call(context, this[i], i, this));
-      }
+
       return res;
     }
   });

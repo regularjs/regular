@@ -199,7 +199,7 @@ describe("Regular.util", function(){
       },
       array: {
         pro: Array.prototype,
-        methods: ['indexOf', 'forEach', 'filter', 'map']
+        methods: ['indexOf', 'forEach', 'filter']
       },
       array_static: {
         pro: Array,
@@ -248,13 +248,6 @@ describe("Regular.util", function(){
         return index < 2 || item < 2;
       })
       expect(res).to.eql([3,4,1]);
-    })
-    it("array.map", function(){
-      var arr = [3,4,5, 1];
-      var res = arr.map(function(item, index){
-        return item+ index
-      })
-      expect(res).to.eql([3,5,7, 4]);
     })
     it("array.isArray", function(){
       expect(Array.isArray([])).to.equal(true);
