@@ -1,6 +1,6 @@
 /**
 @author	leeluolee
-@version	0.4.1
+@version	0.4.2
 @homepage	http://regularjs.github.io
 */
 (function webpackUniversalModuleDefinition(root, factory) {
@@ -87,6 +87,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 
+
 /***/ },
 /* 1 */
 /***/ function(module, exports, __webpack_require__) {
@@ -157,13 +158,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	  definition = definition || {};
 	  options = options || {};
 
-	  if(typeof zone !== 'undefined') this._zone = zone.fork({
-	    beforeTask: function () {
-	      self.$pahse = 'digest';
-	    },
+	  if(typeof zone !== 'undefined' && zone.fork) this._zone = zone.fork({
 	    afterTask: function () {
-	      self.$pahse = null;
-	      self.$digest();
+	      self.$root.$digest();
 	    }
 	  })
 
@@ -1092,7 +1089,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	})();
 
 	// 3ks for angular's raf  service
-	var k;
+	var k
 	dom.nextReflow = dom.msie? function(callback){
 	  return dom.nextFrame(function(){
 	    k = document.body.offsetWidth;
@@ -1109,6 +1106,9 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(global) {__webpack_require__(19)();
+
+
+
 	var _  = module.exports;
 	var entities = __webpack_require__(20);
 	var slice = [].slice;
@@ -1467,18 +1467,19 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	  if(evaluate){
 	    return function fire(obj){
-	      self.$update(function(data){
+	      self.$update(function(){
+	        var data = this.data;
 	        data.$event = obj;
-	        var res = evaluate(this);
-	        if( res === false && obj && obj.preventDefault ) obj.preventDefault();
+	        var res = evaluate(self);
+	        if(res === false && obj && obj.preventDefault) obj.preventDefault();
 	        data.$event = undefined;
 	      })
 	    }
 	  }else{
 	    return function fire(){
 	      var args = slice.call(arguments)      
+	      args.unshift(value);
 	      self.$update(function(){
-	        args.unshift(value);
 	        self.$emit.apply(self, args);
 	      })
 	    }
@@ -1501,10 +1502,19 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 
+	_.map= function(array, callback){
+	  var res = [];
+	  for (var i = 0, len = array.length; i < len; i++) {
+	    res.push(callback(array[i], i));
+	  }
+	  return res;
+	}
 
-	_.log = function(msg, type){
+	function log(msg, type){
 	  if(typeof console !== "undefined")  console[type || "log"](msg);
 	}
+
+	_.log = log;
 
 
 
@@ -1527,6 +1537,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	_.getCompileFn = function(source, ctx, options){
 	  return ctx.$compile.bind(ctx,source, options)
 	}
+
+
+
 
 
 	
@@ -1581,28 +1594,32 @@ return /******/ (function(modules) { // webpackBootstrap
 	  // Example: <div r-hide={{items.length > 0}}></div>
 	  'r-hide': function(elem, value){
 	    var preBool = null, compelete;
-	    this.$watch(value, function(nvalue){
-	      var bool = !!nvalue;
-	      if(bool === preBool) return; 
-	      preBool = bool;
-	      if(bool){
-	        if(elem.onleave){
-	          compelete = elem.onleave(function(){
+	    if( _.isExpr(value) || typeof value === "string"){
+	      this.$watch(value, function(nvalue){
+	        var bool = !!nvalue;
+	        if(bool === preBool) return; 
+	        preBool = bool;
+	        if(bool){
+	          if(elem.onleave){
+	            compelete = elem.onleave(function(){
+	              elem.style.display = "none"
+	              compelete = null;
+	            })
+	          }else{
 	            elem.style.display = "none"
-	            compelete = null;
-	          })
+	          }
+	          
 	        }else{
-	          elem.style.display = "none"
+	          if(compelete) compelete();
+	          elem.style.display = "";
+	          if(elem.onenter){
+	            elem.onenter();
+	          }
 	        }
-	        
-	      }else{
-	        if(compelete) compelete();
-	        elem.style.display = "";
-	        if(elem.onenter){
-	          elem.onenter();
-	        }
-	      }
-	    });
+	      });
+	    }else if(!!value){
+	      elem.style.display = "none";
+	    }
 	  },
 	  'r-html': function(elem, value){
 	    this.$watch(value, function(nvalue){
@@ -2009,7 +2026,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var m = 0, len = newValue.length;
 
 	    if(!splices && (len !==0 || oldValue.length !==0)  ){
-	      splices = diffArray(newValue, oldValue);
+	      splices = diffArray(newValue, oldValue, true);
 	    }
 
 	    if(!splices || !splices.length) return;
@@ -2056,6 +2073,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	  // if the track is constant test.
 	  function updateSimple(newValue, oldValue){
+
 	    newValue = newValue || [];
 	    oldValue  = oldValue || [];
 
@@ -2100,7 +2118,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      }
 	    }
 	  }
-	  this.$watch(ast.sequence, update, { init: true, indexTrack: track === true });
+	  this.$watch(ast.sequence, update, { init: true, diffArray: track !== true });
 	  return group;
 	}
 	// {#include } or {#inc template}
@@ -2197,7 +2215,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  var node = document.createTextNode("");
 	  this.$watch(ast, function(newval){
 	    dom.text(node, "" + (newval == null? "": "" + newval) );
-	  })
+	  },{init: true})
 	  return node;
 	}
 	walkers.text = function(ast, options){
@@ -3931,7 +3949,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      once: once, 
 	      force: options.force,
 	      // don't use ld to resolve array diff
-	      notld: options.indexTrack,
+	      diffArray: options.diffArray,
 	      test: test,
 	      deep: options.deep,
 	      last: options.sync? get(this): options.last
@@ -4033,7 +4051,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      if( !(tnow === 'object' && tlast==='object' && watcher.deep) ){
 	        // Array
 	        if( tnow === 'array' && ( tlast=='undefined' || tlast === 'array') ){
-	          diff = diffArray(now, watcher.last || [], watcher.notld)
+	          diff = diffArray(now, watcher.last || [], watcher.diffArray)
 	          if( tlast !== 'array' || diff === true || diff.length ) dirty = true;
 	        }else{
 	          eq = _.equals( now, last );
@@ -4108,25 +4126,31 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return this.$expression(expr).get(this);
 	  },
 	  $update: function(){
+
 	    var self =  this;
-	    this._zone.run(function(){
-	      var rootParent = self;
+	    var rootParent = self;
+	    var args = arguments;
 
-	      do{
-	        if(rootParent.data.isolate || !rootParent.$parent) break;
-	        rootParent = rootParent.$parent;
-	      } while(rootParent)
+	    do{
+	      if(rootParent.data.isolate || !rootParent.$parent) break;
+	      rootParent = rootParent.$parent;
+	    } while(rootParent)
 
+
+	    var run = function(){ self.$set.apply(self, args); }
+	    
+	    if(this._zone) this._zone.run( run );
+	    else { 
 
 	      var prephase =rootParent.$phase;
 	      rootParent.$phase = 'digest'
-
-	      this.$set.apply(self, arguments);
-
+	      run() 
 	      rootParent.$phase = prephase;
 
 	      rootParent.$digest();
-	    })
+	    }
+
+	    return this;
 	  },
 	  // auto collect watchers for logic-control.
 	  _record: function(){
@@ -4254,6 +4278,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  return o2;
 	}
 
+
 	module.exports = function(){
 	  // String proto ;
 	  extend(String.prototype, {
@@ -4272,24 +4297,54 @@ return /******/ (function(modules) { // webpackBootstrap
 	      }
 	      return -1;
 	    },
-	    forEach: function(callback, context){
-	      for (var i = 0, len = this.length; i < len; i++) {
-	        callback.call(context, this[i], i, this);
+	    // polyfill from MDN 
+	    // https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Array/forEach
+	    forEach: function(callback, ctx){
+	      var k = 0;
+
+	      // 1. Let O be the result of calling ToObject passing the |this| value as the argument.
+	      var O = Object(this);
+
+	      var len = O.length >>> 0; 
+
+	      if ( typeof callback !== "function" ) {
+	        throw new TypeError( callback + " is not a function" );
+	      }
+
+	      // 7. Repeat, while k < len
+	      while( k < len ) {
+
+	        var kValue;
+
+	        if ( k in O ) {
+
+	          kValue = O[ k ];
+
+	          callback.call( ctx, kValue, k, O );
+	        }
+	        k++;
 	      }
 	    },
-	    filter: function(callback, context){
+	    // @deprecated
+	    //  will be removed at 0.5.0
+	    filter: function(fun, context){
+
+	      var t = Object(this);
+	      var len = t.length >>> 0;
+	      if (typeof fun !== "function")
+	        throw new TypeError();
+
 	      var res = [];
-	      for (var i = 0, length = this.length; i < length; i++) {
-	        var pass = callback.call(context, this[i], i, this);
-	        if(pass) res.push(this[i]);
+	      for (var i = 0; i < len; i++)
+	      {
+	        if (i in t)
+	        {
+	          var val = t[i];
+	          if (fun.call(context, val, i, t))
+	            res.push(val);
+	        }
 	      }
-	      return res;
-	    },
-	    map: function(callback, context){
-	      var res = [];
-	      for (var i = 0, length = this.length; i < length; i++) {
-	        res.push(callback.call(context, this[i], i, this));
-	      }
+
 	      return res;
 	    }
 	  });
@@ -4730,7 +4785,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  if(mode === 2){ // auto removed
 	    dom.addClass( node, className );
 
-	    activeClassName = className.split(/\s+/).map(function(name){
+	    activeClassName = _.map(className.split(/\s+/), function(name){
 	       return name + '-active';
 	    }).join(" ");
 
@@ -5145,8 +5200,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }
 	  return matrix;
 	}
-	function whole(arr2, arr1, indexTrack) {
-	  if(indexTrack) return simpleDiff(arr2, arr1);
+	function whole(arr2, arr1, diffArray) {
+	  if(!diffArray) return simpleDiff(arr2, arr1);
 	  var matrix = ld(arr1, arr2)
 	  var n = arr1.length;
 	  var i = n;

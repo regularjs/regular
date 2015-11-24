@@ -1,3 +1,4 @@
+require("zone.js");
 
 require("./spec/browser-syntax.js");
 require("./spec/browser-bugfix.js");

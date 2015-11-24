@@ -36,13 +36,9 @@ var Regular = function(definition, options){
   definition = definition || {};
   options = options || {};
 
-  if(typeof zone !== 'undefined') this._zone = zone.fork({
-    beforeTask: function () {
-      self.$pahse = 'digest';
-    },
+  if(typeof zone !== 'undefined' && zone.fork) this._zone = zone.fork({
     afterTask: function () {
-      self.$pahse = null;
-      self.$digest();
+      self.$root.$digest();
     }
   })
 

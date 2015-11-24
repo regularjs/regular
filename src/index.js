@@ -24,3 +24,4 @@ Regular.parse = function(str, options){
   return !options.stringify? ast : JSON.stringify(ast);
 }
 
+

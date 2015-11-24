@@ -79,7 +79,7 @@ walkers.list = function(ast, options){
     var m = 0, len = newValue.length;
 
     if(!splices && (len !==0 || oldValue.length !==0)  ){
-      splices = diffArray(newValue, oldValue);
+      splices = diffArray(newValue, oldValue, true);
     }
 
     if(!splices || !splices.length) return;
@@ -126,6 +126,7 @@ walkers.list = function(ast, options){
 
   // if the track is constant test.
   function updateSimple(newValue, oldValue){
+
     newValue = newValue || [];
     oldValue  = oldValue || [];
 
@@ -170,7 +171,7 @@ walkers.list = function(ast, options){
       }
     }
   }
-  this.$watch(ast.sequence, update, { init: true, indexTrack: track === true });
+  this.$watch(ast.sequence, update, { init: true, diffArray: track !== true });
   return group;
 }
 // {#include } or {#inc template}
@@ -267,7 +268,7 @@ walkers.expression = function(ast, options){
   var node = document.createTextNode("");
   this.$watch(ast, function(newval){
     dom.text(node, "" + (newval == null? "": "" + newval) );
-  })
+  },{init: true})
   return node;
 }
 walkers.text = function(ast, options){

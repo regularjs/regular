@@ -464,7 +464,7 @@ var template = '<input type="text"  class="form-control" \
 
 })
 
-describe("Milestones v0.4.1", function(){
+describe("Milestones v0.4.*", function(){
   it("#53 nested component with delegate-event and [postion:after or before ] bug", function( done ){
     var after = document.createElement('div');
     after.setAttribute('id',1)
@@ -499,6 +499,15 @@ describe("Milestones v0.4.1", function(){
 
 
 
+  })
+
+  it("r-hide={true} should not throwException", function(){
+
+    expect(function(){
+      var component = new Regular({
+        template: "<div r-hide={true} ></div>"
+      })
+    }).to.not.throwException();
   })
 })
 

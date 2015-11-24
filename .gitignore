@@ -2,8 +2,9 @@
 *sublime*
 example
 npm-debug.log
-*/tmp/*
+*tmp/*
 test/tmp/*
+test/runner/dom.bundle.js
 test/coverage/*
 coverage*
 out/*

@@ -109,7 +109,7 @@ describe("Regular.util", function(){
   })
 
   it('diffArray should works as expect', function(){
-    expect(diffArray([], [1,2])).to.eql([
+    expect(diffArray([], [1,2], true)).to.eql([
       {
         "index": 0,
         "add": 0,
@@ -119,20 +119,20 @@ describe("Regular.util", function(){
         ]
       }
     ])
-    expect(diffArray([1,2], [])).to.eql([
+    expect(diffArray([1,2], [], true)).to.eql([
       { index: 0, add: 2, removed: [] } 
     ]);
-    expect(diffArray([1,2,3], [2])).to.eql([
+    expect(diffArray([1,2,3], [2], true)).to.eql([
       { index: 0, add: 1, removed: [] },
       { index: 2, add: 1, removed: []} 
     ]);
     var a = [1,2,3];
-    expect(diffArray(_.slice(a, 1),[])).to.eql([
+    expect(diffArray(_.slice(a, 1),[], true)).to.eql([
       { index: 0, add: 2, removed: []} 
     ]);
 
-    expect(diffArray([{a:1},{a:3}], [{a:2}, {a:3}], true)).to.equal(true)
-    expect(diffArray([1,2], [1,2], true)).to.equal(false)
+    expect(diffArray([{a:1},{a:3}], [{a:2}, {a:3}])).to.equal(true)
+    expect(diffArray([1,2], [1,2])).to.equal(false)
   })
 
 
@@ -199,7 +199,7 @@ describe("Regular.util", function(){
       },
       array: {
         pro: Array.prototype,
-        methods: ['indexOf', 'forEach', 'filter', 'map']
+        methods: ['indexOf', 'forEach', 'filter']
       },
       array_static: {
         pro: Array,
@@ -248,13 +248,6 @@ describe("Regular.util", function(){
         return index < 2 || item < 2;
       })
       expect(res).to.eql([3,4,1]);
-    })
-    it("array.map", function(){
-      var arr = [3,4,5, 1];
-      var res = arr.map(function(item, index){
-        return item+ index
-      })
-      expect(res).to.eql([3,5,7, 4]);
     })
     it("array.isArray", function(){
       expect(Array.isArray([])).to.equal(true);

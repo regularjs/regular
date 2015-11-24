@@ -39,8 +39,8 @@ function ld(array1, array2){
   }
   return matrix;
 }
-function whole(arr2, arr1, indexTrack) {
-  if(indexTrack) return simpleDiff(arr2, arr1);
+function whole(arr2, arr1, diffArray) {
+  if(!diffArray) return simpleDiff(arr2, arr1);
   var matrix = ld(arr1, arr2)
   var n = arr1.length;
   var i = n;

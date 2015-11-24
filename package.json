@@ -1,6 +1,6 @@
 {
   "name": "regularjs",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "author": {
     "name": "leeluolee"
   },
@@ -45,7 +45,8 @@
     "karma-phantomjs-launcher": "~0.1.4",
     "mocha": "~1.18.2",
     "through2": "~0.4.1",
-    "yargs": "^3.26.0"
+    "yargs": "^3.26.0",
+    "zone.js": "^0.5.8"
   },
   "dependencies": {
     "zone.js": "^0.5.8"

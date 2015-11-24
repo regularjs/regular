@@ -377,7 +377,7 @@ dom.nextFrame = (function(){
 })();
 
 // 3ks for angular's raf  service
-var k;
+var k
 dom.nextReflow = dom.msie? function(callback){
   return dom.nextFrame(function(){
     k = document.body.offsetWidth;

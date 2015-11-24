@@ -227,13 +227,13 @@ describe("Animation", function(){
       var klass = Regular.animation("class");
       klass({
         element: element,
-        param: "bouceOut animated"})(function(){
+        param: "bouceout animated"})(function(){
         expect(element.className).to.equal("");
         done();
       })
 
       dom.nextReflow(function(){
-        expect(element.className).to.equal("bouceOut animated");
+        expect(element.className).to.equal("bouceout animated");
       })
     })
     it("animator: class,2", function(done){
@@ -242,17 +242,17 @@ describe("Animation", function(){
 
       klass({
         element: element,
-        param: "bouceOut animated,2"})(function(){
+        param: "bouceout animated,2"})(function(){
         expect(element.className).to.equal("");
         done();
       })
 
-      expect(element.className).to.equal("bouceOut animated");
+      expect(element.className).to.equal("bouceout animated");
 
       dom.nextReflow(function(){
-        expect(dom.hasClass(element, "bouceOut-active")).to.equal(true);
+        expect(dom.hasClass(element, "bouceout-active")).to.equal(true);
         expect(dom.hasClass(element, "animated-active")).to.equal(true);
-        expect(dom.hasClass(element, "bouceOut")).to.equal(true);
+        expect(dom.hasClass(element, "bouceout")).to.equal(true);
         expect(dom.hasClass(element, "animated")).to.equal(true);
       })
 
