@@ -32,7 +32,7 @@ f.average = function(array, key){
 
 // total: one-way
 //  - get: copute the total of the list
-//  - example: `{ list| average: "score" }`
+//  - example: `{ list| total: "score" }`
 f.total = function(array, key){
   var total = 0;
   if(!array) return;
