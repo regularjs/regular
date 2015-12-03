@@ -189,7 +189,12 @@ walkers.template = function(ast, options){
         group.children.pop();
       }
       if(!value) return;
-      group.push( compiled = (typeof value === 'function') ? value(): self.$compile(value, {record: true, outer: options.outer,namespace: namespace, extra: extra}) ); 
+
+      group.push( compiled = type === 'function' ? value(): self.$compile( type !== 'object'? String(value): value, {
+        record: true, 
+        outer: options.outer,
+        namespace: namespace, 
+        extra: extra}) ); 
       if(placeholder.parentNode) {
         compiled.$inject(placeholder, 'before')
       }

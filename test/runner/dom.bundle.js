@@ -762,7 +762,6 @@
 	      })
 	    }).to.not.throwException();
 	  })
-	})
 
 	it('bugfix #50', function(){
 	  // https://github.com/regularjs/regular/issues/50
@@ -784,6 +783,33 @@
 
 
 	})
+	it('bugfix #67', function(){
+	  // https://github.com/regularjs/regular/issues/50
+	  var template =  "{#include a}";
+
+	  expect(function(){
+	    var component = new Regular({
+	      data: {
+	        a: 1,
+	        b: true,
+	        c: undefined,
+	        d: null,
+	        e: '123',
+	      },
+	      template: "{#inc a}{#inc b}{#inc c}{#inc d}{#inc e}"
+	    })
+	  }).to.not.throwException();
+
+	  
+
+	  var ps = nes.all('p' ,container);
+
+
+
+
+	})
+	})
+
 
 
 
@@ -11306,7 +11332,12 @@
 	        group.children.pop();
 	      }
 	      if(!value) return;
-	      group.push( compiled = (typeof value === 'function') ? value(): self.$compile(value, {record: true, outer: options.outer,namespace: namespace, extra: extra}) ); 
+
+	      group.push( compiled = type === 'function' ? value(): self.$compile( type !== 'object'? String(value): value, {
+	        record: true, 
+	        outer: options.outer,
+	        namespace: namespace, 
+	        extra: extra}) ); 
 	      if(placeholder.parentNode) {
 	        compiled.$inject(placeholder, 'before')
 	      }
