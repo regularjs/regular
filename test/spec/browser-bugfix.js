@@ -541,7 +541,7 @@ it('bugfix #67', function(){
         b: true,
         c: undefined,
         d: null,
-        e: '123',
+        e: '123'
       },
       template: "{#inc a}{#inc b}{#inc c}{#inc d}{#inc e}"
     })

@@ -66,7 +66,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var expect = __webpack_require__(26);
-	var Regular = __webpack_require__(16);
+	var Regular = __webpack_require__(17);
 
 	function destroy(component, container){
 	  component.destroy();
@@ -253,7 +253,7 @@
 
 	var expect = __webpack_require__(26);
 
-	var Regular = __webpack_require__(16);
+	var Regular = __webpack_require__(17);
 	var dom = Regular.dom;
 
 	function destroy(component, container){
@@ -794,7 +794,7 @@
 	        b: true,
 	        c: undefined,
 	        d: null,
-	        e: '123',
+	        e: '123'
 	      },
 	      template: "{#inc a}{#inc b}{#inc c}{#inc d}{#inc e}"
 	    })
@@ -817,9 +817,9 @@
 /* 3 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var Regular = __webpack_require__(16);
+	var Regular = __webpack_require__(17);
 	var animate = __webpack_require__(19);
-	var dom = __webpack_require__(17);
+	var dom = __webpack_require__(16);
 
 	function destroy(component, container){
 	  component.destroy();
@@ -1256,8 +1256,8 @@
 
 	var expect = __webpack_require__(26);
 	// contains basic dom && event specs
-	var dom = __webpack_require__(17);
-	var Regular = __webpack_require__(16);
+	var dom = __webpack_require__(16);
+	var Regular = __webpack_require__(17);
 
 	function destroy(component, container){
 	  component.destroy();
@@ -1657,7 +1657,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var expect = __webpack_require__(26);
-	var Regular = __webpack_require__(16);
+	var Regular = __webpack_require__(17);
 	var combine = __webpack_require__(20);
 	function destroy(component, container){
 	  component.destroy();
@@ -1831,7 +1831,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var expect = __webpack_require__(26);
-	  var Regular = __webpack_require__(16);
+	  var Regular = __webpack_require__(17);
 
 	function reset(){}
 
@@ -2051,7 +2051,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var expect = __webpack_require__(26);
-	var Regular = __webpack_require__(16);
+	var Regular = __webpack_require__(17);
 
 	function destroy(component, container){
 	  component.destroy();
@@ -2680,8 +2680,8 @@
 	var expect = __webpack_require__(26);
 
 
-	var dom = __webpack_require__(17);
-	var Regular = __webpack_require__(16);
+	var dom = __webpack_require__(16);
+	var Regular = __webpack_require__(17);
 
 	var container = document.createElement('div');
 	function destroy(component, container){
@@ -3105,7 +3105,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var expect = __webpack_require__(26);
-	var Regular = __webpack_require__(16);
+	var Regular = __webpack_require__(17);
 
 	var container = document.createElement('div');
 	function destroy(component, container){
@@ -3332,7 +3332,7 @@
 	var expect = __webpack_require__(26);
 
 
-	var Regular = __webpack_require__(16);
+	var Regular = __webpack_require__(17);
 
 	function destroy(component, container){
 	  component.destroy();
@@ -4081,7 +4081,7 @@
 
 	var expect = __webpack_require__(26);
 
-	var Regular = __webpack_require__(16);
+	var Regular = __webpack_require__(17);
 
 
 	describe("Filter", function(){
@@ -4282,8 +4282,8 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var expect = __webpack_require__(26);
-	var Regular = __webpack_require__(16);
-	var parse = __webpack_require__(21);
+	var Regular = __webpack_require__(17);
+	var parse = __webpack_require__(24);
 
 	var Component = Regular.extend();
 
@@ -4916,7 +4916,7 @@
 
 	var expect = __webpack_require__(26);
 
-	  var Regular = __webpack_require__(16);
+	  var Regular = __webpack_require__(17);
 	  var Component = Regular.extend();
 
 	  function destroy(component, container){
@@ -5411,9 +5411,9 @@
 
 	var expect = __webpack_require__(26);
 	var _ = __webpack_require__(18);
-	var shim = __webpack_require__(22);
-	var extend = __webpack_require__(23);
-	var diffArray = __webpack_require__(24);
+	var shim = __webpack_require__(21);
+	var extend = __webpack_require__(22);
+	var diffArray = __webpack_require__(23);
 
 
 
@@ -5813,39 +5813,6 @@
 /* 16 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var env =  __webpack_require__(27);
-	var config = __webpack_require__(28); 
-	var Regular = module.exports = __webpack_require__(29);
-	var Parser = Regular.Parser;
-	var Lexer = Regular.Lexer;
-
-	if(env.browser){
-	    __webpack_require__(31);
-	    __webpack_require__(32);
-	    __webpack_require__(33);
-	    Regular.dom = __webpack_require__(17);
-	}
-	Regular.env = env;
-	Regular.util = __webpack_require__(18);
-	Regular.parse = function(str, options){
-	  options = options || {};
-
-	  if(options.BEGIN || options.END){
-	    if(options.BEGIN) config.BEGIN = options.BEGIN;
-	    if(options.END) config.END = options.END;
-	    Lexer.setup();
-	  }
-	  var ast = new Parser(str).parse();
-	  return !options.stringify? ast : JSON.stringify(ast);
-	}
-
-
-
-
-/***/ },
-/* 17 */
-/***/ function(module, exports, __webpack_require__) {
-
 	
 	// thanks for angular && mootools for some concise&cross-platform  implemention
 	// =====================================
@@ -6238,10 +6205,43 @@
 
 
 /***/ },
+/* 17 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var env =  __webpack_require__(27);
+	var config = __webpack_require__(28); 
+	var Regular = module.exports = __webpack_require__(29);
+	var Parser = Regular.Parser;
+	var Lexer = Regular.Lexer;
+
+	if(env.browser){
+	    __webpack_require__(31);
+	    __webpack_require__(32);
+	    __webpack_require__(33);
+	    Regular.dom = __webpack_require__(16);
+	}
+	Regular.env = env;
+	Regular.util = __webpack_require__(18);
+	Regular.parse = function(str, options){
+	  options = options || {};
+
+	  if(options.BEGIN || options.END){
+	    if(options.BEGIN) config.BEGIN = options.BEGIN;
+	    if(options.END) config.END = options.END;
+	    Lexer.setup();
+	  }
+	  var ast = new Parser(str).parse();
+	  return !options.stringify? ast : JSON.stringify(ast);
+	}
+
+
+
+
+/***/ },
 /* 18 */
 /***/ function(module, exports, __webpack_require__) {
 
-	/* WEBPACK VAR INJECTION */(function(global) {__webpack_require__(22)();
+	/* WEBPACK VAR INJECTION */(function(global) {__webpack_require__(21)();
 
 
 
@@ -6686,7 +6686,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(18);
-	var dom  = __webpack_require__(17);
+	var dom  = __webpack_require__(16);
 	var animate = {};
 	var env = __webpack_require__(27);
 
@@ -6942,7 +6942,7 @@
 	// some nested  operation in ast 
 	// --------------------------------
 
-	var dom = __webpack_require__(17);
+	var dom = __webpack_require__(16);
 	var animate = __webpack_require__(19);
 
 	var combine = module.exports = {
@@ -7050,28 +7050,6 @@
 /* 21 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var exprCache = __webpack_require__(27).exprCache;
-	var _ = __webpack_require__(18);
-	var Parser = __webpack_require__(34);
-	module.exports = {
-	  expression: function(expr, simple){
-	    // @TODO cache
-	    if( typeof expr === 'string' && ( expr = expr.trim() ) ){
-	      expr = exprCache.get( expr ) || exprCache.set( expr, new Parser( expr, { mode: 2, expression: true } ).expression() )
-	    }
-	    if(expr) return expr;
-	  },
-	  parse: function(template){
-	    return new Parser(template).parse();
-	  }
-	}
-
-
-
-/***/ },
-/* 22 */
-/***/ function(module, exports, __webpack_require__) {
-
 	// shim for es5
 	var slice = [].slice;
 	var tstr = ({}).toString;
@@ -7177,7 +7155,7 @@
 
 
 /***/ },
-/* 23 */
+/* 22 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// (c) 2010-2014 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
@@ -7263,7 +7241,7 @@
 
 
 /***/ },
-/* 24 */
+/* 23 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
@@ -7400,6 +7378,28 @@
 	  return steps
 	}
 	module.exports = whole;
+
+/***/ },
+/* 24 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var exprCache = __webpack_require__(27).exprCache;
+	var _ = __webpack_require__(18);
+	var Parser = __webpack_require__(34);
+	module.exports = {
+	  expression: function(expr, simple){
+	    // @TODO cache
+	    if( typeof expr === 'string' && ( expr = expr.trim() ) ){
+	      expr = exprCache.get( expr ) || exprCache.set( expr, new Parser( expr, { mode: 2, expression: true } ).expression() )
+	    }
+	    if(expr) return expr;
+	  },
+	  parse: function(template){
+	    return new Parser(template).parse();
+	  }
+	}
+
+
 
 /***/ },
 /* 25 */
@@ -8810,10 +8810,10 @@
 	var Parser = __webpack_require__(34);
 	var config = __webpack_require__(28);
 	var _ = __webpack_require__(18);
-	var extend = __webpack_require__(23);
+	var extend = __webpack_require__(22);
 	var combine = {};
 	if(env.browser){
-	  var dom = __webpack_require__(17);
+	  var dom = __webpack_require__(16);
 	  var walkers = __webpack_require__(36);
 	  var Group = __webpack_require__(37);
 	  var doc = dom.doc;
@@ -8821,7 +8821,7 @@
 	}
 	var events = __webpack_require__(25);
 	var Watcher = __webpack_require__(38);
-	var parse = __webpack_require__(21);
+	var parse = __webpack_require__(24);
 	var filter = __webpack_require__(39);
 
 
@@ -9654,7 +9654,7 @@
 
 	// Regular
 	var _ = __webpack_require__(18);
-	var dom = __webpack_require__(17);
+	var dom = __webpack_require__(16);
 	var animate = __webpack_require__(19);
 	var Regular = __webpack_require__(29);
 	var consts = __webpack_require__(40);
@@ -9771,7 +9771,7 @@
 	var // packages
 	  _ = __webpack_require__(18),
 	 animate = __webpack_require__(19),
-	 dom = __webpack_require__(17),
+	 dom = __webpack_require__(16),
 	 Regular = __webpack_require__(29);
 
 
@@ -11141,12 +11141,12 @@
 /* 36 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var diffArray = __webpack_require__(24);
+	var diffArray = __webpack_require__(23);
 	var combine = __webpack_require__(20);
 	var animate = __webpack_require__(19);
 	var node = __webpack_require__(43);
 	var Group = __webpack_require__(37);
-	var dom = __webpack_require__(17);
+	var dom = __webpack_require__(16);
 	var _ = __webpack_require__(18);
 
 
@@ -11736,8 +11736,8 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(18);
-	var parseExpression = __webpack_require__(21).expression;
-	var diffArray = __webpack_require__(24);
+	var parseExpression = __webpack_require__(24).expression;
+	var diffArray = __webpack_require__(23);
 
 	function Watcher(){}
 
@@ -12085,7 +12085,7 @@
 	 *
 	 */
 	var _ = __webpack_require__(18);
-	var dom = __webpack_require__(17);
+	var dom = __webpack_require__(16);
 	var Regular = __webpack_require__(29);
 
 	Regular._addProtoInheritCache("event");
@@ -12166,7 +12166,7 @@
 
 	// Regular
 	var _ = __webpack_require__(18);
-	var dom = __webpack_require__(17);
+	var dom = __webpack_require__(16);
 	var Regular = __webpack_require__(29);
 
 	var modelHandlers = {
