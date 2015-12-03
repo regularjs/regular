@@ -144,8 +144,7 @@ var methods = {
       last = watcher.last;
       tlast = _.typeOf(last);
       tnow = _.typeOf(now);
-      eq = true, diff;
-
+      eq = true;
       // !Object
       if( !(tnow === 'object' && tlast==='object' && watcher.deep) ){
         // Array
@@ -227,27 +226,22 @@ var methods = {
   $update: function(){
 
     var self =  this;
-    var rootParent = self;
+    var rootParent = this._digestRoot;
     var args = arguments;
 
-    do{
-      if(rootParent.data.isolate || !rootParent.$parent) break;
-      rootParent = rootParent.$parent;
-    } while(rootParent)
+    var prephase =rootParent.$phase;
+    
+    rootParent.$phase = 'digest'
 
+    var run = function(){ 
+      self.$set.apply(self, args);  
+      rootParent.$phase = prephase;
+      if( !self._zone ) rootParent.$digest();
+    }
 
-    var run = function(){ self.$set.apply(self, args); }
     
     if(this._zone) this._zone.run( run );
-    else { 
-
-      var prephase =rootParent.$phase;
-      rootParent.$phase = 'digest'
-      run() 
-      rootParent.$phase = prephase;
-
-      rootParent.$digest();
-    }
+    else  run() 
 
     return this;
   },

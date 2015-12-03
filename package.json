@@ -47,8 +47,5 @@
     "through2": "~0.4.1",
     "yargs": "^3.26.0",
     "zone.js": "^0.5.8"
-  },
-  "dependencies": {
-    "zone.js": "^0.5.8"
   }
 }

@@ -36,11 +36,6 @@ var Regular = function(definition, options){
   definition = definition || {};
   options = options || {};
 
-  if(typeof zone !== 'undefined' && zone.fork) this._zone = zone.fork({
-    afterTask: function () {
-      self.$root.$digest();
-    }
-  })
 
   definition.data = definition.data || {};
   definition.computed = definition.computed || {};
@@ -53,12 +48,28 @@ var Regular = function(definition, options){
   if(this.$parent){
      this.$parent._append(this);
   }
+
+  // find the digest Root for each digest lifecycle.
+  var digestRoot = this;
+  do{
+    if(digestRoot.data.isolate || !digestRoot.$parent) break;
+    digestRoot = digestRoot.$parent;
+  } while(digestRoot)
+
+  this._digestRoot = digestRoot;
+
+  if( config.useZone && this._digestRoot === this) this._zone = zone.fork({
+    afterTask: function () {
+      self.$digest();
+    }
+  })
+
   this._children = [];
   this.$refs = {};
 
   template = this.template;
 
-  // template is a string (len < 16). we will find it container first
+  // template is a string (len < 16). we will find its container first
   if((typeof template === 'string' && template.length < 16) && (node = dom.find(template))) {
     template = node.innerHTML;
   }
