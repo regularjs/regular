@@ -1,6 +1,6 @@
 /**
 @author	leeluolee
-@version	0.4.2
+@version	0.4.3
 @homepage	http://regularjs.github.io
 */
 (function webpackUniversalModuleDefinition(root, factory) {
