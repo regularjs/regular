@@ -114,7 +114,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = {
 	  'BEGIN': '{',
 	  'END': '}',
-	  'useZone': typeof zone !== undefined && zone.fork
+	  'useZone': typeof zone !== 'undefined' && zone.fork
 	}
 
 /***/ },
@@ -3914,6 +3914,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	var _ = __webpack_require__(5);
 	var parseExpression = __webpack_require__(17).expression;
 	var diffArray = __webpack_require__(25);
+	var config = __webpack_require__(2);
 
 	function Watcher(){}
 
@@ -4143,17 +4144,17 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var args = arguments;
 
 	    var prephase =rootParent.$phase;
-	    
+
 	    rootParent.$phase = 'digest'
 
 	    var run = function(){ 
 	      self.$set.apply(self, args);  
 	      rootParent.$phase = prephase;
-	      if( !self._zone ) rootParent.$digest();
+	      if( !config.useZone ) rootParent.$digest();
 	    }
 
 	    
-	    if(this._zone) this._zone.run( run );
+	    if(config.useZone) rootParent._zone.run( run );
 	    else  run() 
 
 	    return this;

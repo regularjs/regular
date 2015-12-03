@@ -1,6 +1,7 @@
 var _ = require('../util.js');
 var parseExpression = require('./parse.js').expression;
 var diffArray = require('./arrayDiff.js');
+var config = require('../config.js');
 
 function Watcher(){}
 
@@ -230,17 +231,17 @@ var methods = {
     var args = arguments;
 
     var prephase =rootParent.$phase;
-    
+
     rootParent.$phase = 'digest'
 
     var run = function(){ 
       self.$set.apply(self, args);  
       rootParent.$phase = prephase;
-      if( !self._zone ) rootParent.$digest();
+      if( !config.useZone ) rootParent.$digest();
     }
 
     
-    if(this._zone) this._zone.run( run );
+    if(config.useZone) rootParent._zone.run( run );
     else  run() 
 
     return this;

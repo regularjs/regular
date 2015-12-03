@@ -1,5 +1,9 @@
 require("zone.js");
 
+var Regular = require("../src/index.js");
+Regular.config({
+  useZone: false
+})
 require("./spec/browser-syntax.js");
 require("./spec/browser-bugfix.js");
 require("./spec/browser-animate.js");
@@ -15,5 +19,6 @@ require("./spec/browser-watcher.js");
 require("./spec/browser-nested.js");
 require("./spec/test-util.js");
 require("./spec/test-event.js");
+
 
 
