@@ -918,6 +918,33 @@
 	      
 	    })
 
+	    it("#issue 61: parse value before start animation", function(done){
+	      var div1 =document.createElement("div");
+	      var i = 0;
+	      Component.animation({
+	        "custom": function( step ){
+	          i++;
+	          expect(step.param).to.equal("animated")
+	        },
+	        "custom2": function( step ){
+	          i++;
+	          expect(step.param).to.equal("static")
+	          expect(i).to.equal(2);
+	          done();
+	        }
+	      })
+
+
+	      var component = new Component({
+	        data: {
+	          className: "animated"
+	        },
+	        template: "<div r-anim='on: enter; custom: {className}; custom2: static'></div>"
+	      });
+	      var i =0;
+
+	    })
+
 	    it("animate.inject&animate.remove with callback", function(done){
 	      var div1 =document.createElement("div");
 	      var div2 =document.createElement("div");
@@ -9860,6 +9887,11 @@
 	// value: the directive value
 	function processAnimate( element, value ){
 	  var Component = this.constructor;
+
+	  if(_.isExpr(value)){
+	    value = value.get(this);
+	  }
+
 	  value = value.trim();
 
 	  var composites = value.split(";"), 

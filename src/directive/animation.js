@@ -143,6 +143,11 @@ Regular.animation({
 // value: the directive value
 function processAnimate( element, value ){
   var Component = this.constructor;
+
+  if(_.isExpr(value)){
+    value = value.get(this);
+  }
+
   value = value.trim();
 
   var composites = value.split(";"), 
