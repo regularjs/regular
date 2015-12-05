@@ -1,3 +1,4 @@
+var _ = require('../util.js');
 
 function simpleDiff(now, old){
   var nlen = now.length;
@@ -39,8 +40,8 @@ function ld(array1, array2){
   }
   return matrix;
 }
-function whole(arr2, arr1, diffArray) {
-  if(!diffArray) return simpleDiff(arr2, arr1);
+function diffArray(arr2, arr1, diff) {
+  if(!diff) return simpleDiff(arr2, arr1);
   var matrix = ld(arr1, arr2)
   var n = arr1.length;
   var i = n;
@@ -131,4 +132,42 @@ function whole(arr2, arr1, diffArray) {
   }
   return steps
 }
-module.exports = whole;
+
+
+
+// diffObject
+// ----
+// test if obj1 deepEqual obj2
+function diffObject( now, last, diff ){
+
+
+  if(!diff){
+
+    for( var j in now ){
+      if( last[j] !== now[j] ) return true
+    }
+
+    for( var n in last ){
+      if(last[n] !== now[n]) return true;
+    }
+
+  }else{
+
+    var nKeys = _.keys(now);
+    var lKeys = _.keys(last);
+
+    return diffArray(nKeys, lKeys, diff, function(a, b){
+      return a === b;
+    });
+
+  }
+
+  return false;
+
+
+}
+
+module.exports = {
+  diffArray: diffArray,
+  diffObject: diffObject
+}

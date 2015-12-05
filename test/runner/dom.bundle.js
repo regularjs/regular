@@ -66,7 +66,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var expect = __webpack_require__(26);
-	var Regular = __webpack_require__(17);
+	var Regular = __webpack_require__(16);
 
 	function destroy(component, container){
 	  component.destroy();
@@ -253,7 +253,7 @@
 
 	var expect = __webpack_require__(26);
 
-	var Regular = __webpack_require__(17);
+	var Regular = __webpack_require__(16);
 	var dom = Regular.dom;
 
 	function destroy(component, container){
@@ -783,32 +783,51 @@
 
 
 	})
-	it('bugfix #67', function(){
-	  // https://github.com/regularjs/regular/issues/50
-	  var template =  "{#include a}";
-
-	  expect(function(){
-	    var component = new Regular({
-	      data: {
-	        a: 1,
-	        b: true,
-	        c: undefined,
-	        d: null,
-	        e: '123'
-	      },
-	      template: "{#inc a}{#inc b}{#inc c}{#inc d}{#inc e}"
-	    })
-	  }).to.not.throwException();
-
-	  
-
-	  var ps = nes.all('p' ,container);
 
 
+	  it('bugfix #67', function(){
+	    // https://github.com/regularjs/regular/issues/50
+	    var template =  "{#include a}";
+
+	    expect(function(){
+	      var component = new Regular({
+	        data: {
+	          a: 1,
+	          b: true,
+	          c: undefined,
+	          d: null,
+	          e: '123'
+	        },
+	        template: "{#inc a}{#inc b}{#inc c}{#inc d}{#inc e}"
+	      })
+	    }).to.not.throwException();
+
+	    
+
+	    var ps = nes.all('p' ,container);
+
+	  })
+
+	  it('bugfix #68, isolate with transclude content', function(){
+
+	      var XSelect = Regular.extend({
+	        name: 'xselect',
+	        template: '<div>{#inc this.$body }</div>'
+	      })
 
 
+	      var component = new Regular({
+	        data: { name: 'leeluolee' },
+	        template: '<xselect isolate ><div ref=a>{name}</div></xselect>'
+	      })
+
+	      expect(component.$refs.a.innerHTML).to.equal('leeluolee');
+	      component.destroy();
+
+	  })
 	})
-	})
+
+
 
 
 
@@ -817,9 +836,9 @@
 /* 3 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var Regular = __webpack_require__(17);
+	var Regular = __webpack_require__(16);
 	var animate = __webpack_require__(19);
-	var dom = __webpack_require__(16);
+	var dom = __webpack_require__(17);
 
 	function destroy(component, container){
 	  component.destroy();
@@ -1256,8 +1275,8 @@
 
 	var expect = __webpack_require__(26);
 	// contains basic dom && event specs
-	var dom = __webpack_require__(16);
-	var Regular = __webpack_require__(17);
+	var dom = __webpack_require__(17);
+	var Regular = __webpack_require__(16);
 
 	function destroy(component, container){
 	  component.destroy();
@@ -1657,7 +1676,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var expect = __webpack_require__(26);
-	var Regular = __webpack_require__(17);
+	var Regular = __webpack_require__(16);
 	var combine = __webpack_require__(20);
 	function destroy(component, container){
 	  component.destroy();
@@ -1831,7 +1850,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var expect = __webpack_require__(26);
-	  var Regular = __webpack_require__(17);
+	  var Regular = __webpack_require__(16);
 
 	function reset(){}
 
@@ -2051,7 +2070,8 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var expect = __webpack_require__(26);
-	var Regular = __webpack_require__(17);
+	var Regular = __webpack_require__(16);
+	var _ = Regular.util;
 
 	function destroy(component, container){
 	  component.destroy();
@@ -2670,6 +2690,83 @@
 	      expect(divs[2]).to.not.equal(divs2[2]);
 
 	    })
+	    it("list track non-index expression" , function(){
+	      var List = Regular.extend({
+	        template: '<div ref=cnt>{#list list as item by item.a}\
+	          <div>{item.a}</div>{/list}</div>'
+	      })
+	      var list = new List({
+	        data: {
+	          list: [{a: 1}, {a: 2} , {a: 3}]
+	        }
+	      })
+	      var divs = nes.all('div', list.$refs.cnt);
+
+	      list.data.list = [{a: 4},{a: 2} , {a: 6}]
+	      list.$update();
+
+	      var divs2 = nes.all('div', list.$refs.cnt);
+
+	      expect(divs[0]).to.not.equal(divs2[0]);
+	      expect(divs[1]).to.equal(divs2[1]);
+	      expect(divs[2]).to.not.equal(divs2[2]);
+
+	    })
+	  })
+
+	  describe("List with Object", function(){
+	    it("items should list by Object.keys", function( done){
+
+	      var component = new Regular({
+	        template: "<div ref=container>\
+	          {#list json as item by item_index}\
+	            <div>{item.age}:{item_key}</div>\
+	          {/list}\
+	        </div>",
+	        data: {
+	          json: {
+	            "xiaomin": {age:11},
+	            "xiaoli": {age:12},
+	            "xiaogang": {age:13}
+	          }
+	        }
+	      })
+
+	      // only make sure 
+	      var json = component.data.json;
+	      var keys = _.keys(json);
+
+	      var divs =  nes.all('div', component.$refs.container );
+
+	      expect(divs.length).to.equal(3);
+
+	      divs.forEach(function(div, index){
+	        expect(div.innerHTML).to.equal('' + json[ keys[index] ].age + keys[index]);
+	      })
+
+	      component.destroy();
+
+
+	    })
+
+	    it("items converted from Object to Array", function(){
+	      
+	    })
+	    it("items converted from Array to Object", function(){
+
+	    })
+	    it("items converted from null to Object", function(){
+
+	    })
+	    it("items converted from Object to null", function(){
+
+	    })
+	    it("items converted from Object to other dataType", function(){
+
+	    })
+	    it("items converted from  other dataType to Object", function(){
+
+	    })
 	  })
 	})
 
@@ -2680,8 +2777,8 @@
 	var expect = __webpack_require__(26);
 
 
-	var dom = __webpack_require__(16);
-	var Regular = __webpack_require__(17);
+	var dom = __webpack_require__(17);
+	var Regular = __webpack_require__(16);
 
 	var container = document.createElement('div');
 	function destroy(component, container){
@@ -3105,7 +3202,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var expect = __webpack_require__(26);
-	var Regular = __webpack_require__(17);
+	var Regular = __webpack_require__(16);
 
 	var container = document.createElement('div');
 	function destroy(component, container){
@@ -3332,7 +3429,7 @@
 	var expect = __webpack_require__(26);
 
 
-	var Regular = __webpack_require__(17);
+	var Regular = __webpack_require__(16);
 
 	function destroy(component, container){
 	  component.destroy();
@@ -4081,7 +4178,7 @@
 
 	var expect = __webpack_require__(26);
 
-	var Regular = __webpack_require__(17);
+	var Regular = __webpack_require__(16);
 
 
 	describe("Filter", function(){
@@ -4282,8 +4379,8 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var expect = __webpack_require__(26);
-	var Regular = __webpack_require__(17);
-	var parse = __webpack_require__(24);
+	var Regular = __webpack_require__(16);
+	var parse = __webpack_require__(21);
 
 	var Component = Regular.extend();
 
@@ -4892,10 +4989,10 @@
 	      i++;
 	     })
 	     watcher.$watch('list', function(nList, oList, splice){
-	      expect(splice).to.not.equal(undefined);
+	      expect(splice).to.not.equal(true);
 	      i++;
 	     },{
-	      diffArray: true
+	      diff: true
 	     })
 
 	     watcher.$update('list', [1,2,3])
@@ -4916,7 +5013,7 @@
 
 	var expect = __webpack_require__(26);
 
-	  var Regular = __webpack_require__(17);
+	  var Regular = __webpack_require__(16);
 	  var Component = Regular.extend();
 
 	  function destroy(component, container){
@@ -5411,9 +5508,9 @@
 
 	var expect = __webpack_require__(26);
 	var _ = __webpack_require__(18);
-	var shim = __webpack_require__(21);
-	var extend = __webpack_require__(22);
-	var diffArray = __webpack_require__(23);
+	var shim = __webpack_require__(22);
+	var extend = __webpack_require__(23);
+	var diffArray = __webpack_require__(24).diffArray;
 
 
 
@@ -5813,6 +5910,39 @@
 /* 16 */
 /***/ function(module, exports, __webpack_require__) {
 
+	var env =  __webpack_require__(27);
+	var config = __webpack_require__(28); 
+	var Regular = module.exports = __webpack_require__(29);
+	var Parser = Regular.Parser;
+	var Lexer = Regular.Lexer;
+
+	if(env.browser){
+	    __webpack_require__(31);
+	    __webpack_require__(32);
+	    __webpack_require__(33);
+	    Regular.dom = __webpack_require__(17);
+	}
+	Regular.env = env;
+	Regular.util = __webpack_require__(18);
+	Regular.parse = function(str, options){
+	  options = options || {};
+
+	  if(options.BEGIN || options.END){
+	    if(options.BEGIN) config.BEGIN = options.BEGIN;
+	    if(options.END) config.END = options.END;
+	    Lexer.setup();
+	  }
+	  var ast = new Parser(str).parse();
+	  return !options.stringify? ast : JSON.stringify(ast);
+	}
+
+
+
+
+/***/ },
+/* 17 */
+/***/ function(module, exports, __webpack_require__) {
+
 	
 	// thanks for angular && mootools for some concise&cross-platform  implemention
 	// =====================================
@@ -6205,43 +6335,10 @@
 
 
 /***/ },
-/* 17 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var env =  __webpack_require__(27);
-	var config = __webpack_require__(28); 
-	var Regular = module.exports = __webpack_require__(29);
-	var Parser = Regular.Parser;
-	var Lexer = Regular.Lexer;
-
-	if(env.browser){
-	    __webpack_require__(31);
-	    __webpack_require__(32);
-	    __webpack_require__(33);
-	    Regular.dom = __webpack_require__(16);
-	}
-	Regular.env = env;
-	Regular.util = __webpack_require__(18);
-	Regular.parse = function(str, options){
-	  options = options || {};
-
-	  if(options.BEGIN || options.END){
-	    if(options.BEGIN) config.BEGIN = options.BEGIN;
-	    if(options.END) config.END = options.END;
-	    Lexer.setup();
-	  }
-	  var ast = new Parser(str).parse();
-	  return !options.stringify? ast : JSON.stringify(ast);
-	}
-
-
-
-
-/***/ },
 /* 18 */
 /***/ function(module, exports, __webpack_require__) {
 
-	/* WEBPACK VAR INJECTION */(function(global) {__webpack_require__(21)();
+	/* WEBPACK VAR INJECTION */(function(global) {__webpack_require__(22)();
 
 
 
@@ -6686,7 +6783,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(18);
-	var dom  = __webpack_require__(16);
+	var dom  = __webpack_require__(17);
 	var animate = {};
 	var env = __webpack_require__(27);
 
@@ -6942,7 +7039,7 @@
 	// some nested  operation in ast 
 	// --------------------------------
 
-	var dom = __webpack_require__(16);
+	var dom = __webpack_require__(17);
 	var animate = __webpack_require__(19);
 
 	var combine = module.exports = {
@@ -7050,6 +7147,28 @@
 /* 21 */
 /***/ function(module, exports, __webpack_require__) {
 
+	var exprCache = __webpack_require__(27).exprCache;
+	var _ = __webpack_require__(18);
+	var Parser = __webpack_require__(34);
+	module.exports = {
+	  expression: function(expr, simple){
+	    // @TODO cache
+	    if( typeof expr === 'string' && ( expr = expr.trim() ) ){
+	      expr = exprCache.get( expr ) || exprCache.set( expr, new Parser( expr, { mode: 2, expression: true } ).expression() )
+	    }
+	    if(expr) return expr;
+	  },
+	  parse: function(template){
+	    return new Parser(template).parse();
+	  }
+	}
+
+
+
+/***/ },
+/* 22 */
+/***/ function(module, exports, __webpack_require__) {
+
 	// shim for es5
 	var slice = [].slice;
 	var tstr = ({}).toString;
@@ -7155,7 +7274,7 @@
 
 
 /***/ },
-/* 22 */
+/* 23 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// (c) 2010-2014 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
@@ -7241,10 +7360,11 @@
 
 
 /***/ },
-/* 23 */
+/* 24 */
 /***/ function(module, exports, __webpack_require__) {
 
-	
+	var _ = __webpack_require__(18);
+
 	function simpleDiff(now, old){
 	  var nlen = now.length;
 	  var olen = old.length;
@@ -7285,8 +7405,8 @@
 	  }
 	  return matrix;
 	}
-	function whole(arr2, arr1, diffArray) {
-	  if(!diffArray) return simpleDiff(arr2, arr1);
+	function diffArray(arr2, arr1, diff) {
+	  if(!diff) return simpleDiff(arr2, arr1);
 	  var matrix = ld(arr1, arr2)
 	  var n = arr1.length;
 	  var i = n;
@@ -7377,29 +7497,45 @@
 	  }
 	  return steps
 	}
-	module.exports = whole;
 
-/***/ },
-/* 24 */
-/***/ function(module, exports, __webpack_require__) {
 
-	var exprCache = __webpack_require__(27).exprCache;
-	var _ = __webpack_require__(18);
-	var Parser = __webpack_require__(34);
-	module.exports = {
-	  expression: function(expr, simple){
-	    // @TODO cache
-	    if( typeof expr === 'string' && ( expr = expr.trim() ) ){
-	      expr = exprCache.get( expr ) || exprCache.set( expr, new Parser( expr, { mode: 2, expression: true } ).expression() )
+
+	// diffObject
+	// ----
+	// test if obj1 deepEqual obj2
+	function diffObject( now, last, diff ){
+
+
+	  if(!diff){
+
+	    for( var j in now ){
+	      if( last[j] !== now[j] ) return true
 	    }
-	    if(expr) return expr;
-	  },
-	  parse: function(template){
-	    return new Parser(template).parse();
+
+	    for( var n in last ){
+	      if(last[n] !== now[n]) return true;
+	    }
+
+	  }else{
+
+	    var nKeys = _.keys(now);
+	    var lKeys = _.keys(last);
+
+	    return diffArray(nKeys, lKeys, diff, function(a, b){
+	      return a === b;
+	    });
+
 	  }
+
+	  return false;
+
+
 	}
 
-
+	module.exports = {
+	  diffArray: diffArray,
+	  diffObject: diffObject
+	}
 
 /***/ },
 /* 25 */
@@ -8810,10 +8946,10 @@
 	var Parser = __webpack_require__(34);
 	var config = __webpack_require__(28);
 	var _ = __webpack_require__(18);
-	var extend = __webpack_require__(22);
+	var extend = __webpack_require__(23);
 	var combine = {};
 	if(env.browser){
-	  var dom = __webpack_require__(16);
+	  var dom = __webpack_require__(17);
 	  var walkers = __webpack_require__(36);
 	  var Group = __webpack_require__(37);
 	  var doc = dom.doc;
@@ -8821,7 +8957,7 @@
 	}
 	var events = __webpack_require__(25);
 	var Watcher = __webpack_require__(38);
-	var parse = __webpack_require__(24);
+	var parse = __webpack_require__(21);
 	var filter = __webpack_require__(39);
 
 
@@ -8873,14 +9009,17 @@
 	  }
 	  this.$emit("$config");
 	  this.config && this.config(this.data);
-	  if(this._body && this._body.length){
-	    this.$body = _.getCompileFn(this._body, this.$parent, {
+
+	  var body = this._body;
+	  this._body = null;
+
+	  if(body && body.ast && body.ast.length){
+	    this.$body = _.getCompileFn(body.ast, body.ctx , {
 	      outer: this,
 	      namespace: options.namespace,
 	      extra: options.extra,
 	      record: true
 	    })
-	    this._body = null;
 	  }
 	  // handle computed
 	  if(template){
@@ -9654,7 +9793,7 @@
 
 	// Regular
 	var _ = __webpack_require__(18);
-	var dom = __webpack_require__(16);
+	var dom = __webpack_require__(17);
 	var animate = __webpack_require__(19);
 	var Regular = __webpack_require__(29);
 	var consts = __webpack_require__(40);
@@ -9771,7 +9910,7 @@
 	var // packages
 	  _ = __webpack_require__(18),
 	 animate = __webpack_require__(19),
-	 dom = __webpack_require__(16),
+	 dom = __webpack_require__(17),
 	 Regular = __webpack_require__(29);
 
 
@@ -11141,12 +11280,12 @@
 /* 36 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var diffArray = __webpack_require__(23);
+	var diffArray = __webpack_require__(24).diffArray;
 	var combine = __webpack_require__(20);
 	var animate = __webpack_require__(19);
 	var node = __webpack_require__(43);
 	var Group = __webpack_require__(37);
-	var dom = __webpack_require__(16);
+	var dom = __webpack_require__(17);
 	var _ = __webpack_require__(18);
 
 
@@ -11164,6 +11303,7 @@
 	  var variable = ast.variable;
 	  var alternate = ast.alternate;
 	  var track = ast.track, keyOf, extraObj;
+
 	  if( track && track !== true ){
 	    track = this._touchExpr(track);
 	    extraObj = _.createObject(extra);
@@ -11173,6 +11313,7 @@
 	      return track.get( self, extraObj );
 	    }
 	  }
+
 	  function removeRange(index, rlen){
 	    for(var j = 0; j< rlen; j++){ //removed
 	      var removed = group.children.splice( index + 1, 1)[0];
@@ -11211,6 +11352,18 @@
 	      sect.data[ indexName ] = k;
 	      sect.data[ variable ] = newValue[k];
 	    }
+	  }
+
+	  // update object type 
+	  function updateObject(newValue, oldValue, splices){
+	    // if type doesn't equal Object, we remove all of them directly
+	    // if(oldType !== 'object'){
+	    //   removeRange(0, group.children.length-1);
+	    // }
+
+	    var keys = Object.keys(newValue);
+
+	    
 	  }
 
 	  function updateLD(newValue, oldValue, splices){
@@ -11314,7 +11467,7 @@
 	      }
 	    }
 	  }
-	  this.$watch(ast.sequence, update, { init: true, diffArray: track !== true });
+	  this.$watch(ast.sequence, update, { init: true, diff: track !== true });
 	  return group;
 	}
 	// {#include } or {#inc template}
@@ -11588,7 +11741,10 @@
 	    $parent: (isolate & 2)? null: this,
 	    $root: this.$root,
 	    $outer: options.outer,
-	    _body: ast.children
+	    _body: {
+	      ctx: this,
+	      ast: ast.children
+	    }
 	  }
 	  var options = {
 	    namespace: namespace, 
@@ -11736,8 +11892,10 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(18);
-	var parseExpression = __webpack_require__(24).expression;
-	var diffArray = __webpack_require__(23);
+	var parseExpression = __webpack_require__(21).expression;
+	var diff = __webpack_require__(24);
+	var diffArray = diff.diffArray;
+	var diffObject = diff.diffObject;
 
 	function Watcher(){}
 
@@ -11785,7 +11943,7 @@
 	      once: once, 
 	      force: options.force,
 	      // don't use ld to resolve array diff
-	      diffArray: options.diffArray,
+	      diff: options.diff,
 	      test: test,
 	      deep: options.deep,
 	      last: options.sync? get(this): options.last
@@ -11887,7 +12045,7 @@
 	      if( !(tnow === 'object' && tlast==='object' && watcher.deep) ){
 	        // Array
 	        if( tnow === 'array' && ( tlast=='undefined' || tlast === 'array') ){
-	          diff = diffArray(now, watcher.last || [], watcher.diffArray)
+	          diff = diffArray(now, watcher.last || [], watcher.diff)
 	          if( tlast !== 'array' || diff === true || diff.length ) dirty = true;
 	        }else{
 	          eq = _.equals( now, last );
@@ -11897,20 +12055,8 @@
 	          }
 	        }
 	      }else{
-	        for(var j in now){
-	          if(last[j] !== now[j]){
-	            dirty = true;
-	            break;
-	          }
-	        }
-	        if(dirty !== true){
-	          for(var n in last){
-	            if(last[n] !== now[n]){
-	              dirty = true;
-	              break;
-	            }
-	          }
-	        }
+	        diff =  diffObject( now, last, watcher.diff );
+	        if( diff === true || diff.length ) dirty = true;
 	      }
 	    } else{
 	      // @TODO 是否把多重改掉
@@ -12085,7 +12231,7 @@
 	 *
 	 */
 	var _ = __webpack_require__(18);
-	var dom = __webpack_require__(16);
+	var dom = __webpack_require__(17);
 	var Regular = __webpack_require__(29);
 
 	Regular._addProtoInheritCache("event");
@@ -12166,7 +12312,7 @@
 
 	// Regular
 	var _ = __webpack_require__(18);
-	var dom = __webpack_require__(16);
+	var dom = __webpack_require__(17);
 	var Regular = __webpack_require__(29);
 
 	var modelHandlers = {

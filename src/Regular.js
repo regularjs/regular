@@ -67,14 +67,17 @@ var Regular = function(definition, options){
   }
   this.$emit("$config");
   this.config && this.config(this.data);
-  if(this._body && this._body.length){
-    this.$body = _.getCompileFn(this._body, this.$parent, {
+
+  var body = this._body;
+  this._body = null;
+
+  if(body && body.ast && body.ast.length){
+    this.$body = _.getCompileFn(body.ast, body.ctx , {
       outer: this,
       namespace: options.namespace,
       extra: options.extra,
       record: true
     })
-    this._body = null;
   }
   // handle computed
   if(template){

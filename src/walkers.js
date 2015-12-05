@@ -1,4 +1,4 @@
-var diffArray = require('./helper/arrayDiff.js');
+var diffArray = require('./helper/diff.js').diffArray;
 var combine = require('./helper/combine.js');
 var animate = require("./helper/animate.js");
 var node = require("./parser/node.js");
@@ -21,6 +21,7 @@ walkers.list = function(ast, options){
   var variable = ast.variable;
   var alternate = ast.alternate;
   var track = ast.track, keyOf, extraObj;
+
   if( track && track !== true ){
     track = this._touchExpr(track);
     extraObj = _.createObject(extra);
@@ -30,6 +31,7 @@ walkers.list = function(ast, options){
       return track.get( self, extraObj );
     }
   }
+
   function removeRange(index, rlen){
     for(var j = 0; j< rlen; j++){ //removed
       var removed = group.children.splice( index + 1, 1)[0];
@@ -68,6 +70,18 @@ walkers.list = function(ast, options){
       sect.data[ indexName ] = k;
       sect.data[ variable ] = newValue[k];
     }
+  }
+
+  // update object type 
+  function updateObject(newValue, oldValue, splices){
+    // if type doesn't equal Object, we remove all of them directly
+    // if(oldType !== 'object'){
+    //   removeRange(0, group.children.length-1);
+    // }
+
+    var keys = Object.keys(newValue);
+
+    
   }
 
   function updateLD(newValue, oldValue, splices){
@@ -171,7 +185,7 @@ walkers.list = function(ast, options){
       }
     }
   }
-  this.$watch(ast.sequence, update, { init: true, diffArray: track !== true });
+  this.$watch(ast.sequence, update, { init: true, diff: track !== true });
   return group;
 }
 // {#include } or {#inc template}
@@ -445,7 +459,10 @@ walkers.component = function(ast, options){
     $parent: (isolate & 2)? null: this,
     $root: this.$root,
     $outer: options.outer,
-    _body: ast.children
+    _body: {
+      ctx: this,
+      ast: ast.children
+    }
   }
   var options = {
     namespace: namespace, 

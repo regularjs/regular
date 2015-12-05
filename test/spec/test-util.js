@@ -2,7 +2,7 @@ var expect = require('expect.js');
 var _ = require("../../src/util.js");
 var shim = require("../../src/helper/shim.js");
 var extend = require("../../src/helper/extend.js");
-var diffArray = require("../../src/helper/arrayDiff.js");
+var diffArray = require("../../src/helper/diff.js").diffArray;
 
 
 

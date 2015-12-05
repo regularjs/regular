@@ -1,5 +1,6 @@
 var expect = require('expect.js');
 var Regular = require("../../src/index.js");
+var _ = Regular.util;
 
 function destroy(component, container){
   component.destroy();
@@ -616,6 +617,83 @@ it("list with else should also works under track mode", function(){
       expect(divs[0]).to.not.equal(divs2[0]);
       expect(divs[1]).to.equal(divs2[1]);
       expect(divs[2]).to.not.equal(divs2[2]);
+
+    })
+    it("list track non-index expression" , function(){
+      var List = Regular.extend({
+        template: '<div ref=cnt>{#list list as item by item.a}\
+          <div>{item.a}</div>{/list}</div>'
+      })
+      var list = new List({
+        data: {
+          list: [{a: 1}, {a: 2} , {a: 3}]
+        }
+      })
+      var divs = nes.all('div', list.$refs.cnt);
+
+      list.data.list = [{a: 4},{a: 2} , {a: 6}]
+      list.$update();
+
+      var divs2 = nes.all('div', list.$refs.cnt);
+
+      expect(divs[0]).to.not.equal(divs2[0]);
+      expect(divs[1]).to.equal(divs2[1]);
+      expect(divs[2]).to.not.equal(divs2[2]);
+
+    })
+  })
+
+  describe("List with Object", function(){
+    it("items should list by Object.keys", function( done){
+
+      var component = new Regular({
+        template: "<div ref=container>\
+          {#list json as item by item_index}\
+            <div>{item.age}:{item_key}</div>\
+          {/list}\
+        </div>",
+        data: {
+          json: {
+            "xiaomin": {age:11},
+            "xiaoli": {age:12},
+            "xiaogang": {age:13}
+          }
+        }
+      })
+
+      // only make sure 
+      var json = component.data.json;
+      var keys = _.keys(json);
+
+      var divs =  nes.all('div', component.$refs.container );
+
+      expect(divs.length).to.equal(3);
+
+      divs.forEach(function(div, index){
+        expect(div.innerHTML).to.equal('' + json[ keys[index] ].age + keys[index]);
+      })
+
+      component.destroy();
+
+
+    })
+
+    it("items converted from Object to Array", function(){
+      
+    })
+    it("items converted from Array to Object", function(){
+
+    })
+    it("items converted from null to Object", function(){
+
+    })
+    it("items converted from Object to null", function(){
+
+    })
+    it("items converted from Object to other dataType", function(){
+
+    })
+    it("items converted from  other dataType to Object", function(){
 
     })
   })

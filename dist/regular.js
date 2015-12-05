@@ -189,14 +189,17 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }
 	  this.$emit("$config");
 	  this.config && this.config(this.data);
-	  if(this._body && this._body.length){
-	    this.$body = _.getCompileFn(this._body, this.$parent, {
+
+	  var body = this._body;
+	  this._body = null;
+
+	  if(body && body.ast && body.ast.length){
+	    this.$body = _.getCompileFn(body.ast, body.ctx , {
 	      outer: this,
 	      namespace: options.namespace,
 	      extra: options.extra,
 	      record: true
 	    })
-	    this._body = null;
 	  }
 	  // handle computed
 	  if(template){
@@ -1943,7 +1946,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 9 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var diffArray = __webpack_require__(25);
+	var diffArray = __webpack_require__(25).diffArray;
 	var combine = __webpack_require__(14);
 	var animate = __webpack_require__(21);
 	var node = __webpack_require__(26);
@@ -1966,6 +1969,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  var variable = ast.variable;
 	  var alternate = ast.alternate;
 	  var track = ast.track, keyOf, extraObj;
+
 	  if( track && track !== true ){
 	    track = this._touchExpr(track);
 	    extraObj = _.createObject(extra);
@@ -1975,6 +1979,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      return track.get( self, extraObj );
 	    }
 	  }
+
 	  function removeRange(index, rlen){
 	    for(var j = 0; j< rlen; j++){ //removed
 	      var removed = group.children.splice( index + 1, 1)[0];
@@ -2013,6 +2018,18 @@ return /******/ (function(modules) { // webpackBootstrap
 	      sect.data[ indexName ] = k;
 	      sect.data[ variable ] = newValue[k];
 	    }
+	  }
+
+	  // update object type 
+	  function updateObject(newValue, oldValue, splices){
+	    // if type doesn't equal Object, we remove all of them directly
+	    // if(oldType !== 'object'){
+	    //   removeRange(0, group.children.length-1);
+	    // }
+
+	    var keys = Object.keys(newValue);
+
+	    
 	  }
 
 	  function updateLD(newValue, oldValue, splices){
@@ -2116,7 +2133,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      }
 	    }
 	  }
-	  this.$watch(ast.sequence, update, { init: true, diffArray: track !== true });
+	  this.$watch(ast.sequence, update, { init: true, diff: track !== true });
 	  return group;
 	}
 	// {#include } or {#inc template}
@@ -2390,7 +2407,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	    $parent: (isolate & 2)? null: this,
 	    $root: this.$root,
 	    $outer: options.outer,
-	    _body: ast.children
+	    _body: {
+	      ctx: this,
+	      ast: ast.children
+	    }
 	  }
 	  var options = {
 	    namespace: namespace, 
@@ -3904,7 +3924,9 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _ = __webpack_require__(5);
 	var parseExpression = __webpack_require__(17).expression;
-	var diffArray = __webpack_require__(25);
+	var diff = __webpack_require__(25);
+	var diffArray = diff.diffArray;
+	var diffObject = diff.diffObject;
 
 	function Watcher(){}
 
@@ -3952,7 +3974,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      once: once, 
 	      force: options.force,
 	      // don't use ld to resolve array diff
-	      diffArray: options.diffArray,
+	      diff: options.diff,
 	      test: test,
 	      deep: options.deep,
 	      last: options.sync? get(this): options.last
@@ -4054,7 +4076,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      if( !(tnow === 'object' && tlast==='object' && watcher.deep) ){
 	        // Array
 	        if( tnow === 'array' && ( tlast=='undefined' || tlast === 'array') ){
-	          diff = diffArray(now, watcher.last || [], watcher.diffArray)
+	          diff = diffArray(now, watcher.last || [], watcher.diff)
 	          if( tlast !== 'array' || diff === true || diff.length ) dirty = true;
 	        }else{
 	          eq = _.equals( now, last );
@@ -4064,20 +4086,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	          }
 	        }
 	      }else{
-	        for(var j in now){
-	          if(last[j] !== now[j]){
-	            dirty = true;
-	            break;
-	          }
-	        }
-	        if(dirty !== true){
-	          for(var n in last){
-	            if(last[n] !== now[n]){
-	              dirty = true;
-	              break;
-	            }
-	          }
-	        }
+	        diff =  diffObject( now, last, watcher.diff );
+	        if( diff === true || diff.length ) dirty = true;
 	      }
 	    } else{
 	      // @TODO 是否把多重改掉
@@ -5152,7 +5162,8 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 25 */
 /***/ function(module, exports, __webpack_require__) {
 
-	
+	var _ = __webpack_require__(5);
+
 	function simpleDiff(now, old){
 	  var nlen = now.length;
 	  var olen = old.length;
@@ -5193,8 +5204,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }
 	  return matrix;
 	}
-	function whole(arr2, arr1, diffArray) {
-	  if(!diffArray) return simpleDiff(arr2, arr1);
+	function diffArray(arr2, arr1, diff) {
+	  if(!diff) return simpleDiff(arr2, arr1);
 	  var matrix = ld(arr1, arr2)
 	  var n = arr1.length;
 	  var i = n;
@@ -5285,7 +5296,45 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }
 	  return steps
 	}
-	module.exports = whole;
+
+
+
+	// diffObject
+	// ----
+	// test if obj1 deepEqual obj2
+	function diffObject( now, last, diff ){
+
+
+	  if(!diff){
+
+	    for( var j in now ){
+	      if( last[j] !== now[j] ) return true
+	    }
+
+	    for( var n in last ){
+	      if(last[n] !== now[n]) return true;
+	    }
+
+	  }else{
+
+	    var nKeys = _.keys(now);
+	    var lKeys = _.keys(last);
+
+	    return diffArray(nKeys, lKeys, diff, function(a, b){
+	      return a === b;
+	    });
+
+	  }
+
+	  return false;
+
+
+	}
+
+	module.exports = {
+	  diffArray: diffArray,
+	  diffObject: diffObject
+	}
 
 /***/ },
 /* 26 */
