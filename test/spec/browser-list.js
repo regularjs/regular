@@ -644,12 +644,33 @@ it("list with else should also works under track mode", function(){
   })
 
   describe("List with Object", function(){
-    it("items should list by Object.keys", function( done){
+
+    var obj = {
+      "xiaomin": {age:11},
+      "xiaoli": {age:12},
+      "xiaogang": {age:13}
+    }
+    var arr = [
+      {age:11},
+      {age:12},
+      {age:13}
+    ]
+
+    var ComplexList = Regular.extend({
+        template: "<div ref=container>\
+          {#list json as item}\
+            <div>{item.age}:{item_key}:{item_index}</div>\
+          {/list}\
+        </div>"
+    })
+
+
+    it("items should list by Object.keys", function( ){
 
       var component = new Regular({
         template: "<div ref=container>\
-          {#list json as item by item_index}\
-            <div>{item.age}:{item_key}</div>\
+          {#list json as item by item_key}\
+            <div>{item.age}:{item_key}:{item_index}</div>\
           {/list}\
         </div>",
         data: {
@@ -670,8 +691,60 @@ it("list with else should also works under track mode", function(){
       expect(divs.length).to.equal(3);
 
       divs.forEach(function(div, index){
-        expect(div.innerHTML).to.equal('' + json[ keys[index] ].age + keys[index]);
+        expect(div.innerHTML).to.equal('' + json[ keys[index] ].age + ':' + keys[index] + ':' + index);
       })
+
+      delete json.xiaomin;
+      json.xiaoli = {age: 33}
+
+      component.$update();
+
+      divs =  nes.all('div', component.$refs.container );
+
+      expect(divs.length).to.equal(2);
+
+      expect(divs[0].innerHTML).to.equal('33:xiaoli:0')
+
+      component.destroy();
+
+
+
+    })
+    it("items should works under complex mode: item_index & item_key & item", function( ){
+
+      var component = new ComplexList({
+        data: {
+          json: {
+            "xiaomin": {age:11},
+            "xiaoli": {age:12},
+            "xiaogang": {age:13}
+          }
+        }
+      })
+
+      // only make sure 
+      var json = component.data.json;
+      var keys = _.keys(json);
+
+      var divs =  nes.all('div', component.$refs.container );
+
+      expect(divs.length).to.equal(3);
+
+      divs.forEach(function(div, index){
+        expect(div.innerHTML).to.equal('' + json[ keys[index] ].age + ':' + keys[index]+ ':' + index);
+      })
+
+      delete json.xiaomin;
+      json.xiaoli = {age: 33}
+
+      component.$update();
+
+      divs =  nes.all('div', component.$refs.container );
+
+      expect(divs.length).to.equal(2);
+
+      expect(divs[0].innerHTML).to.equal('33:xiaoli:0')
+      expect(divs[1].innerHTML).to.equal('13:xiaogang:1')
 
       component.destroy();
 
@@ -679,22 +752,141 @@ it("list with else should also works under track mode", function(){
     })
 
     it("items converted from Object to Array", function(){
+      var component = new ComplexList({
+        data: { json: obj }
+      })
+
+      component.$update('json', arr)
+
+      divs =  nes.all('div', component.$refs.container );
+
+      expect(divs.length).to.equal(3);
+
+      divs.forEach(function(div, index){
+        expect(div.innerHTML).to.equal('' + arr[index].age  + '::' + index);
+      })
+
+      component.destroy();
       
     })
     it("items converted from Array to Object", function(){
 
+      var component = new ComplexList({
+        data: { json: arr }
+      })
+
+      var divs =  nes.all('div', component.$refs.container );
+      var keys = _.keys(obj);
+
+      expect(divs.length).to.equal(3);
+
+      divs.forEach(function(div, index){
+        expect(div.innerHTML).to.equal('' + arr[index].age  + '::' + index);
+      })
+
+      
+      component.$update('json', obj )
+      divs =  nes.all('div', component.$refs.container );
+      divs.forEach(function(div, index){
+        expect(div.innerHTML).to.equal('' + arr[index].age  + ':'+keys[index]+':' + index);
+      })
+
+      component.destroy();
     })
     it("items converted from null to Object", function(){
 
+      var component = new ComplexList({
+        data: { json: null }
+      })
+      var divs =  nes.all('div', component.$refs.container );
+      var keys = _.keys(obj);
+      expect(divs.length).to.equal(0);
+
+      component.$update('json', obj )
+      var divs =  nes.all('div', component.$refs.container );
+      expect(divs.length).to.equal(3);
+      component.destroy();
     })
     it("items converted from Object to null", function(){
+
+      var component = new ComplexList({
+        data: { json: obj }
+      })
+      var divs =  nes.all('div', component.$refs.container );
+      expect(divs.length).to.equal(3);
+      var keys = _.keys(obj);
+
+      component.$update('json', null )
+      var divs =  nes.all('div', component.$refs.container );
+      expect(divs.length).to.equal(0);
+
+      component.destroy();
 
     })
     it("items converted from Object to other dataType", function(){
 
+      var component = new ComplexList({
+        data: { json: obj }
+      })
+      var divs =  nes.all('div', component.$refs.container );
+      expect(divs.length).to.equal(3);
+      var keys = _.keys(obj);
+
+      component.$update('json', 100 )
+      var divs =  nes.all('div', component.$refs.container );
+      expect(divs.length).to.equal(0);
+
+      component.destroy();
     })
     it("items converted from  other dataType to Object", function(){
 
+      var component = new ComplexList({
+        data: { json: true }
+      })
+      var divs =  nes.all('div', component.$refs.container );
+      expect(divs.length).to.equal(0);
+      var keys = _.keys(obj);
+
+      component.$update('json', obj )
+      var divs =  nes.all('div', component.$refs.container );
+      expect(divs.length).to.equal(3);
+
+      component.destroy();
     })
+
+    it("items key should update if only value is changed", function(){
+
+      var raw =  {a: {age: 1}, b:{age: 2}, c:{age:3}};
+      var component = new ComplexList({
+        data: { json: raw}
+      })
+
+      raw.b = raw.a;
+      delete raw.a;
+      component.$update();
+
+      expect(component.$refs.container)
+
+      var divs =  nes.all('div', component.$refs.container );
+      expect(divs.length).to.equal(2);
+      var keys = _.keys(raw);
+
+      divs.forEach(function(div, index){
+        expect(div.innerHTML).to.equal('' + raw[keys[index]].age  + ':'+keys[index]+':' + index);
+      })
+
+
+    })
+
   })
 })
+
+
+
+
+
+
+
+
+
+

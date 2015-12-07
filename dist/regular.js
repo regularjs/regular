@@ -1966,6 +1966,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  var self = this;
 	  var group = new Group([placeholder]);
 	  var indexName = ast.variable + '_index';
+	  var keyName = ast.variable + '_key';
 	  var variable = ast.variable;
 	  var alternate = ast.alternate;
 	  var track = ast.track, keyOf, extraObj;
@@ -1976,6 +1977,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    keyOf = function( item, index ){
 	      extraObj[ variable ] = item;
 	      extraObj[ indexName ] = index;
+	      // @FIX keyName
 	      return track.get( self, extraObj );
 	    }
 	  }
@@ -1986,13 +1988,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	      if(removed) removed.destroy(true);
 	    }
 	  }
-	  function addRange(index, end, newValue){
+
+	  function addRange(index, end, newList, rawNewValue){
 	    for(var o = index; o < end; o++){ //add
 	      // prototype inherit
-	      var item = newValue[o];
+	      var item = newList[o];
 	      var data = {};
-	      data[indexName] = o;
-	      data[variable] = item;
+	      updateTarget(data, o, item, rawNewValue);
 
 	      data = _.createObject(extra, data);
 	      var section = self.$compile(ast.body, {
@@ -2012,36 +2014,33 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	  }
 
-	  function updateRange(start, end, newValue){
+	  function updateTarget(target, index, item, rawNewValue){
+
+	      target[ indexName ] = index;
+	      if( rawNewValue ){
+	        target[ keyName ] = item;
+	        target[ variable ] = rawNewValue[ item ];
+	      }else{
+	        target[ variable ] = item;
+	        target[keyName] = null
+	      }
+	  }
+
+
+	  function updateRange(start, end, newList, rawNewValue){
 	    for(var k = start; k < end; k++){ // no change
-	      var sect = group.get( k + 1 );
-	      sect.data[ indexName ] = k;
-	      sect.data[ variable ] = newValue[k];
+	      var sect = group.get( k + 1 ), item = newList[ k ];
+	      updateTarget(sect.data, k, item, rawNewValue);
 	    }
 	  }
 
-	  // update object type 
-	  function updateObject(newValue, oldValue, splices){
-	    // if type doesn't equal Object, we remove all of them directly
-	    // if(oldType !== 'object'){
-	    //   removeRange(0, group.children.length-1);
-	    // }
-
-	    var keys = Object.keys(newValue);
-
-	    
-	  }
-
-	  function updateLD(newValue, oldValue, splices){
-	    if(!oldValue) oldValue = [];
-	    if(!newValue) newValue = [];
-
+	  function updateLD(newList, oldList, splices , rawNewValue ){
 
 	    var cur = placeholder;
-	    var m = 0, len = newValue.length;
+	    var m = 0, len = newList.length;
 
-	    if(!splices && (len !==0 || oldValue.length !==0)  ){
-	      splices = diffArray(newValue, oldValue, true);
+	    if(!splices && (len !==0 || oldList.length !==0)  ){
+	      splices = diffArray(newList, oldList, true);
 	    }
 
 	    if(!splices || !splices.length) return;
@@ -2057,9 +2056,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var minar = Math.min(rlen, add);
 	        var tIndex = 0;
 	        while(tIndex < minar){
-	          if( keyOf(newValue[index], index) !== keyOf( removed[0], index ) ){
+	          if( keyOf(newList[index], index) !== keyOf( removed[0], index ) ){
 	            removeRange(index, 1)
-	            addRange(index, index+1, newValue)
+	            addRange(index, index+1, newList, rawNewValue)
 	          }
 	          removed.shift();
 	          add--;
@@ -2069,10 +2068,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	        rlen = removed.length;
 	      }
 	      // update
-	      updateRange(m, index, newValue);
+	      updateRange(m, index, newList, rawNewValue);
+
 	      removeRange( index ,rlen)
 
-	      addRange(index, index+add, newValue)
+	      addRange(index, index+add, newList, rawNewValue)
 
 	      m = index + add - rlen;
 	      m  = m < 0? 0 : m;
@@ -2082,41 +2082,50 @@ return /******/ (function(modules) { // webpackBootstrap
 	      for(var i = m; i < len; i++){
 	        var pair = group.get(i + 1);
 	        pair.data[indexName] = i;
+	        // @TODO fix keys
 	      }
 	    }
 	  }
 
 	  // if the track is constant test.
-	  function updateSimple(newValue, oldValue){
+	  function updateSimple(newList, oldList, rawNewValue ){
 
-	    newValue = newValue || [];
-	    oldValue  = oldValue || [];
-
-	    var nlen = newValue.length || 0;
-	    var olen = oldValue.length || 0;
+	    var nlen = newList.length;
+	    var olen = oldList.length;
 	    var mlen = Math.min(nlen, olen);
 
-
-	    updateRange(0, mlen, newValue)
+	    updateRange(0, mlen, newList, rawNewValue)
 	    if(nlen < olen){ //need add
 	      removeRange(nlen, olen-nlen);
 	    }else if(nlen > olen){
-	      addRange(olen, nlen, newValue);
+	      addRange(olen, nlen, newList, rawNewValue);
 	    }
 	  }
 
 	  function update(newValue, oldValue, splices){
-	    var nlen = newValue && newValue.length;
-	    var olen = oldValue && oldValue.length;
-	    if( !olen && nlen && group.get(1)){
+
+	    var nType = _.typeOf( newValue );
+	    var oType = _.typeOf( oldValue );
+
+	    var newList = getListFromValue( newValue, nType );
+	    var oldList = getListFromValue( oldValue, oType );
+
+
+	    var nlen = newList && newList.length;
+	    var olen = oldList && oldList.length;
+
+	    // if previous list has , we need to remove the altnated section.
+	    if( !olen && nlen && group.get(1) ){
 	      var altGroup = group.children.pop();
 	      if(altGroup.destroy)  altGroup.destroy(true);
 	    }
 
+	    if( nType === 'object' ) var rawNewValue = newValue;
+
 	    if(track === true){
-	      updateSimple(newValue, oldValue, splices)
+	      updateSimple( newList, oldList,  rawNewValue );
 	    }else{
-	      updateLD(newValue, oldValue, splices)
+	      updateLD( newList, oldList, splices, rawNewValue );
 	    }
 
 	    // @ {#list} {#else}
@@ -2133,9 +2142,21 @@ return /******/ (function(modules) { // webpackBootstrap
 	      }
 	    }
 	  }
-	  this.$watch(ast.sequence, update, { init: true, diff: track !== true });
+
+	  this.$watch(ast.sequence, update, { 
+	    init: true, 
+	    diff: track !== true ,
+	    deep: true
+	  });
 	  return group;
 	}
+
+
+	function updateItem(){
+	  
+	}
+
+
 	// {#include } or {#inc template}
 	walkers.template = function(ast, options){
 	  var content = ast.content, compiled;
@@ -2166,6 +2187,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }
 	  return group;
 	};
+
+	function getListFromValue(value, type){
+	  return type === 'object'? _.keys(value): (
+	      type === 'array'? value: []
+	    )
+	}
 
 
 	// how to resolve this problem
@@ -5180,9 +5207,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	function equals(a,b){
 	  return a === b;
 	}
-	function ld(array1, array2){
+
+	// array1 - old array
+	// array2 - new array
+	function ld(array1, array2, equalFn){
 	  var n = array1.length;
 	  var m = array2.length;
+	  var equalFn = equalFn || equals;
 	  var matrix = [];
 	  for(var i = 0; i <= n; i++){
 	    matrix.push([i]);
@@ -5192,7 +5223,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }
 	  for(var i = 1; i <= n; i++){
 	    for(var j = 1; j <= m; j++){
-	      if(equals(array1[i-1], array2[j-1])){
+	      if(equalFn(array1[i-1], array2[j-1])){
 	        matrix[i][j] = matrix[i-1][j-1];
 	      }else{
 	        matrix[i][j] = Math.min(
@@ -5204,9 +5235,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }
 	  return matrix;
 	}
-	function diffArray(arr2, arr1, diff) {
+	// arr2 - new array
+	// arr1 - old array
+	function diffArray(arr2, arr1, diff, diffFn) {
 	  if(!diff) return simpleDiff(arr2, arr1);
-	  var matrix = ld(arr1, arr2)
+	  var matrix = ld(arr1, arr2, diffFn)
 	  var n = arr1.length;
 	  var i = n;
 	  var m = arr2.length;
@@ -5320,8 +5353,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var nKeys = _.keys(now);
 	    var lKeys = _.keys(last);
 
+	    /**
+	     * [description]
+	     * @param  {[type]} a    [description]
+	     * @param  {[type]} b){                   return now[b] [description]
+	     * @return {[type]}      [description]
+	     */
 	    return diffArray(nKeys, lKeys, diff, function(a, b){
-	      return a === b;
+	      return now[b] === last[a];
 	    });
 
 	  }

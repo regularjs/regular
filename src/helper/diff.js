@@ -16,9 +16,13 @@ function simpleDiff(now, old){
 function equals(a,b){
   return a === b;
 }
-function ld(array1, array2){
+
+// array1 - old array
+// array2 - new array
+function ld(array1, array2, equalFn){
   var n = array1.length;
   var m = array2.length;
+  var equalFn = equalFn || equals;
   var matrix = [];
   for(var i = 0; i <= n; i++){
     matrix.push([i]);
@@ -28,7 +32,7 @@ function ld(array1, array2){
   }
   for(var i = 1; i <= n; i++){
     for(var j = 1; j <= m; j++){
-      if(equals(array1[i-1], array2[j-1])){
+      if(equalFn(array1[i-1], array2[j-1])){
         matrix[i][j] = matrix[i-1][j-1];
       }else{
         matrix[i][j] = Math.min(
@@ -40,9 +44,11 @@ function ld(array1, array2){
   }
   return matrix;
 }
-function diffArray(arr2, arr1, diff) {
+// arr2 - new array
+// arr1 - old array
+function diffArray(arr2, arr1, diff, diffFn) {
   if(!diff) return simpleDiff(arr2, arr1);
-  var matrix = ld(arr1, arr2)
+  var matrix = ld(arr1, arr2, diffFn)
   var n = arr1.length;
   var i = n;
   var m = arr2.length;
@@ -156,8 +162,14 @@ function diffObject( now, last, diff ){
     var nKeys = _.keys(now);
     var lKeys = _.keys(last);
 
+    /**
+     * [description]
+     * @param  {[type]} a    [description]
+     * @param  {[type]} b){                   return now[b] [description]
+     * @return {[type]}      [description]
+     */
     return diffArray(nKeys, lKeys, diff, function(a, b){
-      return a === b;
+      return now[b] === last[a];
     });
 
   }
