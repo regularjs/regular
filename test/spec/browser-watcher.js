@@ -609,10 +609,10 @@ describe("component.watcher", function(){
       i++;
      })
      watcher.$watch('list', function(nList, oList, splice){
-      expect(splice).to.not.equal(undefined);
+      expect(splice).to.not.equal(true);
       i++;
      },{
-      diffArray: true
+      diff: true
      })
 
      watcher.$update('list', [1,2,3])

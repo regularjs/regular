@@ -762,7 +762,6 @@
 	      })
 	    }).to.not.throwException();
 	  })
-	})
 
 	it('bugfix #50', function(){
 	  // https://github.com/regularjs/regular/issues/50
@@ -784,6 +783,52 @@
 
 
 	})
+
+
+	  it('bugfix #67', function(){
+	    // https://github.com/regularjs/regular/issues/50
+	    var template =  "{#include a}";
+
+	    expect(function(){
+	      var component = new Regular({
+	        data: {
+	          a: 1,
+	          b: true,
+	          c: undefined,
+	          d: null,
+	          e: '123'
+	        },
+	        template: "{#inc a}{#inc b}{#inc c}{#inc d}{#inc e}"
+	      })
+	    }).to.not.throwException();
+
+	    
+
+	    var ps = nes.all('p' ,container);
+
+	  })
+
+	  it('bugfix #68, isolate with transclude content', function(){
+
+	      var XSelect = Regular.extend({
+	        name: 'xselect',
+	        template: '<div>{#inc this.$body }</div>'
+	      })
+
+
+	      var component = new Regular({
+	        data: { name: 'leeluolee' },
+	        template: '<xselect isolate ><div ref=a>{name}</div></xselect>'
+	      })
+
+	      expect(component.$refs.a.innerHTML).to.equal('leeluolee');
+	      component.destroy();
+
+	  })
+	})
+
+
+
 
 
 
@@ -916,6 +961,33 @@
 	      })
 	      expect(a).to.equal(1);
 	      
+	    })
+
+	    it("#issue 61: parse value before start animation", function(done){
+	      var div1 =document.createElement("div");
+	      var i = 0;
+	      Component.animation({
+	        "custom": function( step ){
+	          i++;
+	          expect(step.param).to.equal("animated")
+	        },
+	        "custom2": function( step ){
+	          i++;
+	          expect(step.param).to.equal("static")
+	          expect(i).to.equal(2);
+	          done();
+	        }
+	      })
+
+
+	      var component = new Component({
+	        data: {
+	          className: "animated"
+	        },
+	        template: "<div r-anim='on: enter; custom: {className}; custom2: static'></div>"
+	      });
+	      var i =0;
+
 	    })
 
 	    it("animate.inject&animate.remove with callback", function(done){
@@ -1999,6 +2071,7 @@
 
 	var expect = __webpack_require__(26);
 	var Regular = __webpack_require__(16);
+	var _ = Regular.util;
 
 	function destroy(component, container){
 	  component.destroy();
@@ -2617,8 +2690,302 @@
 	      expect(divs[2]).to.not.equal(divs2[2]);
 
 	    })
+	    it("list track non-index expression" , function(){
+	      var List = Regular.extend({
+	        template: '<div ref=cnt>{#list list as item by item.a}\
+	          <div>{item.a}</div>{/list}</div>'
+	      })
+	      var list = new List({
+	        data: {
+	          list: [{a: 1}, {a: 2} , {a: 3}]
+	        }
+	      })
+	      var divs = nes.all('div', list.$refs.cnt);
+
+	      list.data.list = [{a: 4},{a: 2} , {a: 6}]
+	      list.$update();
+
+	      var divs2 = nes.all('div', list.$refs.cnt);
+
+	      expect(divs[0]).to.not.equal(divs2[0]);
+	      expect(divs[1]).to.equal(divs2[1]);
+	      expect(divs[2]).to.not.equal(divs2[2]);
+
+	    })
+	  })
+
+	  describe("List with Object", function(){
+
+	    var obj = {
+	      "xiaomin": {age:11},
+	      "xiaoli": {age:12},
+	      "xiaogang": {age:13}
+	    }
+	    var arr = [
+	      {age:11},
+	      {age:12},
+	      {age:13}
+	    ]
+
+	    var ComplexList = Regular.extend({
+	        template: "<div ref=container>\
+	          {#list json as item}\
+	            <div>{item.age}:{item_key}:{item_index}</div>\
+	          {/list}\
+	        </div>"
+	    })
+
+
+	    it("items should list by Object.keys", function( ){
+
+	      var component = new Regular({
+	        template: "<div ref=container>\
+	          {#list json as item by item_key}\
+	            <div>{item.age}:{item_key}:{item_index}</div>\
+	          {/list}\
+	        </div>",
+	        data: {
+	          json: {
+	            "xiaomin": {age:11},
+	            "xiaoli": {age:12},
+	            "xiaogang": {age:13}
+	          }
+	        }
+	      })
+
+	      // only make sure 
+	      var json = component.data.json;
+	      var keys = _.keys(json);
+
+	      var divs =  nes.all('div', component.$refs.container );
+
+	      expect(divs.length).to.equal(3);
+
+	      divs.forEach(function(div, index){
+	        expect(div.innerHTML).to.equal('' + json[ keys[index] ].age + ':' + keys[index] + ':' + index);
+	      })
+
+	      delete json.xiaomin;
+	      json.xiaoli = {age: 33}
+
+	      component.$update();
+
+	      divs =  nes.all('div', component.$refs.container );
+
+	      expect(divs.length).to.equal(2);
+
+	      expect(divs[0].innerHTML).to.equal('33:xiaoli:0')
+
+	      component.destroy();
+
+
+
+	    })
+	    it("items should works under complex mode: item_index & item_key & item", function( ){
+
+	      var component = new ComplexList({
+	        data: {
+	          json: {
+	            "xiaomin": {age:11},
+	            "xiaoli": {age:12},
+	            "xiaogang": {age:13}
+	          }
+	        }
+	      })
+
+	      // only make sure 
+	      var json = component.data.json;
+	      var keys = _.keys(json);
+
+	      var divs =  nes.all('div', component.$refs.container );
+
+	      expect(divs.length).to.equal(3);
+
+	      divs.forEach(function(div, index){
+	        expect(div.innerHTML).to.equal('' + json[ keys[index] ].age + ':' + keys[index]+ ':' + index);
+	      })
+
+	      delete json.xiaomin;
+	      json.xiaoli = {age: 33}
+
+	      component.$update();
+
+	      divs =  nes.all('div', component.$refs.container );
+
+	      expect(divs.length).to.equal(2);
+
+	      expect(divs[0].innerHTML).to.equal('33:xiaoli:0')
+	      expect(divs[1].innerHTML).to.equal('13:xiaogang:1')
+
+	      component.destroy();
+
+
+	    })
+
+	    it("items converted from Object to Array", function(){
+	      var component = new ComplexList({
+	        data: { json: obj }
+	      })
+
+	      component.$update('json', arr)
+
+	      divs =  nes.all('div', component.$refs.container );
+
+	      expect(divs.length).to.equal(3);
+
+	      divs.forEach(function(div, index){
+	        expect(div.innerHTML).to.equal('' + arr[index].age  + '::' + index);
+	      })
+
+	      component.destroy();
+	      
+	    })
+	    it("items converted from Array to Object", function(){
+
+	      var component = new ComplexList({
+	        data: { json: arr }
+	      })
+
+	      var divs =  nes.all('div', component.$refs.container );
+	      var keys = _.keys(obj);
+
+	      expect(divs.length).to.equal(3);
+
+	      divs.forEach(function(div, index){
+	        expect(div.innerHTML).to.equal('' + arr[index].age  + '::' + index);
+	      })
+
+	      
+	      component.$update('json', obj )
+	      divs =  nes.all('div', component.$refs.container );
+	      divs.forEach(function(div, index){
+	        expect(div.innerHTML).to.equal('' + arr[index].age  + ':'+keys[index]+':' + index);
+	      })
+
+	      component.destroy();
+	    })
+	    it("items converted from null to Object", function(){
+
+	      var component = new ComplexList({
+	        data: { json: null }
+	      })
+	      var divs =  nes.all('div', component.$refs.container );
+	      var keys = _.keys(obj);
+	      expect(divs.length).to.equal(0);
+
+	      component.$update('json', obj )
+	      var divs =  nes.all('div', component.$refs.container );
+	      expect(divs.length).to.equal(3);
+	      component.destroy();
+	    })
+	    it("items converted from Object to null", function(){
+
+	      var component = new ComplexList({
+	        data: { json: obj }
+	      })
+	      var divs =  nes.all('div', component.$refs.container );
+	      expect(divs.length).to.equal(3);
+	      var keys = _.keys(obj);
+
+	      component.$update('json', null )
+	      var divs =  nes.all('div', component.$refs.container );
+	      expect(divs.length).to.equal(0);
+
+	      component.destroy();
+
+	    })
+	    it("items converted from Object to other dataType", function(){
+
+	      var component = new ComplexList({
+	        data: { json: obj }
+	      })
+	      var divs =  nes.all('div', component.$refs.container );
+	      expect(divs.length).to.equal(3);
+	      var keys = _.keys(obj);
+
+	      component.$update('json', 100 )
+	      var divs =  nes.all('div', component.$refs.container );
+	      expect(divs.length).to.equal(0);
+
+	      component.destroy();
+	    })
+	    it("items converted from  other dataType to Object", function(){
+
+	      var component = new ComplexList({
+	        data: { json: true }
+	      })
+	      var divs =  nes.all('div', component.$refs.container );
+	      expect(divs.length).to.equal(0);
+	      var keys = _.keys(obj);
+
+	      component.$update('json', obj )
+	      var divs =  nes.all('div', component.$refs.container );
+	      expect(divs.length).to.equal(3);
+
+	      component.destroy();
+	    })
+
+	    it("items key should update if only value is changed", function(){
+
+	      var raw =  {a: {age: 1}, b:{age: 2}, c:{age:3}};
+	      var component = new ComplexList({
+	        data: { json: raw}
+	      })
+
+	      raw.b = raw.a;
+	      delete raw.a;
+	      component.$update();
+
+	      expect(component.$refs.container)
+
+	      var divs =  nes.all('div', component.$refs.container );
+	      expect(divs.length).to.equal(2);
+	      var keys = _.keys(raw);
+
+	      divs.forEach(function(div, index){
+	        expect(div.innerHTML).to.equal('' + raw[keys[index]].age  + ':'+keys[index]+':' + index);
+	      })
+
+
+	    })
+
+	    it("list Object also accept #else stateman", function(){
+	      var component = new Regular({
+	        template: "<div ref=container>\
+	          {#list json as item by item_key}\
+	            <div>{item.age}:{item_key}:{item_index}</div>\
+	          {#else} <div id='notfound'></div>\
+	          {/list}\
+	        </div>",
+	        data: { json: obj}
+	      })
+	      var divs =  nes.all('div', component.$refs.container );
+	      expect(divs.length).to.equal(3);
+	      component.$update('json', null);
+
+	      var divs =  nes.all('div', component.$refs.container );
+	      expect(divs.length).to.equal(1);
+	      expect(divs[0].id).to.equal('notfound');
+
+	      component.$update('json', arr);
+	      var divs =  nes.all('div', component.$refs.container );
+	      expect(divs.length).to.equal(3);
+
+	    })
+
 	  })
 	})
+
+
+
+
+
+
+
+
+
+
+
 
 /***/ },
 /* 8 */
@@ -4230,7 +4597,7 @@
 
 	var expect = __webpack_require__(26);
 	var Regular = __webpack_require__(16);
-	var parse = __webpack_require__(24);
+	var parse = __webpack_require__(21);
 
 	var Component = Regular.extend();
 
@@ -4839,10 +5206,10 @@
 	      i++;
 	     })
 	     watcher.$watch('list', function(nList, oList, splice){
-	      expect(splice).to.not.equal(undefined);
+	      expect(splice).to.not.equal(true);
 	      i++;
 	     },{
-	      diffArray: true
+	      diff: true
 	     })
 
 	     watcher.$update('list', [1,2,3])
@@ -5358,9 +5725,11 @@
 
 	var expect = __webpack_require__(26);
 	var _ = __webpack_require__(18);
-	var shim = __webpack_require__(21);
-	var extend = __webpack_require__(22);
-	var diffArray = __webpack_require__(23);
+	var shim = __webpack_require__(22);
+	var extend = __webpack_require__(23);
+	var diff = __webpack_require__(24)
+	var diffArray = diff.diffArray;
+	var diffObject = diff.diffObject;
 
 
 
@@ -5493,6 +5862,59 @@
 	    expect(diffArray([1,2], [1,2])).to.equal(false)
 	  })
 
+	  it('complex diffObject should work as expect when the values are deep Equal', function(){
+
+	    var obj = {a: 1, b:2, c:3};
+	    var obj2 = {a: 1, b:2, c:3};
+
+	    expect( diffObject(obj, obj2, true) ).to.eql([])
+
+	  })
+
+	  it('complex diffObject should work as expect when the values aren"t deep Equal', function(){
+
+	    var obj = { a: 1, b:2, c:3 };
+	    var obj2 = { a: 1, b:2, c:4 };
+
+	    expect( diffObject(obj, obj2, true) ).to.eql([ { index: 2, add: 1, removed: [ 'c' ] } ] )
+
+	  })
+
+	  it('complex diffObject"s equalitation should judged by value, but not the key ', function(){
+
+	    var obj = { a: 1, b:2, c:3 };
+	    var obj2 = { a: 1, c: 2};
+
+	    expect( diffObject(obj, obj2, true) ).to.eql([ { index: 2, add: 1, removed: [] } ] )
+
+	  })
+
+	  it('complex diffObject should work as expect when the keys"s number aren"t equal', function(){
+
+	    var obj = { a: 1, b:2, c:3 };
+	    var obj2 = { a: 1, b:2};
+
+	    expect( diffObject(obj, obj2, true) ).to.eql([ { index: 2, add: 1, removed: [  ] } ] )
+
+	  })
+
+	  it('simple diffObject should work as expect when the value are deep Equal', function(){
+
+	    var obj = {a: 1, b:2, c:3};
+	    var obj2 = {a: 1, b:2, c:3};
+
+	    expect( diffObject(obj, obj2) ).to.equal(false)
+
+	  })
+
+	  it('simple diffObject should work as expect when the value aren"t deep Equal', function(){
+
+	    var obj = {a: 1, b:2, c:3};
+	    var obj2 = {a: 1, b:2, c:4};
+
+	    expect( diffObject(obj, obj2) ).to.equal(true)
+
+	  })
 
 
 	  it('_.equals should works as expect', function(){
@@ -6188,7 +6610,7 @@
 /* 18 */
 /***/ function(module, exports, __webpack_require__) {
 
-	/* WEBPACK VAR INJECTION */(function(global) {__webpack_require__(21)();
+	/* WEBPACK VAR INJECTION */(function(global) {__webpack_require__(22)();
 
 
 
@@ -6997,6 +7419,28 @@
 /* 21 */
 /***/ function(module, exports, __webpack_require__) {
 
+	var exprCache = __webpack_require__(27).exprCache;
+	var _ = __webpack_require__(18);
+	var Parser = __webpack_require__(34);
+	module.exports = {
+	  expression: function(expr, simple){
+	    // @TODO cache
+	    if( typeof expr === 'string' && ( expr = expr.trim() ) ){
+	      expr = exprCache.get( expr ) || exprCache.set( expr, new Parser( expr, { mode: 2, expression: true } ).expression() )
+	    }
+	    if(expr) return expr;
+	  },
+	  parse: function(template){
+	    return new Parser(template).parse();
+	  }
+	}
+
+
+
+/***/ },
+/* 22 */
+/***/ function(module, exports, __webpack_require__) {
+
 	// shim for es5
 	var slice = [].slice;
 	var tstr = ({}).toString;
@@ -7102,7 +7546,7 @@
 
 
 /***/ },
-/* 22 */
+/* 23 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// (c) 2010-2014 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
@@ -7188,10 +7632,11 @@
 
 
 /***/ },
-/* 23 */
+/* 24 */
 /***/ function(module, exports, __webpack_require__) {
 
-	
+	var _ = __webpack_require__(18);
+
 	function simpleDiff(now, old){
 	  var nlen = now.length;
 	  var olen = old.length;
@@ -7208,9 +7653,13 @@
 	function equals(a,b){
 	  return a === b;
 	}
-	function ld(array1, array2){
+
+	// array1 - old array
+	// array2 - new array
+	function ld(array1, array2, equalFn){
 	  var n = array1.length;
 	  var m = array2.length;
+	  var equalFn = equalFn || equals;
 	  var matrix = [];
 	  for(var i = 0; i <= n; i++){
 	    matrix.push([i]);
@@ -7220,7 +7669,7 @@
 	  }
 	  for(var i = 1; i <= n; i++){
 	    for(var j = 1; j <= m; j++){
-	      if(equals(array1[i-1], array2[j-1])){
+	      if(equalFn(array1[i-1], array2[j-1])){
 	        matrix[i][j] = matrix[i-1][j-1];
 	      }else{
 	        matrix[i][j] = Math.min(
@@ -7232,9 +7681,11 @@
 	  }
 	  return matrix;
 	}
-	function whole(arr2, arr1, diffArray) {
-	  if(!diffArray) return simpleDiff(arr2, arr1);
-	  var matrix = ld(arr1, arr2)
+	// arr2 - new array
+	// arr1 - old array
+	function diffArray(arr2, arr1, diff, diffFn) {
+	  if(!diff) return simpleDiff(arr2, arr1);
+	  var matrix = ld(arr1, arr2, diffFn)
 	  var n = arr1.length;
 	  var i = n;
 	  var m = arr2.length;
@@ -7324,29 +7775,51 @@
 	  }
 	  return steps
 	}
-	module.exports = whole;
 
-/***/ },
-/* 24 */
-/***/ function(module, exports, __webpack_require__) {
 
-	var exprCache = __webpack_require__(27).exprCache;
-	var _ = __webpack_require__(18);
-	var Parser = __webpack_require__(34);
-	module.exports = {
-	  expression: function(expr, simple){
-	    // @TODO cache
-	    if( typeof expr === 'string' && ( expr = expr.trim() ) ){
-	      expr = exprCache.get( expr ) || exprCache.set( expr, new Parser( expr, { mode: 2, expression: true } ).expression() )
+
+	// diffObject
+	// ----
+	// test if obj1 deepEqual obj2
+	function diffObject( now, last, diff ){
+
+
+	  if(!diff){
+
+	    for( var j in now ){
+	      if( last[j] !== now[j] ) return true
 	    }
-	    if(expr) return expr;
-	  },
-	  parse: function(template){
-	    return new Parser(template).parse();
+
+	    for( var n in last ){
+	      if(last[n] !== now[n]) return true;
+	    }
+
+	  }else{
+
+	    var nKeys = _.keys(now);
+	    var lKeys = _.keys(last);
+
+	    /**
+	     * [description]
+	     * @param  {[type]} a    [description]
+	     * @param  {[type]} b){                   return now[b] [description]
+	     * @return {[type]}      [description]
+	     */
+	    return diffArray(nKeys, lKeys, diff, function(a, b){
+	      return now[b] === last[a];
+	    });
+
 	  }
+
+	  return false;
+
+
 	}
 
-
+	module.exports = {
+	  diffArray: diffArray,
+	  diffObject: diffObject
+	}
 
 /***/ },
 /* 25 */
@@ -8757,7 +9230,7 @@
 	var Parser = __webpack_require__(34);
 	var config = __webpack_require__(28);
 	var _ = __webpack_require__(18);
-	var extend = __webpack_require__(22);
+	var extend = __webpack_require__(23);
 	var combine = {};
 	if(env.browser){
 	  var dom = __webpack_require__(17);
@@ -8768,7 +9241,7 @@
 	}
 	var events = __webpack_require__(25);
 	var Watcher = __webpack_require__(38);
-	var parse = __webpack_require__(24);
+	var parse = __webpack_require__(21);
 	var filter = __webpack_require__(39);
 
 
@@ -8820,14 +9293,17 @@
 	  }
 	  this.$emit("$config");
 	  this.config && this.config(this.data);
-	  if(this._body && this._body.length){
-	    this.$body = _.getCompileFn(this._body, this.$parent, {
+
+	  var body = this._body;
+	  this._body = null;
+
+	  if(body && body.ast && body.ast.length){
+	    this.$body = _.getCompileFn(body.ast, body.ctx , {
 	      outer: this,
 	      namespace: options.namespace,
 	      extra: options.extra,
 	      record: true
 	    })
-	    this._body = null;
 	  }
 	  // handle computed
 	  if(template){
@@ -9860,6 +10336,11 @@
 	// value: the directive value
 	function processAnimate( element, value ){
 	  var Component = this.constructor;
+
+	  if(_.isExpr(value)){
+	    value = value.get(this);
+	  }
+
 	  value = value.trim();
 
 	  var composites = value.split(";"), 
@@ -9877,8 +10358,8 @@
 
 	  function animationDestroy(element){
 	    return function(){
-	      delete element.onenter;
-	      delete element.onleave;
+	      element.onenter = null;
+	      element.onleave = null;
 	    } 
 	  }
 
@@ -11083,7 +11564,7 @@
 /* 36 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var diffArray = __webpack_require__(23);
+	var diffArray = __webpack_require__(24).diffArray;
 	var combine = __webpack_require__(20);
 	var animate = __webpack_require__(19);
 	var node = __webpack_require__(43);
@@ -11103,31 +11584,35 @@
 	  var self = this;
 	  var group = new Group([placeholder]);
 	  var indexName = ast.variable + '_index';
+	  var keyName = ast.variable + '_key';
 	  var variable = ast.variable;
 	  var alternate = ast.alternate;
 	  var track = ast.track, keyOf, extraObj;
+
 	  if( track && track !== true ){
 	    track = this._touchExpr(track);
 	    extraObj = _.createObject(extra);
 	    keyOf = function( item, index ){
 	      extraObj[ variable ] = item;
 	      extraObj[ indexName ] = index;
+	      // @FIX keyName
 	      return track.get( self, extraObj );
 	    }
 	  }
+
 	  function removeRange(index, rlen){
 	    for(var j = 0; j< rlen; j++){ //removed
 	      var removed = group.children.splice( index + 1, 1)[0];
 	      if(removed) removed.destroy(true);
 	    }
 	  }
-	  function addRange(index, end, newValue){
+
+	  function addRange(index, end, newList, rawNewValue){
 	    for(var o = index; o < end; o++){ //add
 	      // prototype inherit
-	      var item = newValue[o];
+	      var item = newList[o];
 	      var data = {};
-	      data[indexName] = o;
-	      data[variable] = item;
+	      updateTarget(data, o, item, rawNewValue);
 
 	      data = _.createObject(extra, data);
 	      var section = self.$compile(ast.body, {
@@ -11147,24 +11632,33 @@
 	    }
 	  }
 
-	  function updateRange(start, end, newValue){
+	  function updateTarget(target, index, item, rawNewValue){
+
+	      target[ indexName ] = index;
+	      if( rawNewValue ){
+	        target[ keyName ] = item;
+	        target[ variable ] = rawNewValue[ item ];
+	      }else{
+	        target[ variable ] = item;
+	        target[keyName] = null
+	      }
+	  }
+
+
+	  function updateRange(start, end, newList, rawNewValue){
 	    for(var k = start; k < end; k++){ // no change
-	      var sect = group.get( k + 1 );
-	      sect.data[ indexName ] = k;
-	      sect.data[ variable ] = newValue[k];
+	      var sect = group.get( k + 1 ), item = newList[ k ];
+	      updateTarget(sect.data, k, item, rawNewValue);
 	    }
 	  }
 
-	  function updateLD(newValue, oldValue, splices){
-	    if(!oldValue) oldValue = [];
-	    if(!newValue) newValue = [];
-
+	  function updateLD(newList, oldList, splices , rawNewValue ){
 
 	    var cur = placeholder;
-	    var m = 0, len = newValue.length;
+	    var m = 0, len = newList.length;
 
-	    if(!splices && (len !==0 || oldValue.length !==0)  ){
-	      splices = diffArray(newValue, oldValue, true);
+	    if(!splices && (len !==0 || oldList.length !==0)  ){
+	      splices = diffArray(newList, oldList, true);
 	    }
 
 	    if(!splices || !splices.length) return;
@@ -11180,9 +11674,9 @@
 	        var minar = Math.min(rlen, add);
 	        var tIndex = 0;
 	        while(tIndex < minar){
-	          if( keyOf(newValue[index], index) !== keyOf( removed[0], index ) ){
+	          if( keyOf(newList[index], index) !== keyOf( removed[0], index ) ){
 	            removeRange(index, 1)
-	            addRange(index, index+1, newValue)
+	            addRange(index, index+1, newList, rawNewValue)
 	          }
 	          removed.shift();
 	          add--;
@@ -11192,10 +11686,11 @@
 	        rlen = removed.length;
 	      }
 	      // update
-	      updateRange(m, index, newValue);
+	      updateRange(m, index, newList, rawNewValue);
+
 	      removeRange( index ,rlen)
 
-	      addRange(index, index+add, newValue)
+	      addRange(index, index+add, newList, rawNewValue)
 
 	      m = index + add - rlen;
 	      m  = m < 0? 0 : m;
@@ -11205,41 +11700,52 @@
 	      for(var i = m; i < len; i++){
 	        var pair = group.get(i + 1);
 	        pair.data[indexName] = i;
+	        // @TODO fix keys
 	      }
 	    }
 	  }
 
 	  // if the track is constant test.
-	  function updateSimple(newValue, oldValue){
+	  function updateSimple(newList, oldList, rawNewValue ){
 
-	    newValue = newValue || [];
-	    oldValue  = oldValue || [];
-
-	    var nlen = newValue.length || 0;
-	    var olen = oldValue.length || 0;
+	    var nlen = newList.length;
+	    var olen = oldList.length;
 	    var mlen = Math.min(nlen, olen);
 
-
-	    updateRange(0, mlen, newValue)
+	    updateRange(0, mlen, newList, rawNewValue)
 	    if(nlen < olen){ //need add
 	      removeRange(nlen, olen-nlen);
 	    }else if(nlen > olen){
-	      addRange(olen, nlen, newValue);
+	      addRange(olen, nlen, newList, rawNewValue);
 	    }
 	  }
 
 	  function update(newValue, oldValue, splices){
-	    var nlen = newValue && newValue.length;
-	    var olen = oldValue && oldValue.length;
-	    if( !olen && nlen && group.get(1)){
+
+	    var nType = _.typeOf( newValue );
+	    var oType = _.typeOf( oldValue );
+
+	    var newList = getListFromValue( newValue, nType );
+	    var oldList = getListFromValue( oldValue, oType );
+
+	    var rawNewValue;
+
+
+	    var nlen = newList && newList.length;
+	    var olen = oldList && oldList.length;
+
+	    // if previous list has , we need to remove the altnated section.
+	    if( !olen && nlen && group.get(1) ){
 	      var altGroup = group.children.pop();
 	      if(altGroup.destroy)  altGroup.destroy(true);
 	    }
 
+	    if( nType === 'object' ) rawNewValue = newValue;
+
 	    if(track === true){
-	      updateSimple(newValue, oldValue, splices)
+	      updateSimple( newList, oldList,  rawNewValue );
 	    }else{
-	      updateLD(newValue, oldValue, splices)
+	      updateLD( newList, oldList, splices, rawNewValue );
 	    }
 
 	    // @ {#list} {#else}
@@ -11256,9 +11762,21 @@
 	      }
 	    }
 	  }
-	  this.$watch(ast.sequence, update, { init: true, diffArray: track !== true });
+
+	  this.$watch(ast.sequence, update, { 
+	    init: true, 
+	    diff: track !== true ,
+	    deep: true
+	  });
 	  return group;
 	}
+
+
+	function updateItem(){
+	  
+	}
+
+
 	// {#include } or {#inc template}
 	walkers.template = function(ast, options){
 	  var content = ast.content, compiled;
@@ -11274,7 +11792,12 @@
 	        group.children.pop();
 	      }
 	      if(!value) return;
-	      group.push( compiled = (typeof value === 'function') ? value(): self.$compile(value, {record: true, outer: options.outer,namespace: namespace, extra: extra}) ); 
+
+	      group.push( compiled = type === 'function' ? value(): self.$compile( type !== 'object'? String(value): value, {
+	        record: true, 
+	        outer: options.outer,
+	        namespace: namespace, 
+	        extra: extra}) ); 
 	      if(placeholder.parentNode) {
 	        compiled.$inject(placeholder, 'before')
 	      }
@@ -11284,6 +11807,12 @@
 	  }
 	  return group;
 	};
+
+	function getListFromValue(value, type){
+	  return type === 'object'? _.keys(value): (
+	      type === 'array'? value: []
+	    )
+	}
 
 
 	// how to resolve this problem
@@ -11525,7 +12054,10 @@
 	    $parent: (isolate & 2)? null: this,
 	    $root: this.$root,
 	    $outer: options.outer,
-	    _body: ast.children
+	    _body: {
+	      ctx: this,
+	      ast: ast.children
+	    }
 	  }
 	  var options = {
 	    namespace: namespace, 
@@ -11673,8 +12205,10 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(18);
-	var parseExpression = __webpack_require__(24).expression;
-	var diffArray = __webpack_require__(23);
+	var parseExpression = __webpack_require__(21).expression;
+	var diff = __webpack_require__(24);
+	var diffArray = diff.diffArray;
+	var diffObject = diff.diffObject;
 
 	function Watcher(){}
 
@@ -11722,7 +12256,7 @@
 	      once: once, 
 	      force: options.force,
 	      // don't use ld to resolve array diff
-	      diffArray: options.diffArray,
+	      diff: options.diff,
 	      test: test,
 	      deep: options.deep,
 	      last: options.sync? get(this): options.last
@@ -11824,7 +12358,7 @@
 	      if( !(tnow === 'object' && tlast==='object' && watcher.deep) ){
 	        // Array
 	        if( tnow === 'array' && ( tlast=='undefined' || tlast === 'array') ){
-	          diff = diffArray(now, watcher.last || [], watcher.diffArray)
+	          diff = diffArray(now, watcher.last || [], watcher.diff)
 	          if( tlast !== 'array' || diff === true || diff.length ) dirty = true;
 	        }else{
 	          eq = _.equals( now, last );
@@ -11834,20 +12368,8 @@
 	          }
 	        }
 	      }else{
-	        for(var j in now){
-	          if(last[j] !== now[j]){
-	            dirty = true;
-	            break;
-	          }
-	        }
-	        if(dirty !== true){
-	          for(var n in last){
-	            if(last[n] !== now[n]){
-	              dirty = true;
-	              break;
-	            }
-	          }
-	        }
+	        diff =  diffObject( now, last, watcher.diff );
+	        if( diff === true || diff.length ) dirty = true;
 	      }
 	    } else{
 	      // @TODO 是否把多重改掉
@@ -12343,8 +12865,8 @@
 	 */
 
 	var base64 = __webpack_require__(48)
-	var ieee754 = __webpack_require__(47)
-	var isArray = __webpack_require__(46)
+	var ieee754 = __webpack_require__(46)
+	var isArray = __webpack_require__(47)
 
 	exports.Buffer = Buffer
 	exports.SlowBuffer = Buffer
@@ -13410,45 +13932,6 @@
 /* 46 */
 /***/ function(module, exports, __webpack_require__) {
 
-	
-	/**
-	 * isArray
-	 */
-
-	var isArray = Array.isArray;
-
-	/**
-	 * toString
-	 */
-
-	var str = Object.prototype.toString;
-
-	/**
-	 * Whether or not the given `val`
-	 * is an array.
-	 *
-	 * example:
-	 *
-	 *        isArray([]);
-	 *        // > true
-	 *        isArray(arguments);
-	 *        // > false
-	 *        isArray('');
-	 *        // > false
-	 *
-	 * @param {mixed} val
-	 * @return {bool}
-	 */
-
-	module.exports = isArray || function (val) {
-	  return !! val && '[object Array]' == str.call(val);
-	};
-
-
-/***/ },
-/* 47 */
-/***/ function(module, exports, __webpack_require__) {
-
 	exports.read = function(buffer, offset, isLE, mLen, nBytes) {
 	  var e, m,
 	      eLen = nBytes * 8 - mLen - 1,
@@ -13532,6 +14015,45 @@
 	  for (; eLen > 0; buffer[offset + i] = e & 0xff, i += d, e /= 256, eLen -= 8);
 
 	  buffer[offset + i - d] |= s * 128;
+	};
+
+
+/***/ },
+/* 47 */
+/***/ function(module, exports, __webpack_require__) {
+
+	
+	/**
+	 * isArray
+	 */
+
+	var isArray = Array.isArray;
+
+	/**
+	 * toString
+	 */
+
+	var str = Object.prototype.toString;
+
+	/**
+	 * Whether or not the given `val`
+	 * is an array.
+	 *
+	 * example:
+	 *
+	 *        isArray([]);
+	 *        // > true
+	 *        isArray(arguments);
+	 *        // > false
+	 *        isArray('');
+	 *        // > false
+	 *
+	 * @param {mixed} val
+	 * @return {bool}
+	 */
+
+	module.exports = isArray || function (val) {
+	  return !! val && '[object Array]' == str.call(val);
 	};
 
 

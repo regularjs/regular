@@ -1,4 +1,4 @@
-var diffArray = require('./helper/arrayDiff.js');
+var diffArray = require('./helper/diff.js').diffArray;
 var combine = require('./helper/combine.js');
 var animate = require("./helper/animate.js");
 var node = require("./parser/node.js");
@@ -18,31 +18,35 @@ walkers.list = function(ast, options){
   var self = this;
   var group = new Group([placeholder]);
   var indexName = ast.variable + '_index';
+  var keyName = ast.variable + '_key';
   var variable = ast.variable;
   var alternate = ast.alternate;
   var track = ast.track, keyOf, extraObj;
+
   if( track && track !== true ){
     track = this._touchExpr(track);
     extraObj = _.createObject(extra);
     keyOf = function( item, index ){
       extraObj[ variable ] = item;
       extraObj[ indexName ] = index;
+      // @FIX keyName
       return track.get( self, extraObj );
     }
   }
+
   function removeRange(index, rlen){
     for(var j = 0; j< rlen; j++){ //removed
       var removed = group.children.splice( index + 1, 1)[0];
       if(removed) removed.destroy(true);
     }
   }
-  function addRange(index, end, newValue){
+
+  function addRange(index, end, newList, rawNewValue){
     for(var o = index; o < end; o++){ //add
       // prototype inherit
-      var item = newValue[o];
+      var item = newList[o];
       var data = {};
-      data[indexName] = o;
-      data[variable] = item;
+      updateTarget(data, o, item, rawNewValue);
 
       data = _.createObject(extra, data);
       var section = self.$compile(ast.body, {
@@ -62,24 +66,33 @@ walkers.list = function(ast, options){
     }
   }
 
-  function updateRange(start, end, newValue){
+  function updateTarget(target, index, item, rawNewValue){
+
+      target[ indexName ] = index;
+      if( rawNewValue ){
+        target[ keyName ] = item;
+        target[ variable ] = rawNewValue[ item ];
+      }else{
+        target[ variable ] = item;
+        target[keyName] = null
+      }
+  }
+
+
+  function updateRange(start, end, newList, rawNewValue){
     for(var k = start; k < end; k++){ // no change
-      var sect = group.get( k + 1 );
-      sect.data[ indexName ] = k;
-      sect.data[ variable ] = newValue[k];
+      var sect = group.get( k + 1 ), item = newList[ k ];
+      updateTarget(sect.data, k, item, rawNewValue);
     }
   }
 
-  function updateLD(newValue, oldValue, splices){
-    if(!oldValue) oldValue = [];
-    if(!newValue) newValue = [];
-
+  function updateLD(newList, oldList, splices , rawNewValue ){
 
     var cur = placeholder;
-    var m = 0, len = newValue.length;
+    var m = 0, len = newList.length;
 
-    if(!splices && (len !==0 || oldValue.length !==0)  ){
-      splices = diffArray(newValue, oldValue, true);
+    if(!splices && (len !==0 || oldList.length !==0)  ){
+      splices = diffArray(newList, oldList, true);
     }
 
     if(!splices || !splices.length) return;
@@ -95,9 +108,9 @@ walkers.list = function(ast, options){
         var minar = Math.min(rlen, add);
         var tIndex = 0;
         while(tIndex < minar){
-          if( keyOf(newValue[index], index) !== keyOf( removed[0], index ) ){
+          if( keyOf(newList[index], index) !== keyOf( removed[0], index ) ){
             removeRange(index, 1)
-            addRange(index, index+1, newValue)
+            addRange(index, index+1, newList, rawNewValue)
           }
           removed.shift();
           add--;
@@ -107,10 +120,11 @@ walkers.list = function(ast, options){
         rlen = removed.length;
       }
       // update
-      updateRange(m, index, newValue);
+      updateRange(m, index, newList, rawNewValue);
+
       removeRange( index ,rlen)
 
-      addRange(index, index+add, newValue)
+      addRange(index, index+add, newList, rawNewValue)
 
       m = index + add - rlen;
       m  = m < 0? 0 : m;
@@ -120,41 +134,52 @@ walkers.list = function(ast, options){
       for(var i = m; i < len; i++){
         var pair = group.get(i + 1);
         pair.data[indexName] = i;
+        // @TODO fix keys
       }
     }
   }
 
   // if the track is constant test.
-  function updateSimple(newValue, oldValue){
+  function updateSimple(newList, oldList, rawNewValue ){
 
-    newValue = newValue || [];
-    oldValue  = oldValue || [];
-
-    var nlen = newValue.length || 0;
-    var olen = oldValue.length || 0;
+    var nlen = newList.length;
+    var olen = oldList.length;
     var mlen = Math.min(nlen, olen);
 
-
-    updateRange(0, mlen, newValue)
+    updateRange(0, mlen, newList, rawNewValue)
     if(nlen < olen){ //need add
       removeRange(nlen, olen-nlen);
     }else if(nlen > olen){
-      addRange(olen, nlen, newValue);
+      addRange(olen, nlen, newList, rawNewValue);
     }
   }
 
   function update(newValue, oldValue, splices){
-    var nlen = newValue && newValue.length;
-    var olen = oldValue && oldValue.length;
-    if( !olen && nlen && group.get(1)){
+
+    var nType = _.typeOf( newValue );
+    var oType = _.typeOf( oldValue );
+
+    var newList = getListFromValue( newValue, nType );
+    var oldList = getListFromValue( oldValue, oType );
+
+    var rawNewValue;
+
+
+    var nlen = newList && newList.length;
+    var olen = oldList && oldList.length;
+
+    // if previous list has , we need to remove the altnated section.
+    if( !olen && nlen && group.get(1) ){
       var altGroup = group.children.pop();
       if(altGroup.destroy)  altGroup.destroy(true);
     }
 
+    if( nType === 'object' ) rawNewValue = newValue;
+
     if(track === true){
-      updateSimple(newValue, oldValue, splices)
+      updateSimple( newList, oldList,  rawNewValue );
     }else{
-      updateLD(newValue, oldValue, splices)
+      updateLD( newList, oldList, splices, rawNewValue );
     }
 
     // @ {#list} {#else}
@@ -171,9 +196,21 @@ walkers.list = function(ast, options){
       }
     }
   }
-  this.$watch(ast.sequence, update, { init: true, diffArray: track !== true });
+
+  this.$watch(ast.sequence, update, { 
+    init: true, 
+    diff: track !== true ,
+    deep: true
+  });
   return group;
 }
+
+
+function updateItem(){
+  
+}
+
+
 // {#include } or {#inc template}
 walkers.template = function(ast, options){
   var content = ast.content, compiled;
@@ -189,7 +226,12 @@ walkers.template = function(ast, options){
         group.children.pop();
       }
       if(!value) return;
-      group.push( compiled = (typeof value === 'function') ? value(): self.$compile(value, {record: true, outer: options.outer,namespace: namespace, extra: extra}) ); 
+
+      group.push( compiled = type === 'function' ? value(): self.$compile( type !== 'object'? String(value): value, {
+        record: true, 
+        outer: options.outer,
+        namespace: namespace, 
+        extra: extra}) ); 
       if(placeholder.parentNode) {
         compiled.$inject(placeholder, 'before')
       }
@@ -199,6 +241,12 @@ walkers.template = function(ast, options){
   }
   return group;
 };
+
+function getListFromValue(value, type){
+  return type === 'object'? _.keys(value): (
+      type === 'array'? value: []
+    )
+}
 
 
 // how to resolve this problem
@@ -440,7 +488,10 @@ walkers.component = function(ast, options){
     $parent: (isolate & 2)? null: this,
     $root: this.$root,
     $outer: options.outer,
-    _body: ast.children
+    _body: {
+      ctx: this,
+      ast: ast.children
+    }
   }
   var options = {
     namespace: namespace, 

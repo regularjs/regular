@@ -143,6 +143,11 @@ Regular.animation({
 // value: the directive value
 function processAnimate( element, value ){
   var Component = this.constructor;
+
+  if(_.isExpr(value)){
+    value = value.get(this);
+  }
+
   value = value.trim();
 
   var composites = value.split(";"), 
@@ -160,8 +165,8 @@ function processAnimate( element, value ){
 
   function animationDestroy(element){
     return function(){
-      delete element.onenter;
-      delete element.onleave;
+      element.onenter = null;
+      element.onleave = null;
     } 
   }
 

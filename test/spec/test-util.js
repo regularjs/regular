@@ -2,7 +2,9 @@ var expect = require('expect.js');
 var _ = require("../../src/util.js");
 var shim = require("../../src/helper/shim.js");
 var extend = require("../../src/helper/extend.js");
-var diffArray = require("../../src/helper/arrayDiff.js");
+var diff = require("../../src/helper/diff.js")
+var diffArray = diff.diffArray;
+var diffObject = diff.diffObject;
 
 
 
@@ -135,6 +137,59 @@ describe("Regular.util", function(){
     expect(diffArray([1,2], [1,2])).to.equal(false)
   })
 
+  it('complex diffObject should work as expect when the values are deep Equal', function(){
+
+    var obj = {a: 1, b:2, c:3};
+    var obj2 = {a: 1, b:2, c:3};
+
+    expect( diffObject(obj, obj2, true) ).to.eql([])
+
+  })
+
+  it('complex diffObject should work as expect when the values aren"t deep Equal', function(){
+
+    var obj = { a: 1, b:2, c:3 };
+    var obj2 = { a: 1, b:2, c:4 };
+
+    expect( diffObject(obj, obj2, true) ).to.eql([ { index: 2, add: 1, removed: [ 'c' ] } ] )
+
+  })
+
+  it('complex diffObject"s equalitation should judged by value, but not the key ', function(){
+
+    var obj = { a: 1, b:2, c:3 };
+    var obj2 = { a: 1, c: 2};
+
+    expect( diffObject(obj, obj2, true) ).to.eql([ { index: 2, add: 1, removed: [] } ] )
+
+  })
+
+  it('complex diffObject should work as expect when the keys"s number aren"t equal', function(){
+
+    var obj = { a: 1, b:2, c:3 };
+    var obj2 = { a: 1, b:2};
+
+    expect( diffObject(obj, obj2, true) ).to.eql([ { index: 2, add: 1, removed: [  ] } ] )
+
+  })
+
+  it('simple diffObject should work as expect when the value are deep Equal', function(){
+
+    var obj = {a: 1, b:2, c:3};
+    var obj2 = {a: 1, b:2, c:3};
+
+    expect( diffObject(obj, obj2) ).to.equal(false)
+
+  })
+
+  it('simple diffObject should work as expect when the value aren"t deep Equal', function(){
+
+    var obj = {a: 1, b:2, c:3};
+    var obj2 = {a: 1, b:2, c:4};
+
+    expect( diffObject(obj, obj2) ).to.equal(true)
+
+  })
 
 
   it('_.equals should works as expect', function(){

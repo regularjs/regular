@@ -1,6 +1,8 @@
 var _ = require('../util.js');
 var parseExpression = require('./parse.js').expression;
-var diffArray = require('./arrayDiff.js');
+var diff = require('./diff.js');
+var diffArray = diff.diffArray;
+var diffObject = diff.diffObject;
 
 function Watcher(){}
 
@@ -48,7 +50,7 @@ var methods = {
       once: once, 
       force: options.force,
       // don't use ld to resolve array diff
-      diffArray: options.diffArray,
+      diff: options.diff,
       test: test,
       deep: options.deep,
       last: options.sync? get(this): options.last
@@ -150,7 +152,7 @@ var methods = {
       if( !(tnow === 'object' && tlast==='object' && watcher.deep) ){
         // Array
         if( tnow === 'array' && ( tlast=='undefined' || tlast === 'array') ){
-          diff = diffArray(now, watcher.last || [], watcher.diffArray)
+          diff = diffArray(now, watcher.last || [], watcher.diff)
           if( tlast !== 'array' || diff === true || diff.length ) dirty = true;
         }else{
           eq = _.equals( now, last );
@@ -160,20 +162,8 @@ var methods = {
           }
         }
       }else{
-        for(var j in now){
-          if(last[j] !== now[j]){
-            dirty = true;
-            break;
-          }
-        }
-        if(dirty !== true){
-          for(var n in last){
-            if(last[n] !== now[n]){
-              dirty = true;
-              break;
-            }
-          }
-        }
+        diff =  diffObject( now, last, watcher.diff );
+        if( diff === true || diff.length ) dirty = true;
       }
     } else{
       // @TODO 是否把多重改掉

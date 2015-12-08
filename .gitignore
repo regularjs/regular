@@ -4,7 +4,7 @@ example
 npm-debug.log
 */tmp/*
 test/tmp/*
-test/runner/dom.bundle.js
+test/runner/dom*
 test/coverage/*
 coverage*
 out/*
