@@ -2110,6 +2110,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var newList = getListFromValue( newValue, nType );
 	    var oldList = getListFromValue( oldValue, oType );
 
+	    var rawNewValue;
+
 
 	    var nlen = newList && newList.length;
 	    var olen = oldList && oldList.length;
@@ -2120,7 +2122,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      if(altGroup.destroy)  altGroup.destroy(true);
 	    }
 
-	    if( nType === 'object' ) var rawNewValue = newValue;
+	    if( nType === 'object' ) rawNewValue = newValue;
 
 	    if(track === true){
 	      updateSimple( newList, oldList,  rawNewValue );

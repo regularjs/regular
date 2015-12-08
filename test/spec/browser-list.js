@@ -878,6 +878,30 @@ it("list with else should also works under track mode", function(){
 
     })
 
+    it("list Object also accept #else stateman", function(){
+      var component = new Regular({
+        template: "<div ref=container>\
+          {#list json as item by item_key}\
+            <div>{item.age}:{item_key}:{item_index}</div>\
+          {#else} <div id='notfound'></div>\
+          {/list}\
+        </div>",
+        data: { json: obj}
+      })
+      var divs =  nes.all('div', component.$refs.container );
+      expect(divs.length).to.equal(3);
+      component.$update('json', null);
+
+      var divs =  nes.all('div', component.$refs.container );
+      expect(divs.length).to.equal(1);
+      expect(divs[0].id).to.equal('notfound');
+
+      component.$update('json', arr);
+      var divs =  nes.all('div', component.$refs.container );
+      expect(divs.length).to.equal(3);
+
+    })
+
   })
 })
 
