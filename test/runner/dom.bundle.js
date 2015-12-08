@@ -4230,7 +4230,7 @@
 
 	var expect = __webpack_require__(26);
 	var Regular = __webpack_require__(16);
-	var parse = __webpack_require__(21);
+	var parse = __webpack_require__(22);
 
 	var Component = Regular.extend();
 
@@ -5358,9 +5358,9 @@
 
 	var expect = __webpack_require__(26);
 	var _ = __webpack_require__(18);
-	var shim = __webpack_require__(22);
-	var extend = __webpack_require__(23);
-	var diffArray = __webpack_require__(24);
+	var shim = __webpack_require__(23);
+	var extend = __webpack_require__(24);
+	var diffArray = __webpack_require__(25);
 
 
 
@@ -5629,7 +5629,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var expect = __webpack_require__(26);
-	var Event = __webpack_require__(25);
+	var Event = __webpack_require__(21);
 
 
 
@@ -6188,7 +6188,7 @@
 /* 18 */
 /***/ function(module, exports, __webpack_require__) {
 
-	/* WEBPACK VAR INJECTION */(function(global) {__webpack_require__(22)();
+	/* WEBPACK VAR INJECTION */(function(global) {__webpack_require__(23)();
 
 
 
@@ -6997,6 +6997,86 @@
 /* 21 */
 /***/ function(module, exports, __webpack_require__) {
 
+	// simplest event emitter 60 lines
+	// ===============================
+	var slice = [].slice, _ = __webpack_require__(18);
+	var API = {
+	  $on: function(event, fn) {
+	    if(typeof event === "object"){
+	      for (var i in event) {
+	        this.$on(i, event[i]);
+	      }
+	    }else{
+	      // @patch: for list
+	      var context = this;
+	      var handles = context._handles || (context._handles = {}),
+	        calls = handles[event] || (handles[event] = []);
+	      calls.push(fn);
+	    }
+	    return this;
+	  },
+	  $off: function(event, fn) {
+	    var context = this;
+	    if(!context._handles) return;
+	    if(!event) this._handles = {};
+	    var handles = context._handles,
+	      calls;
+
+	    if (calls = handles[event]) {
+	      if (!fn) {
+	        handles[event] = [];
+	        return context;
+	      }
+	      for (var i = 0, len = calls.length; i < len; i++) {
+	        if (fn === calls[i]) {
+	          calls.splice(i, 1);
+	          return context;
+	        }
+	      }
+	    }
+	    return context;
+	  },
+	  // bubble event
+	  $emit: function(event){
+	    // @patch: for list
+	    var context = this;
+	    var handles = context._handles, calls, args, type;
+	    if(!event) return;
+	    var args = slice.call(arguments, 1);
+	    var type = event;
+
+	    if(!handles) return context;
+	    if(calls = handles[type.slice(1)]){
+	      for (var j = 0, len = calls.length; j < len; j++) {
+	        calls[j].apply(context, args)
+	      }
+	    }
+	    if (!(calls = handles[type])) return context;
+	    for (var i = 0, len = calls.length; i < len; i++) {
+	      calls[i].apply(context, args)
+	    }
+	    // if(calls.length) context.$update();
+	    return context;
+	  },
+	  // capture  event
+	  $one: function(){
+	    
+	}
+	}
+	// container class
+	function Event() {}
+	_.extend(Event.prototype, API)
+
+	Event.mixTo = function(obj){
+	  obj = typeof obj === "function" ? obj.prototype : obj;
+	  _.extend(obj, API)
+	}
+	module.exports = Event;
+
+/***/ },
+/* 22 */
+/***/ function(module, exports, __webpack_require__) {
+
 	var exprCache = __webpack_require__(27).exprCache;
 	var _ = __webpack_require__(18);
 	var Parser = __webpack_require__(34);
@@ -7016,7 +7096,7 @@
 
 
 /***/ },
-/* 22 */
+/* 23 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// shim for es5
@@ -7124,7 +7204,7 @@
 
 
 /***/ },
-/* 23 */
+/* 24 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// (c) 2010-2014 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
@@ -7210,7 +7290,7 @@
 
 
 /***/ },
-/* 24 */
+/* 25 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
@@ -7347,86 +7427,6 @@
 	  return steps
 	}
 	module.exports = whole;
-
-/***/ },
-/* 25 */
-/***/ function(module, exports, __webpack_require__) {
-
-	// simplest event emitter 60 lines
-	// ===============================
-	var slice = [].slice, _ = __webpack_require__(18);
-	var API = {
-	  $on: function(event, fn) {
-	    if(typeof event === "object"){
-	      for (var i in event) {
-	        this.$on(i, event[i]);
-	      }
-	    }else{
-	      // @patch: for list
-	      var context = this;
-	      var handles = context._handles || (context._handles = {}),
-	        calls = handles[event] || (handles[event] = []);
-	      calls.push(fn);
-	    }
-	    return this;
-	  },
-	  $off: function(event, fn) {
-	    var context = this;
-	    if(!context._handles) return;
-	    if(!event) this._handles = {};
-	    var handles = context._handles,
-	      calls;
-
-	    if (calls = handles[event]) {
-	      if (!fn) {
-	        handles[event] = [];
-	        return context;
-	      }
-	      for (var i = 0, len = calls.length; i < len; i++) {
-	        if (fn === calls[i]) {
-	          calls.splice(i, 1);
-	          return context;
-	        }
-	      }
-	    }
-	    return context;
-	  },
-	  // bubble event
-	  $emit: function(event){
-	    // @patch: for list
-	    var context = this;
-	    var handles = context._handles, calls, args, type;
-	    if(!event) return;
-	    var args = slice.call(arguments, 1);
-	    var type = event;
-
-	    if(!handles) return context;
-	    if(calls = handles[type.slice(1)]){
-	      for (var j = 0, len = calls.length; j < len; j++) {
-	        calls[j].apply(context, args)
-	      }
-	    }
-	    if (!(calls = handles[type])) return context;
-	    for (var i = 0, len = calls.length; i < len; i++) {
-	      calls[i].apply(context, args)
-	    }
-	    // if(calls.length) context.$update();
-	    return context;
-	  },
-	  // capture  event
-	  $one: function(){
-	    
-	}
-	}
-	// container class
-	function Event() {}
-	_.extend(Event.prototype, API)
-
-	Event.mixTo = function(obj){
-	  obj = typeof obj === "function" ? obj.prototype : obj;
-	  _.extend(obj, API)
-	}
-	module.exports = Event;
 
 /***/ },
 /* 26 */
@@ -8757,7 +8757,7 @@
 	var Parser = __webpack_require__(34);
 	var config = __webpack_require__(28);
 	var _ = __webpack_require__(18);
-	var extend = __webpack_require__(23);
+	var extend = __webpack_require__(24);
 	var combine = {};
 	if(env.browser){
 	  var dom = __webpack_require__(17);
@@ -8766,9 +8766,9 @@
 	  var doc = dom.doc;
 	  combine = __webpack_require__(20);
 	}
-	var events = __webpack_require__(25);
+	var events = __webpack_require__(21);
 	var Watcher = __webpack_require__(38);
-	var parse = __webpack_require__(21);
+	var parse = __webpack_require__(22);
 	var filter = __webpack_require__(39);
 
 
@@ -11083,7 +11083,7 @@
 /* 36 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var diffArray = __webpack_require__(24);
+	var diffArray = __webpack_require__(25);
 	var combine = __webpack_require__(20);
 	var animate = __webpack_require__(19);
 	var node = __webpack_require__(43);
@@ -11673,8 +11673,8 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(18);
-	var parseExpression = __webpack_require__(21).expression;
-	var diffArray = __webpack_require__(24);
+	var parseExpression = __webpack_require__(22).expression;
+	var diffArray = __webpack_require__(25);
 
 	function Watcher(){}
 
