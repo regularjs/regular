@@ -12,6 +12,28 @@
 
 
 
+## 版本特性
+
+- 加入mounted,就是DOM画到页面去了后，相当于jquery的$(document).ready;
+- 加入$broadcast广告，可以广播，有需要的组件加broadcast:function(act){},可以注册接收广播
+
+```javascript
+  var Note = Regular.extend({
+    template: 
+      "<input id="inputid" {#if !disabled} r-model='hello' {#else} disabled {/if} > {hello} \
+    <button on-click={disabled = !disabled}>{disabled? 'active': 'disable'} it</button>",
+    mounted:function(){
+    //与init的区别在于，这里可以用getElementById("inputid")拿到对应的DOM结构
+    console.log(document.getElementById("inputid"));
+    },
+    broadcast:function(act){
+    //注册接收,只有定义了这个方法，才会注册接收广播，任何一个Regular.extend({})里都可以
+    //发送广播，和发送事件类似。this.$broadcast(any),参数为任意，接收也会收到any.
+    //开发者可自行定义对像，如{action:"logout",other:...},
+    }
+  })
+```
+
 
 * __[✨中文指南 ](http://regularjs.github.io/guide/zh/index.html)__
 * __[✨中文API ](http://regularjs.github.io/reference/?api-zh)__

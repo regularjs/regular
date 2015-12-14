@@ -13,7 +13,7 @@
   "main": "src/index.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/regularjs/regular"
+    "url": "https://github.com/todayliu/regular"
   },
   "homepage": "http://regularjs.github.io",
   "scripts": {
@@ -24,19 +24,19 @@
   },
   "devDependencies": {
     "expect.js": "~0.3.1",
-    "gulp": "3.6.x",
+    "gulp": "^3.6.2",
     "gulp-bump": "^1.0.0",
-    "gulp-git": "^1.4.0",
-    "gulp-istanbul": "~0.1.1",
-    "gulp-jshint": "~1.5.3",
-    "gulp-mocha": "~0.4.1",
+    "gulp-git": "^1.6.0",
+    "gulp-istanbul": "^0.1.1",
+    "gulp-jshint": "^1.5.6",
+    "gulp-mocha": "^0.4.1",
     "gulp-run-sequence": "^0.3.2",
-    "gulp-shell": "^0.2.9",
+    "gulp-shell": "^0.2.11",
     "gulp-tag-version": "^1.3.0",
-    "gulp-uglify": "~0.2.1",
+    "gulp-uglify": "^0.2.1",
     "gulp-util": "~2.2.14",
-    "gulp-webpack": "^1.0.0",
-    "karma": "~0.12.6",
+    "gulp-webpack": "^1.5.0",
+    "karma": "^0.12.37",
     "karma-chrome-launcher": "~0.1.4",
     "karma-coverage": "~0.2.4",
     "karma-firefox-launcher": "~0.1.3",

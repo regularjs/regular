@@ -17,6 +17,9 @@ var events = require('./helper/event.js');
 var Watcher = require('./helper/watcher.js');
 var parse = require('./helper/parse.js');
 var filter = require('./helper/filter.js');
+var domready = require('./helper/ready.js');
+//事件广播管理，用于组件与组件之间通信
+var dispatcher = require('./helper/dispatcher.js');
 
 
 /**
@@ -87,6 +90,19 @@ var Regular = function(definition, options){
   this.$ready = true;
   this.$emit("$init");
   if( this.init ) this.init(this.data);
+  var _this = this;
+
+  if(this.broadcast){
+    console.log("this is broadcast dist . listener");
+    this.__broadcastid__ = dispatcher.register(this.broadcast);
+    console.log(this);
+    console.log(this.__broadcastid__);
+  }
+  console.log("this is broadcast dist");
+  domready(function(){
+      _this.$emit("$mounted");
+      if(_this.mounted)_this.mounted(_this.mounted);
+  })
 
   // @TODO: remove, maybe , there is no need to update after init; 
   // if(this.$root === this) this.$update();
@@ -267,8 +283,17 @@ Regular.implement({
     this.$root = null;
     this._handles = null;
     this.$refs = null;
+    //如果有定义广播，那么清除
+    if(this.__broadcastid__>0){
+      dispatcher.unregister(this.__broadcastid__);
+    }
   },
-
+  /**
+   * 广播
+   */
+  $broadcast:function(action){
+    dispatcher.dispatch(action);
+  },
   /**
    * compile a block ast ; return a group;
    * @param  {Array} parsed ast
