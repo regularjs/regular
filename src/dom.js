@@ -9,6 +9,8 @@
 // license: MIT-style license. http://mootools.net
 
 
+if(typeof window !== 'undefined'){
+  
 var dom = module.exports;
 var env = require("./env.js");
 var _ = require("./util");
@@ -22,8 +24,9 @@ var namespaces = {
 }
 
 dom.body = document.body;
-
 dom.doc = document;
+dom.tNode = tNode;
+
 
 // camelCase
 function camelCase(str){
@@ -33,7 +36,6 @@ function camelCase(str){
 }
 
 
-dom.tNode = tNode;
 
 if(tNode.addEventListener){
   addEvent = function(node, type, fn) {
@@ -384,6 +386,8 @@ dom.nextReflow = dom.msie? function(callback){
     callback();
   })
 }: dom.nextFrame;
+
+}
 
 
 

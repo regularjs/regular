@@ -2,7 +2,7 @@ var // packages
   _ = require("../util.js"),
  animate = require("../helper/animate.js"),
  dom = require("../dom.js"),
- Regular = require("../Regular.js");
+ Regular = require("../render/component.js");
 
 
 var // variables

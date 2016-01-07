@@ -431,6 +431,9 @@ _.getCompileFn = function(source, ctx, options){
   return ctx.$compile.bind(ctx,source, options)
 }
 
+_.eventReg = /^on-(\w[-\w]+)$/;
+
+
 
 
 

@@ -312,6 +312,8 @@ walkers['if'] = function(ast, options){
 }
 
 
+
+
 walkers.expression = function(ast, options){
   var node = document.createTextNode("");
   this.$watch(ast, function(newval){
@@ -326,7 +328,6 @@ walkers.text = function(ast, options){
 
 
 
-var eventReg = /^on-(.+)$/
 
 /**
  * walkers element (contains component)
@@ -432,7 +433,7 @@ walkers.component = function(ast, options){
     }
     var name = attr.name;
     if(!attr.event){
-      var etest = name.match(eventReg);
+      var etest = name.match(_.eventReg);
       // event: 'nav'
       if(etest) attr.event = etest[1];
     }

@@ -2,7 +2,7 @@
 var _ = require("../util.js");
 var dom = require("../dom.js");
 var animate = require("../helper/animate.js");
-var Regular = require("../Regular.js");
+var Regular = require("../render/component.js");
 var consts = require("../const");
 
 

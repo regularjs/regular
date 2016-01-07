@@ -1,0 +1,72 @@
+
+<link rel="stylesheet" href="https://rawgit.com/tastejs/todomvc-common/v0.1.11/base.css" />
+<div id="todoapp">
+</div>
+<footer id="info">
+      <p>Double-click to edit a todo</p>
+      <p>Created by @leeluolee</p>
+      <p>Part of <a href="http://todomvc.com">TodoMVC</a></p>
+</footer>
+<script id="todo" type="template/regular" name="todo">
+  <li  r-class={ {'completed': todo.completed, 'editing': todo.editing} }>
+    <div class="view">
+      <input class="toggle" type="checkbox" r-model={ todo.completed }>
+        <label on-dblclick={todo.editin  = true}>{ todo.description }</label>
+        <button on-click={ this.$emit('remove', todo_index) } class="destroy"></button>
+        </div>
+      <input id="edit" class="edit" on-enter={ todo.editing = false } r-model={todo.description} autofocus>
+  </li>
+</script>
+ <script id="application" type="template/regular">
+      <div>
+        <h1>regular-todo</h1>
+        <input id="new-todo" on-enter={ this.newTodo(editTodo) } placeholder="What needs to be done?" r-model={ editTodo }>
+      </div>
+      {#if !!items.length}
+        <section id="main">
+          <input id="toggle-all" type="checkbox" name='toggle' r-model={items| every: 'completed', items}>
+          <label for="toggle-all">Mark all as complete</label>
+          <ul id="todo-list">
+            {#list this.getList(filter) as i}
+            {i_index}, <todo todo={i} on-remove={this.remove(i_index)} />
+            {/list}
+          </ul>
+        </section>
+        <footer id="footer">
+          <span id="todo-count">
+            <strong>{ this.getList('active').length }</strong> { this.getList('active').length === 1 ? 'item' : 'items' } left
+          </span>
+          <ul id="filters">
+            <li><a class="{ filter === 'all'? 'selected' : '' }"  href="javascript:;" on-click={filter='all'}>All</a></li>
+            <li><a class="{ filter === 'active'? 'selected' : '' }" href='javascript:;' on-click={filter = 'active'}>Active</a></li>
+            <li><a class="{ filter === 'completed'? 'selected' : '' }" href="javascript:;" on-click={filter = 'completed'}>Completed</a></li>
+          </ul>
+          {#if this.getList('completed').length > 0 }
+            <button id="clear-completed" on-click={this.clearCompleted()}>Clear completed ({ this.getList('completed').length })</button>
+          {/if}
+        </footer>
+      {/if}
+    </script>
+
+
+<script src="../../..//dist/regular.js"></script>
+
+<script>
+  
+
+
+  // // localStorage stuff
+  if(window.localStorage && window.JSON){
+    var items = localStorage && localStorage.getItem('items');
+    items = JSON.parse(items);
+  }
+
+  
+  var todo = new TodoApp({data: {
+    filter:"all",
+    items: []
+  }});
+
+
+  todo.$inject('#todoapp')
+</script>

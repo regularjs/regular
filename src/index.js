@@ -1,15 +1,15 @@
 var env =  require("./env.js");
 var config = require("./config"); 
-var Regular = module.exports = require("./Regular.js");
+var Regular = module.exports = require("./render/component.js");
 var Parser = Regular.Parser;
 var Lexer = Regular.Lexer;
 
-if(env.browser){
+// if(env.browser){
     require("./directive/base.js");
     require("./directive/animation.js");
     require("./module/timeout.js");
     Regular.dom = require("./dom.js");
-}
+// }
 Regular.env = env;
 Regular.util = require("./util.js");
 Regular.parse = function(str, options){
@@ -24,4 +24,5 @@ Regular.parse = function(str, options){
   return !options.stringify? ast : JSON.stringify(ast);
 }
 
+Regular.renderToString = require("./render/server.js").render;
 

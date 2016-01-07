@@ -4,7 +4,7 @@
  */
 var _ = require("../util.js");
 var dom = require("../dom.js");
-var Regular = require("../Regular.js");
+var Regular = require("../render/component.js");
 
 Regular._addProtoInheritCache("event");
 

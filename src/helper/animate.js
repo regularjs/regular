@@ -4,6 +4,7 @@ var animate = {};
 var env = require("../env.js");
 
 
+if(typeof window !== 'undefined'){
 var 
   transitionEnd = 'transitionend', 
   animationEnd = 'animationend', 
@@ -34,6 +35,7 @@ if(!('onanimationend' in window)){
     animationEnd += ' oAnimationEnd';
     animationProperty = 'oAnimation';
   }
+}
 }
 
 /**

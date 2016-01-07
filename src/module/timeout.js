@@ -1,4 +1,4 @@
-var Regular = require("../Regular.js");
+var Regular = require("../render/component.js");
 
 /**
  * Timeout Module

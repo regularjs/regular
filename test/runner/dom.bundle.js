@@ -4597,7 +4597,7 @@
 
 	var expect = __webpack_require__(26);
 	var Regular = __webpack_require__(16);
-	var parse = __webpack_require__(21);
+	var parse = __webpack_require__(24);
 
 	var Component = Regular.extend();
 
@@ -5725,9 +5725,9 @@
 
 	var expect = __webpack_require__(26);
 	var _ = __webpack_require__(18);
-	var shim = __webpack_require__(22);
-	var extend = __webpack_require__(23);
-	var diff = __webpack_require__(24)
+	var shim = __webpack_require__(21);
+	var extend = __webpack_require__(22);
+	var diff = __webpack_require__(23)
 	var diffArray = diff.diffArray;
 	var diffObject = diff.diffObject;
 
@@ -6184,14 +6184,14 @@
 
 	var env =  __webpack_require__(27);
 	var config = __webpack_require__(28); 
-	var Regular = module.exports = __webpack_require__(29);
+	var Regular = module.exports = __webpack_require__(30);
 	var Parser = Regular.Parser;
 	var Lexer = Regular.Lexer;
 
 	if(env.browser){
-	    __webpack_require__(31);
 	    __webpack_require__(32);
 	    __webpack_require__(33);
+	    __webpack_require__(34);
 	    Regular.dom = __webpack_require__(17);
 	}
 	Regular.env = env;
@@ -6208,6 +6208,7 @@
 	  return !options.stringify? ast : JSON.stringify(ast);
 	}
 
+	Regular.renderToString = __webpack_require__(31).render;
 
 
 
@@ -6610,12 +6611,12 @@
 /* 18 */
 /***/ function(module, exports, __webpack_require__) {
 
-	/* WEBPACK VAR INJECTION */(function(global) {__webpack_require__(22)();
+	/* WEBPACK VAR INJECTION */(function(global) {__webpack_require__(21)();
 
 
 
 	var _  = module.exports;
-	var entities = __webpack_require__(30);
+	var entities = __webpack_require__(29);
 	var slice = [].slice;
 	var o2str = ({}).toString;
 	var win = typeof window !=='undefined'? window: global;
@@ -7419,28 +7420,6 @@
 /* 21 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var exprCache = __webpack_require__(27).exprCache;
-	var _ = __webpack_require__(18);
-	var Parser = __webpack_require__(34);
-	module.exports = {
-	  expression: function(expr, simple){
-	    // @TODO cache
-	    if( typeof expr === 'string' && ( expr = expr.trim() ) ){
-	      expr = exprCache.get( expr ) || exprCache.set( expr, new Parser( expr, { mode: 2, expression: true } ).expression() )
-	    }
-	    if(expr) return expr;
-	  },
-	  parse: function(template){
-	    return new Parser(template).parse();
-	  }
-	}
-
-
-
-/***/ },
-/* 22 */
-/***/ function(module, exports, __webpack_require__) {
-
 	// shim for es5
 	var slice = [].slice;
 	var tstr = ({}).toString;
@@ -7546,7 +7525,7 @@
 
 
 /***/ },
-/* 23 */
+/* 22 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// (c) 2010-2014 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
@@ -7632,7 +7611,7 @@
 
 
 /***/ },
-/* 24 */
+/* 23 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(18);
@@ -7820,6 +7799,28 @@
 	  diffArray: diffArray,
 	  diffObject: diffObject
 	}
+
+/***/ },
+/* 24 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var exprCache = __webpack_require__(27).exprCache;
+	var _ = __webpack_require__(18);
+	var Parser = __webpack_require__(35);
+	module.exports = {
+	  expression: function(expr, simple){
+	    // @TODO cache
+	    if( typeof expr === 'string' && ( expr = expr.trim() ) ){
+	      expr = exprCache.get( expr ) || exprCache.set( expr, new Parser( expr, { mode: 2, expression: true } ).expression() )
+	    }
+	    if(expr) return expr;
+	  },
+	  parse: function(template){
+	    return new Parser(template).parse();
+	  }
+	}
+
+
 
 /***/ },
 /* 25 */
@@ -9190,7 +9191,7 @@
 	  , true ? module : {exports: {}}
 	);
 	
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(45)(module), __webpack_require__(44).Buffer))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(46)(module), __webpack_require__(45).Buffer))
 
 /***/ },
 /* 27 */
@@ -9224,25 +9225,293 @@
 /* 29 */
 /***/ function(module, exports, __webpack_require__) {
 
-	
+	// http://stackoverflow.com/questions/1354064/how-to-convert-characters-to-html-entities-using-plain-javascript
+	var entities = {
+	  'quot':34, 
+	  'amp':38, 
+	  'apos':39, 
+	  'lt':60, 
+	  'gt':62, 
+	  'nbsp':160, 
+	  'iexcl':161, 
+	  'cent':162, 
+	  'pound':163, 
+	  'curren':164, 
+	  'yen':165, 
+	  'brvbar':166, 
+	  'sect':167, 
+	  'uml':168, 
+	  'copy':169, 
+	  'ordf':170, 
+	  'laquo':171, 
+	  'not':172, 
+	  'shy':173, 
+	  'reg':174, 
+	  'macr':175, 
+	  'deg':176, 
+	  'plusmn':177, 
+	  'sup2':178, 
+	  'sup3':179, 
+	  'acute':180, 
+	  'micro':181, 
+	  'para':182, 
+	  'middot':183, 
+	  'cedil':184, 
+	  'sup1':185, 
+	  'ordm':186, 
+	  'raquo':187, 
+	  'frac14':188, 
+	  'frac12':189, 
+	  'frac34':190, 
+	  'iquest':191, 
+	  'Agrave':192, 
+	  'Aacute':193, 
+	  'Acirc':194, 
+	  'Atilde':195, 
+	  'Auml':196, 
+	  'Aring':197, 
+	  'AElig':198, 
+	  'Ccedil':199, 
+	  'Egrave':200, 
+	  'Eacute':201, 
+	  'Ecirc':202, 
+	  'Euml':203, 
+	  'Igrave':204, 
+	  'Iacute':205, 
+	  'Icirc':206, 
+	  'Iuml':207, 
+	  'ETH':208, 
+	  'Ntilde':209, 
+	  'Ograve':210, 
+	  'Oacute':211, 
+	  'Ocirc':212, 
+	  'Otilde':213, 
+	  'Ouml':214, 
+	  'times':215, 
+	  'Oslash':216, 
+	  'Ugrave':217, 
+	  'Uacute':218, 
+	  'Ucirc':219, 
+	  'Uuml':220, 
+	  'Yacute':221, 
+	  'THORN':222, 
+	  'szlig':223, 
+	  'agrave':224, 
+	  'aacute':225, 
+	  'acirc':226, 
+	  'atilde':227, 
+	  'auml':228, 
+	  'aring':229, 
+	  'aelig':230, 
+	  'ccedil':231, 
+	  'egrave':232, 
+	  'eacute':233, 
+	  'ecirc':234, 
+	  'euml':235, 
+	  'igrave':236, 
+	  'iacute':237, 
+	  'icirc':238, 
+	  'iuml':239, 
+	  'eth':240, 
+	  'ntilde':241, 
+	  'ograve':242, 
+	  'oacute':243, 
+	  'ocirc':244, 
+	  'otilde':245, 
+	  'ouml':246, 
+	  'divide':247, 
+	  'oslash':248, 
+	  'ugrave':249, 
+	  'uacute':250, 
+	  'ucirc':251, 
+	  'uuml':252, 
+	  'yacute':253, 
+	  'thorn':254, 
+	  'yuml':255, 
+	  'fnof':402, 
+	  'Alpha':913, 
+	  'Beta':914, 
+	  'Gamma':915, 
+	  'Delta':916, 
+	  'Epsilon':917, 
+	  'Zeta':918, 
+	  'Eta':919, 
+	  'Theta':920, 
+	  'Iota':921, 
+	  'Kappa':922, 
+	  'Lambda':923, 
+	  'Mu':924, 
+	  'Nu':925, 
+	  'Xi':926, 
+	  'Omicron':927, 
+	  'Pi':928, 
+	  'Rho':929, 
+	  'Sigma':931, 
+	  'Tau':932, 
+	  'Upsilon':933, 
+	  'Phi':934, 
+	  'Chi':935, 
+	  'Psi':936, 
+	  'Omega':937, 
+	  'alpha':945, 
+	  'beta':946, 
+	  'gamma':947, 
+	  'delta':948, 
+	  'epsilon':949, 
+	  'zeta':950, 
+	  'eta':951, 
+	  'theta':952, 
+	  'iota':953, 
+	  'kappa':954, 
+	  'lambda':955, 
+	  'mu':956, 
+	  'nu':957, 
+	  'xi':958, 
+	  'omicron':959, 
+	  'pi':960, 
+	  'rho':961, 
+	  'sigmaf':962, 
+	  'sigma':963, 
+	  'tau':964, 
+	  'upsilon':965, 
+	  'phi':966, 
+	  'chi':967, 
+	  'psi':968, 
+	  'omega':969, 
+	  'thetasym':977, 
+	  'upsih':978, 
+	  'piv':982, 
+	  'bull':8226, 
+	  'hellip':8230, 
+	  'prime':8242, 
+	  'Prime':8243, 
+	  'oline':8254, 
+	  'frasl':8260, 
+	  'weierp':8472, 
+	  'image':8465, 
+	  'real':8476, 
+	  'trade':8482, 
+	  'alefsym':8501, 
+	  'larr':8592, 
+	  'uarr':8593, 
+	  'rarr':8594, 
+	  'darr':8595, 
+	  'harr':8596, 
+	  'crarr':8629, 
+	  'lArr':8656, 
+	  'uArr':8657, 
+	  'rArr':8658, 
+	  'dArr':8659, 
+	  'hArr':8660, 
+	  'forall':8704, 
+	  'part':8706, 
+	  'exist':8707, 
+	  'empty':8709, 
+	  'nabla':8711, 
+	  'isin':8712, 
+	  'notin':8713, 
+	  'ni':8715, 
+	  'prod':8719, 
+	  'sum':8721, 
+	  'minus':8722, 
+	  'lowast':8727, 
+	  'radic':8730, 
+	  'prop':8733, 
+	  'infin':8734, 
+	  'ang':8736, 
+	  'and':8743, 
+	  'or':8744, 
+	  'cap':8745, 
+	  'cup':8746, 
+	  'int':8747, 
+	  'there4':8756, 
+	  'sim':8764, 
+	  'cong':8773, 
+	  'asymp':8776, 
+	  'ne':8800, 
+	  'equiv':8801, 
+	  'le':8804, 
+	  'ge':8805, 
+	  'sub':8834, 
+	  'sup':8835, 
+	  'nsub':8836, 
+	  'sube':8838, 
+	  'supe':8839, 
+	  'oplus':8853, 
+	  'otimes':8855, 
+	  'perp':8869, 
+	  'sdot':8901, 
+	  'lceil':8968, 
+	  'rceil':8969, 
+	  'lfloor':8970, 
+	  'rfloor':8971, 
+	  'lang':9001, 
+	  'rang':9002, 
+	  'loz':9674, 
+	  'spades':9824, 
+	  'clubs':9827, 
+	  'hearts':9829, 
+	  'diams':9830, 
+	  'OElig':338, 
+	  'oelig':339, 
+	  'Scaron':352, 
+	  'scaron':353, 
+	  'Yuml':376, 
+	  'circ':710, 
+	  'tilde':732, 
+	  'ensp':8194, 
+	  'emsp':8195, 
+	  'thinsp':8201, 
+	  'zwnj':8204, 
+	  'zwj':8205, 
+	  'lrm':8206, 
+	  'rlm':8207, 
+	  'ndash':8211, 
+	  'mdash':8212, 
+	  'lsquo':8216, 
+	  'rsquo':8217, 
+	  'sbquo':8218, 
+	  'ldquo':8220, 
+	  'rdquo':8221, 
+	  'bdquo':8222, 
+	  'dagger':8224, 
+	  'Dagger':8225, 
+	  'permil':8240, 
+	  'lsaquo':8249, 
+	  'rsaquo':8250, 
+	  'euro':8364
+	}
+
+
+
+	module.exports  = entities;
+
+/***/ },
+/* 30 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/**
+	 * render for component in browsers
+	 */
+
 	var env = __webpack_require__(27);
-	var Lexer = __webpack_require__(35);
-	var Parser = __webpack_require__(34);
+	var Lexer = __webpack_require__(36);
+	var Parser = __webpack_require__(35);
 	var config = __webpack_require__(28);
 	var _ = __webpack_require__(18);
-	var extend = __webpack_require__(23);
+	var extend = __webpack_require__(22);
 	var combine = {};
 	if(env.browser){
 	  var dom = __webpack_require__(17);
-	  var walkers = __webpack_require__(36);
-	  var Group = __webpack_require__(37);
+	  var walkers = __webpack_require__(37);
+	  var Group = __webpack_require__(38);
 	  var doc = dom.doc;
 	  combine = __webpack_require__(20);
 	}
 	var events = __webpack_require__(25);
-	var Watcher = __webpack_require__(38);
-	var parse = __webpack_require__(21);
-	var filter = __webpack_require__(39);
+	var Watcher = __webpack_require__(39);
+	var parse = __webpack_require__(24);
+	var filter = __webpack_require__(40);
 
 
 	/**
@@ -9707,7 +9976,7 @@
 	        if(computedProperty.get)  return computedProperty.get(this);
 	        else _.log("the computed '" + path + "' don't define the get function,  get data."+path + " altnately", "warn")
 	      }
-	  }
+	    }
 	    if(typeof defaults === "undefined" || typeof path == "undefined" ){
 	      return undefined;
 	    }
@@ -9807,285 +10076,272 @@
 
 
 /***/ },
-/* 30 */
+/* 31 */
 /***/ function(module, exports, __webpack_require__) {
 
-	// http://stackoverflow.com/questions/1354064/how-to-convert-characters-to-html-entities-using-plain-javascript
-	var entities = {
-	  'quot':34, 
-	  'amp':38, 
-	  'apos':39, 
-	  'lt':60, 
-	  'gt':62, 
-	  'nbsp':160, 
-	  'iexcl':161, 
-	  'cent':162, 
-	  'pound':163, 
-	  'curren':164, 
-	  'yen':165, 
-	  'brvbar':166, 
-	  'sect':167, 
-	  'uml':168, 
-	  'copy':169, 
-	  'ordf':170, 
-	  'laquo':171, 
-	  'not':172, 
-	  'shy':173, 
-	  'reg':174, 
-	  'macr':175, 
-	  'deg':176, 
-	  'plusmn':177, 
-	  'sup2':178, 
-	  'sup3':179, 
-	  'acute':180, 
-	  'micro':181, 
-	  'para':182, 
-	  'middot':183, 
-	  'cedil':184, 
-	  'sup1':185, 
-	  'ordm':186, 
-	  'raquo':187, 
-	  'frac14':188, 
-	  'frac12':189, 
-	  'frac34':190, 
-	  'iquest':191, 
-	  'Agrave':192, 
-	  'Aacute':193, 
-	  'Acirc':194, 
-	  'Atilde':195, 
-	  'Auml':196, 
-	  'Aring':197, 
-	  'AElig':198, 
-	  'Ccedil':199, 
-	  'Egrave':200, 
-	  'Eacute':201, 
-	  'Ecirc':202, 
-	  'Euml':203, 
-	  'Igrave':204, 
-	  'Iacute':205, 
-	  'Icirc':206, 
-	  'Iuml':207, 
-	  'ETH':208, 
-	  'Ntilde':209, 
-	  'Ograve':210, 
-	  'Oacute':211, 
-	  'Ocirc':212, 
-	  'Otilde':213, 
-	  'Ouml':214, 
-	  'times':215, 
-	  'Oslash':216, 
-	  'Ugrave':217, 
-	  'Uacute':218, 
-	  'Ucirc':219, 
-	  'Uuml':220, 
-	  'Yacute':221, 
-	  'THORN':222, 
-	  'szlig':223, 
-	  'agrave':224, 
-	  'aacute':225, 
-	  'acirc':226, 
-	  'atilde':227, 
-	  'auml':228, 
-	  'aring':229, 
-	  'aelig':230, 
-	  'ccedil':231, 
-	  'egrave':232, 
-	  'eacute':233, 
-	  'ecirc':234, 
-	  'euml':235, 
-	  'igrave':236, 
-	  'iacute':237, 
-	  'icirc':238, 
-	  'iuml':239, 
-	  'eth':240, 
-	  'ntilde':241, 
-	  'ograve':242, 
-	  'oacute':243, 
-	  'ocirc':244, 
-	  'otilde':245, 
-	  'ouml':246, 
-	  'divide':247, 
-	  'oslash':248, 
-	  'ugrave':249, 
-	  'uacute':250, 
-	  'ucirc':251, 
-	  'uuml':252, 
-	  'yacute':253, 
-	  'thorn':254, 
-	  'yuml':255, 
-	  'fnof':402, 
-	  'Alpha':913, 
-	  'Beta':914, 
-	  'Gamma':915, 
-	  'Delta':916, 
-	  'Epsilon':917, 
-	  'Zeta':918, 
-	  'Eta':919, 
-	  'Theta':920, 
-	  'Iota':921, 
-	  'Kappa':922, 
-	  'Lambda':923, 
-	  'Mu':924, 
-	  'Nu':925, 
-	  'Xi':926, 
-	  'Omicron':927, 
-	  'Pi':928, 
-	  'Rho':929, 
-	  'Sigma':931, 
-	  'Tau':932, 
-	  'Upsilon':933, 
-	  'Phi':934, 
-	  'Chi':935, 
-	  'Psi':936, 
-	  'Omega':937, 
-	  'alpha':945, 
-	  'beta':946, 
-	  'gamma':947, 
-	  'delta':948, 
-	  'epsilon':949, 
-	  'zeta':950, 
-	  'eta':951, 
-	  'theta':952, 
-	  'iota':953, 
-	  'kappa':954, 
-	  'lambda':955, 
-	  'mu':956, 
-	  'nu':957, 
-	  'xi':958, 
-	  'omicron':959, 
-	  'pi':960, 
-	  'rho':961, 
-	  'sigmaf':962, 
-	  'sigma':963, 
-	  'tau':964, 
-	  'upsilon':965, 
-	  'phi':966, 
-	  'chi':967, 
-	  'psi':968, 
-	  'omega':969, 
-	  'thetasym':977, 
-	  'upsih':978, 
-	  'piv':982, 
-	  'bull':8226, 
-	  'hellip':8230, 
-	  'prime':8242, 
-	  'Prime':8243, 
-	  'oline':8254, 
-	  'frasl':8260, 
-	  'weierp':8472, 
-	  'image':8465, 
-	  'real':8476, 
-	  'trade':8482, 
-	  'alefsym':8501, 
-	  'larr':8592, 
-	  'uarr':8593, 
-	  'rarr':8594, 
-	  'darr':8595, 
-	  'harr':8596, 
-	  'crarr':8629, 
-	  'lArr':8656, 
-	  'uArr':8657, 
-	  'rArr':8658, 
-	  'dArr':8659, 
-	  'hArr':8660, 
-	  'forall':8704, 
-	  'part':8706, 
-	  'exist':8707, 
-	  'empty':8709, 
-	  'nabla':8711, 
-	  'isin':8712, 
-	  'notin':8713, 
-	  'ni':8715, 
-	  'prod':8719, 
-	  'sum':8721, 
-	  'minus':8722, 
-	  'lowast':8727, 
-	  'radic':8730, 
-	  'prop':8733, 
-	  'infin':8734, 
-	  'ang':8736, 
-	  'and':8743, 
-	  'or':8744, 
-	  'cap':8745, 
-	  'cup':8746, 
-	  'int':8747, 
-	  'there4':8756, 
-	  'sim':8764, 
-	  'cong':8773, 
-	  'asymp':8776, 
-	  'ne':8800, 
-	  'equiv':8801, 
-	  'le':8804, 
-	  'ge':8805, 
-	  'sub':8834, 
-	  'sup':8835, 
-	  'nsub':8836, 
-	  'sube':8838, 
-	  'supe':8839, 
-	  'oplus':8853, 
-	  'otimes':8855, 
-	  'perp':8869, 
-	  'sdot':8901, 
-	  'lceil':8968, 
-	  'rceil':8969, 
-	  'lfloor':8970, 
-	  'rfloor':8971, 
-	  'lang':9001, 
-	  'rang':9002, 
-	  'loz':9674, 
-	  'spades':9824, 
-	  'clubs':9827, 
-	  'hearts':9829, 
-	  'diams':9830, 
-	  'OElig':338, 
-	  'oelig':339, 
-	  'Scaron':352, 
-	  'scaron':353, 
-	  'Yuml':376, 
-	  'circ':710, 
-	  'tilde':732, 
-	  'ensp':8194, 
-	  'emsp':8195, 
-	  'thinsp':8201, 
-	  'zwnj':8204, 
-	  'zwj':8205, 
-	  'lrm':8206, 
-	  'rlm':8207, 
-	  'ndash':8211, 
-	  'mdash':8212, 
-	  'lsquo':8216, 
-	  'rsquo':8217, 
-	  'sbquo':8218, 
-	  'ldquo':8220, 
-	  'rdquo':8221, 
-	  'bdquo':8222, 
-	  'dagger':8224, 
-	  'Dagger':8225, 
-	  'permil':8240, 
-	  'lsaquo':8249, 
-	  'rsaquo':8250, 
-	  'euro':8364
+	// server side rendering for regularjs
+
+
+	var _ = __webpack_require__(18);
+	var parser = __webpack_require__(24);
+
+	/**
+	 * [compile description]
+	 * @param  {[type]} ast     [description]
+	 * @param  {[type]} options [description]
+	 */
+
+
+
+
+	function SSR (Component, definition){
+
+	  definition = definition || {};
+
+	  this.Component = Component;
+	  var context = this.context = Object.create(Component.prototype)
+
+
+	  definition.data = definition.data || {};
+	  definition.computed = definition.computed || {};
+	  if(context.data) _.extend(definition.data, context.data);
+	  if(context.computed) _.extend(definition.computed, context.computed);
+
+	  _.extend(context, definition, true);
+
+	  context.config( context.data = context.data || {} );
+	  
+
+	}
+
+
+	var ssr = _.extend(SSR.prototype, {});
+
+
+	ssr.render = function(){
+
+	  var self = this;
+	  return this.compile(this.context.template);
+
+	}
+
+	ssr.compile = function(ast){
+
+	  if(typeof ast === 'string'){
+	    ast = parser.parse(ast);
+	  }
+	  return this.walk(ast)
+	}
+
+
+	ssr.walk = function(ast, options){
+
+	  var type = ast.type; 
+
+	  if(Array.isArray(ast)){
+
+	    return ast.map(function(item){
+
+	      return this.walk(item, options)
+
+	    }.bind(this)).join('');
+
+	  }
+
+	  return this[ast.type](ast, options)
+
+	}
+
+
+	ssr.element = function(ast ){
+
+	  var children = ast.children,
+	    attrs = ast.attrs,
+	    tag = ast.tag,
+	    Component = this.Component.component(tag);
+
+	  if( Component ) return this.component( ast, { 
+	    Component: Component 
+	  } );
+
+	  return "<" + tag + " " + this.attrs(attrs) + " >" +  
+	      this.compile(children) + 
+	    "</" + tag + ">"
+
 	}
 
 
 
-	module.exports  = entities;
+	ssr.component = function(ast, options){
+	  var Component = options.Component;
+
+	  // return SSR.render(Component, {
+	  //   data: data,
+	  //   ext: this.ext
+	  // })
+	}
+
+
+
+	ssr.list = function(ast){
+
+	  var 
+	    altnate = ast.altnate,
+	    variable = ast.variable,
+	    indexName = variable + '_index',
+	    keyName = variable + '_key',
+	    body = ast.body,
+	    self = this,
+	    prevExtra = this.extra;
+
+	  var sequence = this.get(ast.sequence);
+	  var keys, list; 
+
+	  var type = _.typeOf(sequence);
+
+	  if( type === 'object'){
+
+	    keys = Object.keys(list);
+	    list = keys.map(function(key){return sequence[key]})
+
+	  }else{
+
+	    list = sequence || [];
+
+	  }
+
+	  return list.map(function(item, item_index){
+
+	    var sectionData = {};
+	    sectionData[variable] = item;
+	    sectionData[indexName] = item_index;
+	    if(keys) sectionData[keyName] = sequence[item_index];
+	    self.extra = _.extend(Object.create(prevExtra), sectionData );
+	    var section =  this.compile( body );
+	    self.extra = prevExtra;
+	    return section;
+
+	  }).join('');
+
+	}
+
+
+
+
+	// {#include } or {#inc template}
+	ssr.template = function(ast, options){
+	  var content = this.get(ast.content);
+	  var type = typeof content;
+
+
+	  if(!content) return '';
+	  if(type === 'function' ){
+	    return content();
+	  }else{
+	    return this.compile(type !== 'object'? String(content): content)
+	  }
+
+	};
+
+	ssr.if = function(ast, options){
+	  var test = this.get(test.test);  
+	  if(test){
+	    if(ast.consequent){
+	      return this.compile( ast.consequent );
+	    }
+	  }else{
+	    if(ast.altnate){
+	      return this.compile( ast.altnate );
+	    }
+	  }
+
+	}
+
+
+	ssr.expression = function(ast, options){
+	  var str = this.get(ast);
+	  return str == null?  "" : "" + str;
+	}
+
+	ssr.text = function(ast, options){
+	  return ast.text  
+	}
+
+
+
+	ssr.attrs = function(attrs){
+	  return attrs.map(function(attr){
+	    return this.attr(attr);
+	  }.bind(this)).join(" ");
+	}
+
+	ssr.attr = function(attr){
+
+	  var name = attr.name, 
+	    value = attr.value || "",
+	    Component = this.Component,
+	    directive = Component.directive(name);
+
+	  if(_.isExpr(value)) value = this.get(value); 
+
+	  if( directive ){
+	    if(directive.ssr){
+
+	      // @TODO: 应该提供hook可以控制节点内部  ,比如r-html
+	      return directive.ssr( name, value );
+	    }
+	  }else{
+
+	    // @TODO 对于boolean 值
+	    if(_.isBooleanAttr(name)){
+	      return name;
+	    }else{
+	      return name + '="' + value + '"';
+	    }
+	  }
+	}
+
+	ssr.get = function(expr){
+
+	  var rawget, 
+	    touched = {},
+	    ext = this.ext;
+
+	  if(expr.get) return expr.get(this.context);
+	  else {
+	    var rawget = new Function(_.ctxName, _.extName , _.prefix+ "return (" + expr.body + ")")
+	    expr.get = function(context){
+	      return rawget(context, ext)
+	    }
+	    return expr.get(this.context)
+	  }
+
+	}
+
+	SSR.render = function(Component, options){
+
+	  return new SSR(Component, options).render();
+
+	}
+
+	module.exports = SSR;
+
 
 /***/ },
-/* 31 */
+/* 32 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// Regular
 	var _ = __webpack_require__(18);
 	var dom = __webpack_require__(17);
 	var animate = __webpack_require__(19);
-	var Regular = __webpack_require__(29);
-	var consts = __webpack_require__(40);
+	var Regular = __webpack_require__(30);
+	var consts = __webpack_require__(41);
 
 
 
-	__webpack_require__(41);
 	__webpack_require__(42);
+	__webpack_require__(43);
 
 
 	module.exports = {
@@ -10188,14 +10444,14 @@
 
 
 /***/ },
-/* 32 */
+/* 33 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var // packages
 	  _ = __webpack_require__(18),
 	 animate = __webpack_require__(19),
 	 dom = __webpack_require__(17),
-	 Regular = __webpack_require__(29);
+	 Regular = __webpack_require__(30);
 
 
 	var // variables
@@ -10427,10 +10683,10 @@
 
 
 /***/ },
-/* 33 */
+/* 34 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var Regular = __webpack_require__(29);
+	var Regular = __webpack_require__(30);
 
 	/**
 	 * Timeout Module
@@ -10473,20 +10729,19 @@
 	Regular.plugin('$timeout', TimeoutModule);
 
 /***/ },
-/* 34 */
+/* 35 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(18);
 
 	var config = __webpack_require__(28);
-	var node = __webpack_require__(43);
-	var Lexer = __webpack_require__(35);
+	var node = __webpack_require__(44);
+	var Lexer = __webpack_require__(36);
 	var varName = _.varName;
 	var ctxName = _.ctxName;
 	var extName = _.extName;
 	var isPath = _.makePredicate("STRING IDENT NUMBER");
 	var isKeyWord = _.makePredicate("true false undefined null this Array Date JSON Math NaN RegExp decodeURI decodeURIComponent encodeURI encodeURIComponent parseFloat parseInt Object");
-
 
 
 
@@ -10715,6 +10970,9 @@
 	    this.error('Undefined directive['+ name +']');
 	  }
 	}
+
+
+
 
 
 	// {{}}
@@ -11204,7 +11462,7 @@
 
 
 /***/ },
-/* 35 */
+/* 36 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(18);
@@ -11561,14 +11819,14 @@
 
 
 /***/ },
-/* 36 */
+/* 37 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var diffArray = __webpack_require__(24).diffArray;
+	var diffArray = __webpack_require__(23).diffArray;
 	var combine = __webpack_require__(20);
 	var animate = __webpack_require__(19);
-	var node = __webpack_require__(43);
-	var Group = __webpack_require__(37);
+	var node = __webpack_require__(44);
+	var Group = __webpack_require__(38);
 	var dom = __webpack_require__(17);
 	var _ = __webpack_require__(18);
 
@@ -11878,6 +12136,8 @@
 	}
 
 
+
+
 	walkers.expression = function(ast, options){
 	  var node = document.createTextNode("");
 	  this.$watch(ast, function(newval){
@@ -12167,7 +12427,7 @@
 
 
 /***/ },
-/* 37 */
+/* 38 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(18);
@@ -12201,12 +12461,12 @@
 
 
 /***/ },
-/* 38 */
+/* 39 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(18);
-	var parseExpression = __webpack_require__(21).expression;
-	var diff = __webpack_require__(24);
+	var parseExpression = __webpack_require__(24).expression;
+	var diff = __webpack_require__(23);
 	var diffArray = diff.diffArray;
 	var diffObject = diff.diffObject;
 
@@ -12459,7 +12719,7 @@
 	module.exports = Watcher;
 
 /***/ },
-/* 39 */
+/* 40 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
@@ -12527,7 +12787,7 @@
 
 
 /***/ },
-/* 40 */
+/* 41 */
 /***/ function(module, exports, __webpack_require__) {
 
 	module.exports = {
@@ -12536,7 +12796,7 @@
 	}
 
 /***/ },
-/* 41 */
+/* 42 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -12545,7 +12805,7 @@
 	 */
 	var _ = __webpack_require__(18);
 	var dom = __webpack_require__(17);
-	var Regular = __webpack_require__(29);
+	var Regular = __webpack_require__(30);
 
 	Regular._addProtoInheritCache("event");
 
@@ -12620,13 +12880,13 @@
 	}
 
 /***/ },
-/* 42 */
+/* 43 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// Regular
 	var _ = __webpack_require__(18);
 	var dom = __webpack_require__(17);
-	var Regular = __webpack_require__(29);
+	var Regular = __webpack_require__(30);
 
 	var modelHandlers = {
 	  "text": initText,
@@ -12792,7 +13052,7 @@
 
 
 /***/ },
-/* 43 */
+/* 44 */
 /***/ function(module, exports, __webpack_require__) {
 
 	module.exports = {
@@ -12854,7 +13114,7 @@
 
 
 /***/ },
-/* 44 */
+/* 45 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(Buffer) {/*!
@@ -12864,8 +13124,8 @@
 	 * @license  MIT
 	 */
 
-	var base64 = __webpack_require__(48)
-	var ieee754 = __webpack_require__(46)
+	var base64 = __webpack_require__(49)
+	var ieee754 = __webpack_require__(48)
 	var isArray = __webpack_require__(47)
 
 	exports.Buffer = Buffer
@@ -13910,10 +14170,10 @@
 	  }
 	}
 	
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(44).Buffer))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(45).Buffer))
 
 /***/ },
-/* 45 */
+/* 46 */
 /***/ function(module, exports, __webpack_require__) {
 
 	module.exports = function(module) {
@@ -13929,7 +14189,46 @@
 
 
 /***/ },
-/* 46 */
+/* 47 */
+/***/ function(module, exports, __webpack_require__) {
+
+	
+	/**
+	 * isArray
+	 */
+
+	var isArray = Array.isArray;
+
+	/**
+	 * toString
+	 */
+
+	var str = Object.prototype.toString;
+
+	/**
+	 * Whether or not the given `val`
+	 * is an array.
+	 *
+	 * example:
+	 *
+	 *        isArray([]);
+	 *        // > true
+	 *        isArray(arguments);
+	 *        // > false
+	 *        isArray('');
+	 *        // > false
+	 *
+	 * @param {mixed} val
+	 * @return {bool}
+	 */
+
+	module.exports = isArray || function (val) {
+	  return !! val && '[object Array]' == str.call(val);
+	};
+
+
+/***/ },
+/* 48 */
 /***/ function(module, exports, __webpack_require__) {
 
 	exports.read = function(buffer, offset, isLE, mLen, nBytes) {
@@ -14019,46 +14318,7 @@
 
 
 /***/ },
-/* 47 */
-/***/ function(module, exports, __webpack_require__) {
-
-	
-	/**
-	 * isArray
-	 */
-
-	var isArray = Array.isArray;
-
-	/**
-	 * toString
-	 */
-
-	var str = Object.prototype.toString;
-
-	/**
-	 * Whether or not the given `val`
-	 * is an array.
-	 *
-	 * example:
-	 *
-	 *        isArray([]);
-	 *        // > true
-	 *        isArray(arguments);
-	 *        // > false
-	 *        isArray('');
-	 *        // > false
-	 *
-	 * @param {mixed} val
-	 * @return {bool}
-	 */
-
-	module.exports = isArray || function (val) {
-	  return !! val && '[object Array]' == str.call(val);
-	};
-
-
-/***/ },
-/* 48 */
+/* 49 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var lookup = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
