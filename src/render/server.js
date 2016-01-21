@@ -21,6 +21,7 @@ function SSR (Component, definition){
   var context = this.context = Object.create(Component.prototype)
 
 
+  context.extra = definition.extra;
   definition.data = definition.data || {};
   definition.computed = definition.computed || {};
   if(context.data) _.extend(definition.data, context.data);
@@ -100,9 +101,10 @@ ssr.element = function(ast ){
 
 
   var attrStr = this.attrs(attrs);
+  var body = (children && children.length? this.compile(children): "")
 
   return "<" + tag + (attrStr? " " + attrStr: ""  ) + ">" +  
-      this.compile(children) + 
+        body +
     "</" + tag + ">"
 
 }
@@ -146,8 +148,9 @@ ssr.list = function(ast){
     indexName = variable + '_index',
     keyName = variable + '_key',
     body = ast.body,
+    context = this.context,
     self = this,
-    prevExtra = this.extra;
+    prevExtra = context.extra;
 
   var sequence = this.get(ast.sequence);
   var keys, list; 
@@ -171,10 +174,10 @@ ssr.list = function(ast){
     sectionData[variable] = item;
     sectionData[indexName] = item_index;
     if(keys) sectionData[keyName] = sequence[item_index];
-    self.extra = _.extend(
+    context.extra = _.extend(
       prevExtra? Object.create(prevExtra): {}, sectionData );
     var section =  this.compile( body );
-    self.extra = prevExtra;
+    context.extra = prevExtra;
     return section;
 
   }.bind(this)).join('');
@@ -200,7 +203,7 @@ ssr.template = function(ast, options){
 };
 
 ssr.if = function(ast, options){
-  var test = this.get(test.test);  
+  var test = this.get(ast.test);  
   if(test){
     if(ast.consequent){
       return this.compile( ast.consequent );
@@ -238,7 +241,7 @@ ssr.attr = function(attr){
     Component = this.Component,
     directive = Component.directive(name);
 
-  if(_.isExpr(value)) value = this.get(value); 
+  
 
   if( directive ){
     if(directive.ssr){
@@ -248,6 +251,7 @@ ssr.attr = function(attr){
     }
   }else{
     // @TODO 对于boolean 值
+    if(_.isExpr(value)) value = this.get(value); 
     if(_.isBooleanAttr(name)){
       return name + " ";
     }else{
@@ -259,14 +263,15 @@ ssr.attr = function(attr){
 ssr.get = function(expr){
 
   var rawget, 
-    touched = {},
-    extra = this.extra;
+    self = this,
+    context = this.context,
+    touched = {};
 
-  if(expr.get) return expr.get(this.context);
+  if(expr.get) return expr.get(context);
   else {
     var rawget = new Function(_.ctxName, _.extName , _.prefix+ "return (" + expr.body + ")")
     expr.get = function(context){
-      return rawget(context, extra)
+      return rawget(context, context.extra)
     }
     return expr.get(this.context)
   }

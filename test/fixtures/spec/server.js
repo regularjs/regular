@@ -49,10 +49,10 @@ console.log(
       title: "服务端渲染",
       content: `
         {#list books as book}
-        <div>{book}</div>
+        <div>{book.name}</div>
         {/list}
       `,
-      books: ['高级程序设计', '编程语言实现模式']
+      books: [{name:'高级程序设计'}, {name:'编程语言实现模式'}]
     }
   })
 )

@@ -427,11 +427,17 @@ _.isGroup = function(group){
   return group.inject || group.$inject;
 }
 
+_.blankReg = /\s+/; 
+
 _.getCompileFn = function(source, ctx, options){
   return ctx.$compile.bind(ctx,source, options)
 }
 
 _.eventReg = /^on-(\w[-\w]+)$/;
+
+_.toText = function(obj){
+  return obj == null ? "": "" + obj;
+}
 
 
 

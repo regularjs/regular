@@ -113,7 +113,7 @@ dom.id = function(id){
 }
 
 // createElement 
-dom.create = function(type, ns, attrs){
+dom.create = function(type, ns){
   if(ns === 'svg'){
     if(!env.svg) throw Error('the env need svg support')
     ns = namespaces.svg;
@@ -125,6 +125,7 @@ dom.create = function(type, ns, attrs){
 dom.fragment = function(){
   return document.createDocumentFragment();
 }
+
 
 
 

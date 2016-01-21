@@ -20,6 +20,8 @@ var events = require('../helper/event.js');
 var Watcher = require('../helper/watcher.js');
 var parse = require('../helper/parse.js');
 var filter = require('../helper/filter.js');
+var ERROR = require('../const.js').ERROR;
+var nodeCursor = require('../helper/cursor.js');
 
 
 /**
@@ -33,10 +35,23 @@ var filter = require('../helper/filter.js');
 var Regular = function(definition, options){
   var prevRunning = env.isRunning;
   env.isRunning = true;
-  var node, template;
+  var node, template, cursor;
 
   definition = definition || {};
   options = options || {};
+
+  var mountNode = definition.mountNode;
+  if(typeof mountNode === 'string'){
+    mountNode = dom.find( mountNode );
+    if(!mountNode) throw Error('mountNode ' + mountNode + ' is not found')
+  } 
+
+  if(mountNode){
+    cursor = nodeCursor(mountNode)
+    delete definition.mountNode
+  }else{
+    cursor = options.cursor
+  }
 
   definition.data = definition.data || {};
   definition.computed = definition.computed || {};
@@ -53,6 +68,7 @@ var Regular = function(definition, options){
   this.$refs = {};
 
   template = this.template;
+
 
   // template is a string (len < 16). we will find it container first
   if((typeof template === 'string' && template.length < 16) && (node = dom.find(template))) {
@@ -79,12 +95,16 @@ var Regular = function(definition, options){
       outer: this,
       namespace: options.namespace,
       extra: options.extra,
-      record: true
+      record: true,
+      cursor: cursor
     })
   }
   // handle computed
   if(template){
-    this.group = this.$compile(this.template, {namespace: options.namespace});
+    this.group = this.$compile(this.template, {
+      namespace: options.namespace,
+      cursor: cursor
+    });
     combine.node(this);
   }
 
@@ -292,6 +312,7 @@ Regular.implement({
 
     if(options.extra) this.__ext__ = options.extra;
 
+
     if(record) this._record();
     var group = this._walk(ast, options);
     if(record){
@@ -405,18 +426,23 @@ Regular.implement({
     // sync the component's state to called's state
     expr2.set(component, expr1.get(this));
   },
-  _walk: function(ast, arg1){
+  _walk: function(ast, options){
     if( _.typeOf(ast) === 'array' ){
       var res = [];
 
       for(var i = 0, len = ast.length; i < len; i++){
-        res.push( this._walk(ast[i], arg1) );
+        var ret = this._walk(ast[i], options);
+        if(ret && ret.code === ERROR.UNMATCHED_AST){
+          ast.splice(i, 1);
+          i--;
+          len--;
+        }else res.push( ret );
       }
 
       return new Group(res);
     }
     if(typeof ast === 'string') return doc.createTextNode(ast)
-    return walkers[ast.type || "default"].call(this, ast, arg1);
+    return walkers[ast.type || "default"].call(this, ast, options);
   },
   _append: function(component){
     this._children.push(component);
