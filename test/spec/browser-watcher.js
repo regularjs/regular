@@ -476,6 +476,7 @@ describe("component.watcher", function(){
     watcher.$digest();
   })
 
+
   it("watch accept function", function(done){
     watcher.$watch( function(){return this.first+":" + this.last}, function(now, old){
       expect(old).to.equal(undefined)
@@ -618,6 +619,17 @@ describe("component.watcher", function(){
      watcher.$update('list', [1,2,3])
      expect(i). to.equal(2);
   })
+
+
+  it("$unwatch should work as expect", function(){
+     var watcher = new Regular({
+     });
+     var wt = watcher.$watch('auto', function(){ })
+     expect(watcher._watchers.length).to.equal(1)
+     watcher.$unwatch(wt)
+     expect(watcher._watchers.length).to.equal(0)
+  })
+
 
 })
 

@@ -103,6 +103,8 @@ var expect = require('expect.js');
 
     })
 
+
+
     it("transclude-html with $body ", function(){
                   
 
@@ -483,6 +485,29 @@ var expect = require('expect.js');
       expect(data.isOld).to.equal(true)
       expect(data.isNew).to.equal(true)
       expect(data.normal).to.equal(true)
+    })
+
+
+    it("auto unwatch when component destroy", function(){
+
+      var Component1 = NameSpace.extend({
+        name: 'unwatch_c1',
+        template: "<div></div>"
+      })
+
+      var Component2 = NameSpace.extend({
+        name: 'unwatch_c2',
+        template: "<unwatch_c1 a={a} b={b} ref=c></unwatch_c1>"
+      })
+
+      var component = new Component2();
+      expect(component._watchers.length).to.equal(2)
+
+      var component2 = component.$refs.c;
+      expect( component2._watchers.length).to.equal(2)
+      component2.destroy();
+      expect(component._watchers.length).to.equal(0)
+      expect(component2._watchers).to.equal(null)
     })
 })
 

@@ -4023,7 +4023,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return watcher;
 	  },
 	  $unwatch: function(uid){
-	    uid = uid.uid || uid;
+	    uid = uid.id || uid;
 	    if(!this._watchers) this._watchers = [];
 	    if(Array.isArray(uid)){
 	      for(var i =0, len = uid.length; i < len; i++){
