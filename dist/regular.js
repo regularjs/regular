@@ -65,12 +65,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	var Parser = Regular.Parser;
 	var Lexer = Regular.Lexer;
 
-	if(env.browser){
+	// if(env.browser){
 	    __webpack_require__(7);
 	    __webpack_require__(8);
 	    __webpack_require__(9);
 	    Regular.dom = __webpack_require__(3);
-	}
+	// }
 	Regular.env = env;
 	Regular.util = __webpack_require__(4);
 	Regular.parse = function(str, options){
@@ -132,6 +132,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	// license: MIT-style license. http://mootools.net
 
 
+	if(typeof window !== 'undefined'){
+	  
 	var dom = module.exports;
 	var env = __webpack_require__(1);
 	var _ = __webpack_require__(4);
@@ -145,8 +147,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 	dom.body = document.body;
-
 	dom.doc = document;
+	dom.tNode = tNode;
+
 
 	// camelCase
 	function camelCase(str){
@@ -156,7 +159,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 
-	dom.tNode = tNode;
 
 	if(tNode.addEventListener){
 	  addEvent = function(node, type, fn) {
@@ -234,7 +236,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 	// createElement 
-	dom.create = function(type, ns, attrs){
+	dom.create = function(type, ns){
 	  if(ns === 'svg'){
 	    if(!env.svg) throw Error('the env need svg support')
 	    ns = namespaces.svg;
@@ -246,6 +248,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	dom.fragment = function(){
 	  return document.createDocumentFragment();
 	}
+
 
 
 
@@ -507,6 +510,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	    callback();
 	  })
 	}: dom.nextFrame;
+
+	}
 
 
 
@@ -945,9 +950,18 @@ return /******/ (function(modules) { // webpackBootstrap
 	  return group.inject || group.$inject;
 	}
 
+	_.blankReg = /\s+/; 
+
 	_.getCompileFn = function(source, ctx, options){
 	  return ctx.$compile.bind(ctx,source, options)
 	}
+
+	_.eventReg = /^on-(\w[-\w]+)$/;
+
+	_.toText = function(obj){
+	  return obj == null ? "": "" + obj;
+	}
+
 
 
 
@@ -965,23 +979,25 @@ return /******/ (function(modules) { // webpackBootstrap
 	 */
 
 	var env = __webpack_require__(1);
-	var Lexer = __webpack_require__(24);
-	var Parser = __webpack_require__(25);
+	var Lexer = __webpack_require__(25);
+	var Parser = __webpack_require__(26);
 	var config = __webpack_require__(2);
 	var _ = __webpack_require__(4);
-	var extend = __webpack_require__(17);
+	var extend = __webpack_require__(18);
 	var combine = {};
 	if(env.browser){
 	  var dom = __webpack_require__(3);
 	  var walkers = __webpack_require__(10);
 	  var Group = __webpack_require__(11);
 	  var doc = dom.doc;
-	  combine = __webpack_require__(18);
+	  combine = __webpack_require__(19);
 	}
-	var events = __webpack_require__(19);
-	var Watcher = __webpack_require__(20);
-	var parse = __webpack_require__(21);
+	var events = __webpack_require__(20);
+	var Watcher = __webpack_require__(21);
+	var parse = __webpack_require__(17);
 	var filter = __webpack_require__(22);
+	var ERROR = __webpack_require__(12).ERROR;
+	var nodeCursor = __webpack_require__(23);
 
 
 	/**
@@ -995,10 +1011,23 @@ return /******/ (function(modules) { // webpackBootstrap
 	var Regular = function(definition, options){
 	  var prevRunning = env.isRunning;
 	  env.isRunning = true;
-	  var node, template;
+	  var node, template, cursor;
 
 	  definition = definition || {};
 	  options = options || {};
+
+	  var mountNode = definition.mountNode;
+	  if(typeof mountNode === 'string'){
+	    mountNode = dom.find( mountNode );
+	    if(!mountNode) throw Error('mountNode ' + mountNode + ' is not found')
+	  } 
+
+	  if(mountNode){
+	    cursor = nodeCursor(mountNode)
+	    delete definition.mountNode
+	  }else{
+	    cursor = options.cursor
+	  }
 
 	  definition.data = definition.data || {};
 	  definition.computed = definition.computed || {};
@@ -1015,6 +1044,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  this.$refs = {};
 
 	  template = this.template;
+
 
 	  // template is a string (len < 16). we will find it container first
 	  if((typeof template === 'string' && template.length < 16) && (node = dom.find(template))) {
@@ -1041,12 +1071,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	      outer: this,
 	      namespace: options.namespace,
 	      extra: options.extra,
-	      record: true
+	      record: true,
+	      cursor: cursor
 	    })
 	  }
 	  // handle computed
 	  if(template){
-	    this.group = this.$compile(this.template, {namespace: options.namespace});
+	    this.group = this.$compile(this.template, {
+	      namespace: options.namespace,
+	      cursor: cursor
+	    });
 	    combine.node(this);
 	  }
 
@@ -1254,6 +1288,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    if(options.extra) this.__ext__ = options.extra;
 
+
 	    if(record) this._record();
 	    var group = this._walk(ast, options);
 	    if(record){
@@ -1367,18 +1402,23 @@ return /******/ (function(modules) { // webpackBootstrap
 	    // sync the component's state to called's state
 	    expr2.set(component, expr1.get(this));
 	  },
-	  _walk: function(ast, arg1){
+	  _walk: function(ast, options){
 	    if( _.typeOf(ast) === 'array' ){
 	      var res = [];
 
 	      for(var i = 0, len = ast.length; i < len; i++){
-	        res.push( this._walk(ast[i], arg1) );
+	        var ret = this._walk(ast[i], options);
+	        if(ret && ret.code === ERROR.UNMATCHED_AST){
+	          ast.splice(i, 1);
+	          i--;
+	          len--;
+	        }else res.push( ret );
 	      }
 
 	      return new Group(res);
 	    }
 	    if(typeof ast === 'string') return doc.createTextNode(ast)
-	    return walkers[ast.type || "default"].call(this, ast, arg1);
+	    return walkers[ast.type || "default"].call(this, ast, options);
 	  },
 	  _append: function(component){
 	    this._children.push(component);
@@ -1553,7 +1593,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 	var _ = __webpack_require__(4);
-	var parser = __webpack_require__(21);
+	var parser = __webpack_require__(17);
 
 	/**
 	 * [compile description]
@@ -1572,6 +1612,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  var context = this.context = Object.create(Component.prototype)
 
 
+	  context.extra = definition.extra;
 	  definition.data = definition.data || {};
 	  definition.computed = definition.computed || {};
 	  if(context.data) _.extend(definition.data, context.data);
@@ -1627,15 +1668,34 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	  var children = ast.children,
 	    attrs = ast.attrs,
-	    tag = ast.tag,
-	    Component = this.Component.component(tag);
+	    tag = ast.tag;
+
+	  if( tag === 'r-component' ){
+	    attrs.some(function(attr){
+	      if(attr.name === 'is'){
+	        tag = attr.value;
+	        if( _.isExpr(attr.value)) tag = this.get(value);
+	        return true;
+	      }
+	    }.bind(this))
+	  }
+
+	  var Component = this.Component.component(tag);
+
+	  if(ast.tag === 'r-component' && !Component){
+	    throw Error('r-component with unregister component ' + tag)
+	  }
 
 	  if( Component ) return this.component( ast, { 
 	    Component: Component 
 	  } );
 
-	  return "<" + tag + " " + this.attrs(attrs) + " >" +  
-	      this.compile(children) + 
+
+	  var attrStr = this.attrs(attrs);
+	  var body = (children && children.length? this.compile(children): "")
+
+	  return "<" + tag + (attrStr? " " + attrStr: ""  ) + ">" +  
+	        body +
 	    "</" + tag + ">"
 
 	}
@@ -1643,12 +1703,30 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 	ssr.component = function(ast, options){
-	  var Component = options.Component;
 
-	  // return SSR.render(Component, {
-	  //   data: data,
-	  //   ext: this.ext
-	  // })
+	  var children = ast.children,
+	    attrs = ast.attrs,
+	    data = {},
+	    Component = options.Component, body;
+
+	  if(children && children.length){
+	    body = function(){
+	      return this.compile(children)
+	    }.bind(this)
+	  }
+
+	  attrs.forEach(function(attr){
+	    if(!_.eventReg.test(attr.name)){
+	      data[attr.name] = _.isExpr(attr.value)? this.get(attr.value): attr.value
+	    }
+	  }.bind(this))
+
+
+	  return SSR.render(Component, {
+	    $body: body,
+	    data: data,
+	    extra: this.extra
+	  })
 	}
 
 
@@ -1661,8 +1739,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	    indexName = variable + '_index',
 	    keyName = variable + '_key',
 	    body = ast.body,
+	    context = this.context,
 	    self = this,
-	    prevExtra = this.extra;
+	    prevExtra = context.extra;
 
 	  var sequence = this.get(ast.sequence);
 	  var keys, list; 
@@ -1686,12 +1765,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	    sectionData[variable] = item;
 	    sectionData[indexName] = item_index;
 	    if(keys) sectionData[keyName] = sequence[item_index];
-	    self.extra = _.extend(Object.create(prevExtra), sectionData );
+	    context.extra = _.extend(
+	      prevExtra? Object.create(prevExtra): {}, sectionData );
 	    var section =  this.compile( body );
-	    self.extra = prevExtra;
+	    context.extra = prevExtra;
 	    return section;
 
-	  }).join('');
+	  }.bind(this)).join('');
 
 	}
 
@@ -1714,7 +1794,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	};
 
 	ssr.if = function(ast, options){
-	  var test = this.get(test.test);  
+	  var test = this.get(ast.test);  
 	  if(test){
 	    if(ast.consequent){
 	      return this.compile( ast.consequent );
@@ -1742,7 +1822,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	ssr.attrs = function(attrs){
 	  return attrs.map(function(attr){
 	    return this.attr(attr);
-	  }.bind(this)).join(" ");
+	  }.bind(this)).join("").replace(/\s+$/,"");
 	}
 
 	ssr.attr = function(attr){
@@ -1752,7 +1832,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    Component = this.Component,
 	    directive = Component.directive(name);
 
-	  if(_.isExpr(value)) value = this.get(value); 
+	  
 
 	  if( directive ){
 	    if(directive.ssr){
@@ -1761,12 +1841,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	      return directive.ssr( name, value );
 	    }
 	  }else{
-
 	    // @TODO 对于boolean 值
+	    if(_.isExpr(value)) value = this.get(value); 
 	    if(_.isBooleanAttr(name)){
-	      return name;
+	      return name + " ";
 	    }else{
-	      return name + '="' + value + '"';
+	      return name + '="' + value + '" ';
 	    }
 	  }
 	}
@@ -1774,14 +1854,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	ssr.get = function(expr){
 
 	  var rawget, 
-	    touched = {},
-	    ext = this.ext;
+	    self = this,
+	    context = this.context,
+	    touched = {};
 
-	  if(expr.get) return expr.get(this.context);
+	  if(expr.get) return expr.get(context);
 	  else {
 	    var rawget = new Function(_.ctxName, _.extName , _.prefix+ "return (" + expr.body + ")")
 	    expr.get = function(context){
-	      return rawget(context, ext)
+	      return rawget(context, context.extra)
 	    }
 	    return expr.get(this.context)
 	  }
@@ -1804,7 +1885,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	// Regular
 	var _ = __webpack_require__(4);
 	var dom = __webpack_require__(3);
-	var animate = __webpack_require__(23);
+	var animate = __webpack_require__(24);
 	var Regular = __webpack_require__(5);
 	var consts = __webpack_require__(12);
 
@@ -1919,7 +2000,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var // packages
 	  _ = __webpack_require__(4),
-	 animate = __webpack_require__(23),
+	 animate = __webpack_require__(24),
 	 dom = __webpack_require__(3),
 	 Regular = __webpack_require__(5);
 
@@ -2202,13 +2283,18 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 10 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var diffArray = __webpack_require__(26).diffArray;
-	var combine = __webpack_require__(18);
-	var animate = __webpack_require__(23);
-	var node = __webpack_require__(27);
+	var diffArray = __webpack_require__(27).diffArray;
+	var combine = __webpack_require__(19);
+	var animate = __webpack_require__(24);
+	var node = __webpack_require__(28);
 	var Group = __webpack_require__(11);
 	var dom = __webpack_require__(3);
 	var _ = __webpack_require__(4);
+	var consts =   __webpack_require__(12)
+	var ERROR = consts.ERROR;
+	var MSG = consts.MSG;
+	var nodeCursor = __webpack_require__(23);
+
 
 
 	var walkers = module.exports = {};
@@ -2219,6 +2305,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  var placeholder = document.createComment("Regular list"),
 	    namespace = options.namespace,
 	    extra = options.extra;
+
 	  var self = this;
 	  var group = new Group([placeholder]);
 	  var indexName = ast.variable + '_index';
@@ -2226,6 +2313,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  var variable = ast.variable;
 	  var alternate = ast.alternate;
 	  var track = ast.track, keyOf, extraObj;
+	  var cursor = options.cursor;
 
 	  if( track && track !== true ){
 	    track = this._touchExpr(track);
@@ -2253,16 +2341,18 @@ return /******/ (function(modules) { // webpackBootstrap
 	      updateTarget(data, o, item, rawNewValue);
 
 	      data = _.createObject(extra, data);
-	      var section = self.$compile(ast.body, {
+	      var curOptions = {
 	        extra: data,
 	        namespace:namespace,
 	        record: true,
-	        outer: options.outer
-	      })
+	        outer: options.outer,
+	        cursor: cursor
+	      }
+	      var section = self.$compile(ast.body, curOptions);
 	      section.data = data;
 	      // autolink
 	      var insert =  combine.last(group.get(o));
-	      if(insert.parentNode){
+	      if(insert.parentNode && !cursor){
 	        animate.inject(combine.node(section),insert, 'after');
 	      }
 	      // insert.parentNode.insertBefore(combine.node(section), insert.nextSibling);
@@ -2399,6 +2489,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        animate.inject(combine.node(section), placeholder, 'after');
 	      }
 	    }
+	    cursor = null;
 	  }
 
 	  this.$watch(ast.sequence, update, { 
@@ -2410,9 +2501,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 
-	function updateItem(){
-	  
-	}
 
 
 	// {#include } or {#inc template}
@@ -2421,6 +2509,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	  var placeholder = document.createComment('inlcude');
 	  var compiled, namespace = options.namespace, extra = options.extra;
 	  var group = new Group([placeholder]);
+
+
 	  if(content){
 	    var self = this;
 	    this.$watch(content, function(value){
@@ -2461,10 +2551,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var update = function(nvalue){
 	      if(!!nvalue){
 	        if(alternate) combine.destroy(alternate)
-	        if(ast.consequent) consequent = self.$compile(ast.consequent, {record: true, element: options.element , extra:extra});
+	        if(ast.consequent) consequent = self.$compile(ast.consequent, {
+	          record: true, 
+	          element: options.element , 
+	          extra:extra
+	        });
 	      }else{
-	        if(consequent) combine.destroy(consequent)
-	        if(ast.alternate) alternate = self.$compile(ast.alternate, {record: true, element: options.element, extra: extra});
+	        if( consequent ) combine.destroy(consequent)
+	        if( ast.alternate ) alternate = self.$compile(ast.alternate, {record: true, element: options.element, extra: extra});
 	      }
 	    }
 	    this.$watch(ast.test, update, { force: true });
@@ -2476,39 +2570,51 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	  }
 
-	  var test, consequent, alternate, node;
+	  var test, node;
 	  var placeholder = document.createComment("Regular if" + ii++);
 	  var group = new Group();
 	  group.push(placeholder);
 	  var preValue = null, namespace= options.namespace;
+	  var cursor = options.cursor;
+	  if(cursor && cursor.node){
+	    dom.inject( placeholder , cursor.node,'before')
+	  }
 
 
 	  var update = function (nvalue, old){
-	    var value = !!nvalue;
+	    var value = !!nvalue, compiledSection;
 	    if(value === preValue) return;
 	    preValue = value;
 	    if(group.children[1]){
 	      group.children[1].destroy(true);
 	      group.children.pop();
 	    }
+	    var curOptions = {
+	      record: true, 
+	      outer: options.outer,
+	      namespace: namespace, 
+	      extra: extra,
+	      cursor: cursor
+	    }
 	    if(value){ //true
-	      if(ast.consequent && ast.consequent.length){
-	        consequent = self.$compile( ast.consequent , {record:true, outer: options.outer,namespace: namespace, extra:extra })
-	        // placeholder.parentNode && placeholder.parentNode.insertBefore( node, placeholder );
-	        group.push(consequent);
-	        if(placeholder.parentNode){
-	          animate.inject(combine.node(consequent), placeholder, 'before');
-	        }
+
+	      if(ast.consequent && ast.consequent.length){ 
+	        compiledSection = self.$compile( ast.consequent , curOptions );
 	      }
 	    }else{ //false
 	      if(ast.alternate && ast.alternate.length){
-	        alternate = self.$compile(ast.alternate, {record:true, outer: options.outer,namespace: namespace, extra:extra});
-	        group.push(alternate);
-	        if(placeholder.parentNode){
-	          animate.inject(combine.node(alternate), placeholder, 'before');
-	        }
+	        compiledSection = self.$compile(ast.alternate, curOptions);
 	      }
 	    }
+	    // placeholder.parentNode && placeholder.parentNode.insertBefore( node, placeholder );
+	    if(compiledSection){
+	      group.push(compiledSection);
+	      if(placeholder.parentNode){
+	        animate.inject(combine.node(compiledSection), placeholder, 'before');
+	      }
+	    }
+	    cursor = null;
+	    // after first mount , we need clear this flat;
 	  }
 	  this.$watch(ast.test, update, {force: true, init: true});
 
@@ -2519,33 +2625,101 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 	walkers.expression = function(ast, options){
-	  var node = document.createTextNode("");
+
+	  var cursor = options.cursor, node,
+	    mountNode = cursor && cursor.node;
+
+	  if(mountNode){
+	    //@BUG: if server render &gt; in Expression will cause error
+	    var astText = _.toText(this.$get(ast)), nodeText = dom.text(mountNode);
+
+	    if( nodeText === astText ){
+	      node = mountNode;
+	      cursor.next();
+	    }else{
+	      // maybe have some redundancy  blank
+	      var index = nodeText.indexOf(astText);
+	      if(~index){
+	        node = document.createTextNode("")
+	        dom.text(mountNode, nodeText.slice(index+astText.length))
+	      } else throw Error( MSG[ERROR.UNMATCHED_AST]);
+	    }
+	  }else{
+	    node = document.createTextNode("");
+	  }
+
 	  this.$watch(ast, function(newval){
-	    dom.text(node, "" + (newval == null? "": "" + newval) );
-	  },{init: true})
+
+	    dom.text(node, _.toText(newval) );
+
+	  },{ init: true })
+
 	  return node;
+
 	}
 	walkers.text = function(ast, options){
-	  var node = document.createTextNode(_.convertEntity(ast.text));
-	  return node;
+	  var cursor = options.cursor , node;
+	  var astText = _.convertEntity(ast.text);
+
+	  if(cursor && cursor.node) { 
+	    var mountNode = cursor.node;
+	    // maybe regularjs parser have some difference with html builtin parser when process  empty text
+	    // @todo error report
+	    if(mountNode.nodeType !== 3 ){
+
+	      if( _.blankReg.test(ast.text) ) return {
+	        code:  ERROR.UNMATCHED_AST
+	      };
+	    }else{
+	      var nodeText = dom.text(mountNode);
+	      if( nodeText === astText ){
+	        node = mountNode;
+	        cursor.next();
+	      }else{
+	        // maybe have some redundancy  blank
+	        var index = nodeText.indexOf(astText);
+	        if(~index){
+
+	          node = document.createTextNode(astText)
+	          dom.text(mountNode, nodeText.slice(index+astText.length))
+	        } else throw Error( MSG[ERROR.UNMATCHED_AST]);
+	      }
+	    } 
+	  }
+	      
+
+	  return node || document.createTextNode( astText );
 	}
 
 
 
-	var eventReg = /^on-(.+)$/
 
 	/**
 	 * walkers element (contains component)
 	 */
 	walkers.element = function(ast, options){
+
 	  var attrs = ast.attrs, self = this,
 	    Constructor = this.constructor,
 	    children = ast.children,
 	    namespace = options.namespace, 
 	    extra = options.extra,
+	    cursor = options.cursor,
 	    tag = ast.tag,
 	    Component = Constructor.component(tag),
 	    ref, group, element;
+
+	  // if inititalized with mount mode, sometime, 
+	  // browser will ignore the whitespace between node, and sometimes it won't
+	  if(cursor){
+	    // textCOntent with Empty text
+	    if(cursor.node && cursor.node.nodeType === 3){
+	      if(_.blankReg.test(dom.text(cursor.node) ) ) cursor.next();
+	      else throw Error(MSG[ERROR.UNMATCHED_AST]);
+	    }
+	  }
+
+	  if(cursor) var mountNode = cursor.node;
 
 	  if( tag === 'r-content' ){
 	    _.log('r-content is deprecated, use {#inc this.$body} instead (`{#include}` as same)', 'warn');
@@ -2561,13 +2735,27 @@ return /******/ (function(modules) { // webpackBootstrap
 	  // @Deprecated: may be removed in next version, use {#inc } instead
 	  
 	  if( children && children.length ){
-	    group = this.$compile(children, {outer: options.outer,namespace: namespace, extra: extra });
+
+	    var subMountNode = mountNode? mountNode.firstChild: null;
+	    group = this.$compile(children, {
+	      extra: extra ,
+	      outer: options.outer,
+	      namespace: namespace, 
+	      cursor:  subMountNode? nodeCursor(subMountNode): null
+	    });
 	  }
 
-	  element = dom.create(tag, namespace, attrs);
 
-	  if(group && !_.isVoidTag(tag)){
-	    dom.inject( combine.node(group) , element)
+	  if(mountNode){
+	    element = mountNode
+	    cursor.next();
+	  }else{
+	    element = dom.create( tag, namespace, attrs);
+	  }
+	  
+
+	  if(group && !_.isVoidTag(tag) ){ // if not init with mount mode
+	    animate.inject( combine.node(group) , element)
 	  }
 
 	  // sort before
@@ -2620,6 +2808,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	walkers.component = function(ast, options){
 	  var attrs = ast.attrs, 
 	    Component = options.Component,
+	    cursor = options.cursor,
 	    Constructor = this.constructor,
 	    isolate, 
 	    extra = options.extra,
@@ -2638,7 +2827,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	    var name = attr.name;
 	    if(!attr.event){
-	      var etest = name.match(eventReg);
+	      var etest = name.match(_.eventReg);
 	      // event: 'nav'
 	      if(etest) attr.event = etest[1];
 	    }
@@ -2701,6 +2890,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }
 	  var options = {
 	    namespace: namespace, 
+	    cursor: cursor,
 	    extra: options.extra
 	  }
 
@@ -2806,12 +2996,14 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 
+
+
 /***/ },
 /* 11 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(4);
-	var combine = __webpack_require__(18)
+	var combine = __webpack_require__(19)
 
 	function Group(list){
 	  this.children = list || [];
@@ -2846,8 +3038,15 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	module.exports = {
 	  'COMPONENT_TYPE': 1,
-	  'ELEMENT_TYPE': 2
+	  'ELEMENT_TYPE': 2,
+	  'ERROR': {
+	    'UNMATCHED_AST': 101
+	  },
+	  "MSG": {
+	    101: "Unmatched ast and mountNode, report issue at https://github.com/regularjs/regular/issues"
+	  }
 	}
+
 
 /***/ },
 /* 13 */
@@ -3482,6 +3681,28 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 17 */
 /***/ function(module, exports, __webpack_require__) {
 
+	var exprCache = __webpack_require__(1).exprCache;
+	var _ = __webpack_require__(4);
+	var Parser = __webpack_require__(26);
+	module.exports = {
+	  expression: function(expr, simple){
+	    // @TODO cache
+	    if( typeof expr === 'string' && ( expr = expr.trim() ) ){
+	      expr = exprCache.get( expr ) || exprCache.set( expr, new Parser( expr, { mode: 2, expression: true } ).expression() )
+	    }
+	    if(expr) return expr;
+	  },
+	  parse: function(template){
+	    return new Parser(template).parse();
+	  }
+	}
+
+
+
+/***/ },
+/* 18 */
+/***/ function(module, exports, __webpack_require__) {
+
 	// (c) 2010-2014 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
 	// Backbone may be freely distributed under the MIT license.
 	// For all details and documentation:
@@ -3565,14 +3786,14 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 18 */
+/* 19 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// some nested  operation in ast 
 	// --------------------------------
 
 	var dom = __webpack_require__(3);
-	var animate = __webpack_require__(23);
+	var animate = __webpack_require__(24);
 
 	var combine = module.exports = {
 
@@ -3676,7 +3897,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 19 */
+/* 20 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// simplest event emitter 60 lines
@@ -3756,12 +3977,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = Event;
 
 /***/ },
-/* 20 */
+/* 21 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(4);
-	var parseExpression = __webpack_require__(21).expression;
-	var diff = __webpack_require__(26);
+	var parseExpression = __webpack_require__(17).expression;
+	var diff = __webpack_require__(27);
 	var diffArray = diff.diffArray;
 	var diffObject = diff.diffObject;
 
@@ -4014,28 +4235,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = Watcher;
 
 /***/ },
-/* 21 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var exprCache = __webpack_require__(1).exprCache;
-	var _ = __webpack_require__(4);
-	var Parser = __webpack_require__(25);
-	module.exports = {
-	  expression: function(expr, simple){
-	    // @TODO cache
-	    if( typeof expr === 'string' && ( expr = expr.trim() ) ){
-	      expr = exprCache.get( expr ) || exprCache.set( expr, new Parser( expr, { mode: 2, expression: true } ).expression() )
-	    }
-	    if(expr) return expr;
-	  },
-	  parse: function(template){
-	    return new Parser(template).parse();
-	  }
-	}
-
-
-
-/***/ },
 /* 22 */
 /***/ function(module, exports, __webpack_require__) {
 
@@ -4107,12 +4306,32 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 23 */
 /***/ function(module, exports, __webpack_require__) {
 
+	function NodeCursor(node){
+	  this.node = node;
+	}
+
+
+	var no = NodeCursor.prototype;
+
+	no.next = function(){
+	  this.node = this.node.nextSibling;
+	  return this;
+	}
+
+	module.exports = function(n){ return new NodeCursor(n)}
+
+
+/***/ },
+/* 24 */
+/***/ function(module, exports, __webpack_require__) {
+
 	var _ = __webpack_require__(4);
 	var dom  = __webpack_require__(3);
 	var animate = {};
 	var env = __webpack_require__(1);
 
 
+	if(typeof window !== 'undefined'){
 	var 
 	  transitionEnd = 'transitionend', 
 	  animationEnd = 'animationend', 
@@ -4143,6 +4362,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    animationEnd += ' oAnimationEnd';
 	    animationProperty = 'oAnimation';
 	  }
+	}
 	}
 
 	/**
@@ -4358,7 +4578,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = animate;
 
 /***/ },
-/* 24 */
+/* 25 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(4);
@@ -4715,14 +4935,14 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 25 */
+/* 26 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(4);
 
 	var config = __webpack_require__(2);
-	var node = __webpack_require__(27);
-	var Lexer = __webpack_require__(24);
+	var node = __webpack_require__(28);
+	var Lexer = __webpack_require__(25);
 	var varName = _.varName;
 	var ctxName = _.ctxName;
 	var extName = _.extName;
@@ -5448,7 +5668,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 26 */
+/* 27 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(4);
@@ -5638,7 +5858,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 27 */
+/* 28 */
 /***/ function(module, exports, __webpack_require__) {
 
 	module.exports = {

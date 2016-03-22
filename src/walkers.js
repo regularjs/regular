@@ -224,7 +224,7 @@ walkers.template = function(ast, options){
   var placeholder = document.createComment('inlcude');
   var compiled, namespace = options.namespace, extra = options.extra;
   var group = new Group([placeholder]);
-
+  var cursor = options.cursor;
 
   if(content){
     var self = this;
@@ -236,10 +236,11 @@ walkers.template = function(ast, options){
       }
       if(!value) return;
 
-      group.push( compiled = type === 'function' ? value(): self.$compile( type !== 'object'? String(value): value, {
-        record: true, 
+      group.push( compiled = type === 'function' ? value(cursor? {cursor: cursor}: null): self.$compile( type !== 'object'? String(value): value, {
+        record: true,
         outer: options.outer,
-        namespace: namespace, 
+        namespace: namespace,
+        cursor: cursor,
         extra: extra}) ); 
       if(placeholder.parentNode) {
         compiled.$inject(placeholder, 'before')
@@ -337,6 +338,30 @@ walkers['if'] = function(ast, options){
 }
 
 
+walkers._handleMountText = function(cursor, astText){
+    var node, mountNode = cursor.node;
+    // fix unused black in astText;
+    var nodeText = dom.text(mountNode);
+
+    if( nodeText === astText ){
+      node = mountNode;
+      cursor.next();
+    }else{
+      // maybe have some redundancy  blank
+      var index = nodeText.indexOf(astText);
+      if(~index){
+        node = document.createTextNode(astText);
+        dom.text( mountNode, nodeText.slice(index + astText.length) );
+      } else {
+        if( _.blankReg.test( astText ) ){
+
+        }
+        throw Error( MSG[ERROR.UNMATCHED_AST]);
+      }
+    }
+
+    return node;
+}
 
 
 walkers.expression = function(ast, options){
@@ -346,19 +371,10 @@ walkers.expression = function(ast, options){
 
   if(mountNode){
     //@BUG: if server render &gt; in Expression will cause error
-    var astText = _.toText(this.$get(ast)), nodeText = dom.text(mountNode);
+    var astText = _.toText( this.$get(ast) );
 
-    if( nodeText === astText ){
-      node = mountNode;
-      cursor.next();
-    }else{
-      // maybe have some redundancy  blank
-      var index = nodeText.indexOf(astText);
-      if(~index){
-        node = document.createTextNode("")
-        dom.text(mountNode, nodeText.slice(index+astText.length))
-      } else throw Error( MSG[ERROR.UNMATCHED_AST]);
-    }
+    node = walkers._handleMountText(cursor, astText);
+
   }else{
     node = document.createTextNode("");
   }
@@ -372,9 +388,11 @@ walkers.expression = function(ast, options){
   return node;
 
 }
+
+
 walkers.text = function(ast, options){
   var cursor = options.cursor , node;
-  var astText = _.convertEntity(ast.text);
+  var astText = _.convertEntity( ast.text );
 
   if(cursor && cursor.node) { 
     var mountNode = cursor.node;
@@ -382,23 +400,12 @@ walkers.text = function(ast, options){
     // @todo error report
     if(mountNode.nodeType !== 3 ){
 
-      if( _.blankReg.test(ast.text) ) return {
+      if( _.blankReg.test(astText) ) return {
         code:  ERROR.UNMATCHED_AST
-      };
-    }else{
-      var nodeText = dom.text(mountNode);
-      if( nodeText === astText ){
-        node = mountNode;
-        cursor.next();
-      }else{
-        // maybe have some redundancy  blank
-        var index = nodeText.indexOf(astText);
-        if(~index){
-
-          node = document.createTextNode(astText)
-          dom.text(mountNode, nodeText.slice(index+astText.length))
-        } else throw Error( MSG[ERROR.UNMATCHED_AST]);
       }
+
+    }else{
+      node = walkers._handleMountText( cursor, astText )
     } 
   }
       

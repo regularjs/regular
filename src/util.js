@@ -430,6 +430,11 @@ _.isGroup = function(group){
 _.blankReg = /\s+/; 
 
 _.getCompileFn = function(source, ctx, options){
+  return function( passedOptions ){
+    if( passedOptions && options ) _.extend( passedOptions , options );
+    else passedOptions = options;
+    return ctx.$compile(source, passedOptions )
+  }
   return ctx.$compile.bind(ctx,source, options)
 }
 

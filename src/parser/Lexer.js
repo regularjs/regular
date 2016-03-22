@@ -123,7 +123,8 @@ lo.leave = function(state){
 Lexer.setup = function(){
   macro.END = config.END;
   macro.BEGIN = config.BEGIN;
-  //
+  
+  // living template lexer
   map1 = genMap([
     // INIT
     rules.ENTER_JST,

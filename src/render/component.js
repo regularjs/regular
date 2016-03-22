@@ -95,8 +95,7 @@ var Regular = function(definition, options){
       outer: this,
       namespace: options.namespace,
       extra: options.extra,
-      record: true,
-      cursor: cursor
+      record: true
     })
   }
   // handle computed

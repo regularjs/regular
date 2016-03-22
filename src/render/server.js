@@ -3,7 +3,9 @@
 
 var _ = require('../util');
 var parser = require('../helper/parse.js');
+var diffArray = require('../helper/diff.js').diffArray;
 
+console.log(diffArray([1,2,4,3], [1,2,3], true))
 /**
  * [compile description]
  * @param  {[type]} ast     [description]
