@@ -497,16 +497,18 @@ var expect = require('expect.js');
 
       var Component2 = NameSpace.extend({
         name: 'unwatch_c2',
-        template: "<unwatch_c1 a={a} b={b} ref=c></unwatch_c1>"
+        template: "{#if show}<unwatch_c1 a={a} b={b} ref=c></unwatch_c1>{/if}"
       })
 
-      var component = new Component2();
-      expect(component._watchers.length).to.equal(2)
-
+      var component = new Component2({
+        data: {
+          show: true
+        }
+      });
+      expect(component._watchers.length).to.equal(3)
       var component2 = component.$refs.c;
-      expect( component2._watchers.length).to.equal(2)
-      component2.destroy();
-      expect(component._watchers.length).to.equal(0)
+      component.$update('show', false);
+      expect(component._watchers.length).to.equal(1)
       expect(component2._watchers).to.equal(null)
     })
 })
