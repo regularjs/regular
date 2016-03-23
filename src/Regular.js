@@ -67,6 +67,7 @@ var Regular = function(definition, options){
   }
   this.$emit("$config");
   this.config && this.config(this.data);
+  this.$emit("$afterConfig");
 
   var body = this._body;
   this._body = null;
@@ -90,6 +91,7 @@ var Regular = function(definition, options){
   this.$ready = true;
   this.$emit("$init");
   if( this.init ) this.init(this.data);
+  this.$emit("$afterInit");
 
   // @TODO: remove, maybe , there is no need to update after init; 
   // if(this.$root === this) this.$update();
