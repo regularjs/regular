@@ -47,7 +47,7 @@ var Regular = function(definition, options){
   } 
 
   if(mountNode){
-    cursor = nodeCursor(mountNode)
+    cursor = nodeCursor(mountNode.firstChild)
     delete definition.mountNode
   }else{
     cursor = options.cursor
@@ -292,6 +292,7 @@ Regular.implement({
     this.$root = null;
     this._handles = null;
     this.$refs = null;
+    this.isDestroy = true;
   },
 
   /**

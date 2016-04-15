@@ -5,7 +5,6 @@ var _ = require('../util');
 var parser = require('../helper/parse.js');
 var diffArray = require('../helper/diff.js').diffArray;
 
-console.log(diffArray([1,2,4,3], [1,2,3], true))
 /**
  * [compile description]
  * @param  {[type]} ast     [description]
@@ -254,7 +253,7 @@ ssr.attr = function(attr){
   }else{
     // @TODO 对于boolean 值
     if(_.isExpr(value)) value = this.get(value); 
-    if(_.isBooleanAttr(name)){
+    if(_.isBooleanAttr(name) || value == undefined){
       return name + " ";
     }else{
       return name + '="' + value + '" ';

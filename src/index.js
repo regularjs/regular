@@ -23,6 +23,7 @@ Regular.parse = function(str, options){
   var ast = new Parser(str).parse();
   return !options.stringify? ast : JSON.stringify(ast);
 }
+Regular.Cursor =require('./helper/cursor.js') 
 
 Regular.renderToString = require("./render/server.js").render;
 
