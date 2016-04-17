@@ -144,7 +144,7 @@ ssr.component = function(ast, options){
 ssr.list = function(ast){
 
   var 
-    altnate = ast.altnate,
+    alternate = ast.alternate,
     variable = ast.variable,
     indexName = variable + '_index',
     keyName = variable + '_key',
@@ -210,8 +210,8 @@ ssr.if = function(ast, options){
       return this.compile( ast.consequent );
     }
   }else{
-    if(ast.altnate){
-      return this.compile( ast.altnate );
+    if(ast.alternate){
+      return this.compile( ast.alternate );
     }
   }
 
