@@ -292,7 +292,7 @@ Regular.implement({
     this.$root = null;
     this._handles = null;
     this.$refs = null;
-    this.isDestroy = true;
+    this.$phase = "destroyed";
   },
 
   /**
