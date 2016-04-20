@@ -127,7 +127,7 @@ _.extend(Regular, {
 
       if(template.nodeType) template = template.innerHTML;
 
-      if(typeof template === 'string'){
+      if(typeof template === 'string' && config.PRECOMPILE ){
         this.prototype.template = new Parser(template).parse();
       }
     }

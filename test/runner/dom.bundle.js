@@ -2059,6 +2059,27 @@
 
 	})
 
+	describe("hotfix ", function(){
+	  it("with config.PRECOMPILE === false , wontpreCompile when extend", function( ){
+
+	    var Component = Regular.extend({
+	      template: "<h2>haha</h2>"
+	    })
+	    expect(Component.prototype.template).to.be.an('array');
+	    Regular.config({
+	      'PRECOMPILE': false
+	    })
+	    var Component = Regular.extend({
+	      template: "<h2>haha</h2>"
+	    })
+	    expect(Component.prototype.template).to.not.be.an('array');
+	    // reuse
+	    Regular.config({
+	      'PRECOMPILE': true
+	    })
+	  })
+	})
+
 	})
 
 
@@ -9217,7 +9238,8 @@
 	
 	module.exports = {
 	  'BEGIN': '{',
-	  'END': '}'
+	  'END': '}',
+	  'PRECOMPILE': true
 	}
 
 /***/ },
@@ -9353,7 +9375,7 @@
 
 	      if(template.nodeType) template = template.innerHTML;
 
-	      if(typeof template === 'string'){
+	      if(typeof template === 'string' && config.PRECOMPILE ){
 	        this.prototype.template = new Parser(template).parse();
 	      }
 	    }

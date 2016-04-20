@@ -208,6 +208,27 @@ it("timeout's $interval should update after callback is act", function(done){
 
 })
 
+describe("hotfix ", function(){
+  it("with config.PRECOMPILE === false , wontpreCompile when extend", function( ){
+
+    var Component = Regular.extend({
+      template: "<h2>haha</h2>"
+    })
+    expect(Component.prototype.template).to.be.an('array');
+    Regular.config({
+      'PRECOMPILE': false
+    })
+    var Component = Regular.extend({
+      template: "<h2>haha</h2>"
+    })
+    expect(Component.prototype.template).to.not.be.an('array');
+    // reuse
+    Regular.config({
+      'PRECOMPILE': true
+    })
+  })
+})
+
 })
 
 
