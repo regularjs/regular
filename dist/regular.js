@@ -1,6 +1,6 @@
 /**
 @author	leeluolee
-@version	0.4.3
+@version	0.5.0
 @homepage	http://regularjs.github.io
 */
 (function webpackUniversalModuleDefinition(root, factory) {
@@ -84,6 +84,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  var ast = new Parser(str).parse();
 	  return !options.stringify? ast : JSON.stringify(ast);
 	}
+	Regular.Cursor =__webpack_require__(10) 
 
 	Regular.renderToString = __webpack_require__(6).render;
 
@@ -121,7 +122,8 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 3 */
 /***/ function(module, exports, __webpack_require__) {
 
-	
+	/*jshint -W082 */ 
+
 	// thanks for angular && mootools for some concise&cross-platform  implemention
 	// =====================================
 
@@ -152,7 +154,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 	// camelCase
-	function camelCase(str){
+	var camelCase = function (str){
 	  return ("" + str).replace(/-\D/g, function(match){
 	    return match.charAt(1).toUpperCase();
 	  });
@@ -521,12 +523,12 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 4 */
 /***/ function(module, exports, __webpack_require__) {
 
-	/* WEBPACK VAR INJECTION */(function(global) {__webpack_require__(15)();
+	/* WEBPACK VAR INJECTION */(function(global) {__webpack_require__(11)();
 
 
 
 	var _  = module.exports;
-	var entities = __webpack_require__(16);
+	var entities = __webpack_require__(12);
 	var slice = [].slice;
 	var o2str = ({}).toString;
 	var win = typeof window !=='undefined'? window: global;
@@ -953,6 +955,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	_.blankReg = /\s+/; 
 
 	_.getCompileFn = function(source, ctx, options){
+	  return function( passedOptions ){
+	    if( passedOptions && options ) _.extend( passedOptions , options );
+	    else passedOptions = options;
+	    return ctx.$compile(source, passedOptions )
+	  }
 	  return ctx.$compile.bind(ctx,source, options)
 	}
 
@@ -979,25 +986,25 @@ return /******/ (function(modules) { // webpackBootstrap
 	 */
 
 	var env = __webpack_require__(1);
-	var Lexer = __webpack_require__(25);
-	var Parser = __webpack_require__(26);
+	var Lexer = __webpack_require__(26);
+	var Parser = __webpack_require__(27);
 	var config = __webpack_require__(2);
 	var _ = __webpack_require__(4);
-	var extend = __webpack_require__(18);
+	var extend = __webpack_require__(13);
 	var combine = {};
 	if(env.browser){
 	  var dom = __webpack_require__(3);
-	  var walkers = __webpack_require__(10);
-	  var Group = __webpack_require__(11);
+	  var walkers = __webpack_require__(14);
+	  var Group = __webpack_require__(15);
 	  var doc = dom.doc;
-	  combine = __webpack_require__(19);
+	  combine = __webpack_require__(16);
 	}
-	var events = __webpack_require__(20);
-	var Watcher = __webpack_require__(21);
-	var parse = __webpack_require__(17);
-	var filter = __webpack_require__(22);
-	var ERROR = __webpack_require__(12).ERROR;
-	var nodeCursor = __webpack_require__(23);
+	var events = __webpack_require__(17);
+	var Watcher = __webpack_require__(18);
+	var parse = __webpack_require__(19);
+	var filter = __webpack_require__(20);
+	var ERROR = __webpack_require__(21).ERROR;
+	var nodeCursor = __webpack_require__(10);
 
 
 	/**
@@ -1023,7 +1030,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  } 
 
 	  if(mountNode){
-	    cursor = nodeCursor(mountNode)
+	    cursor = nodeCursor(mountNode.firstChild)
 	    delete definition.mountNode
 	  }else{
 	    cursor = options.cursor
@@ -1071,8 +1078,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      outer: this,
 	      namespace: options.namespace,
 	      extra: options.extra,
-	      record: true,
-	      cursor: cursor
+	      record: true
 	    })
 	  }
 	  // handle computed
@@ -1269,6 +1275,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    this.$root = null;
 	    this._handles = null;
 	    this.$refs = null;
+	    this.$phase = "destroyed";
 	  },
 
 	  /**
@@ -1593,7 +1600,8 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 	var _ = __webpack_require__(4);
-	var parser = __webpack_require__(17);
+	var parser = __webpack_require__(19);
+	var diffArray = __webpack_require__(22).diffArray;
 
 	/**
 	 * [compile description]
@@ -1674,7 +1682,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    attrs.some(function(attr){
 	      if(attr.name === 'is'){
 	        tag = attr.value;
-	        if( _.isExpr(attr.value)) tag = this.get(value);
+	        if( _.isExpr(attr.value)) tag = this.get(attr.value);
 	        return true;
 	      }
 	    }.bind(this))
@@ -1734,7 +1742,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	ssr.list = function(ast){
 
 	  var 
-	    altnate = ast.altnate,
+	    alternate = ast.alternate,
 	    variable = ast.variable,
 	    indexName = variable + '_index',
 	    keyName = variable + '_key',
@@ -1800,8 +1808,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	      return this.compile( ast.consequent );
 	    }
 	  }else{
-	    if(ast.altnate){
-	      return this.compile( ast.altnate );
+	    if(ast.alternate){
+	      return this.compile( ast.alternate );
 	    }
 	  }
 
@@ -1843,7 +1851,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }else{
 	    // @TODO 对于boolean 值
 	    if(_.isExpr(value)) value = this.get(value); 
-	    if(_.isBooleanAttr(name)){
+	    if(_.isBooleanAttr(name) || value == undefined){
 	      return name + " ";
 	    }else{
 	      return name + '="' + value + '" ';
@@ -1885,14 +1893,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	// Regular
 	var _ = __webpack_require__(4);
 	var dom = __webpack_require__(3);
-	var animate = __webpack_require__(24);
+	var animate = __webpack_require__(23);
 	var Regular = __webpack_require__(5);
-	var consts = __webpack_require__(12);
+	var consts = __webpack_require__(21);
 
 
 
-	__webpack_require__(13);
-	__webpack_require__(14);
+	__webpack_require__(24);
+	__webpack_require__(25);
 
 
 	module.exports = {
@@ -2000,7 +2008,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var // packages
 	  _ = __webpack_require__(4),
-	 animate = __webpack_require__(24),
+	 animate = __webpack_require__(23),
 	 dom = __webpack_require__(3),
 	 Regular = __webpack_require__(5);
 
@@ -2283,17 +2291,495 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 10 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var diffArray = __webpack_require__(27).diffArray;
-	var combine = __webpack_require__(19);
-	var animate = __webpack_require__(24);
+	function NodeCursor(node){
+	  this.node = node;
+	}
+
+
+	var no = NodeCursor.prototype;
+
+	no.next = function(){
+	  this.node = this.node.nextSibling;
+	  return this;
+	}
+
+	module.exports = function(n){ return new NodeCursor(n)}
+
+
+/***/ },
+/* 11 */
+/***/ function(module, exports, __webpack_require__) {
+
+	// shim for es5
+	var slice = [].slice;
+	var tstr = ({}).toString;
+
+	function extend(o1, o2 ){
+	  for(var i in o2) if( o1[i] === undefined){
+	    o1[i] = o2[i]
+	  }
+	  return o2;
+	}
+
+
+	module.exports = function(){
+	  // String proto ;
+	  extend(String.prototype, {
+	    trim: function(){
+	      return this.replace(/^\s+|\s+$/g, '');
+	    }
+	  });
+
+
+	  // Array proto;
+	  extend(Array.prototype, {
+	    indexOf: function(obj, from){
+	      from = from || 0;
+	      for (var i = from, len = this.length; i < len; i++) {
+	        if (this[i] === obj) return i;
+	      }
+	      return -1;
+	    },
+	    // polyfill from MDN 
+	    // https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Array/forEach
+	    forEach: function(callback, ctx){
+	      var k = 0;
+
+	      // 1. Let O be the result of calling ToObject passing the |this| value as the argument.
+	      var O = Object(this);
+
+	      var len = O.length >>> 0; 
+
+	      if ( typeof callback !== "function" ) {
+	        throw new TypeError( callback + " is not a function" );
+	      }
+
+	      // 7. Repeat, while k < len
+	      while( k < len ) {
+
+	        var kValue;
+
+	        if ( k in O ) {
+
+	          kValue = O[ k ];
+
+	          callback.call( ctx, kValue, k, O );
+	        }
+	        k++;
+	      }
+	    },
+	    // @deprecated
+	    //  will be removed at 0.5.0
+	    filter: function(fun, context){
+
+	      var t = Object(this);
+	      var len = t.length >>> 0;
+	      if (typeof fun !== "function")
+	        throw new TypeError();
+
+	      var res = [];
+	      for (var i = 0; i < len; i++)
+	      {
+	        if (i in t)
+	        {
+	          var val = t[i];
+	          if (fun.call(context, val, i, t))
+	            res.push(val);
+	        }
+	      }
+
+	      return res;
+	    }
+	  });
+
+	  // Function proto;
+	  extend(Function.prototype, {
+	    bind: function(context){
+	      var fn = this;
+	      var preArgs = slice.call(arguments, 1);
+	      return function(){
+	        var args = preArgs.concat(slice.call(arguments));
+	        return fn.apply(context, args);
+	      }
+	    }
+	  })
+	  
+	  // Array
+	  extend(Array, {
+	    isArray: function(arr){
+	      return tstr.call(arr) === "[object Array]";
+	    }
+	  })
+	}
+
+
+
+/***/ },
+/* 12 */
+/***/ function(module, exports, __webpack_require__) {
+
+	// http://stackoverflow.com/questions/1354064/how-to-convert-characters-to-html-entities-using-plain-javascript
+	var entities = {
+	  'quot':34, 
+	  'amp':38, 
+	  'apos':39, 
+	  'lt':60, 
+	  'gt':62, 
+	  'nbsp':160, 
+	  'iexcl':161, 
+	  'cent':162, 
+	  'pound':163, 
+	  'curren':164, 
+	  'yen':165, 
+	  'brvbar':166, 
+	  'sect':167, 
+	  'uml':168, 
+	  'copy':169, 
+	  'ordf':170, 
+	  'laquo':171, 
+	  'not':172, 
+	  'shy':173, 
+	  'reg':174, 
+	  'macr':175, 
+	  'deg':176, 
+	  'plusmn':177, 
+	  'sup2':178, 
+	  'sup3':179, 
+	  'acute':180, 
+	  'micro':181, 
+	  'para':182, 
+	  'middot':183, 
+	  'cedil':184, 
+	  'sup1':185, 
+	  'ordm':186, 
+	  'raquo':187, 
+	  'frac14':188, 
+	  'frac12':189, 
+	  'frac34':190, 
+	  'iquest':191, 
+	  'Agrave':192, 
+	  'Aacute':193, 
+	  'Acirc':194, 
+	  'Atilde':195, 
+	  'Auml':196, 
+	  'Aring':197, 
+	  'AElig':198, 
+	  'Ccedil':199, 
+	  'Egrave':200, 
+	  'Eacute':201, 
+	  'Ecirc':202, 
+	  'Euml':203, 
+	  'Igrave':204, 
+	  'Iacute':205, 
+	  'Icirc':206, 
+	  'Iuml':207, 
+	  'ETH':208, 
+	  'Ntilde':209, 
+	  'Ograve':210, 
+	  'Oacute':211, 
+	  'Ocirc':212, 
+	  'Otilde':213, 
+	  'Ouml':214, 
+	  'times':215, 
+	  'Oslash':216, 
+	  'Ugrave':217, 
+	  'Uacute':218, 
+	  'Ucirc':219, 
+	  'Uuml':220, 
+	  'Yacute':221, 
+	  'THORN':222, 
+	  'szlig':223, 
+	  'agrave':224, 
+	  'aacute':225, 
+	  'acirc':226, 
+	  'atilde':227, 
+	  'auml':228, 
+	  'aring':229, 
+	  'aelig':230, 
+	  'ccedil':231, 
+	  'egrave':232, 
+	  'eacute':233, 
+	  'ecirc':234, 
+	  'euml':235, 
+	  'igrave':236, 
+	  'iacute':237, 
+	  'icirc':238, 
+	  'iuml':239, 
+	  'eth':240, 
+	  'ntilde':241, 
+	  'ograve':242, 
+	  'oacute':243, 
+	  'ocirc':244, 
+	  'otilde':245, 
+	  'ouml':246, 
+	  'divide':247, 
+	  'oslash':248, 
+	  'ugrave':249, 
+	  'uacute':250, 
+	  'ucirc':251, 
+	  'uuml':252, 
+	  'yacute':253, 
+	  'thorn':254, 
+	  'yuml':255, 
+	  'fnof':402, 
+	  'Alpha':913, 
+	  'Beta':914, 
+	  'Gamma':915, 
+	  'Delta':916, 
+	  'Epsilon':917, 
+	  'Zeta':918, 
+	  'Eta':919, 
+	  'Theta':920, 
+	  'Iota':921, 
+	  'Kappa':922, 
+	  'Lambda':923, 
+	  'Mu':924, 
+	  'Nu':925, 
+	  'Xi':926, 
+	  'Omicron':927, 
+	  'Pi':928, 
+	  'Rho':929, 
+	  'Sigma':931, 
+	  'Tau':932, 
+	  'Upsilon':933, 
+	  'Phi':934, 
+	  'Chi':935, 
+	  'Psi':936, 
+	  'Omega':937, 
+	  'alpha':945, 
+	  'beta':946, 
+	  'gamma':947, 
+	  'delta':948, 
+	  'epsilon':949, 
+	  'zeta':950, 
+	  'eta':951, 
+	  'theta':952, 
+	  'iota':953, 
+	  'kappa':954, 
+	  'lambda':955, 
+	  'mu':956, 
+	  'nu':957, 
+	  'xi':958, 
+	  'omicron':959, 
+	  'pi':960, 
+	  'rho':961, 
+	  'sigmaf':962, 
+	  'sigma':963, 
+	  'tau':964, 
+	  'upsilon':965, 
+	  'phi':966, 
+	  'chi':967, 
+	  'psi':968, 
+	  'omega':969, 
+	  'thetasym':977, 
+	  'upsih':978, 
+	  'piv':982, 
+	  'bull':8226, 
+	  'hellip':8230, 
+	  'prime':8242, 
+	  'Prime':8243, 
+	  'oline':8254, 
+	  'frasl':8260, 
+	  'weierp':8472, 
+	  'image':8465, 
+	  'real':8476, 
+	  'trade':8482, 
+	  'alefsym':8501, 
+	  'larr':8592, 
+	  'uarr':8593, 
+	  'rarr':8594, 
+	  'darr':8595, 
+	  'harr':8596, 
+	  'crarr':8629, 
+	  'lArr':8656, 
+	  'uArr':8657, 
+	  'rArr':8658, 
+	  'dArr':8659, 
+	  'hArr':8660, 
+	  'forall':8704, 
+	  'part':8706, 
+	  'exist':8707, 
+	  'empty':8709, 
+	  'nabla':8711, 
+	  'isin':8712, 
+	  'notin':8713, 
+	  'ni':8715, 
+	  'prod':8719, 
+	  'sum':8721, 
+	  'minus':8722, 
+	  'lowast':8727, 
+	  'radic':8730, 
+	  'prop':8733, 
+	  'infin':8734, 
+	  'ang':8736, 
+	  'and':8743, 
+	  'or':8744, 
+	  'cap':8745, 
+	  'cup':8746, 
+	  'int':8747, 
+	  'there4':8756, 
+	  'sim':8764, 
+	  'cong':8773, 
+	  'asymp':8776, 
+	  'ne':8800, 
+	  'equiv':8801, 
+	  'le':8804, 
+	  'ge':8805, 
+	  'sub':8834, 
+	  'sup':8835, 
+	  'nsub':8836, 
+	  'sube':8838, 
+	  'supe':8839, 
+	  'oplus':8853, 
+	  'otimes':8855, 
+	  'perp':8869, 
+	  'sdot':8901, 
+	  'lceil':8968, 
+	  'rceil':8969, 
+	  'lfloor':8970, 
+	  'rfloor':8971, 
+	  'lang':9001, 
+	  'rang':9002, 
+	  'loz':9674, 
+	  'spades':9824, 
+	  'clubs':9827, 
+	  'hearts':9829, 
+	  'diams':9830, 
+	  'OElig':338, 
+	  'oelig':339, 
+	  'Scaron':352, 
+	  'scaron':353, 
+	  'Yuml':376, 
+	  'circ':710, 
+	  'tilde':732, 
+	  'ensp':8194, 
+	  'emsp':8195, 
+	  'thinsp':8201, 
+	  'zwnj':8204, 
+	  'zwj':8205, 
+	  'lrm':8206, 
+	  'rlm':8207, 
+	  'ndash':8211, 
+	  'mdash':8212, 
+	  'lsquo':8216, 
+	  'rsquo':8217, 
+	  'sbquo':8218, 
+	  'ldquo':8220, 
+	  'rdquo':8221, 
+	  'bdquo':8222, 
+	  'dagger':8224, 
+	  'Dagger':8225, 
+	  'permil':8240, 
+	  'lsaquo':8249, 
+	  'rsaquo':8250, 
+	  'euro':8364
+	}
+
+
+
+	module.exports  = entities;
+
+/***/ },
+/* 13 */
+/***/ function(module, exports, __webpack_require__) {
+
+	// (c) 2010-2014 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
+	// Backbone may be freely distributed under the MIT license.
+	// For all details and documentation:
+	// http://backbonejs.org
+
+	// klass: a classical JS OOP façade
+	// https://github.com/ded/klass
+	// License MIT (c) Dustin Diaz 2014
+	  
+	// inspired by backbone's extend and klass
+	var _ = __webpack_require__(4),
+	  fnTest = /xy/.test(function(){"xy";}) ? /\bsupr\b/:/.*/,
+	  isFn = function(o){return typeof o === "function"};
+
+
+	function wrap(k, fn, supro) {
+	  return function () {
+	    var tmp = this.supr;
+	    this.supr = supro[k];
+	    var ret = fn.apply(this, arguments);
+	    this.supr = tmp;
+	    return ret;
+	  }
+	}
+
+	function process( what, o, supro ) {
+	  for ( var k in o ) {
+	    if (o.hasOwnProperty(k)) {
+
+	      what[k] = isFn( o[k] ) && isFn( supro[k] ) && 
+	        fnTest.test( o[k] ) ? wrap(k, o[k], supro) : o[k];
+	    }
+	  }
+	}
+
+	// if the property is ["events", "data", "computed"] , we should merge them
+	var merged = ["events", "data", "computed"], mlen = merged.length;
+	module.exports = function extend(o){
+	  o = o || {};
+	  var supr = this, proto,
+	    supro = supr && supr.prototype || {};
+
+	  if(typeof o === 'function'){
+	    proto = o.prototype;
+	    o.implement = implement;
+	    o.extend = extend;
+	    return o;
+	  } 
+	  
+	  function fn() {
+	    supr.apply(this, arguments);
+	  }
+
+	  proto = _.createProto(fn, supro);
+
+	  function implement(o){
+	    // we need merge the merged property
+	    var len = mlen;
+	    for(;len--;){
+	      var prop = merged[len];
+	      if(o.hasOwnProperty(prop) && proto.hasOwnProperty(prop)){
+	        _.extend(proto[prop], o[prop], true) 
+	        delete o[prop];
+	      }
+	    }
+
+
+	    process(proto, o, supro); 
+	    return this;
+	  }
+
+
+
+	  fn.implement = implement
+	  fn.implement(o)
+	  if(supr.__after__) supr.__after__.call(fn, supr, o);
+	  fn.extend = extend;
+	  return fn;
+	}
+
+
+
+/***/ },
+/* 14 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var diffArray = __webpack_require__(22).diffArray;
+	var combine = __webpack_require__(16);
+	var animate = __webpack_require__(23);
 	var node = __webpack_require__(28);
-	var Group = __webpack_require__(11);
+	var Group = __webpack_require__(15);
 	var dom = __webpack_require__(3);
 	var _ = __webpack_require__(4);
-	var consts =   __webpack_require__(12)
+	var consts =   __webpack_require__(21)
 	var ERROR = consts.ERROR;
 	var MSG = consts.MSG;
-	var nodeCursor = __webpack_require__(23);
+	var nodeCursor = __webpack_require__(10);
 
 
 
@@ -2509,7 +2995,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  var placeholder = document.createComment('inlcude');
 	  var compiled, namespace = options.namespace, extra = options.extra;
 	  var group = new Group([placeholder]);
-
+	  var cursor = options.cursor;
 
 	  if(content){
 	    var self = this;
@@ -2521,10 +3007,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	      }
 	      if(!value) return;
 
-	      group.push( compiled = type === 'function' ? value(): self.$compile( type !== 'object'? String(value): value, {
-	        record: true, 
+	      group.push( compiled = type === 'function' ? value(cursor? {cursor: cursor}: null): self.$compile( type !== 'object'? String(value): value, {
+	        record: true,
 	        outer: options.outer,
-	        namespace: namespace, 
+	        namespace: namespace,
+	        cursor: cursor,
 	        extra: extra}) ); 
 	      if(placeholder.parentNode) {
 	        compiled.$inject(placeholder, 'before')
@@ -2622,6 +3109,28 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 
+	walkers._handleMountText = function(cursor, astText){
+	    var node, mountNode = cursor.node;
+	    // fix unused black in astText;
+	    var nodeText = dom.text(mountNode);
+
+	    if( nodeText === astText ){
+	      node = mountNode;
+	      cursor.next();
+	    }else{
+	      // maybe have some redundancy  blank
+	      var index = nodeText.indexOf(astText);
+	      if(~index){
+	        node = document.createTextNode(astText);
+	        dom.text( mountNode, nodeText.slice(index + astText.length) );
+	      } else {
+	        // if( _.blankReg.test( astText ) ){ }
+	        throw Error( MSG[ERROR.UNMATCHED_AST]);
+	      }
+	    }
+
+	    return node;
+	}
 
 
 	walkers.expression = function(ast, options){
@@ -2631,19 +3140,10 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	  if(mountNode){
 	    //@BUG: if server render &gt; in Expression will cause error
-	    var astText = _.toText(this.$get(ast)), nodeText = dom.text(mountNode);
+	    var astText = _.toText( this.$get(ast) );
 
-	    if( nodeText === astText ){
-	      node = mountNode;
-	      cursor.next();
-	    }else{
-	      // maybe have some redundancy  blank
-	      var index = nodeText.indexOf(astText);
-	      if(~index){
-	        node = document.createTextNode("")
-	        dom.text(mountNode, nodeText.slice(index+astText.length))
-	      } else throw Error( MSG[ERROR.UNMATCHED_AST]);
-	    }
+	    node = walkers._handleMountText(cursor, astText);
+
 	  }else{
 	    node = document.createTextNode("");
 	  }
@@ -2657,9 +3157,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	  return node;
 
 	}
+
+
 	walkers.text = function(ast, options){
 	  var cursor = options.cursor , node;
-	  var astText = _.convertEntity(ast.text);
+	  var astText = _.convertEntity( ast.text );
 
 	  if(cursor && cursor.node) { 
 	    var mountNode = cursor.node;
@@ -2667,23 +3169,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	    // @todo error report
 	    if(mountNode.nodeType !== 3 ){
 
-	      if( _.blankReg.test(ast.text) ) return {
+	      if( _.blankReg.test(astText) ) return {
 	        code:  ERROR.UNMATCHED_AST
-	      };
-	    }else{
-	      var nodeText = dom.text(mountNode);
-	      if( nodeText === astText ){
-	        node = mountNode;
-	        cursor.next();
-	      }else{
-	        // maybe have some redundancy  blank
-	        var index = nodeText.indexOf(astText);
-	        if(~index){
-
-	          node = document.createTextNode(astText)
-	          dom.text(mountNode, nodeText.slice(index+astText.length))
-	        } else throw Error( MSG[ERROR.UNMATCHED_AST]);
 	      }
+
+	    }else{
+	      node = walkers._handleMountText( cursor, astText )
 	    } 
 	  }
 	      
@@ -2707,7 +3198,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    cursor = options.cursor,
 	    tag = ast.tag,
 	    Component = Constructor.component(tag),
-	    ref, group, element;
+	    ref, group, element, mountNode;
 
 	  // if inititalized with mount mode, sometime, 
 	  // browser will ignore the whitespace between node, and sometimes it won't
@@ -2719,11 +3210,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	  }
 
-	  if(cursor) var mountNode = cursor.node;
+	  if(cursor) mountNode = cursor.node;
 
 	  if( tag === 'r-content' ){
-	    _.log('r-content is deprecated, use {#inc this.$body} instead (`{#include}` as same)', 'warn');
-	    return this.$body && this.$body();
+	    _.log('r-content is deprecated, use {#inc this.$body} instead (`{#include}` as same)', 'error');
+	    return this.$body && this.$body(cursor? {cursor: cursor}: null);
 	  } 
 
 	  if(Component || tag === 'r-component'){
@@ -2999,11 +3490,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 11 */
+/* 15 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(4);
-	var combine = __webpack_require__(19)
+	var combine = __webpack_require__(16)
 
 	function Group(list){
 	  this.children = list || [];
@@ -3033,767 +3524,14 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 12 */
-/***/ function(module, exports, __webpack_require__) {
-
-	module.exports = {
-	  'COMPONENT_TYPE': 1,
-	  'ELEMENT_TYPE': 2,
-	  'ERROR': {
-	    'UNMATCHED_AST': 101
-	  },
-	  "MSG": {
-	    101: "Unmatched ast and mountNode, report issue at https://github.com/regularjs/regular/issues"
-	  }
-	}
-
-
-/***/ },
-/* 13 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/**
-	 * event directive  bundle
-	 *
-	 */
-	var _ = __webpack_require__(4);
-	var dom = __webpack_require__(3);
-	var Regular = __webpack_require__(5);
-
-	Regular._addProtoInheritCache("event");
-
-	Regular.directive( /^on-\w+$/, function( elem, value, name , attrs) {
-	  if ( !name || !value ) return;
-	  var type = name.split("-")[1];
-	  return this._handleEvent( elem, type, value, attrs );
-	});
-	// TODO.
-	/**
-	- $('dx').delegate()
-	*/
-	Regular.directive( /^(delegate|de)-\w+$/, function( elem, value, name ) {
-	  var root = this.$root;
-	  var _delegates = root._delegates || ( root._delegates = {} );
-	  if ( !name || !value ) return;
-	  var type = name.split("-")[1];
-	  var fire = _.handleEvent.call(this, value, type);
-
-	  function delegateEvent(ev){
-	    matchParent(ev, _delegates[type], root.parentNode);
-	  }
-
-	  if( !_delegates[type] ){
-	    _delegates[type] = [];
-
-	    if(root.parentNode){
-	      dom.on(root.parentNode, type, delegateEvent);
-	    }else{
-	      root.$on( "$inject", function( node, position, preParent ){
-	        var newParent = this.parentNode;
-	        if( preParent ){
-	          dom.off(preParent, type, delegateEvent);
-	        }
-	        if(newParent) dom.on(this.parentNode, type, delegateEvent);
-	      })
-	    }
-	    root.$on("$destroy", function(){
-	      if(root.parentNode) dom.off(root.parentNode, type, delegateEvent)
-	      _delegates[type] = null;
-	    })
-	  }
-	  var delegate = {
-	    element: elem,
-	    fire: fire
-	  }
-	  _delegates[type].push( delegate );
-
-	  return function(){
-	    var delegates = _delegates[type];
-	    if(!delegates || !delegates.length) return;
-	    for( var i = 0, len = delegates.length; i < len; i++ ){
-	      if( delegates[i] === delegate ) delegates.splice(i, 1);
-	    }
-	  }
-
-	});
-
-
-	function matchParent(ev , delegates, stop){
-	  if(!stop) return;
-	  var target = ev.target, pair;
-	  while(target && target !== stop){
-	    for( var i = 0, len = delegates.length; i < len; i++ ){
-	      pair = delegates[i];
-	      if(pair && pair.element === target){
-	        pair.fire(ev)
-	      }
-	    }
-	    target = target.parentNode;
-	  }
-	}
-
-/***/ },
-/* 14 */
-/***/ function(module, exports, __webpack_require__) {
-
-	// Regular
-	var _ = __webpack_require__(4);
-	var dom = __webpack_require__(3);
-	var Regular = __webpack_require__(5);
-
-	var modelHandlers = {
-	  "text": initText,
-	  "select": initSelect,
-	  "checkbox": initCheckBox,
-	  "radio": initRadio
-	}
-
-
-	// @TODO
-
-
-	// two-way binding with r-model
-	// works on input, textarea, checkbox, radio, select
-
-	Regular.directive("r-model", function(elem, value){
-	  var tag = elem.tagName.toLowerCase();
-	  var sign = tag;
-	  if(sign === "input") sign = elem.type || "text";
-	  else if(sign === "textarea") sign = "text";
-	  if(typeof value === "string") value = this.$expression(value);
-
-	  if( modelHandlers[sign] ) return modelHandlers[sign].call(this, elem, value);
-	  else if(tag === "input"){
-	    return modelHandlers.text.call(this, elem, value);
-	  }
-	});
-
-
-
-	// binding <select>
-
-	function initSelect( elem, parsed){
-	  var self = this;
-	  var wc =this.$watch(parsed, function(newValue){
-	    var children = _.slice(elem.getElementsByTagName('option'))
-	    children.forEach(function(node, index){
-	      if(node.value == newValue){
-	        elem.selectedIndex = index;
-	      }
-	    })
-	  });
-
-	  function handler(){
-	    parsed.set(self, this.value);
-	    wc.last = this.value;
-	    self.$update();
-	  }
-
-	  dom.on(elem, "change", handler);
-	  
-	  if(parsed.get(self) === undefined && elem.value){
-	     parsed.set(self, elem.value);
-	  }
-	  return function destroy(){
-	    dom.off(elem, "change", handler);
-	  }
-	}
-
-	// input,textarea binding
-
-	function initText(elem, parsed){
-	  var self = this;
-	  var wc = this.$watch(parsed, function(newValue){
-	    if(elem.value !== newValue) elem.value = newValue == null? "": "" + newValue;
-	  });
-
-	  // @TODO to fixed event
-	  var handler = function (ev){
-	    var that = this;
-	    if(ev.type==='cut' || ev.type==='paste'){
-	      _.nextTick(function(){
-	        var value = that.value
-	        parsed.set(self, value);
-	        wc.last = value;
-	        self.$update();
-	      })
-	    }else{
-	        var value = that.value
-	        parsed.set(self, value);
-	        wc.last = value;
-	        self.$update();
-	    }
-	  };
-
-	  if(dom.msie !== 9 && "oninput" in dom.tNode ){
-	    elem.addEventListener("input", handler );
-	  }else{
-	    dom.on(elem, "paste", handler)
-	    dom.on(elem, "keyup", handler)
-	    dom.on(elem, "cut", handler)
-	    dom.on(elem, "change", handler)
-	  }
-	  if(parsed.get(self) === undefined && elem.value){
-	     parsed.set(self, elem.value);
-	  }
-	  return function (){
-	    if(dom.msie !== 9 && "oninput" in dom.tNode ){
-	      elem.removeEventListener("input", handler );
-	    }else{
-	      dom.off(elem, "paste", handler)
-	      dom.off(elem, "keyup", handler)
-	      dom.off(elem, "cut", handler)
-	      dom.off(elem, "change", handler)
-	    }
-	  }
-	}
-
-
-	// input:checkbox  binding
-
-	function initCheckBox(elem, parsed){
-	  var self = this;
-	  var watcher = this.$watch(parsed, function(newValue){
-	    dom.attr(elem, 'checked', !!newValue);
-	  });
-
-	  var handler = function handler(){
-	    var value = this.checked;
-	    parsed.set(self, value);
-	    watcher.last = value;
-	    self.$update();
-	  }
-	  if(parsed.set) dom.on(elem, "change", handler)
-
-	  if(parsed.get(self) === undefined){
-	    parsed.set(self, !!elem.checked);
-	  }
-
-	  return function destroy(){
-	    if(parsed.set) dom.off(elem, "change", handler)
-	  }
-	}
-
-
-	// input:radio binding
-
-	function initRadio(elem, parsed){
-	  var self = this;
-	  var wc = this.$watch(parsed, function( newValue ){
-	    if(newValue == elem.value) elem.checked = true;
-	    else elem.checked = false;
-	  });
-
-
-	  var handler = function handler(){
-	    var value = this.value;
-	    parsed.set(self, value);
-	    self.$update();
-	  }
-	  if(parsed.set) dom.on(elem, "change", handler)
-	  // beacuse only after compile(init), the dom structrue is exsit. 
-	  if(parsed.get(self) === undefined){
-	    if(elem.checked) {
-	      parsed.set(self, elem.value);
-	    }
-	  }
-
-	  return function destroy(){
-	    if(parsed.set) dom.off(elem, "change", handler)
-	  }
-	}
-
-
-/***/ },
-/* 15 */
-/***/ function(module, exports, __webpack_require__) {
-
-	// shim for es5
-	var slice = [].slice;
-	var tstr = ({}).toString;
-
-	function extend(o1, o2 ){
-	  for(var i in o2) if( o1[i] === undefined){
-	    o1[i] = o2[i]
-	  }
-	  return o2;
-	}
-
-
-	module.exports = function(){
-	  // String proto ;
-	  extend(String.prototype, {
-	    trim: function(){
-	      return this.replace(/^\s+|\s+$/g, '');
-	    }
-	  });
-
-
-	  // Array proto;
-	  extend(Array.prototype, {
-	    indexOf: function(obj, from){
-	      from = from || 0;
-	      for (var i = from, len = this.length; i < len; i++) {
-	        if (this[i] === obj) return i;
-	      }
-	      return -1;
-	    },
-	    // polyfill from MDN 
-	    // https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Array/forEach
-	    forEach: function(callback, ctx){
-	      var k = 0;
-
-	      // 1. Let O be the result of calling ToObject passing the |this| value as the argument.
-	      var O = Object(this);
-
-	      var len = O.length >>> 0; 
-
-	      if ( typeof callback !== "function" ) {
-	        throw new TypeError( callback + " is not a function" );
-	      }
-
-	      // 7. Repeat, while k < len
-	      while( k < len ) {
-
-	        var kValue;
-
-	        if ( k in O ) {
-
-	          kValue = O[ k ];
-
-	          callback.call( ctx, kValue, k, O );
-	        }
-	        k++;
-	      }
-	    },
-	    // @deprecated
-	    //  will be removed at 0.5.0
-	    filter: function(fun, context){
-
-	      var t = Object(this);
-	      var len = t.length >>> 0;
-	      if (typeof fun !== "function")
-	        throw new TypeError();
-
-	      var res = [];
-	      for (var i = 0; i < len; i++)
-	      {
-	        if (i in t)
-	        {
-	          var val = t[i];
-	          if (fun.call(context, val, i, t))
-	            res.push(val);
-	        }
-	      }
-
-	      return res;
-	    }
-	  });
-
-	  // Function proto;
-	  extend(Function.prototype, {
-	    bind: function(context){
-	      var fn = this;
-	      var preArgs = slice.call(arguments, 1);
-	      return function(){
-	        var args = preArgs.concat(slice.call(arguments));
-	        return fn.apply(context, args);
-	      }
-	    }
-	  })
-	  
-	  // Array
-	  extend(Array, {
-	    isArray: function(arr){
-	      return tstr.call(arr) === "[object Array]";
-	    }
-	  })
-	}
-
-
-
-/***/ },
 /* 16 */
-/***/ function(module, exports, __webpack_require__) {
-
-	// http://stackoverflow.com/questions/1354064/how-to-convert-characters-to-html-entities-using-plain-javascript
-	var entities = {
-	  'quot':34, 
-	  'amp':38, 
-	  'apos':39, 
-	  'lt':60, 
-	  'gt':62, 
-	  'nbsp':160, 
-	  'iexcl':161, 
-	  'cent':162, 
-	  'pound':163, 
-	  'curren':164, 
-	  'yen':165, 
-	  'brvbar':166, 
-	  'sect':167, 
-	  'uml':168, 
-	  'copy':169, 
-	  'ordf':170, 
-	  'laquo':171, 
-	  'not':172, 
-	  'shy':173, 
-	  'reg':174, 
-	  'macr':175, 
-	  'deg':176, 
-	  'plusmn':177, 
-	  'sup2':178, 
-	  'sup3':179, 
-	  'acute':180, 
-	  'micro':181, 
-	  'para':182, 
-	  'middot':183, 
-	  'cedil':184, 
-	  'sup1':185, 
-	  'ordm':186, 
-	  'raquo':187, 
-	  'frac14':188, 
-	  'frac12':189, 
-	  'frac34':190, 
-	  'iquest':191, 
-	  'Agrave':192, 
-	  'Aacute':193, 
-	  'Acirc':194, 
-	  'Atilde':195, 
-	  'Auml':196, 
-	  'Aring':197, 
-	  'AElig':198, 
-	  'Ccedil':199, 
-	  'Egrave':200, 
-	  'Eacute':201, 
-	  'Ecirc':202, 
-	  'Euml':203, 
-	  'Igrave':204, 
-	  'Iacute':205, 
-	  'Icirc':206, 
-	  'Iuml':207, 
-	  'ETH':208, 
-	  'Ntilde':209, 
-	  'Ograve':210, 
-	  'Oacute':211, 
-	  'Ocirc':212, 
-	  'Otilde':213, 
-	  'Ouml':214, 
-	  'times':215, 
-	  'Oslash':216, 
-	  'Ugrave':217, 
-	  'Uacute':218, 
-	  'Ucirc':219, 
-	  'Uuml':220, 
-	  'Yacute':221, 
-	  'THORN':222, 
-	  'szlig':223, 
-	  'agrave':224, 
-	  'aacute':225, 
-	  'acirc':226, 
-	  'atilde':227, 
-	  'auml':228, 
-	  'aring':229, 
-	  'aelig':230, 
-	  'ccedil':231, 
-	  'egrave':232, 
-	  'eacute':233, 
-	  'ecirc':234, 
-	  'euml':235, 
-	  'igrave':236, 
-	  'iacute':237, 
-	  'icirc':238, 
-	  'iuml':239, 
-	  'eth':240, 
-	  'ntilde':241, 
-	  'ograve':242, 
-	  'oacute':243, 
-	  'ocirc':244, 
-	  'otilde':245, 
-	  'ouml':246, 
-	  'divide':247, 
-	  'oslash':248, 
-	  'ugrave':249, 
-	  'uacute':250, 
-	  'ucirc':251, 
-	  'uuml':252, 
-	  'yacute':253, 
-	  'thorn':254, 
-	  'yuml':255, 
-	  'fnof':402, 
-	  'Alpha':913, 
-	  'Beta':914, 
-	  'Gamma':915, 
-	  'Delta':916, 
-	  'Epsilon':917, 
-	  'Zeta':918, 
-	  'Eta':919, 
-	  'Theta':920, 
-	  'Iota':921, 
-	  'Kappa':922, 
-	  'Lambda':923, 
-	  'Mu':924, 
-	  'Nu':925, 
-	  'Xi':926, 
-	  'Omicron':927, 
-	  'Pi':928, 
-	  'Rho':929, 
-	  'Sigma':931, 
-	  'Tau':932, 
-	  'Upsilon':933, 
-	  'Phi':934, 
-	  'Chi':935, 
-	  'Psi':936, 
-	  'Omega':937, 
-	  'alpha':945, 
-	  'beta':946, 
-	  'gamma':947, 
-	  'delta':948, 
-	  'epsilon':949, 
-	  'zeta':950, 
-	  'eta':951, 
-	  'theta':952, 
-	  'iota':953, 
-	  'kappa':954, 
-	  'lambda':955, 
-	  'mu':956, 
-	  'nu':957, 
-	  'xi':958, 
-	  'omicron':959, 
-	  'pi':960, 
-	  'rho':961, 
-	  'sigmaf':962, 
-	  'sigma':963, 
-	  'tau':964, 
-	  'upsilon':965, 
-	  'phi':966, 
-	  'chi':967, 
-	  'psi':968, 
-	  'omega':969, 
-	  'thetasym':977, 
-	  'upsih':978, 
-	  'piv':982, 
-	  'bull':8226, 
-	  'hellip':8230, 
-	  'prime':8242, 
-	  'Prime':8243, 
-	  'oline':8254, 
-	  'frasl':8260, 
-	  'weierp':8472, 
-	  'image':8465, 
-	  'real':8476, 
-	  'trade':8482, 
-	  'alefsym':8501, 
-	  'larr':8592, 
-	  'uarr':8593, 
-	  'rarr':8594, 
-	  'darr':8595, 
-	  'harr':8596, 
-	  'crarr':8629, 
-	  'lArr':8656, 
-	  'uArr':8657, 
-	  'rArr':8658, 
-	  'dArr':8659, 
-	  'hArr':8660, 
-	  'forall':8704, 
-	  'part':8706, 
-	  'exist':8707, 
-	  'empty':8709, 
-	  'nabla':8711, 
-	  'isin':8712, 
-	  'notin':8713, 
-	  'ni':8715, 
-	  'prod':8719, 
-	  'sum':8721, 
-	  'minus':8722, 
-	  'lowast':8727, 
-	  'radic':8730, 
-	  'prop':8733, 
-	  'infin':8734, 
-	  'ang':8736, 
-	  'and':8743, 
-	  'or':8744, 
-	  'cap':8745, 
-	  'cup':8746, 
-	  'int':8747, 
-	  'there4':8756, 
-	  'sim':8764, 
-	  'cong':8773, 
-	  'asymp':8776, 
-	  'ne':8800, 
-	  'equiv':8801, 
-	  'le':8804, 
-	  'ge':8805, 
-	  'sub':8834, 
-	  'sup':8835, 
-	  'nsub':8836, 
-	  'sube':8838, 
-	  'supe':8839, 
-	  'oplus':8853, 
-	  'otimes':8855, 
-	  'perp':8869, 
-	  'sdot':8901, 
-	  'lceil':8968, 
-	  'rceil':8969, 
-	  'lfloor':8970, 
-	  'rfloor':8971, 
-	  'lang':9001, 
-	  'rang':9002, 
-	  'loz':9674, 
-	  'spades':9824, 
-	  'clubs':9827, 
-	  'hearts':9829, 
-	  'diams':9830, 
-	  'OElig':338, 
-	  'oelig':339, 
-	  'Scaron':352, 
-	  'scaron':353, 
-	  'Yuml':376, 
-	  'circ':710, 
-	  'tilde':732, 
-	  'ensp':8194, 
-	  'emsp':8195, 
-	  'thinsp':8201, 
-	  'zwnj':8204, 
-	  'zwj':8205, 
-	  'lrm':8206, 
-	  'rlm':8207, 
-	  'ndash':8211, 
-	  'mdash':8212, 
-	  'lsquo':8216, 
-	  'rsquo':8217, 
-	  'sbquo':8218, 
-	  'ldquo':8220, 
-	  'rdquo':8221, 
-	  'bdquo':8222, 
-	  'dagger':8224, 
-	  'Dagger':8225, 
-	  'permil':8240, 
-	  'lsaquo':8249, 
-	  'rsaquo':8250, 
-	  'euro':8364
-	}
-
-
-
-	module.exports  = entities;
-
-/***/ },
-/* 17 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var exprCache = __webpack_require__(1).exprCache;
-	var _ = __webpack_require__(4);
-	var Parser = __webpack_require__(26);
-	module.exports = {
-	  expression: function(expr, simple){
-	    // @TODO cache
-	    if( typeof expr === 'string' && ( expr = expr.trim() ) ){
-	      expr = exprCache.get( expr ) || exprCache.set( expr, new Parser( expr, { mode: 2, expression: true } ).expression() )
-	    }
-	    if(expr) return expr;
-	  },
-	  parse: function(template){
-	    return new Parser(template).parse();
-	  }
-	}
-
-
-
-/***/ },
-/* 18 */
-/***/ function(module, exports, __webpack_require__) {
-
-	// (c) 2010-2014 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
-	// Backbone may be freely distributed under the MIT license.
-	// For all details and documentation:
-	// http://backbonejs.org
-
-	// klass: a classical JS OOP façade
-	// https://github.com/ded/klass
-	// License MIT (c) Dustin Diaz 2014
-	  
-	// inspired by backbone's extend and klass
-	var _ = __webpack_require__(4),
-	  fnTest = /xy/.test(function(){"xy";}) ? /\bsupr\b/:/.*/,
-	  isFn = function(o){return typeof o === "function"};
-
-
-	function wrap(k, fn, supro) {
-	  return function () {
-	    var tmp = this.supr;
-	    this.supr = supro[k];
-	    var ret = fn.apply(this, arguments);
-	    this.supr = tmp;
-	    return ret;
-	  }
-	}
-
-	function process( what, o, supro ) {
-	  for ( var k in o ) {
-	    if (o.hasOwnProperty(k)) {
-
-	      what[k] = isFn( o[k] ) && isFn( supro[k] ) && 
-	        fnTest.test( o[k] ) ? wrap(k, o[k], supro) : o[k];
-	    }
-	  }
-	}
-
-	// if the property is ["events", "data", "computed"] , we should merge them
-	var merged = ["events", "data", "computed"], mlen = merged.length;
-	module.exports = function extend(o){
-	  o = o || {};
-	  var supr = this, proto,
-	    supro = supr && supr.prototype || {};
-
-	  if(typeof o === 'function'){
-	    proto = o.prototype;
-	    o.implement = implement;
-	    o.extend = extend;
-	    return o;
-	  } 
-	  
-	  function fn() {
-	    supr.apply(this, arguments);
-	  }
-
-	  proto = _.createProto(fn, supro);
-
-	  function implement(o){
-	    // we need merge the merged property
-	    var len = mlen;
-	    for(;len--;){
-	      var prop = merged[len];
-	      if(o.hasOwnProperty(prop) && proto.hasOwnProperty(prop)){
-	        _.extend(proto[prop], o[prop], true) 
-	        delete o[prop];
-	      }
-	    }
-
-
-	    process(proto, o, supro); 
-	    return this;
-	  }
-
-
-
-	  fn.implement = implement
-	  fn.implement(o)
-	  if(supr.__after__) supr.__after__.call(fn, supr, o);
-	  fn.extend = extend;
-	  return fn;
-	}
-
-
-
-/***/ },
-/* 19 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// some nested  operation in ast 
 	// --------------------------------
 
 	var dom = __webpack_require__(3);
-	var animate = __webpack_require__(24);
+	var animate = __webpack_require__(23);
 
 	var combine = module.exports = {
 
@@ -3897,7 +3635,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 20 */
+/* 17 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// simplest event emitter 60 lines
@@ -3977,12 +3715,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = Event;
 
 /***/ },
-/* 21 */
+/* 18 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(4);
-	var parseExpression = __webpack_require__(17).expression;
-	var diff = __webpack_require__(27);
+	var parseExpression = __webpack_require__(19).expression;
+	var diff = __webpack_require__(22);
 	var diffArray = diff.diffArray;
 	var diffObject = diff.diffObject;
 
@@ -4235,7 +3973,29 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = Watcher;
 
 /***/ },
-/* 22 */
+/* 19 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var exprCache = __webpack_require__(1).exprCache;
+	var _ = __webpack_require__(4);
+	var Parser = __webpack_require__(27);
+	module.exports = {
+	  expression: function(expr, simple){
+	    // @TODO cache
+	    if( typeof expr === 'string' && ( expr = expr.trim() ) ){
+	      expr = exprCache.get( expr ) || exprCache.set( expr, new Parser( expr, { mode: 2, expression: true } ).expression() )
+	    }
+	    if(expr) return expr;
+	  },
+	  parse: function(template){
+	    return new Parser(template).parse();
+	  }
+	}
+
+
+
+/***/ },
+/* 20 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
@@ -4303,26 +4063,213 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 23 */
+/* 21 */
 /***/ function(module, exports, __webpack_require__) {
 
-	function NodeCursor(node){
-	  this.node = node;
+	module.exports = {
+	  'COMPONENT_TYPE': 1,
+	  'ELEMENT_TYPE': 2,
+	  'ERROR': {
+	    'UNMATCHED_AST': 101
+	  },
+	  "MSG": {
+	    101: "Unmatched ast and mountNode, report issue at https://github.com/regularjs/regular/issues"
+	  }
 	}
-
-
-	var no = NodeCursor.prototype;
-
-	no.next = function(){
-	  this.node = this.node.nextSibling;
-	  return this;
-	}
-
-	module.exports = function(n){ return new NodeCursor(n)}
 
 
 /***/ },
-/* 24 */
+/* 22 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var _ = __webpack_require__(4);
+
+	function simpleDiff(now, old){
+	  var nlen = now.length;
+	  var olen = old.length;
+	  if(nlen !== olen){
+	    return true;
+	  }
+	  for(var i = 0; i < nlen ; i++){
+	    if(now[i] !== old[i]) return  true;
+	  }
+	  return false
+
+	}
+
+	function equals(a,b){
+	  return a === b;
+	}
+
+	// array1 - old array
+	// array2 - new array
+	function ld(array1, array2, equalFn){
+	  var n = array1.length;
+	  var m = array2.length;
+	  var equalFn = equalFn || equals;
+	  var matrix = [];
+	  for(var i = 0; i <= n; i++){
+	    matrix.push([i]);
+	  }
+	  for(var j=1;j<=m;j++){
+	    matrix[0][j]=j;
+	  }
+	  for(var i = 1; i <= n; i++){
+	    for(var j = 1; j <= m; j++){
+	      if(equalFn(array1[i-1], array2[j-1])){
+	        matrix[i][j] = matrix[i-1][j-1];
+	      }else{
+	        matrix[i][j] = Math.min(
+	          matrix[i-1][j]+1, //delete
+	          matrix[i][j-1]+1//add
+	          )
+	      }
+	    }
+	  }
+	  return matrix;
+	}
+	// arr2 - new array
+	// arr1 - old array
+	function diffArray(arr2, arr1, diff, diffFn) {
+	  if(!diff) return simpleDiff(arr2, arr1);
+	  var matrix = ld(arr1, arr2, diffFn)
+	  var n = arr1.length;
+	  var i = n;
+	  var m = arr2.length;
+	  var j = m;
+	  var edits = [];
+	  var current = matrix[i][j];
+	  while(i>0 || j>0){
+	  // the last line
+	    if (i === 0) {
+	      edits.unshift(3);
+	      j--;
+	      continue;
+	    }
+	    // the last col
+	    if (j === 0) {
+	      edits.unshift(2);
+	      i--;
+	      continue;
+	    }
+	    var northWest = matrix[i - 1][j - 1];
+	    var west = matrix[i - 1][j];
+	    var north = matrix[i][j - 1];
+
+	    var min = Math.min(north, west, northWest);
+
+	    if (min === west) {
+	      edits.unshift(2); //delete
+	      i--;
+	      current = west;
+	    } else if (min === northWest ) {
+	      if (northWest === current) {
+	        edits.unshift(0); //no change
+	      } else {
+	        edits.unshift(1); //update
+	        current = northWest;
+	      }
+	      i--;
+	      j--;
+	    } else {
+	      edits.unshift(3); //add
+	      j--;
+	      current = north;
+	    }
+	  }
+	  var LEAVE = 0;
+	  var ADD = 3;
+	  var DELELE = 2;
+	  var UPDATE = 1;
+	  var n = 0;m=0;
+	  var steps = [];
+	  var step = {index: null, add:0, removed:[]};
+
+	  for(var i=0;i<edits.length;i++){
+	    if(edits[i] > 0 ){ // NOT LEAVE
+	      if(step.index === null){
+	        step.index = m;
+	      }
+	    } else { //LEAVE
+	      if(step.index != null){
+	        steps.push(step)
+	        step = {index: null, add:0, removed:[]};
+	      }
+	    }
+	    switch(edits[i]){
+	      case LEAVE:
+	        n++;
+	        m++;
+	        break;
+	      case ADD:
+	        step.add++;
+	        m++;
+	        break;
+	      case DELELE:
+	        step.removed.push(arr1[n])
+	        n++;
+	        break;
+	      case UPDATE:
+	        step.add++;
+	        step.removed.push(arr1[n])
+	        n++;
+	        m++;
+	        break;
+	    }
+	  }
+	  if(step.index != null){
+	    steps.push(step)
+	  }
+	  return steps
+	}
+
+
+
+	// diffObject
+	// ----
+	// test if obj1 deepEqual obj2
+	function diffObject( now, last, diff ){
+
+
+	  if(!diff){
+
+	    for( var j in now ){
+	      if( last[j] !== now[j] ) return true
+	    }
+
+	    for( var n in last ){
+	      if(last[n] !== now[n]) return true;
+	    }
+
+	  }else{
+
+	    var nKeys = _.keys(now);
+	    var lKeys = _.keys(last);
+
+	    /**
+	     * [description]
+	     * @param  {[type]} a    [description]
+	     * @param  {[type]} b){                   return now[b] [description]
+	     * @return {[type]}      [description]
+	     */
+	    return diffArray(nKeys, lKeys, diff, function(a, b){
+	      return now[b] === last[a];
+	    });
+
+	  }
+
+	  return false;
+
+
+	}
+
+	module.exports = {
+	  diffArray: diffArray,
+	  diffObject: diffObject
+	}
+
+/***/ },
+/* 23 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(4);
@@ -4397,6 +4344,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      }
 	    }
 	  }else{
+	    if(!node) return;
 	    dom.inject( node, refer, direction );
 	    if(node.onenter){
 	      node.onenter(callback)
@@ -4578,7 +4526,263 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = animate;
 
 /***/ },
+/* 24 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/**
+	 * event directive  bundle
+	 *
+	 */
+	var _ = __webpack_require__(4);
+	var dom = __webpack_require__(3);
+	var Regular = __webpack_require__(5);
+
+	Regular._addProtoInheritCache("event");
+
+	Regular.directive( /^on-\w+$/, function( elem, value, name , attrs) {
+	  if ( !name || !value ) return;
+	  var type = name.split("-")[1];
+	  return this._handleEvent( elem, type, value, attrs );
+	});
+	// TODO.
+	/**
+	- $('dx').delegate()
+	*/
+	Regular.directive( /^(delegate|de)-\w+$/, function( elem, value, name ) {
+	  var root = this.$root;
+	  var _delegates = root._delegates || ( root._delegates = {} );
+	  if ( !name || !value ) return;
+	  var type = name.split("-")[1];
+	  var fire = _.handleEvent.call(this, value, type);
+
+	  function delegateEvent(ev){
+	    matchParent(ev, _delegates[type], root.parentNode);
+	  }
+
+	  if( !_delegates[type] ){
+	    _delegates[type] = [];
+
+	    if(root.parentNode){
+	      dom.on(root.parentNode, type, delegateEvent);
+	    }else{
+	      root.$on( "$inject", function( node, position, preParent ){
+	        var newParent = this.parentNode;
+	        if( preParent ){
+	          dom.off(preParent, type, delegateEvent);
+	        }
+	        if(newParent) dom.on(this.parentNode, type, delegateEvent);
+	      })
+	    }
+	    root.$on("$destroy", function(){
+	      if(root.parentNode) dom.off(root.parentNode, type, delegateEvent)
+	      _delegates[type] = null;
+	    })
+	  }
+	  var delegate = {
+	    element: elem,
+	    fire: fire
+	  }
+	  _delegates[type].push( delegate );
+
+	  return function(){
+	    var delegates = _delegates[type];
+	    if(!delegates || !delegates.length) return;
+	    for( var i = 0, len = delegates.length; i < len; i++ ){
+	      if( delegates[i] === delegate ) delegates.splice(i, 1);
+	    }
+	  }
+
+	});
+
+
+	function matchParent(ev , delegates, stop){
+	  if(!stop) return;
+	  var target = ev.target, pair;
+	  while(target && target !== stop){
+	    for( var i = 0, len = delegates.length; i < len; i++ ){
+	      pair = delegates[i];
+	      if(pair && pair.element === target){
+	        pair.fire(ev)
+	      }
+	    }
+	    target = target.parentNode;
+	  }
+	}
+
+/***/ },
 /* 25 */
+/***/ function(module, exports, __webpack_require__) {
+
+	// Regular
+	var _ = __webpack_require__(4);
+	var dom = __webpack_require__(3);
+	var Regular = __webpack_require__(5);
+
+	var modelHandlers = {
+	  "text": initText,
+	  "select": initSelect,
+	  "checkbox": initCheckBox,
+	  "radio": initRadio
+	}
+
+
+	// @TODO
+
+
+	// two-way binding with r-model
+	// works on input, textarea, checkbox, radio, select
+
+	Regular.directive("r-model", function(elem, value){
+	  var tag = elem.tagName.toLowerCase();
+	  var sign = tag;
+	  if(sign === "input") sign = elem.type || "text";
+	  else if(sign === "textarea") sign = "text";
+	  if(typeof value === "string") value = this.$expression(value);
+
+	  if( modelHandlers[sign] ) return modelHandlers[sign].call(this, elem, value);
+	  else if(tag === "input"){
+	    return modelHandlers.text.call(this, elem, value);
+	  }
+	});
+
+
+
+	// binding <select>
+
+	function initSelect( elem, parsed){
+	  var self = this;
+	  var wc =this.$watch(parsed, function(newValue){
+	    var children = _.slice(elem.getElementsByTagName('option'))
+	    children.forEach(function(node, index){
+	      if(node.value == newValue){
+	        elem.selectedIndex = index;
+	      }
+	    })
+	  });
+
+	  function handler(){
+	    parsed.set(self, this.value);
+	    wc.last = this.value;
+	    self.$update();
+	  }
+
+	  dom.on(elem, "change", handler);
+	  
+	  if(parsed.get(self) === undefined && elem.value){
+	     parsed.set(self, elem.value);
+	  }
+	  return function destroy(){
+	    dom.off(elem, "change", handler);
+	  }
+	}
+
+	// input,textarea binding
+
+	function initText(elem, parsed){
+	  var self = this;
+	  var wc = this.$watch(parsed, function(newValue){
+	    if(elem.value !== newValue) elem.value = newValue == null? "": "" + newValue;
+	  });
+
+	  // @TODO to fixed event
+	  var handler = function (ev){
+	    var that = this;
+	    if(ev.type==='cut' || ev.type==='paste'){
+	      _.nextTick(function(){
+	        var value = that.value
+	        parsed.set(self, value);
+	        wc.last = value;
+	        self.$update();
+	      })
+	    }else{
+	        var value = that.value
+	        parsed.set(self, value);
+	        wc.last = value;
+	        self.$update();
+	    }
+	  };
+
+	  if(dom.msie !== 9 && "oninput" in dom.tNode ){
+	    elem.addEventListener("input", handler );
+	  }else{
+	    dom.on(elem, "paste", handler)
+	    dom.on(elem, "keyup", handler)
+	    dom.on(elem, "cut", handler)
+	    dom.on(elem, "change", handler)
+	  }
+	  if(parsed.get(self) === undefined && elem.value){
+	     parsed.set(self, elem.value);
+	  }
+	  return function (){
+	    if(dom.msie !== 9 && "oninput" in dom.tNode ){
+	      elem.removeEventListener("input", handler );
+	    }else{
+	      dom.off(elem, "paste", handler)
+	      dom.off(elem, "keyup", handler)
+	      dom.off(elem, "cut", handler)
+	      dom.off(elem, "change", handler)
+	    }
+	  }
+	}
+
+
+	// input:checkbox  binding
+
+	function initCheckBox(elem, parsed){
+	  var self = this;
+	  var watcher = this.$watch(parsed, function(newValue){
+	    dom.attr(elem, 'checked', !!newValue);
+	  });
+
+	  var handler = function handler(){
+	    var value = this.checked;
+	    parsed.set(self, value);
+	    watcher.last = value;
+	    self.$update();
+	  }
+	  if(parsed.set) dom.on(elem, "change", handler)
+
+	  if(parsed.get(self) === undefined){
+	    parsed.set(self, !!elem.checked);
+	  }
+
+	  return function destroy(){
+	    if(parsed.set) dom.off(elem, "change", handler)
+	  }
+	}
+
+
+	// input:radio binding
+
+	function initRadio(elem, parsed){
+	  var self = this;
+	  var wc = this.$watch(parsed, function( newValue ){
+	    if(newValue == elem.value) elem.checked = true;
+	    else elem.checked = false;
+	  });
+
+
+	  var handler = function handler(){
+	    var value = this.value;
+	    parsed.set(self, value);
+	    self.$update();
+	  }
+	  if(parsed.set) dom.on(elem, "change", handler)
+	  // beacuse only after compile(init), the dom structrue is exsit. 
+	  if(parsed.get(self) === undefined){
+	    if(elem.checked) {
+	      parsed.set(self, elem.value);
+	    }
+	  }
+
+	  return function destroy(){
+	    if(parsed.set) dom.off(elem, "change", handler)
+	  }
+	}
+
+
+/***/ },
+/* 26 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(4);
@@ -4706,7 +4910,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	Lexer.setup = function(){
 	  macro.END = config.END;
 	  macro.BEGIN = config.BEGIN;
-	  //
+	  
+	  // living template lexer
 	  map1 = genMap([
 	    // INIT
 	    rules.ENTER_JST,
@@ -4935,14 +5140,14 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 26 */
+/* 27 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(4);
 
 	var config = __webpack_require__(2);
 	var node = __webpack_require__(28);
-	var Lexer = __webpack_require__(25);
+	var Lexer = __webpack_require__(26);
 	var varName = _.varName;
 	var ctxName = _.ctxName;
 	var extName = _.extName;
@@ -5666,196 +5871,6 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	module.exports = Parser;
 
-
-/***/ },
-/* 27 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var _ = __webpack_require__(4);
-
-	function simpleDiff(now, old){
-	  var nlen = now.length;
-	  var olen = old.length;
-	  if(nlen !== olen){
-	    return true;
-	  }
-	  for(var i = 0; i < nlen ; i++){
-	    if(now[i] !== old[i]) return  true;
-	  }
-	  return false
-
-	}
-
-	function equals(a,b){
-	  return a === b;
-	}
-
-	// array1 - old array
-	// array2 - new array
-	function ld(array1, array2, equalFn){
-	  var n = array1.length;
-	  var m = array2.length;
-	  var equalFn = equalFn || equals;
-	  var matrix = [];
-	  for(var i = 0; i <= n; i++){
-	    matrix.push([i]);
-	  }
-	  for(var j=1;j<=m;j++){
-	    matrix[0][j]=j;
-	  }
-	  for(var i = 1; i <= n; i++){
-	    for(var j = 1; j <= m; j++){
-	      if(equalFn(array1[i-1], array2[j-1])){
-	        matrix[i][j] = matrix[i-1][j-1];
-	      }else{
-	        matrix[i][j] = Math.min(
-	          matrix[i-1][j]+1, //delete
-	          matrix[i][j-1]+1//add
-	          )
-	      }
-	    }
-	  }
-	  return matrix;
-	}
-	// arr2 - new array
-	// arr1 - old array
-	function diffArray(arr2, arr1, diff, diffFn) {
-	  if(!diff) return simpleDiff(arr2, arr1);
-	  var matrix = ld(arr1, arr2, diffFn)
-	  var n = arr1.length;
-	  var i = n;
-	  var m = arr2.length;
-	  var j = m;
-	  var edits = [];
-	  var current = matrix[i][j];
-	  while(i>0 || j>0){
-	  // the last line
-	    if (i === 0) {
-	      edits.unshift(3);
-	      j--;
-	      continue;
-	    }
-	    // the last col
-	    if (j === 0) {
-	      edits.unshift(2);
-	      i--;
-	      continue;
-	    }
-	    var northWest = matrix[i - 1][j - 1];
-	    var west = matrix[i - 1][j];
-	    var north = matrix[i][j - 1];
-
-	    var min = Math.min(north, west, northWest);
-
-	    if (min === west) {
-	      edits.unshift(2); //delete
-	      i--;
-	      current = west;
-	    } else if (min === northWest ) {
-	      if (northWest === current) {
-	        edits.unshift(0); //no change
-	      } else {
-	        edits.unshift(1); //update
-	        current = northWest;
-	      }
-	      i--;
-	      j--;
-	    } else {
-	      edits.unshift(3); //add
-	      j--;
-	      current = north;
-	    }
-	  }
-	  var LEAVE = 0;
-	  var ADD = 3;
-	  var DELELE = 2;
-	  var UPDATE = 1;
-	  var n = 0;m=0;
-	  var steps = [];
-	  var step = {index: null, add:0, removed:[]};
-
-	  for(var i=0;i<edits.length;i++){
-	    if(edits[i] > 0 ){ // NOT LEAVE
-	      if(step.index === null){
-	        step.index = m;
-	      }
-	    } else { //LEAVE
-	      if(step.index != null){
-	        steps.push(step)
-	        step = {index: null, add:0, removed:[]};
-	      }
-	    }
-	    switch(edits[i]){
-	      case LEAVE:
-	        n++;
-	        m++;
-	        break;
-	      case ADD:
-	        step.add++;
-	        m++;
-	        break;
-	      case DELELE:
-	        step.removed.push(arr1[n])
-	        n++;
-	        break;
-	      case UPDATE:
-	        step.add++;
-	        step.removed.push(arr1[n])
-	        n++;
-	        m++;
-	        break;
-	    }
-	  }
-	  if(step.index != null){
-	    steps.push(step)
-	  }
-	  return steps
-	}
-
-
-
-	// diffObject
-	// ----
-	// test if obj1 deepEqual obj2
-	function diffObject( now, last, diff ){
-
-
-	  if(!diff){
-
-	    for( var j in now ){
-	      if( last[j] !== now[j] ) return true
-	    }
-
-	    for( var n in last ){
-	      if(last[n] !== now[n]) return true;
-	    }
-
-	  }else{
-
-	    var nKeys = _.keys(now);
-	    var lKeys = _.keys(last);
-
-	    /**
-	     * [description]
-	     * @param  {[type]} a    [description]
-	     * @param  {[type]} b){                   return now[b] [description]
-	     * @return {[type]}      [description]
-	     */
-	    return diffArray(nKeys, lKeys, diff, function(a, b){
-	      return now[b] === last[a];
-	    });
-
-	  }
-
-	  return false;
-
-
-	}
-
-	module.exports = {
-	  diffArray: diffArray,
-	  diffObject: diffObject
-	}
 
 /***/ },
 /* 28 */

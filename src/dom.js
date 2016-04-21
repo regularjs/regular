@@ -1,3 +1,4 @@
+/*jshint -W082 */ 
 
 // thanks for angular && mootools for some concise&cross-platform  implemention
 // =====================================
@@ -29,7 +30,7 @@ dom.tNode = tNode;
 
 
 // camelCase
-function camelCase(str){
+var camelCase = function (str){
   return ("" + str).replace(/-\D/g, function(match){
     return match.charAt(1).toUpperCase();
   });

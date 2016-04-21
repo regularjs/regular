@@ -1,5 +1,6 @@
 var expect = require('expect.js');
 var Regular = require("../../src/index.js");
+var SSR = require("../../src/render/server.js");
 var _ = Regular.util;
 
 function destroy(component, container){
@@ -901,6 +902,32 @@ it("list with else should also works under track mode", function(){
       expect(divs.length).to.equal(3);
 
     })
+
+  })
+
+
+})
+
+describe("SSR: list", function(){
+  it("basic usage of ssr with list", function( ){
+    var container = document.createElement('div');
+    var Component = Regular.extend({
+      template: "<div ref=container>\
+        {#list json as item by item_key}\
+          <div class='item'>{item.age}:{item_key}:{item_index}</div>\
+        {#else} <div id='notfound'></div>\
+        {/list}\
+      </div>"
+    });
+
+
+    container.innerHTML = SSR.render(Component);
+
+    var component = new Component({
+      mountNode: container
+    })
+
+    expect(nes('.item', container).length).to.equal(0);
 
   })
 })

@@ -33,7 +33,8 @@ var wpConfig = {
 var testConfig = {
   output: {
     filename: "dom.bundle.js"
-  }
+  },
+  devtool: 'source-map'
 }
 
 

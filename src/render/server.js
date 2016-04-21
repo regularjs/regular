@@ -84,7 +84,7 @@ ssr.element = function(ast ){
     attrs.some(function(attr){
       if(attr.name === 'is'){
         tag = attr.value;
-        if( _.isExpr(attr.value)) tag = this.get(value);
+        if( _.isExpr(attr.value)) tag = this.get(attr.value);
         return true;
       }
     }.bind(this))

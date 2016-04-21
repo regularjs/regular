@@ -70,6 +70,7 @@ animate.inject = function( node, refer ,direction, callback ){
       }
     }
   }else{
+    if(!node) return;
     dom.inject( node, refer, direction );
     if(node.onenter){
       node.onenter(callback)

@@ -353,9 +353,7 @@ walkers._handleMountText = function(cursor, astText){
         node = document.createTextNode(astText);
         dom.text( mountNode, nodeText.slice(index + astText.length) );
       } else {
-        if( _.blankReg.test( astText ) ){
-
-        }
+        // if( _.blankReg.test( astText ) ){ }
         throw Error( MSG[ERROR.UNMATCHED_AST]);
       }
     }
@@ -429,7 +427,7 @@ walkers.element = function(ast, options){
     cursor = options.cursor,
     tag = ast.tag,
     Component = Constructor.component(tag),
-    ref, group, element;
+    ref, group, element, mountNode;
 
   // if inititalized with mount mode, sometime, 
   // browser will ignore the whitespace between node, and sometimes it won't
@@ -441,11 +439,11 @@ walkers.element = function(ast, options){
     }
   }
 
-  if(cursor) var mountNode = cursor.node;
+  if(cursor) mountNode = cursor.node;
 
   if( tag === 'r-content' ){
-    _.log('r-content is deprecated, use {#inc this.$body} instead (`{#include}` as same)', 'warn');
-    return this.$body && this.$body();
+    _.log('r-content is deprecated, use {#inc this.$body} instead (`{#include}` as same)', 'error');
+    return this.$body && this.$body(cursor? {cursor: cursor}: null);
   } 
 
   if(Component || tag === 'r-component'){
