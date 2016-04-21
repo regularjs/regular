@@ -67,7 +67,7 @@ walkers.list = function(ast, options){
       section.data = data;
       // autolink
       var insert =  combine.last(group.get(o));
-      if(insert.parentNode && !cursor){
+      if(insert.parentNode && !(cursor && cursor.node) ){
         animate.inject(combine.node(section),insert, 'after');
       }
       // insert.parentNode.insertBefore(combine.node(section), insert.nextSibling);
@@ -204,7 +204,6 @@ walkers.list = function(ast, options){
         animate.inject(combine.node(section), placeholder, 'after');
       }
     }
-    cursor = null;
   }
 
   this.$watch(ast.sequence, update, { 
@@ -212,6 +211,8 @@ walkers.list = function(ast, options){
     diff: track !== true ,
     deep: true
   });
+  //@FIXIT, beacuse it is sync process, we can 
+  cursor = null;
   return group;
 }
 

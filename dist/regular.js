@@ -2838,7 +2838,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      section.data = data;
 	      // autolink
 	      var insert =  combine.last(group.get(o));
-	      if(insert.parentNode && !cursor){
+	      if(insert.parentNode && !(cursor && cursor.node) ){
 	        animate.inject(combine.node(section),insert, 'after');
 	      }
 	      // insert.parentNode.insertBefore(combine.node(section), insert.nextSibling);
@@ -2975,7 +2975,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	        animate.inject(combine.node(section), placeholder, 'after');
 	      }
 	    }
-	    cursor = null;
 	  }
 
 	  this.$watch(ast.sequence, update, { 
@@ -2983,6 +2982,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	    diff: track !== true ,
 	    deep: true
 	  });
+	  //@FIXIT, beacuse it is sync process, we can 
+	  cursor = null;
 	  return group;
 	}
 

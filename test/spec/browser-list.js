@@ -914,7 +914,7 @@ describe("SSR: list", function(){
     var Component = Regular.extend({
       template: "<div ref=container>\
         {#list json as item by item_key}\
-          <div class='item'>{item.age}:{item_key}:{item_index}</div>\
+          <div class='item'>{item.age}:{item_index}</div>\
         {#else} <div id='notfound'></div>\
         {/list}\
       </div>"
@@ -928,6 +928,19 @@ describe("SSR: list", function(){
     })
 
     expect(nes('.item', container).length).to.equal(0);
+    expect(nes('div', container).length).to.equal(1);
+
+    component.$update('json', [
+      {
+        age: 10
+      },
+      {
+        age: 20
+      }
+    ])
+
+    expect(nes('.item', container).length).to.equal(2);
+    expect(nes.one('.item', container).innerHTML).to.equal('10:0');
 
   })
 })
