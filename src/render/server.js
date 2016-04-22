@@ -5,6 +5,38 @@ var _ = require('../util');
 var parser = require('../helper/parse.js');
 var diffArray = require('../helper/diff.js').diffArray;
 
+
+
+
+// hogan.js
+// https://github.com/twitter/hogan.js
+// MIT
+var escape = (function(){
+  var rAmp = /&/g,
+      rLt = /</g,
+      rGt = />/g,
+      rApos = /\'/g,
+      rQuot = /\"/g,
+      hChars = /[&<>\"\']/;
+
+  function ignoreNullVal(val) {
+    return String((val === undefined || val == null) ? '' : val);
+  }
+
+  return function (str) {
+    str = ignoreNullVal(str);
+    return hChars.test(str) ?
+      str
+        .replace(rAmp, '&amp;')
+        .replace(rLt, '&lt;')
+        .replace(rGt, '&gt;')
+        .replace(rApos, '&#39;')
+        .replace(rQuot, '&quot;') :
+      str;
+  }
+
+})();
+
 /**
  * [compile description]
  * @param  {[type]} ast     [description]
@@ -220,11 +252,11 @@ ssr.if = function(ast, options){
 
 ssr.expression = function(ast, options){
   var str = this.get(ast);
-  return str == null?  "" : "" + str;
+  return escape(str);
 }
 
 ssr.text = function(ast, options){
-  return ast.text  
+  return escape(ast.text) 
 }
 
 
@@ -253,10 +285,10 @@ ssr.attr = function(attr){
   }else{
     // @TODO 对于boolean 值
     if(_.isExpr(value)) value = this.get(value); 
-    if(_.isBooleanAttr(name) || value == undefined){
+    if(_.isBooleanAttr(name) || value === undefined || value === null){
       return name + " ";
     }else{
-      return name + '="' + value + '" ';
+      return name + '="' + escape(value) + '" ';
     }
   }
 }

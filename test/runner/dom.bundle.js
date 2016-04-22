@@ -222,6 +222,19 @@
 	    destroy(component, container)
 	  })
 	
+	  it("Invalid tag should throw Error" , function(){
+	    var Component = Regular.extend();
+	
+	    expect(function(){
+	      Regular.parse("<script>var</script>")
+	    }).to.throwError();
+	
+	    expect(function(){
+	      Regular.parse("<style>body</style>")
+	    }).to.throwError();
+	
+	  })
+	
 	  it("Invalid Lefthand Expression should throw Error" , function(){
 	    var component = new Regular({
 	      data: {name: 2}
@@ -837,7 +850,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var Regular = __webpack_require__(16);
-	var animate = __webpack_require__(18);
+	var animate = __webpack_require__(19);
 	var dom = __webpack_require__(17);
 	
 	function destroy(component, container){
@@ -1677,7 +1690,7 @@
 
 	var expect = __webpack_require__(27);
 	var Regular = __webpack_require__(16);
-	var combine = __webpack_require__(19);
+	var combine = __webpack_require__(20);
 	function destroy(component, container){
 	  component.destroy();
 	  expect(container.innerHTML).to.equal('');
@@ -2071,7 +2084,7 @@
 
 	var expect = __webpack_require__(27);
 	var Regular = __webpack_require__(16);
-	var SSR = __webpack_require__(21);
+	var SSR = __webpack_require__(26);
 	var _ = Regular.util;
 	
 	function destroy(component, container){
@@ -3002,16 +3015,40 @@
 	    expect(nes('div', container).length).to.equal(1);
 	
 	    component.$update('json', [
-	      {
-	        age: 10
-	      },
-	      {
-	        age: 20
-	      }
+	      { age: 10 },
+	      { age: 20 }
 	    ])
 	
 	    expect(nes('.item', container).length).to.equal(2);
 	    expect(nes.one('.item', container).innerHTML).to.equal('10:0');
+	
+	  })
+	
+	  it("should handle common xss error", function(){
+	
+	    var container = document.createElement('div');
+	    var Component = Regular.extend({
+	        template: "<div ref=container>\
+	        <div class='item' onerror={onerror}> {script}</div>\
+	        </div>",
+	        data: {
+	          onerror: "><script>alert(1000)</script>",
+	          script: "test2</a><img src=# onerror='alert(1)'>"
+	        }
+	    })
+	    expect(function(){
+	      new Component();
+	    }).to.not.throwError();
+	
+	    var html = SSR.render(Component);
+	
+	    container.innerHTML = html
+	
+	    expect(function(){
+	      new Component({
+	        mountNode: container
+	      })
+	    }).to.not.throwError();
 	
 	  })
 	})
@@ -4637,7 +4674,7 @@
 
 	var expect = __webpack_require__(27);
 	var Regular = __webpack_require__(16);
-	var parse = __webpack_require__(20);
+	var parse = __webpack_require__(21);
 	
 	var Component = Regular.extend();
 	
@@ -5764,10 +5801,10 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var expect = __webpack_require__(27);
-	var _ = __webpack_require__(23);
-	var shim = __webpack_require__(24);
-	var extend = __webpack_require__(25);
-	var diff = __webpack_require__(26)
+	var _ = __webpack_require__(18);
+	var shim = __webpack_require__(22);
+	var extend = __webpack_require__(23);
+	var diff = __webpack_require__(24)
 	var diffArray = diff.diffArray;
 	var diffObject = diff.diffObject;
 	
@@ -6091,7 +6128,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var expect = __webpack_require__(27);
-	var Event = __webpack_require__(22);
+	var Event = __webpack_require__(25);
 	
 	
 	
@@ -6229,13 +6266,13 @@
 	var Lexer = Regular.Lexer;
 	
 	// if(env.browser){
-	    __webpack_require__(32);
 	    __webpack_require__(33);
 	    __webpack_require__(34);
+	    __webpack_require__(35);
 	    Regular.dom = __webpack_require__(17);
 	// }
 	Regular.env = env;
-	Regular.util = __webpack_require__(23);
+	Regular.util = __webpack_require__(18);
 	Regular.parse = function(str, options){
 	  options = options || {};
 	
@@ -6249,7 +6286,7 @@
 	}
 	Regular.Cursor =__webpack_require__(31) 
 	
-	Regular.renderToString = __webpack_require__(21).render;
+	Regular.renderToString = __webpack_require__(26).render;
 	
 
 
@@ -6273,7 +6310,7 @@
 	  
 	var dom = module.exports;
 	var env = __webpack_require__(28);
-	var _ = __webpack_require__(23);
+	var _ = __webpack_require__(18);
 	var tNode = document.createElement('div')
 	var addEvent, removeEvent;
 	var noop = function(){}
@@ -6658,776 +6695,12 @@
 /* 18 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var _ = __webpack_require__(23);
-	var dom  = __webpack_require__(17);
-	var animate = {};
-	var env = __webpack_require__(28);
-	
-	
-	if(typeof window !== 'undefined'){
-	var 
-	  transitionEnd = 'transitionend', 
-	  animationEnd = 'animationend', 
-	  transitionProperty = 'transition', 
-	  animationProperty = 'animation';
-	
-	if(!('ontransitionend' in window)){
-	  if('onwebkittransitionend' in window) {
-	    
-	    // Chrome/Saf (+ Mobile Saf)/Android
-	    transitionEnd += ' webkitTransitionEnd';
-	    transitionProperty = 'webkitTransition'
-	  } else if('onotransitionend' in dom.tNode || navigator.appName === 'Opera') {
-	
-	    // Opera
-	    transitionEnd += ' oTransitionEnd';
-	    transitionProperty = 'oTransition';
-	  }
-	}
-	if(!('onanimationend' in window)){
-	  if ('onwebkitanimationend' in window){
-	    // Chrome/Saf (+ Mobile Saf)/Android
-	    animationEnd += ' webkitAnimationEnd';
-	    animationProperty = 'webkitAnimation';
-	
-	  }else if ('onoanimationend' in dom.tNode){
-	    // Opera
-	    animationEnd += ' oAnimationEnd';
-	    animationProperty = 'oAnimation';
-	  }
-	}
-	}
-	
-	/**
-	 * inject node with animation
-	 * @param  {[type]} node      [description]
-	 * @param  {[type]} refer     [description]
-	 * @param  {[type]} direction [description]
-	 * @return {[type]}           [description]
-	 */
-	animate.inject = function( node, refer ,direction, callback ){
-	  callback = callback || _.noop;
-	  if( Array.isArray(node) ){
-	    var fragment = dom.fragment();
-	    var count=0;
-	
-	    for(var i = 0,len = node.length;i < len; i++ ){
-	      fragment.appendChild(node[i]); 
-	    }
-	    dom.inject(fragment, refer, direction);
-	
-	    // if all nodes is done, we call the callback
-	    var enterCallback = function (){
-	      count++;
-	      if( count === len ) callback();
-	    }
-	    if(len === count) callback();
-	    for( i = 0; i < len; i++ ){
-	      if(node[i].onenter){
-	        node[i].onenter(enterCallback);
-	      }else{
-	        enterCallback();
-	      }
-	    }
-	  }else{
-	    if(!node) return;
-	    dom.inject( node, refer, direction );
-	    if(node.onenter){
-	      node.onenter(callback)
-	    }else{
-	      callback();
-	    }
-	  }
-	}
-	
-	/**
-	 * remove node with animation
-	 * @param  {[type]}   node     [description]
-	 * @param  {Function} callback [description]
-	 * @return {[type]}            [description]
-	 */
-	animate.remove = function(node, callback){
-	  if(!node) return;
-	  var count = 0;
-	  function loop(){
-	    count++;
-	    if(count === len) callback && callback()
-	  }
-	  if(Array.isArray(node)){
-	    for(var i = 0, len = node.length; i < len ; i++){
-	      animate.remove(node[i], loop)
-	    }
-	    return node;
-	  }
-	  if(node.onleave){
-	    node.onleave(function(){
-	      removeDone(node, callback)
-	    })
-	  }else{
-	    removeDone(node, callback)
-	  }
-	}
-	
-	var removeDone = function (node, callback){
-	    dom.remove(node);
-	    callback && callback();
-	}
-	
-	
-	
-	animate.startClassAnimate = function ( node, className,  callback, mode ){
-	  var activeClassName, timeout, tid, onceAnim;
-	  if( (!animationEnd && !transitionEnd) || env.isRunning ){
-	    return callback();
-	  }
-	
-	  if(mode !== 4){
-	    onceAnim = _.once(function onAnimateEnd(){
-	      if(tid) clearTimeout(tid);
-	
-	      if(mode === 2) {
-	        dom.delClass(node, activeClassName);
-	      }
-	      if(mode !== 3){ // mode hold the class
-	        dom.delClass(node, className);
-	      }
-	      dom.off(node, animationEnd, onceAnim)
-	      dom.off(node, transitionEnd, onceAnim)
-	
-	      callback();
-	
-	    });
-	  }else{
-	    onceAnim = _.once(function onAnimateEnd(){
-	      if(tid) clearTimeout(tid);
-	      callback();
-	    });
-	  }
-	  if(mode === 2){ // auto removed
-	    dom.addClass( node, className );
-	
-	    activeClassName = _.map(className.split(/\s+/), function(name){
-	       return name + '-active';
-	    }).join(" ");
-	
-	    dom.nextReflow(function(){
-	      dom.addClass( node, activeClassName );
-	      timeout = getMaxTimeout( node );
-	      tid = setTimeout( onceAnim, timeout );
-	    });
-	
-	  }else if(mode===4){
-	    dom.nextReflow(function(){
-	      dom.delClass( node, className );
-	      timeout = getMaxTimeout( node );
-	      tid = setTimeout( onceAnim, timeout );
-	    });
-	
-	  }else{
-	    dom.nextReflow(function(){
-	      dom.addClass( node, className );
-	      timeout = getMaxTimeout( node );
-	      tid = setTimeout( onceAnim, timeout );
-	    });
-	  }
-	
-	
-	
-	  dom.on( node, animationEnd, onceAnim )
-	  dom.on( node, transitionEnd, onceAnim )
-	  return onceAnim;
-	}
-	
-	
-	animate.startStyleAnimate = function(node, styles, callback){
-	  var timeout, onceAnim, tid;
-	
-	  dom.nextReflow(function(){
-	    dom.css( node, styles );
-	    timeout = getMaxTimeout( node );
-	    tid = setTimeout( onceAnim, timeout );
-	  });
-	
-	
-	  onceAnim = _.once(function onAnimateEnd(){
-	    if(tid) clearTimeout(tid);
-	
-	    dom.off(node, animationEnd, onceAnim)
-	    dom.off(node, transitionEnd, onceAnim)
-	
-	    callback();
-	
-	  });
-	
-	  dom.on( node, animationEnd, onceAnim )
-	  dom.on( node, transitionEnd, onceAnim )
-	
-	  return onceAnim;
-	}
-	
-	
-	/**
-	 * get maxtimeout
-	 * @param  {Node} node 
-	 * @return {[type]}   [description]
-	 */
-	function getMaxTimeout(node){
-	  var timeout = 0,
-	    tDuration = 0,
-	    tDelay = 0,
-	    aDuration = 0,
-	    aDelay = 0,
-	    ratio = 5 / 3,
-	    styles ;
-	
-	  if(window.getComputedStyle){
-	
-	    styles = window.getComputedStyle(node),
-	    tDuration = getMaxTime( styles[transitionProperty + 'Duration']) || tDuration;
-	    tDelay = getMaxTime( styles[transitionProperty + 'Delay']) || tDelay;
-	    aDuration = getMaxTime( styles[animationProperty + 'Duration']) || aDuration;
-	    aDelay = getMaxTime( styles[animationProperty + 'Delay']) || aDelay;
-	    timeout = Math.max( tDuration+tDelay, aDuration + aDelay );
-	
-	  }
-	  return timeout * 1000 * ratio;
-	}
-	
-	function getMaxTime(str){
-	
-	  var maxTimeout = 0, time;
-	
-	  if(!str) return 0;
-	
-	  str.split(",").forEach(function(str){
-	
-	    time = parseFloat(str);
-	    if( time > maxTimeout ) maxTimeout = time;
-	
-	  });
-	
-	  return maxTimeout;
-	}
-	
-	module.exports = animate;
-
-/***/ },
-/* 19 */
-/***/ function(module, exports, __webpack_require__) {
-
-	// some nested  operation in ast 
-	// --------------------------------
-	
-	var dom = __webpack_require__(17);
-	var animate = __webpack_require__(18);
-	
-	var combine = module.exports = {
-	
-	  // get the initial dom in object
-	  node: function(item){
-	    var children,node, nodes;
-	    if(!item) return;
-	    if(item.element) return item.element;
-	    if(typeof item.node === "function") return item.node();
-	    if(typeof item.nodeType === "number") return item;
-	    if(item.group) return combine.node(item.group)
-	    if(children = item.children){
-	      if(children.length === 1){
-	        return combine.node(children[0]);
-	      }
-	      nodes = [];
-	      for(var i = 0, len = children.length; i < len; i++ ){
-	        node = combine.node(children[i]);
-	        if(Array.isArray(node)){
-	          nodes.push.apply(nodes, node)
-	        }else if(node) {
-	          nodes.push(node)
-	        }
-	      }
-	      return nodes;
-	    }
-	  },
-	  // @TODO remove _gragContainer
-	  inject: function(node, pos ){
-	    var group = this;
-	    var fragment = combine.node(group.group || group);
-	    if(node === false) {
-	      animate.remove(fragment)
-	      return group;
-	    }else{
-	      if(!fragment) return group;
-	      if(typeof node === 'string') node = dom.find(node);
-	      if(!node) throw Error('injected node is not found');
-	      // use animate to animate firstchildren
-	      animate.inject(fragment, node, pos);
-	    }
-	    // if it is a component
-	    if(group.$emit) {
-	      var preParent = group.parentNode;
-	      var newParent = (pos ==='after' || pos === 'before')? node.parentNode : node;
-	      group.parentNode = newParent;
-	      group.$emit("$inject", node, pos, preParent);
-	    }
-	    return group;
-	  },
-	
-	  // get the last dom in object(for insertion operation)
-	  last: function(item){
-	    var children = item.children;
-	
-	    if(typeof item.last === "function") return item.last();
-	    if(typeof item.nodeType === "number") return item;
-	
-	    if(children && children.length) return combine.last(children[children.length - 1]);
-	    if(item.group) return combine.last(item.group);
-	
-	  },
-	
-	  destroy: function(item, first){
-	    if(!item) return;
-	    if(Array.isArray(item)){
-	      for(var i = 0, len = item.length; i < len; i++ ){
-	        combine.destroy(item[i], first);
-	      }
-	    }
-	    var children = item.children;
-	    if(typeof item.destroy === "function") return item.destroy(first);
-	    if(typeof item.nodeType === "number" && first)  dom.remove(item);
-	    if(children && children.length){
-	      combine.destroy(children, true);
-	      item.children = null;
-	    }
-	  }
-	
-	}
-	
-	
-	// @TODO: need move to dom.js
-	dom.element = function( component, all ){
-	  if(!component) return !all? null: [];
-	  var nodes = combine.node( component );
-	  if( nodes.nodeType === 1 ) return all? [nodes]: nodes;
-	  var elements = [];
-	  for(var i = 0; i<nodes.length ;i++){
-	    var node = nodes[i];
-	    if( node && node.nodeType === 1){
-	      if(!all) return node;
-	      elements.push(node);
-	    } 
-	  }
-	  return !all? elements[0]: elements;
-	}
-	
-	
-	
-
-
-/***/ },
-/* 20 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var exprCache = __webpack_require__(28).exprCache;
-	var _ = __webpack_require__(23);
-	var Parser = __webpack_require__(36);
-	module.exports = {
-	  expression: function(expr, simple){
-	    // @TODO cache
-	    if( typeof expr === 'string' && ( expr = expr.trim() ) ){
-	      expr = exprCache.get( expr ) || exprCache.set( expr, new Parser( expr, { mode: 2, expression: true } ).expression() )
-	    }
-	    if(expr) return expr;
-	  },
-	  parse: function(template){
-	    return new Parser(template).parse();
-	  }
-	}
-	
-
-
-/***/ },
-/* 21 */
-/***/ function(module, exports, __webpack_require__) {
-
-	// server side rendering for regularjs
-	
-	
-	var _ = __webpack_require__(23);
-	var parser = __webpack_require__(20);
-	var diffArray = __webpack_require__(26).diffArray;
-	
-	/**
-	 * [compile description]
-	 * @param  {[type]} ast     [description]
-	 * @param  {[type]} options [description]
-	 */
-	
-	
-	
-	
-	function SSR (Component, definition){
-	
-	  definition = definition || {};
-	
-	  this.Component = Component;
-	  var context = this.context = Object.create(Component.prototype)
-	
-	
-	  context.extra = definition.extra;
-	  definition.data = definition.data || {};
-	  definition.computed = definition.computed || {};
-	  if(context.data) _.extend(definition.data, context.data);
-	  if(context.computed) _.extend(definition.computed, context.computed);
-	
-	  _.extend(context, definition, true);
-	
-	  context.config( context.data = context.data || {} );
-	  
-	
-	}
-	
-	
-	var ssr = _.extend(SSR.prototype, {});
-	
-	
-	ssr.render = function(){
-	
-	  var self = this;
-	  return this.compile(this.context.template);
-	
-	}
-	
-	ssr.compile = function(ast){
-	
-	  if(typeof ast === 'string'){
-	    ast = parser.parse(ast);
-	  }
-	  return this.walk(ast)
-	}
-	
-	
-	ssr.walk = function(ast, options){
-	
-	  var type = ast.type; 
-	
-	  if(Array.isArray(ast)){
-	
-	    return ast.map(function(item){
-	
-	      return this.walk(item, options)
-	
-	    }.bind(this)).join('');
-	
-	  }
-	
-	  return this[ast.type](ast, options)
-	
-	}
-	
-	
-	ssr.element = function(ast ){
-	
-	  var children = ast.children,
-	    attrs = ast.attrs,
-	    tag = ast.tag;
-	
-	  if( tag === 'r-component' ){
-	    attrs.some(function(attr){
-	      if(attr.name === 'is'){
-	        tag = attr.value;
-	        if( _.isExpr(attr.value)) tag = this.get(attr.value);
-	        return true;
-	      }
-	    }.bind(this))
-	  }
-	
-	  var Component = this.Component.component(tag);
-	
-	  if(ast.tag === 'r-component' && !Component){
-	    throw Error('r-component with unregister component ' + tag)
-	  }
-	
-	  if( Component ) return this.component( ast, { 
-	    Component: Component 
-	  } );
-	
-	
-	  var attrStr = this.attrs(attrs);
-	  var body = (children && children.length? this.compile(children): "")
-	
-	  return "<" + tag + (attrStr? " " + attrStr: ""  ) + ">" +  
-	        body +
-	    "</" + tag + ">"
-	
-	}
-	
-	
-	
-	ssr.component = function(ast, options){
-	
-	  var children = ast.children,
-	    attrs = ast.attrs,
-	    data = {},
-	    Component = options.Component, body;
-	
-	  if(children && children.length){
-	    body = function(){
-	      return this.compile(children)
-	    }.bind(this)
-	  }
-	
-	  attrs.forEach(function(attr){
-	    if(!_.eventReg.test(attr.name)){
-	      data[attr.name] = _.isExpr(attr.value)? this.get(attr.value): attr.value
-	    }
-	  }.bind(this))
-	
-	
-	  return SSR.render(Component, {
-	    $body: body,
-	    data: data,
-	    extra: this.extra
-	  })
-	}
-	
-	
-	
-	ssr.list = function(ast){
-	
-	  var 
-	    alternate = ast.alternate,
-	    variable = ast.variable,
-	    indexName = variable + '_index',
-	    keyName = variable + '_key',
-	    body = ast.body,
-	    context = this.context,
-	    self = this,
-	    prevExtra = context.extra;
-	
-	  var sequence = this.get(ast.sequence);
-	  var keys, list; 
-	
-	  var type = _.typeOf(sequence);
-	
-	  if( type === 'object'){
-	
-	    keys = Object.keys(list);
-	    list = keys.map(function(key){return sequence[key]})
-	
-	  }else{
-	
-	    list = sequence || [];
-	
-	  }
-	
-	  return list.map(function(item, item_index){
-	
-	    var sectionData = {};
-	    sectionData[variable] = item;
-	    sectionData[indexName] = item_index;
-	    if(keys) sectionData[keyName] = sequence[item_index];
-	    context.extra = _.extend(
-	      prevExtra? Object.create(prevExtra): {}, sectionData );
-	    var section =  this.compile( body );
-	    context.extra = prevExtra;
-	    return section;
-	
-	  }.bind(this)).join('');
-	
-	}
-	
-	
-	
-	
-	// {#include } or {#inc template}
-	ssr.template = function(ast, options){
-	  var content = this.get(ast.content);
-	  var type = typeof content;
-	
-	
-	  if(!content) return '';
-	  if(type === 'function' ){
-	    return content();
-	  }else{
-	    return this.compile(type !== 'object'? String(content): content)
-	  }
-	
-	};
-	
-	ssr.if = function(ast, options){
-	  var test = this.get(ast.test);  
-	  if(test){
-	    if(ast.consequent){
-	      return this.compile( ast.consequent );
-	    }
-	  }else{
-	    if(ast.alternate){
-	      return this.compile( ast.alternate );
-	    }
-	  }
-	
-	}
-	
-	
-	ssr.expression = function(ast, options){
-	  var str = this.get(ast);
-	  return str == null?  "" : "" + str;
-	}
-	
-	ssr.text = function(ast, options){
-	  return ast.text  
-	}
-	
-	
-	
-	ssr.attrs = function(attrs){
-	  return attrs.map(function(attr){
-	    return this.attr(attr);
-	  }.bind(this)).join("").replace(/\s+$/,"");
-	}
-	
-	ssr.attr = function(attr){
-	
-	  var name = attr.name, 
-	    value = attr.value || "",
-	    Component = this.Component,
-	    directive = Component.directive(name);
-	
-	  
-	
-	  if( directive ){
-	    if(directive.ssr){
-	
-	      // @TODO: 应该提供hook可以控制节点内部  ,比如r-html
-	      return directive.ssr( name, value );
-	    }
-	  }else{
-	    // @TODO 对于boolean 值
-	    if(_.isExpr(value)) value = this.get(value); 
-	    if(_.isBooleanAttr(name) || value == undefined){
-	      return name + " ";
-	    }else{
-	      return name + '="' + value + '" ';
-	    }
-	  }
-	}
-	
-	ssr.get = function(expr){
-	
-	  var rawget, 
-	    self = this,
-	    context = this.context,
-	    touched = {};
-	
-	  if(expr.get) return expr.get(context);
-	  else {
-	    var rawget = new Function(_.ctxName, _.extName , _.prefix+ "return (" + expr.body + ")")
-	    expr.get = function(context){
-	      return rawget(context, context.extra)
-	    }
-	    return expr.get(this.context)
-	  }
-	
-	}
-	
-	SSR.render = function(Component, options){
-	
-	  return new SSR(Component, options).render();
-	
-	}
-	
-	module.exports = SSR;
-
-
-/***/ },
-/* 22 */
-/***/ function(module, exports, __webpack_require__) {
-
-	// simplest event emitter 60 lines
-	// ===============================
-	var slice = [].slice, _ = __webpack_require__(23);
-	var API = {
-	  $on: function(event, fn) {
-	    if(typeof event === "object"){
-	      for (var i in event) {
-	        this.$on(i, event[i]);
-	      }
-	    }else{
-	      // @patch: for list
-	      var context = this;
-	      var handles = context._handles || (context._handles = {}),
-	        calls = handles[event] || (handles[event] = []);
-	      calls.push(fn);
-	    }
-	    return this;
-	  },
-	  $off: function(event, fn) {
-	    var context = this;
-	    if(!context._handles) return;
-	    if(!event) this._handles = {};
-	    var handles = context._handles,
-	      calls;
-	
-	    if (calls = handles[event]) {
-	      if (!fn) {
-	        handles[event] = [];
-	        return context;
-	      }
-	      for (var i = 0, len = calls.length; i < len; i++) {
-	        if (fn === calls[i]) {
-	          calls.splice(i, 1);
-	          return context;
-	        }
-	      }
-	    }
-	    return context;
-	  },
-	  // bubble event
-	  $emit: function(event){
-	    // @patch: for list
-	    var context = this;
-	    var handles = context._handles, calls, args, type;
-	    if(!event) return;
-	    var args = slice.call(arguments, 1);
-	    var type = event;
-	
-	    if(!handles) return context;
-	    if(calls = handles[type.slice(1)]){
-	      for (var j = 0, len = calls.length; j < len; j++) {
-	        calls[j].apply(context, args)
-	      }
-	    }
-	    if (!(calls = handles[type])) return context;
-	    for (var i = 0, len = calls.length; i < len; i++) {
-	      calls[i].apply(context, args)
-	    }
-	    // if(calls.length) context.$update();
-	    return context;
-	  },
-	  // capture  event
-	  $one: function(){
-	    
-	}
-	}
-	// container class
-	function Event() {}
-	_.extend(Event.prototype, API)
-	
-	Event.mixTo = function(obj){
-	  obj = typeof obj === "function" ? obj.prototype : obj;
-	  _.extend(obj, API)
-	}
-	module.exports = Event;
-
-/***/ },
-/* 23 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/* WEBPACK VAR INJECTION */(function(global) {__webpack_require__(24)();
+	/* WEBPACK VAR INJECTION */(function(global) {__webpack_require__(22)();
 	
 	
 	
 	var _  = module.exports;
-	var entities = __webpack_require__(35);
+	var entities = __webpack_require__(32);
 	var slice = [].slice;
 	var o2str = ({}).toString;
 	var win = typeof window !=='undefined'? window: global;
@@ -7877,7 +7150,397 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
 
 /***/ },
-/* 24 */
+/* 19 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var _ = __webpack_require__(18);
+	var dom  = __webpack_require__(17);
+	var animate = {};
+	var env = __webpack_require__(28);
+	
+	
+	if(typeof window !== 'undefined'){
+	var 
+	  transitionEnd = 'transitionend', 
+	  animationEnd = 'animationend', 
+	  transitionProperty = 'transition', 
+	  animationProperty = 'animation';
+	
+	if(!('ontransitionend' in window)){
+	  if('onwebkittransitionend' in window) {
+	    
+	    // Chrome/Saf (+ Mobile Saf)/Android
+	    transitionEnd += ' webkitTransitionEnd';
+	    transitionProperty = 'webkitTransition'
+	  } else if('onotransitionend' in dom.tNode || navigator.appName === 'Opera') {
+	
+	    // Opera
+	    transitionEnd += ' oTransitionEnd';
+	    transitionProperty = 'oTransition';
+	  }
+	}
+	if(!('onanimationend' in window)){
+	  if ('onwebkitanimationend' in window){
+	    // Chrome/Saf (+ Mobile Saf)/Android
+	    animationEnd += ' webkitAnimationEnd';
+	    animationProperty = 'webkitAnimation';
+	
+	  }else if ('onoanimationend' in dom.tNode){
+	    // Opera
+	    animationEnd += ' oAnimationEnd';
+	    animationProperty = 'oAnimation';
+	  }
+	}
+	}
+	
+	/**
+	 * inject node with animation
+	 * @param  {[type]} node      [description]
+	 * @param  {[type]} refer     [description]
+	 * @param  {[type]} direction [description]
+	 * @return {[type]}           [description]
+	 */
+	animate.inject = function( node, refer ,direction, callback ){
+	  callback = callback || _.noop;
+	  if( Array.isArray(node) ){
+	    var fragment = dom.fragment();
+	    var count=0;
+	
+	    for(var i = 0,len = node.length;i < len; i++ ){
+	      fragment.appendChild(node[i]); 
+	    }
+	    dom.inject(fragment, refer, direction);
+	
+	    // if all nodes is done, we call the callback
+	    var enterCallback = function (){
+	      count++;
+	      if( count === len ) callback();
+	    }
+	    if(len === count) callback();
+	    for( i = 0; i < len; i++ ){
+	      if(node[i].onenter){
+	        node[i].onenter(enterCallback);
+	      }else{
+	        enterCallback();
+	      }
+	    }
+	  }else{
+	    if(!node) return;
+	    dom.inject( node, refer, direction );
+	    if(node.onenter){
+	      node.onenter(callback)
+	    }else{
+	      callback();
+	    }
+	  }
+	}
+	
+	/**
+	 * remove node with animation
+	 * @param  {[type]}   node     [description]
+	 * @param  {Function} callback [description]
+	 * @return {[type]}            [description]
+	 */
+	animate.remove = function(node, callback){
+	  if(!node) return;
+	  var count = 0;
+	  function loop(){
+	    count++;
+	    if(count === len) callback && callback()
+	  }
+	  if(Array.isArray(node)){
+	    for(var i = 0, len = node.length; i < len ; i++){
+	      animate.remove(node[i], loop)
+	    }
+	    return node;
+	  }
+	  if(node.onleave){
+	    node.onleave(function(){
+	      removeDone(node, callback)
+	    })
+	  }else{
+	    removeDone(node, callback)
+	  }
+	}
+	
+	var removeDone = function (node, callback){
+	    dom.remove(node);
+	    callback && callback();
+	}
+	
+	
+	
+	animate.startClassAnimate = function ( node, className,  callback, mode ){
+	  var activeClassName, timeout, tid, onceAnim;
+	  if( (!animationEnd && !transitionEnd) || env.isRunning ){
+	    return callback();
+	  }
+	
+	  if(mode !== 4){
+	    onceAnim = _.once(function onAnimateEnd(){
+	      if(tid) clearTimeout(tid);
+	
+	      if(mode === 2) {
+	        dom.delClass(node, activeClassName);
+	      }
+	      if(mode !== 3){ // mode hold the class
+	        dom.delClass(node, className);
+	      }
+	      dom.off(node, animationEnd, onceAnim)
+	      dom.off(node, transitionEnd, onceAnim)
+	
+	      callback();
+	
+	    });
+	  }else{
+	    onceAnim = _.once(function onAnimateEnd(){
+	      if(tid) clearTimeout(tid);
+	      callback();
+	    });
+	  }
+	  if(mode === 2){ // auto removed
+	    dom.addClass( node, className );
+	
+	    activeClassName = _.map(className.split(/\s+/), function(name){
+	       return name + '-active';
+	    }).join(" ");
+	
+	    dom.nextReflow(function(){
+	      dom.addClass( node, activeClassName );
+	      timeout = getMaxTimeout( node );
+	      tid = setTimeout( onceAnim, timeout );
+	    });
+	
+	  }else if(mode===4){
+	    dom.nextReflow(function(){
+	      dom.delClass( node, className );
+	      timeout = getMaxTimeout( node );
+	      tid = setTimeout( onceAnim, timeout );
+	    });
+	
+	  }else{
+	    dom.nextReflow(function(){
+	      dom.addClass( node, className );
+	      timeout = getMaxTimeout( node );
+	      tid = setTimeout( onceAnim, timeout );
+	    });
+	  }
+	
+	
+	
+	  dom.on( node, animationEnd, onceAnim )
+	  dom.on( node, transitionEnd, onceAnim )
+	  return onceAnim;
+	}
+	
+	
+	animate.startStyleAnimate = function(node, styles, callback){
+	  var timeout, onceAnim, tid;
+	
+	  dom.nextReflow(function(){
+	    dom.css( node, styles );
+	    timeout = getMaxTimeout( node );
+	    tid = setTimeout( onceAnim, timeout );
+	  });
+	
+	
+	  onceAnim = _.once(function onAnimateEnd(){
+	    if(tid) clearTimeout(tid);
+	
+	    dom.off(node, animationEnd, onceAnim)
+	    dom.off(node, transitionEnd, onceAnim)
+	
+	    callback();
+	
+	  });
+	
+	  dom.on( node, animationEnd, onceAnim )
+	  dom.on( node, transitionEnd, onceAnim )
+	
+	  return onceAnim;
+	}
+	
+	
+	/**
+	 * get maxtimeout
+	 * @param  {Node} node 
+	 * @return {[type]}   [description]
+	 */
+	function getMaxTimeout(node){
+	  var timeout = 0,
+	    tDuration = 0,
+	    tDelay = 0,
+	    aDuration = 0,
+	    aDelay = 0,
+	    ratio = 5 / 3,
+	    styles ;
+	
+	  if(window.getComputedStyle){
+	
+	    styles = window.getComputedStyle(node),
+	    tDuration = getMaxTime( styles[transitionProperty + 'Duration']) || tDuration;
+	    tDelay = getMaxTime( styles[transitionProperty + 'Delay']) || tDelay;
+	    aDuration = getMaxTime( styles[animationProperty + 'Duration']) || aDuration;
+	    aDelay = getMaxTime( styles[animationProperty + 'Delay']) || aDelay;
+	    timeout = Math.max( tDuration+tDelay, aDuration + aDelay );
+	
+	  }
+	  return timeout * 1000 * ratio;
+	}
+	
+	function getMaxTime(str){
+	
+	  var maxTimeout = 0, time;
+	
+	  if(!str) return 0;
+	
+	  str.split(",").forEach(function(str){
+	
+	    time = parseFloat(str);
+	    if( time > maxTimeout ) maxTimeout = time;
+	
+	  });
+	
+	  return maxTimeout;
+	}
+	
+	module.exports = animate;
+
+/***/ },
+/* 20 */
+/***/ function(module, exports, __webpack_require__) {
+
+	// some nested  operation in ast 
+	// --------------------------------
+	
+	var dom = __webpack_require__(17);
+	var animate = __webpack_require__(19);
+	
+	var combine = module.exports = {
+	
+	  // get the initial dom in object
+	  node: function(item){
+	    var children,node, nodes;
+	    if(!item) return;
+	    if(item.element) return item.element;
+	    if(typeof item.node === "function") return item.node();
+	    if(typeof item.nodeType === "number") return item;
+	    if(item.group) return combine.node(item.group)
+	    if(children = item.children){
+	      if(children.length === 1){
+	        return combine.node(children[0]);
+	      }
+	      nodes = [];
+	      for(var i = 0, len = children.length; i < len; i++ ){
+	        node = combine.node(children[i]);
+	        if(Array.isArray(node)){
+	          nodes.push.apply(nodes, node)
+	        }else if(node) {
+	          nodes.push(node)
+	        }
+	      }
+	      return nodes;
+	    }
+	  },
+	  // @TODO remove _gragContainer
+	  inject: function(node, pos ){
+	    var group = this;
+	    var fragment = combine.node(group.group || group);
+	    if(node === false) {
+	      animate.remove(fragment)
+	      return group;
+	    }else{
+	      if(!fragment) return group;
+	      if(typeof node === 'string') node = dom.find(node);
+	      if(!node) throw Error('injected node is not found');
+	      // use animate to animate firstchildren
+	      animate.inject(fragment, node, pos);
+	    }
+	    // if it is a component
+	    if(group.$emit) {
+	      var preParent = group.parentNode;
+	      var newParent = (pos ==='after' || pos === 'before')? node.parentNode : node;
+	      group.parentNode = newParent;
+	      group.$emit("$inject", node, pos, preParent);
+	    }
+	    return group;
+	  },
+	
+	  // get the last dom in object(for insertion operation)
+	  last: function(item){
+	    var children = item.children;
+	
+	    if(typeof item.last === "function") return item.last();
+	    if(typeof item.nodeType === "number") return item;
+	
+	    if(children && children.length) return combine.last(children[children.length - 1]);
+	    if(item.group) return combine.last(item.group);
+	
+	  },
+	
+	  destroy: function(item, first){
+	    if(!item) return;
+	    if(Array.isArray(item)){
+	      for(var i = 0, len = item.length; i < len; i++ ){
+	        combine.destroy(item[i], first);
+	      }
+	    }
+	    var children = item.children;
+	    if(typeof item.destroy === "function") return item.destroy(first);
+	    if(typeof item.nodeType === "number" && first)  dom.remove(item);
+	    if(children && children.length){
+	      combine.destroy(children, true);
+	      item.children = null;
+	    }
+	  }
+	
+	}
+	
+	
+	// @TODO: need move to dom.js
+	dom.element = function( component, all ){
+	  if(!component) return !all? null: [];
+	  var nodes = combine.node( component );
+	  if( nodes.nodeType === 1 ) return all? [nodes]: nodes;
+	  var elements = [];
+	  for(var i = 0; i<nodes.length ;i++){
+	    var node = nodes[i];
+	    if( node && node.nodeType === 1){
+	      if(!all) return node;
+	      elements.push(node);
+	    } 
+	  }
+	  return !all? elements[0]: elements;
+	}
+	
+	
+	
+
+
+/***/ },
+/* 21 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var exprCache = __webpack_require__(28).exprCache;
+	var _ = __webpack_require__(18);
+	var Parser = __webpack_require__(36);
+	module.exports = {
+	  expression: function(expr, simple){
+	    // @TODO cache
+	    if( typeof expr === 'string' && ( expr = expr.trim() ) ){
+	      expr = exprCache.get( expr ) || exprCache.set( expr, new Parser( expr, { mode: 2, expression: true } ).expression() )
+	    }
+	    if(expr) return expr;
+	  },
+	  parse: function(template){
+	    return new Parser(template).parse();
+	  }
+	}
+	
+
+
+/***/ },
+/* 22 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// shim for es5
@@ -7985,7 +7648,7 @@
 
 
 /***/ },
-/* 25 */
+/* 23 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// (c) 2010-2014 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
@@ -7998,7 +7661,7 @@
 	// License MIT (c) Dustin Diaz 2014
 	  
 	// inspired by backbone's extend and klass
-	var _ = __webpack_require__(23),
+	var _ = __webpack_require__(18),
 	  fnTest = /xy/.test(function(){"xy";}) ? /\bsupr\b/:/.*/,
 	  isFn = function(o){return typeof o === "function"};
 	
@@ -8071,10 +7734,10 @@
 
 
 /***/ },
-/* 26 */
+/* 24 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var _ = __webpack_require__(23);
+	var _ = __webpack_require__(18);
 	
 	function simpleDiff(now, old){
 	  var nlen = now.length;
@@ -8259,6 +7922,412 @@
 	  diffArray: diffArray,
 	  diffObject: diffObject
 	}
+
+/***/ },
+/* 25 */
+/***/ function(module, exports, __webpack_require__) {
+
+	// simplest event emitter 60 lines
+	// ===============================
+	var slice = [].slice, _ = __webpack_require__(18);
+	var API = {
+	  $on: function(event, fn) {
+	    if(typeof event === "object"){
+	      for (var i in event) {
+	        this.$on(i, event[i]);
+	      }
+	    }else{
+	      // @patch: for list
+	      var context = this;
+	      var handles = context._handles || (context._handles = {}),
+	        calls = handles[event] || (handles[event] = []);
+	      calls.push(fn);
+	    }
+	    return this;
+	  },
+	  $off: function(event, fn) {
+	    var context = this;
+	    if(!context._handles) return;
+	    if(!event) this._handles = {};
+	    var handles = context._handles,
+	      calls;
+	
+	    if (calls = handles[event]) {
+	      if (!fn) {
+	        handles[event] = [];
+	        return context;
+	      }
+	      for (var i = 0, len = calls.length; i < len; i++) {
+	        if (fn === calls[i]) {
+	          calls.splice(i, 1);
+	          return context;
+	        }
+	      }
+	    }
+	    return context;
+	  },
+	  // bubble event
+	  $emit: function(event){
+	    // @patch: for list
+	    var context = this;
+	    var handles = context._handles, calls, args, type;
+	    if(!event) return;
+	    var args = slice.call(arguments, 1);
+	    var type = event;
+	
+	    if(!handles) return context;
+	    if(calls = handles[type.slice(1)]){
+	      for (var j = 0, len = calls.length; j < len; j++) {
+	        calls[j].apply(context, args)
+	      }
+	    }
+	    if (!(calls = handles[type])) return context;
+	    for (var i = 0, len = calls.length; i < len; i++) {
+	      calls[i].apply(context, args)
+	    }
+	    // if(calls.length) context.$update();
+	    return context;
+	  },
+	  // capture  event
+	  $one: function(){
+	    
+	}
+	}
+	// container class
+	function Event() {}
+	_.extend(Event.prototype, API)
+	
+	Event.mixTo = function(obj){
+	  obj = typeof obj === "function" ? obj.prototype : obj;
+	  _.extend(obj, API)
+	}
+	module.exports = Event;
+
+/***/ },
+/* 26 */
+/***/ function(module, exports, __webpack_require__) {
+
+	// server side rendering for regularjs
+	
+	
+	var _ = __webpack_require__(18);
+	var parser = __webpack_require__(21);
+	var diffArray = __webpack_require__(24).diffArray;
+	
+	
+	
+	
+	// hogan.js
+	// https://github.com/twitter/hogan.js
+	// MIT
+	var escape = (function(){
+	  var rAmp = /&/g,
+	      rLt = /</g,
+	      rGt = />/g,
+	      rApos = /\'/g,
+	      rQuot = /\"/g,
+	      hChars = /[&<>\"\']/;
+	
+	  function ignoreNullVal(val) {
+	    return String((val === undefined || val == null) ? '' : val);
+	  }
+	
+	  return function (str) {
+	    str = ignoreNullVal(str);
+	    return hChars.test(str) ?
+	      str
+	        .replace(rAmp, '&amp;')
+	        .replace(rLt, '&lt;')
+	        .replace(rGt, '&gt;')
+	        .replace(rApos, '&#39;')
+	        .replace(rQuot, '&quot;') :
+	      str;
+	  }
+	
+	})();
+	
+	/**
+	 * [compile description]
+	 * @param  {[type]} ast     [description]
+	 * @param  {[type]} options [description]
+	 */
+	
+	
+	
+	
+	function SSR (Component, definition){
+	
+	  definition = definition || {};
+	
+	  this.Component = Component;
+	  var context = this.context = Object.create(Component.prototype)
+	
+	
+	  context.extra = definition.extra;
+	  definition.data = definition.data || {};
+	  definition.computed = definition.computed || {};
+	  if(context.data) _.extend(definition.data, context.data);
+	  if(context.computed) _.extend(definition.computed, context.computed);
+	
+	  _.extend(context, definition, true);
+	
+	  context.config( context.data = context.data || {} );
+	  
+	
+	}
+	
+	
+	var ssr = _.extend(SSR.prototype, {});
+	
+	
+	ssr.render = function(){
+	
+	  var self = this;
+	  return this.compile(this.context.template);
+	
+	}
+	
+	ssr.compile = function(ast){
+	
+	  if(typeof ast === 'string'){
+	    ast = parser.parse(ast);
+	  }
+	  return this.walk(ast)
+	}
+	
+	
+	ssr.walk = function(ast, options){
+	
+	  var type = ast.type; 
+	
+	  if(Array.isArray(ast)){
+	
+	    return ast.map(function(item){
+	
+	      return this.walk(item, options)
+	
+	    }.bind(this)).join('');
+	
+	  }
+	
+	  return this[ast.type](ast, options)
+	
+	}
+	
+	
+	ssr.element = function(ast ){
+	
+	  var children = ast.children,
+	    attrs = ast.attrs,
+	    tag = ast.tag;
+	
+	  if( tag === 'r-component' ){
+	    attrs.some(function(attr){
+	      if(attr.name === 'is'){
+	        tag = attr.value;
+	        if( _.isExpr(attr.value)) tag = this.get(attr.value);
+	        return true;
+	      }
+	    }.bind(this))
+	  }
+	
+	  var Component = this.Component.component(tag);
+	
+	  if(ast.tag === 'r-component' && !Component){
+	    throw Error('r-component with unregister component ' + tag)
+	  }
+	
+	  if( Component ) return this.component( ast, { 
+	    Component: Component 
+	  } );
+	
+	
+	  var attrStr = this.attrs(attrs);
+	  var body = (children && children.length? this.compile(children): "")
+	
+	  return "<" + tag + (attrStr? " " + attrStr: ""  ) + ">" +  
+	        body +
+	    "</" + tag + ">"
+	
+	}
+	
+	
+	
+	ssr.component = function(ast, options){
+	
+	  var children = ast.children,
+	    attrs = ast.attrs,
+	    data = {},
+	    Component = options.Component, body;
+	
+	  if(children && children.length){
+	    body = function(){
+	      return this.compile(children)
+	    }.bind(this)
+	  }
+	
+	  attrs.forEach(function(attr){
+	    if(!_.eventReg.test(attr.name)){
+	      data[attr.name] = _.isExpr(attr.value)? this.get(attr.value): attr.value
+	    }
+	  }.bind(this))
+	
+	
+	  return SSR.render(Component, {
+	    $body: body,
+	    data: data,
+	    extra: this.extra
+	  })
+	}
+	
+	
+	
+	ssr.list = function(ast){
+	
+	  var 
+	    alternate = ast.alternate,
+	    variable = ast.variable,
+	    indexName = variable + '_index',
+	    keyName = variable + '_key',
+	    body = ast.body,
+	    context = this.context,
+	    self = this,
+	    prevExtra = context.extra;
+	
+	  var sequence = this.get(ast.sequence);
+	  var keys, list; 
+	
+	  var type = _.typeOf(sequence);
+	
+	  if( type === 'object'){
+	
+	    keys = Object.keys(list);
+	    list = keys.map(function(key){return sequence[key]})
+	
+	  }else{
+	
+	    list = sequence || [];
+	
+	  }
+	
+	  return list.map(function(item, item_index){
+	
+	    var sectionData = {};
+	    sectionData[variable] = item;
+	    sectionData[indexName] = item_index;
+	    if(keys) sectionData[keyName] = sequence[item_index];
+	    context.extra = _.extend(
+	      prevExtra? Object.create(prevExtra): {}, sectionData );
+	    var section =  this.compile( body );
+	    context.extra = prevExtra;
+	    return section;
+	
+	  }.bind(this)).join('');
+	
+	}
+	
+	
+	
+	
+	// {#include } or {#inc template}
+	ssr.template = function(ast, options){
+	  var content = this.get(ast.content);
+	  var type = typeof content;
+	
+	
+	  if(!content) return '';
+	  if(type === 'function' ){
+	    return content();
+	  }else{
+	    return this.compile(type !== 'object'? String(content): content)
+	  }
+	
+	};
+	
+	ssr.if = function(ast, options){
+	  var test = this.get(ast.test);  
+	  if(test){
+	    if(ast.consequent){
+	      return this.compile( ast.consequent );
+	    }
+	  }else{
+	    if(ast.alternate){
+	      return this.compile( ast.alternate );
+	    }
+	  }
+	
+	}
+	
+	
+	ssr.expression = function(ast, options){
+	  var str = this.get(ast);
+	  return escape(str);
+	}
+	
+	ssr.text = function(ast, options){
+	  return escape(ast.text) 
+	}
+	
+	
+	
+	ssr.attrs = function(attrs){
+	  return attrs.map(function(attr){
+	    return this.attr(attr);
+	  }.bind(this)).join("").replace(/\s+$/,"");
+	}
+	
+	ssr.attr = function(attr){
+	
+	  var name = attr.name, 
+	    value = attr.value || "",
+	    Component = this.Component,
+	    directive = Component.directive(name);
+	
+	  
+	
+	  if( directive ){
+	    if(directive.ssr){
+	
+	      // @TODO: 应该提供hook可以控制节点内部  ,比如r-html
+	      return directive.ssr( name, value );
+	    }
+	  }else{
+	    // @TODO 对于boolean 值
+	    if(_.isExpr(value)) value = this.get(value); 
+	    if(_.isBooleanAttr(name) || value === undefined || value === null){
+	      return name + " ";
+	    }else{
+	      return name + '="' + escape(value) + '" ';
+	    }
+	  }
+	}
+	
+	ssr.get = function(expr){
+	
+	  var rawget, 
+	    self = this,
+	    context = this.context,
+	    touched = {};
+	
+	  if(expr.get) return expr.get(context);
+	  else {
+	    var rawget = new Function(_.ctxName, _.extName , _.prefix+ "return (" + expr.body + ")")
+	    expr.get = function(context){
+	      return rawget(context, context.extra)
+	    }
+	    return expr.get(this.context)
+	  }
+	
+	}
+	
+	SSR.render = function(Component, options){
+	
+	  return new SSR(Component, options).render();
+	
+	}
+	
+	module.exports = SSR;
+
 
 /***/ },
 /* 27 */
@@ -9557,7 +9626,7 @@
 
 	// some fixture test;
 	// ---------------
-	var _ = __webpack_require__(23);
+	var _ = __webpack_require__(18);
 	exports.svg = (function(){
 	  return typeof document !== "undefined" && document.implementation.hasFeature( "http://www.w3.org/TR/SVG11/feature#BasicStructure", "1.1" );
 	})();
@@ -9591,19 +9660,19 @@
 	var Lexer = __webpack_require__(37);
 	var Parser = __webpack_require__(36);
 	var config = __webpack_require__(29);
-	var _ = __webpack_require__(23);
-	var extend = __webpack_require__(25);
+	var _ = __webpack_require__(18);
+	var extend = __webpack_require__(23);
 	var combine = {};
 	if(env.browser){
 	  var dom = __webpack_require__(17);
 	  var walkers = __webpack_require__(38);
 	  var Group = __webpack_require__(39);
 	  var doc = dom.doc;
-	  combine = __webpack_require__(19);
+	  combine = __webpack_require__(20);
 	}
-	var events = __webpack_require__(22);
+	var events = __webpack_require__(25);
 	var Watcher = __webpack_require__(40);
-	var parse = __webpack_require__(20);
+	var parse = __webpack_require__(21);
 	var filter = __webpack_require__(41);
 	var ERROR = __webpack_require__(42).ERROR;
 	var nodeCursor = __webpack_require__(31);
@@ -10217,407 +10286,6 @@
 /* 32 */
 /***/ function(module, exports, __webpack_require__) {
 
-	// Regular
-	var _ = __webpack_require__(23);
-	var dom = __webpack_require__(17);
-	var animate = __webpack_require__(18);
-	var Regular = __webpack_require__(30);
-	var consts = __webpack_require__(42);
-	
-	
-	
-	__webpack_require__(43);
-	__webpack_require__(44);
-	
-	
-	module.exports = {
-	// **warn**: class inteplation will override this directive 
-	  'r-class': function(elem, value){
-	    if(typeof value=== 'string'){
-	      value = _.fixObjStr(value)
-	    }
-	    this.$watch(value, function(nvalue){
-	      var className = ' '+ elem.className.replace(/\s+/g, ' ') +' ';
-	      for(var i in nvalue) if(nvalue.hasOwnProperty(i)){
-	        className = className.replace(' ' + i + ' ',' ');
-	        if(nvalue[i] === true){
-	          className += i+' ';
-	        }
-	      }
-	      elem.className = className.trim();
-	    },true);
-	  },
-	  // **warn**: style inteplation will override this directive 
-	  'r-style': function(elem, value){
-	    if(typeof value=== 'string'){
-	      value = _.fixObjStr(value)
-	    }
-	    this.$watch(value, function(nvalue){
-	      for(var i in nvalue) if(nvalue.hasOwnProperty(i)){
-	        dom.css(elem, i, nvalue[i]);
-	      }
-	    },true);
-	  },
-	  // when expression is evaluate to true, the elem will add display:none
-	  // Example: <div r-hide={{items.length > 0}}></div>
-	  'r-hide': function(elem, value){
-	    var preBool = null, compelete;
-	    if( _.isExpr(value) || typeof value === "string"){
-	      this.$watch(value, function(nvalue){
-	        var bool = !!nvalue;
-	        if(bool === preBool) return; 
-	        preBool = bool;
-	        if(bool){
-	          if(elem.onleave){
-	            compelete = elem.onleave(function(){
-	              elem.style.display = "none"
-	              compelete = null;
-	            })
-	          }else{
-	            elem.style.display = "none"
-	          }
-	          
-	        }else{
-	          if(compelete) compelete();
-	          elem.style.display = "";
-	          if(elem.onenter){
-	            elem.onenter();
-	          }
-	        }
-	      });
-	    }else if(!!value){
-	      elem.style.display = "none";
-	    }
-	  },
-	  'r-html': function(elem, value){
-	    this.$watch(value, function(nvalue){
-	      nvalue = nvalue || "";
-	      dom.html(elem, nvalue)
-	    }, {force: true});
-	  },
-	  'ref': {
-	    accept: consts.COMPONENT_TYPE + consts.ELEMENT_TYPE,
-	    link: function( elem, value ){
-	      var refs = this.$refs || (this.$refs = {});
-	      var cval;
-	      if(_.isExpr(value)){
-	        this.$watch(value, function(nval, oval){
-	          cval = nval;
-	          if(refs[oval] === elem) refs[oval] = null;
-	          if(cval) refs[cval] = elem;
-	        })
-	      }else{
-	        refs[cval = value] = elem;
-	      }
-	      return function(){
-	        refs[cval] = null;
-	      }
-	    }
-	  }
-	}
-	
-	Regular.directive(module.exports);
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-
-
-/***/ },
-/* 33 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var // packages
-	  _ = __webpack_require__(23),
-	 animate = __webpack_require__(18),
-	 dom = __webpack_require__(17),
-	 Regular = __webpack_require__(30);
-	
-	
-	var // variables
-	  rClassName = /^[-\w]+(\s[-\w]+)*$/,
-	  rCommaSep = /[\r\n\f ]*,[\r\n\f ]*(?=\w+\:)/, //  dont split comma in  Expression
-	  rStyles = /^\{.*\}$/, //  for Simpilfy
-	  rSpace = /\s+/, //  for Simpilfy
-	  WHEN_COMMAND = "when",
-	  EVENT_COMMAND = "on",
-	  THEN_COMMAND = "then";
-	
-	/**
-	 * Animation Plugin
-	 * @param {Component} Component 
-	 */
-	
-	
-	function createSeed(type){
-	
-	  var steps = [], current = 0, callback = _.noop;
-	  var key;
-	
-	  var out = {
-	    type: type,
-	    start: function(cb){
-	      key = _.uid();
-	      if(typeof cb === "function") callback = cb;
-	      if(current> 0 ){
-	        current = 0 ;
-	      }else{
-	        out.step();
-	      }
-	      return out.compelete;
-	    },
-	    compelete: function(){
-	      key = null;
-	      callback && callback();
-	      callback = _.noop;
-	      current = 0;
-	    },
-	    step: function(){
-	      if(steps[current]) steps[current ]( out.done.bind(out, key) );
-	    },
-	    done: function(pkey){
-	      if(pkey !== key) return; // means the loop is down
-	      if( current < steps.length - 1 ) {
-	        current++;
-	        out.step();
-	      }else{
-	        out.compelete();
-	      }
-	    },
-	    push: function(step){
-	      steps.push(step)
-	    }
-	  }
-	
-	  return out;
-	}
-	
-	Regular._addProtoInheritCache("animation")
-	
-	
-	// builtin animation
-	Regular.animation({
-	  "wait": function( step ){
-	    var timeout = parseInt( step.param ) || 0
-	    return function(done){
-	      // _.log("delay " + timeout)
-	      setTimeout( done, timeout );
-	    }
-	  },
-	  "class": function(step){
-	    var tmp = step.param.split(","),
-	      className = tmp[0] || "",
-	      mode = parseInt(tmp[1]) || 1;
-	
-	    return function(done){
-	      // _.log(className)
-	      animate.startClassAnimate( step.element, className , done, mode );
-	    }
-	  },
-	  "call": function(step){
-	    var fn = this.$expression(step.param).get, self = this;
-	    return function(done){
-	      // _.log(step.param, 'call')
-	      fn(self);
-	      self.$update();
-	      done()
-	    }
-	  },
-	  "emit": function(step){
-	    var param = step.param;
-	    var tmp = param.split(","),
-	      evt = tmp[0] || "",
-	      args = tmp[1]? this.$expression(tmp[1]).get: null;
-	
-	    if(!evt) throw Error("you shoud specified a eventname in emit command");
-	
-	    var self = this;
-	    return function(done){
-	      self.$emit(evt, args? args(self) : undefined);
-	      done();
-	    }
-	  },
-	  // style: left {10}px,
-	  style: function(step){
-	    var styles = {}, 
-	      param = step.param,
-	      pairs = param.split(","), valid;
-	    pairs.forEach(function(pair){
-	      pair = pair.trim();
-	      if(pair){
-	        var tmp = pair.split( rSpace ),
-	          name = tmp.shift(),
-	          value = tmp.join(" ");
-	
-	        if( !name || !value ) throw Error("invalid style in command: style");
-	        styles[name] = value;
-	        valid = true;
-	      }
-	    })
-	
-	    return function(done){
-	      if(valid){
-	        animate.startStyleAnimate(step.element, styles, done);
-	      }else{
-	        done();
-	      }
-	    }
-	  }
-	})
-	
-	
-	
-	// hancdle the r-animation directive
-	// el : the element to process
-	// value: the directive value
-	function processAnimate( element, value ){
-	  var Component = this.constructor;
-	
-	  if(_.isExpr(value)){
-	    value = value.get(this);
-	  }
-	
-	  value = value.trim();
-	
-	  var composites = value.split(";"), 
-	    composite, context = this, seeds = [], seed, destroies = [], destroy,
-	    command, param , current = 0, tmp, animator, self = this;
-	
-	  function reset( type ){
-	    seed && seeds.push( seed )
-	    seed = createSeed( type );
-	  }
-	
-	  function whenCallback(start, value){
-	    if( !!value ) start()
-	  }
-	
-	  function animationDestroy(element){
-	    return function(){
-	      element.onenter = null;
-	      element.onleave = null;
-	    } 
-	  }
-	
-	  for( var i = 0, len = composites.length; i < len; i++ ){
-	
-	    composite = composites[i];
-	    tmp = composite.split(":");
-	    command = tmp[0] && tmp[0].trim();
-	    param = tmp[1] && tmp[1].trim();
-	
-	    if( !command ) continue;
-	
-	    if( command === WHEN_COMMAND ){
-	      reset("when");
-	      this.$watch(param, whenCallback.bind( this, seed.start ) );
-	      continue;
-	    }
-	
-	    if( command === EVENT_COMMAND){
-	      reset(param);
-	      if( param === "leave" ){
-	        element.onleave = seed.start;
-	        destroies.push( animationDestroy(element) );
-	      }else if( param === "enter" ){
-	        element.onenter = seed.start;
-	        destroies.push( animationDestroy(element) );
-	      }else{
-	        if( ("on" + param) in element){ // if dom have the event , we use dom event
-	          destroies.push(this._handleEvent( element, param, seed.start ));
-	        }else{ // otherwise, we use component event
-	          this.$on(param, seed.start);
-	          destroies.push(this.$off.bind(this, param, seed.start));
-	        }
-	      }
-	      continue;
-	    }
-	
-	    var animator =  Component.animation(command) 
-	    if( animator && seed ){
-	      seed.push(
-	        animator.call(this,{
-	          element: element,
-	          done: seed.done,
-	          param: param 
-	        })
-	      )
-	    }else{
-	      throw Error( animator? "you should start with `on` or `event` in animation" : ("undefined animator 【" + command +"】" ));
-	    }
-	  }
-	
-	  if(destroies.length){
-	    return function(){
-	      destroies.forEach(function(destroy){
-	        destroy();
-	      })
-	    }
-	  }
-	}
-	
-	
-	Regular.directive( "r-animation", processAnimate)
-	Regular.directive( "r-anim", processAnimate)
-	
-
-
-/***/ },
-/* 34 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var Regular = __webpack_require__(30);
-	
-	/**
-	 * Timeout Module
-	 * @param {Component} Component 
-	 */
-	function TimeoutModule(Component){
-	
-	  Component.implement({
-	    /**
-	     * just like setTimeout, but will enter digest automately
-	     * @param  {Function} fn    
-	     * @param  {Number}   delay 
-	     * @return {Number}   timeoutid
-	     */
-	    $timeout: function(fn, delay){
-	      delay = delay || 0;
-	      return setTimeout(function(){
-	        fn.call(this);
-	        this.$update(); //enter digest
-	      }.bind(this), delay);
-	    },
-	    /**
-	     * just like setInterval, but will enter digest automately
-	     * @param  {Function} fn    
-	     * @param  {Number}   interval 
-	     * @return {Number}   intervalid
-	     */
-	    $interval: function(fn, interval){
-	      interval = interval || 1000/60;
-	      return setInterval(function(){
-	        fn.call(this);
-	        this.$update(); //enter digest
-	      }.bind(this), interval);
-	    }
-	  });
-	}
-	
-	
-	Regular.plugin('timeout', TimeoutModule);
-	Regular.plugin('$timeout', TimeoutModule);
-
-/***/ },
-/* 35 */
-/***/ function(module, exports, __webpack_require__) {
-
 	// http://stackoverflow.com/questions/1354064/how-to-convert-characters-to-html-entities-using-plain-javascript
 	var entities = {
 	  'quot':34, 
@@ -10880,10 +10548,411 @@
 	module.exports  = entities;
 
 /***/ },
+/* 33 */
+/***/ function(module, exports, __webpack_require__) {
+
+	// Regular
+	var _ = __webpack_require__(18);
+	var dom = __webpack_require__(17);
+	var animate = __webpack_require__(19);
+	var Regular = __webpack_require__(30);
+	var consts = __webpack_require__(42);
+	
+	
+	
+	__webpack_require__(43);
+	__webpack_require__(44);
+	
+	
+	module.exports = {
+	// **warn**: class inteplation will override this directive 
+	  'r-class': function(elem, value){
+	    if(typeof value=== 'string'){
+	      value = _.fixObjStr(value)
+	    }
+	    this.$watch(value, function(nvalue){
+	      var className = ' '+ elem.className.replace(/\s+/g, ' ') +' ';
+	      for(var i in nvalue) if(nvalue.hasOwnProperty(i)){
+	        className = className.replace(' ' + i + ' ',' ');
+	        if(nvalue[i] === true){
+	          className += i+' ';
+	        }
+	      }
+	      elem.className = className.trim();
+	    },true);
+	  },
+	  // **warn**: style inteplation will override this directive 
+	  'r-style': function(elem, value){
+	    if(typeof value=== 'string'){
+	      value = _.fixObjStr(value)
+	    }
+	    this.$watch(value, function(nvalue){
+	      for(var i in nvalue) if(nvalue.hasOwnProperty(i)){
+	        dom.css(elem, i, nvalue[i]);
+	      }
+	    },true);
+	  },
+	  // when expression is evaluate to true, the elem will add display:none
+	  // Example: <div r-hide={{items.length > 0}}></div>
+	  'r-hide': function(elem, value){
+	    var preBool = null, compelete;
+	    if( _.isExpr(value) || typeof value === "string"){
+	      this.$watch(value, function(nvalue){
+	        var bool = !!nvalue;
+	        if(bool === preBool) return; 
+	        preBool = bool;
+	        if(bool){
+	          if(elem.onleave){
+	            compelete = elem.onleave(function(){
+	              elem.style.display = "none"
+	              compelete = null;
+	            })
+	          }else{
+	            elem.style.display = "none"
+	          }
+	          
+	        }else{
+	          if(compelete) compelete();
+	          elem.style.display = "";
+	          if(elem.onenter){
+	            elem.onenter();
+	          }
+	        }
+	      });
+	    }else if(!!value){
+	      elem.style.display = "none";
+	    }
+	  },
+	  'r-html': function(elem, value){
+	    this.$watch(value, function(nvalue){
+	      nvalue = nvalue || "";
+	      dom.html(elem, nvalue)
+	    }, {force: true});
+	  },
+	  'ref': {
+	    accept: consts.COMPONENT_TYPE + consts.ELEMENT_TYPE,
+	    link: function( elem, value ){
+	      var refs = this.$refs || (this.$refs = {});
+	      var cval;
+	      if(_.isExpr(value)){
+	        this.$watch(value, function(nval, oval){
+	          cval = nval;
+	          if(refs[oval] === elem) refs[oval] = null;
+	          if(cval) refs[cval] = elem;
+	        })
+	      }else{
+	        refs[cval = value] = elem;
+	      }
+	      return function(){
+	        refs[cval] = null;
+	      }
+	    }
+	  }
+	}
+	
+	Regular.directive(module.exports);
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+
+
+/***/ },
+/* 34 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var // packages
+	  _ = __webpack_require__(18),
+	 animate = __webpack_require__(19),
+	 dom = __webpack_require__(17),
+	 Regular = __webpack_require__(30);
+	
+	
+	var // variables
+	  rClassName = /^[-\w]+(\s[-\w]+)*$/,
+	  rCommaSep = /[\r\n\f ]*,[\r\n\f ]*(?=\w+\:)/, //  dont split comma in  Expression
+	  rStyles = /^\{.*\}$/, //  for Simpilfy
+	  rSpace = /\s+/, //  for Simpilfy
+	  WHEN_COMMAND = "when",
+	  EVENT_COMMAND = "on",
+	  THEN_COMMAND = "then";
+	
+	/**
+	 * Animation Plugin
+	 * @param {Component} Component 
+	 */
+	
+	
+	function createSeed(type){
+	
+	  var steps = [], current = 0, callback = _.noop;
+	  var key;
+	
+	  var out = {
+	    type: type,
+	    start: function(cb){
+	      key = _.uid();
+	      if(typeof cb === "function") callback = cb;
+	      if(current> 0 ){
+	        current = 0 ;
+	      }else{
+	        out.step();
+	      }
+	      return out.compelete;
+	    },
+	    compelete: function(){
+	      key = null;
+	      callback && callback();
+	      callback = _.noop;
+	      current = 0;
+	    },
+	    step: function(){
+	      if(steps[current]) steps[current ]( out.done.bind(out, key) );
+	    },
+	    done: function(pkey){
+	      if(pkey !== key) return; // means the loop is down
+	      if( current < steps.length - 1 ) {
+	        current++;
+	        out.step();
+	      }else{
+	        out.compelete();
+	      }
+	    },
+	    push: function(step){
+	      steps.push(step)
+	    }
+	  }
+	
+	  return out;
+	}
+	
+	Regular._addProtoInheritCache("animation")
+	
+	
+	// builtin animation
+	Regular.animation({
+	  "wait": function( step ){
+	    var timeout = parseInt( step.param ) || 0
+	    return function(done){
+	      // _.log("delay " + timeout)
+	      setTimeout( done, timeout );
+	    }
+	  },
+	  "class": function(step){
+	    var tmp = step.param.split(","),
+	      className = tmp[0] || "",
+	      mode = parseInt(tmp[1]) || 1;
+	
+	    return function(done){
+	      // _.log(className)
+	      animate.startClassAnimate( step.element, className , done, mode );
+	    }
+	  },
+	  "call": function(step){
+	    var fn = this.$expression(step.param).get, self = this;
+	    return function(done){
+	      // _.log(step.param, 'call')
+	      fn(self);
+	      self.$update();
+	      done()
+	    }
+	  },
+	  "emit": function(step){
+	    var param = step.param;
+	    var tmp = param.split(","),
+	      evt = tmp[0] || "",
+	      args = tmp[1]? this.$expression(tmp[1]).get: null;
+	
+	    if(!evt) throw Error("you shoud specified a eventname in emit command");
+	
+	    var self = this;
+	    return function(done){
+	      self.$emit(evt, args? args(self) : undefined);
+	      done();
+	    }
+	  },
+	  // style: left {10}px,
+	  style: function(step){
+	    var styles = {}, 
+	      param = step.param,
+	      pairs = param.split(","), valid;
+	    pairs.forEach(function(pair){
+	      pair = pair.trim();
+	      if(pair){
+	        var tmp = pair.split( rSpace ),
+	          name = tmp.shift(),
+	          value = tmp.join(" ");
+	
+	        if( !name || !value ) throw Error("invalid style in command: style");
+	        styles[name] = value;
+	        valid = true;
+	      }
+	    })
+	
+	    return function(done){
+	      if(valid){
+	        animate.startStyleAnimate(step.element, styles, done);
+	      }else{
+	        done();
+	      }
+	    }
+	  }
+	})
+	
+	
+	
+	// hancdle the r-animation directive
+	// el : the element to process
+	// value: the directive value
+	function processAnimate( element, value ){
+	  var Component = this.constructor;
+	
+	  if(_.isExpr(value)){
+	    value = value.get(this);
+	  }
+	
+	  value = value.trim();
+	
+	  var composites = value.split(";"), 
+	    composite, context = this, seeds = [], seed, destroies = [], destroy,
+	    command, param , current = 0, tmp, animator, self = this;
+	
+	  function reset( type ){
+	    seed && seeds.push( seed )
+	    seed = createSeed( type );
+	  }
+	
+	  function whenCallback(start, value){
+	    if( !!value ) start()
+	  }
+	
+	  function animationDestroy(element){
+	    return function(){
+	      element.onenter = null;
+	      element.onleave = null;
+	    } 
+	  }
+	
+	  for( var i = 0, len = composites.length; i < len; i++ ){
+	
+	    composite = composites[i];
+	    tmp = composite.split(":");
+	    command = tmp[0] && tmp[0].trim();
+	    param = tmp[1] && tmp[1].trim();
+	
+	    if( !command ) continue;
+	
+	    if( command === WHEN_COMMAND ){
+	      reset("when");
+	      this.$watch(param, whenCallback.bind( this, seed.start ) );
+	      continue;
+	    }
+	
+	    if( command === EVENT_COMMAND){
+	      reset(param);
+	      if( param === "leave" ){
+	        element.onleave = seed.start;
+	        destroies.push( animationDestroy(element) );
+	      }else if( param === "enter" ){
+	        element.onenter = seed.start;
+	        destroies.push( animationDestroy(element) );
+	      }else{
+	        if( ("on" + param) in element){ // if dom have the event , we use dom event
+	          destroies.push(this._handleEvent( element, param, seed.start ));
+	        }else{ // otherwise, we use component event
+	          this.$on(param, seed.start);
+	          destroies.push(this.$off.bind(this, param, seed.start));
+	        }
+	      }
+	      continue;
+	    }
+	
+	    var animator =  Component.animation(command) 
+	    if( animator && seed ){
+	      seed.push(
+	        animator.call(this,{
+	          element: element,
+	          done: seed.done,
+	          param: param 
+	        })
+	      )
+	    }else{
+	      throw Error( animator? "you should start with `on` or `event` in animation" : ("undefined animator 【" + command +"】" ));
+	    }
+	  }
+	
+	  if(destroies.length){
+	    return function(){
+	      destroies.forEach(function(destroy){
+	        destroy();
+	      })
+	    }
+	  }
+	}
+	
+	
+	Regular.directive( "r-animation", processAnimate)
+	Regular.directive( "r-anim", processAnimate)
+	
+
+
+/***/ },
+/* 35 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var Regular = __webpack_require__(30);
+	
+	/**
+	 * Timeout Module
+	 * @param {Component} Component 
+	 */
+	function TimeoutModule(Component){
+	
+	  Component.implement({
+	    /**
+	     * just like setTimeout, but will enter digest automately
+	     * @param  {Function} fn    
+	     * @param  {Number}   delay 
+	     * @return {Number}   timeoutid
+	     */
+	    $timeout: function(fn, delay){
+	      delay = delay || 0;
+	      return setTimeout(function(){
+	        fn.call(this);
+	        this.$update(); //enter digest
+	      }.bind(this), delay);
+	    },
+	    /**
+	     * just like setInterval, but will enter digest automately
+	     * @param  {Function} fn    
+	     * @param  {Number}   interval 
+	     * @return {Number}   intervalid
+	     */
+	    $interval: function(fn, interval){
+	      interval = interval || 1000/60;
+	      return setInterval(function(){
+	        fn.call(this);
+	        this.$update(); //enter digest
+	      }.bind(this), interval);
+	    }
+	  });
+	}
+	
+	
+	Regular.plugin('timeout', TimeoutModule);
+	Regular.plugin('$timeout', TimeoutModule);
+
+/***/ },
 /* 36 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var _ = __webpack_require__(23);
+	var _ = __webpack_require__(18);
 	
 	var config = __webpack_require__(29);
 	var node = __webpack_require__(45);
@@ -10893,6 +10962,7 @@
 	var extName = _.extName;
 	var isPath = _.makePredicate("STRING IDENT NUMBER");
 	var isKeyWord = _.makePredicate("true false undefined null this Array Date JSON Math NaN RegExp decodeURI decodeURIComponent encodeURI encodeURIComponent parseFloat parseInt Object");
+	var isInvalidTag = _.makePredicate("script style");
 	
 	
 	
@@ -11014,6 +11084,10 @@
 	op.xml = function(){
 	  var name, attrs, children, selfClosed;
 	  name = this.match('TAG_OPEN').value;
+	
+	  if( isInvalidTag(name)){
+	    this.error('Invalid Tag: ' + name);
+	  }
 	  attrs = this.attrs();
 	  selfClosed = this.eat('/')
 	  this.match('>');
@@ -11616,7 +11690,7 @@
 /* 37 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var _ = __webpack_require__(23);
+	var _ = __webpack_require__(18);
 	var config = __webpack_require__(29);
 	
 	// some custom tag  will conflict with the Lexer progress
@@ -11974,13 +12048,13 @@
 /* 38 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var diffArray = __webpack_require__(26).diffArray;
-	var combine = __webpack_require__(19);
-	var animate = __webpack_require__(18);
+	var diffArray = __webpack_require__(24).diffArray;
+	var combine = __webpack_require__(20);
+	var animate = __webpack_require__(19);
 	var node = __webpack_require__(45);
 	var Group = __webpack_require__(39);
 	var dom = __webpack_require__(17);
-	var _ = __webpack_require__(23);
+	var _ = __webpack_require__(18);
 	var consts =   __webpack_require__(42)
 	var ERROR = consts.ERROR;
 	var MSG = consts.MSG;
@@ -12419,7 +12493,7 @@
 	  if(cursor) mountNode = cursor.node;
 	
 	  if( tag === 'r-content' ){
-	    _.log('r-content is deprecated, use {#inc this.$body} instead (`{#include}` as same)', 'error');
+	    _.log('r-content is deprecated, use {#inc this.$body} instead (`{#include}` as same)', 'warn');
 	    return this.$body && this.$body(cursor? {cursor: cursor}: null);
 	  } 
 	
@@ -12699,8 +12773,8 @@
 /* 39 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var _ = __webpack_require__(23);
-	var combine = __webpack_require__(19)
+	var _ = __webpack_require__(18);
+	var combine = __webpack_require__(20)
 	
 	function Group(list){
 	  this.children = list || [];
@@ -12733,9 +12807,9 @@
 /* 40 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var _ = __webpack_require__(23);
-	var parseExpression = __webpack_require__(20).expression;
-	var diff = __webpack_require__(26);
+	var _ = __webpack_require__(18);
+	var parseExpression = __webpack_require__(21).expression;
+	var diff = __webpack_require__(24);
 	var diffArray = diff.diffArray;
 	var diffObject = diff.diffObject;
 	
@@ -13079,7 +13153,7 @@
 	 * event directive  bundle
 	 *
 	 */
-	var _ = __webpack_require__(23);
+	var _ = __webpack_require__(18);
 	var dom = __webpack_require__(17);
 	var Regular = __webpack_require__(30);
 	
@@ -13160,7 +13234,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	// Regular
-	var _ = __webpack_require__(23);
+	var _ = __webpack_require__(18);
 	var dom = __webpack_require__(17);
 	var Regular = __webpack_require__(30);
 	

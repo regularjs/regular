@@ -155,6 +155,19 @@ describe("Interplation", function(){
     destroy(component, container)
   })
 
+  it("Invalid tag should throw Error" , function(){
+    var Component = Regular.extend();
+
+    expect(function(){
+      Regular.parse("<script>var</script>")
+    }).to.throwError();
+
+    expect(function(){
+      Regular.parse("<style>body</style>")
+    }).to.throwError();
+
+  })
+
   it("Invalid Lefthand Expression should throw Error" , function(){
     var component = new Regular({
       data: {name: 2}

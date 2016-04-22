@@ -931,16 +931,40 @@ describe("SSR: list", function(){
     expect(nes('div', container).length).to.equal(1);
 
     component.$update('json', [
-      {
-        age: 10
-      },
-      {
-        age: 20
-      }
+      { age: 10 },
+      { age: 20 }
     ])
 
     expect(nes('.item', container).length).to.equal(2);
     expect(nes.one('.item', container).innerHTML).to.equal('10:0');
+
+  })
+
+  it("should handle common xss error", function(){
+
+    var container = document.createElement('div');
+    var Component = Regular.extend({
+        template: "<div ref=container>\
+        <div class='item' onerror={onerror}> {script}</div>\
+        </div>",
+        data: {
+          onerror: "><script>alert(1000)</script>",
+          script: "test2</a><img src=# onerror='alert(1)'>"
+        }
+    })
+    expect(function(){
+      new Component();
+    }).to.not.throwError();
+
+    var html = SSR.render(Component);
+
+    container.innerHTML = html
+
+    expect(function(){
+      new Component({
+        mountNode: container
+      })
+    }).to.not.throwError();
 
   })
 })

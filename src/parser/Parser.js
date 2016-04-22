@@ -8,6 +8,7 @@ var ctxName = _.ctxName;
 var extName = _.extName;
 var isPath = _.makePredicate("STRING IDENT NUMBER");
 var isKeyWord = _.makePredicate("true false undefined null this Array Date JSON Math NaN RegExp decodeURI decodeURIComponent encodeURI encodeURIComponent parseFloat parseInt Object");
+var isInvalidTag = _.makePredicate("script style");
 
 
 
@@ -129,6 +130,10 @@ op.statement = function(){
 op.xml = function(){
   var name, attrs, children, selfClosed;
   name = this.match('TAG_OPEN').value;
+
+  if( isInvalidTag(name)){
+    this.error('Invalid Tag: ' + name);
+  }
   attrs = this.attrs();
   selfClosed = this.eat('/')
   this.match('>');

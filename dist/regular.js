@@ -1603,6 +1603,38 @@ return /******/ (function(modules) { // webpackBootstrap
 	var parser = __webpack_require__(19);
 	var diffArray = __webpack_require__(22).diffArray;
 
+
+
+
+	// hogan.js
+	// https://github.com/twitter/hogan.js
+	// MIT
+	var escape = (function(){
+	  var rAmp = /&/g,
+	      rLt = /</g,
+	      rGt = />/g,
+	      rApos = /\'/g,
+	      rQuot = /\"/g,
+	      hChars = /[&<>\"\']/;
+
+	  function ignoreNullVal(val) {
+	    return String((val === undefined || val == null) ? '' : val);
+	  }
+
+	  return function (str) {
+	    str = ignoreNullVal(str);
+	    return hChars.test(str) ?
+	      str
+	        .replace(rAmp, '&amp;')
+	        .replace(rLt, '&lt;')
+	        .replace(rGt, '&gt;')
+	        .replace(rApos, '&#39;')
+	        .replace(rQuot, '&quot;') :
+	      str;
+	  }
+
+	})();
+
 	/**
 	 * [compile description]
 	 * @param  {[type]} ast     [description]
@@ -1818,11 +1850,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	ssr.expression = function(ast, options){
 	  var str = this.get(ast);
-	  return str == null?  "" : "" + str;
+	  return escape(str);
 	}
 
 	ssr.text = function(ast, options){
-	  return ast.text  
+	  return escape(ast.text) 
 	}
 
 
@@ -1851,10 +1883,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }else{
 	    // @TODO 对于boolean 值
 	    if(_.isExpr(value)) value = this.get(value); 
-	    if(_.isBooleanAttr(name) || value == undefined){
+	    if(_.isBooleanAttr(name) || value === undefined || value === null){
 	      return name + " ";
 	    }else{
-	      return name + '="' + value + '" ';
+	      return name + '="' + escape(value) + '" ';
 	    }
 	  }
 	}
@@ -3214,7 +3246,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  if(cursor) mountNode = cursor.node;
 
 	  if( tag === 'r-content' ){
-	    _.log('r-content is deprecated, use {#inc this.$body} instead (`{#include}` as same)', 'error');
+	    _.log('r-content is deprecated, use {#inc this.$body} instead (`{#include}` as same)', 'warn');
 	    return this.$body && this.$body(cursor? {cursor: cursor}: null);
 	  } 
 
@@ -5154,6 +5186,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	var extName = _.extName;
 	var isPath = _.makePredicate("STRING IDENT NUMBER");
 	var isKeyWord = _.makePredicate("true false undefined null this Array Date JSON Math NaN RegExp decodeURI decodeURIComponent encodeURI encodeURIComponent parseFloat parseInt Object");
+	var isInvalidTag = _.makePredicate("script style");
 
 
 
@@ -5275,6 +5308,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	op.xml = function(){
 	  var name, attrs, children, selfClosed;
 	  name = this.match('TAG_OPEN').value;
+
+	  if( isInvalidTag(name)){
+	    this.error('Invalid Tag: ' + name);
+	  }
 	  attrs = this.attrs();
 	  selfClosed = this.eat('/')
 	  this.match('>');
