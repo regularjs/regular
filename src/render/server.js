@@ -280,7 +280,7 @@ ssr.attr = function(attr){
     if(directive.ssr){
 
       // @TODO: 应该提供hook可以控制节点内部  ,比如r-html
-      return directive.ssr( name, value );
+      return directive.ssr( name, _.isExpr(value)? this.get(value): '' );
     }
   }else{
     // @TODO 对于boolean 值

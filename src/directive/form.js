@@ -17,17 +17,23 @@ var modelHandlers = {
 // two-way binding with r-model
 // works on input, textarea, checkbox, radio, select
 
-Regular.directive("r-model", function(elem, value){
-  var tag = elem.tagName.toLowerCase();
-  var sign = tag;
-  if(sign === "input") sign = elem.type || "text";
-  else if(sign === "textarea") sign = "text";
-  if(typeof value === "string") value = this.$expression(value);
+Regular.directive("r-model", {
+  link: function(elem, value){
+    var tag = elem.tagName.toLowerCase();
+    var sign = tag;
+    if(sign === "input") sign = elem.type || "text";
+    else if(sign === "textarea") sign = "text";
+    if(typeof value === "string") value = this.$expression(value);
 
-  if( modelHandlers[sign] ) return modelHandlers[sign].call(this, elem, value);
-  else if(tag === "input"){
-    return modelHandlers.text.call(this, elem, value);
+    if( modelHandlers[sign] ) return modelHandlers[sign].call(this, elem, value);
+    else if(tag === "input"){
+      return modelHandlers.text.call(this, elem, value);
+    }
   }
+  //@TODO
+  // ssr: function(name, value){
+  //   return value? "value=" + value: ""
+  // }
 });
 
 

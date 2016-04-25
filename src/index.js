@@ -25,5 +25,6 @@ Regular.parse = function(str, options){
 }
 Regular.Cursor =require('./helper/cursor.js') 
 
-Regular.renderToString = require("./render/server.js").render;
+Regular.isServer = !Regular.env.browser;
+
 
