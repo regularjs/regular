@@ -9,4 +9,5 @@ exports.svg = (function(){
 exports.browser = typeof document !== "undefined" && document.nodeType;
 // whether have component in initializing
 exports.exprCache = _.cache(1000);
+exports.nodejs = typeof process !== "undefined" && ( '' + process ) === '[object process]';
 exports.isRunning = false;

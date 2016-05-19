@@ -850,7 +850,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var Regular = __webpack_require__(16);
-	var animate = __webpack_require__(19);
+	var animate = __webpack_require__(20);
 	var dom = __webpack_require__(17);
 	
 	function destroy(component, container){
@@ -1690,7 +1690,7 @@
 
 	var expect = __webpack_require__(27);
 	var Regular = __webpack_require__(16);
-	var combine = __webpack_require__(20);
+	var combine = __webpack_require__(19);
 	function destroy(component, container){
 	  component.destroy();
 	  expect(container.innerHTML).to.equal('');
@@ -4674,7 +4674,7 @@
 
 	var expect = __webpack_require__(27);
 	var Regular = __webpack_require__(16);
-	var parse = __webpack_require__(21);
+	var parse = __webpack_require__(22);
 	
 	var Component = Regular.extend();
 	
@@ -5802,9 +5802,9 @@
 
 	var expect = __webpack_require__(27);
 	var _ = __webpack_require__(18);
-	var shim = __webpack_require__(22);
-	var extend = __webpack_require__(23);
-	var diff = __webpack_require__(24)
+	var shim = __webpack_require__(23);
+	var extend = __webpack_require__(24);
+	var diff = __webpack_require__(25)
 	var diffArray = diff.diffArray;
 	var diffObject = diff.diffObject;
 	
@@ -6128,7 +6128,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var expect = __webpack_require__(27);
-	var Event = __webpack_require__(25);
+	var Event = __webpack_require__(21);
 	
 	
 	
@@ -6286,7 +6286,8 @@
 	}
 	Regular.Cursor =__webpack_require__(31) 
 	
-	Regular.renderToString = __webpack_require__(26).render;
+	Regular.isServer = !Regular.env.browser;
+	
 	
 
 
@@ -6695,7 +6696,7 @@
 /* 18 */
 /***/ function(module, exports, __webpack_require__) {
 
-	/* WEBPACK VAR INJECTION */(function(global) {__webpack_require__(22)();
+	/* WEBPACK VAR INJECTION */(function(global) {__webpack_require__(23)();
 	
 	
 	
@@ -7091,6 +7092,13 @@
 	  return str;
 	}
 	
+	_.indexOf = function(array, filter){
+	  for (var i = 0, len = array.length; i < len; i++) {
+	    if(filter(array[i], i)) return i;
+	  }
+	  return -1;
+	}
+	
 	
 	_.map= function(array, callback){
 	  var res = [];
@@ -7151,6 +7159,117 @@
 
 /***/ },
 /* 19 */
+/***/ function(module, exports, __webpack_require__) {
+
+	// some nested  operation in ast 
+	// --------------------------------
+	
+	var dom = __webpack_require__(17);
+	var animate = __webpack_require__(20);
+	
+	var combine = module.exports = {
+	
+	  // get the initial dom in object
+	  node: function(item){
+	    var children,node, nodes;
+	    if(!item) return;
+	    if(item.element) return item.element;
+	    if(typeof item.node === "function") return item.node();
+	    if(typeof item.nodeType === "number") return item;
+	    if(item.group) return combine.node(item.group)
+	    if(children = item.children){
+	      if(children.length === 1){
+	        return combine.node(children[0]);
+	      }
+	      nodes = [];
+	      for(var i = 0, len = children.length; i < len; i++ ){
+	        node = combine.node(children[i]);
+	        if(Array.isArray(node)){
+	          nodes.push.apply(nodes, node)
+	        }else if(node) {
+	          nodes.push(node)
+	        }
+	      }
+	      return nodes;
+	    }
+	  },
+	  // @TODO remove _gragContainer
+	  inject: function(node, pos ){
+	    var group = this;
+	    var fragment = combine.node(group.group || group);
+	    if(node === false) {
+	      animate.remove(fragment)
+	      return group;
+	    }else{
+	      if(!fragment) return group;
+	      if(typeof node === 'string') node = dom.find(node);
+	      if(!node) throw Error('injected node is not found');
+	      // use animate to animate firstchildren
+	      animate.inject(fragment, node, pos);
+	    }
+	    // if it is a component
+	    if(group.$emit) {
+	      var preParent = group.parentNode;
+	      var newParent = (pos ==='after' || pos === 'before')? node.parentNode : node;
+	      group.parentNode = newParent;
+	      group.$emit("$inject", node, pos, preParent);
+	    }
+	    return group;
+	  },
+	
+	  // get the last dom in object(for insertion operation)
+	  last: function(item){
+	    var children = item.children;
+	
+	    if(typeof item.last === "function") return item.last();
+	    if(typeof item.nodeType === "number") return item;
+	
+	    if(children && children.length) return combine.last(children[children.length - 1]);
+	    if(item.group) return combine.last(item.group);
+	
+	  },
+	
+	  destroy: function(item, first){
+	    if(!item) return;
+	    if(Array.isArray(item)){
+	      for(var i = 0, len = item.length; i < len; i++ ){
+	        combine.destroy(item[i], first);
+	      }
+	    }
+	    var children = item.children;
+	    if(typeof item.destroy === "function") return item.destroy(first);
+	    if(typeof item.nodeType === "number" && first)  dom.remove(item);
+	    if(children && children.length){
+	      combine.destroy(children, true);
+	      item.children = null;
+	    }
+	  }
+	
+	}
+	
+	
+	// @TODO: need move to dom.js
+	dom.element = function( component, all ){
+	  if(!component) return !all? null: [];
+	  var nodes = combine.node( component );
+	  if( nodes.nodeType === 1 ) return all? [nodes]: nodes;
+	  var elements = [];
+	  for(var i = 0; i<nodes.length ;i++){
+	    var node = nodes[i];
+	    if( node && node.nodeType === 1){
+	      if(!all) return node;
+	      elements.push(node);
+	    } 
+	  }
+	  return !all? elements[0]: elements;
+	}
+	
+	
+	
+
+
+/***/ },
+/* 20 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(18);
@@ -7407,118 +7526,87 @@
 	module.exports = animate;
 
 /***/ },
-/* 20 */
+/* 21 */
 /***/ function(module, exports, __webpack_require__) {
 
-	// some nested  operation in ast 
-	// --------------------------------
-	
-	var dom = __webpack_require__(17);
-	var animate = __webpack_require__(19);
-	
-	var combine = module.exports = {
-	
-	  // get the initial dom in object
-	  node: function(item){
-	    var children,node, nodes;
-	    if(!item) return;
-	    if(item.element) return item.element;
-	    if(typeof item.node === "function") return item.node();
-	    if(typeof item.nodeType === "number") return item;
-	    if(item.group) return combine.node(item.group)
-	    if(children = item.children){
-	      if(children.length === 1){
-	        return combine.node(children[0]);
+	// simplest event emitter 60 lines
+	// ===============================
+	var slice = [].slice, _ = __webpack_require__(18);
+	var API = {
+	  $on: function(event, fn) {
+	    if(typeof event === "object"){
+	      for (var i in event) {
+	        this.$on(i, event[i]);
 	      }
-	      nodes = [];
-	      for(var i = 0, len = children.length; i < len; i++ ){
-	        node = combine.node(children[i]);
-	        if(Array.isArray(node)){
-	          nodes.push.apply(nodes, node)
-	        }else if(node) {
-	          nodes.push(node)
+	    }else{
+	      // @patch: for list
+	      var context = this;
+	      var handles = context._handles || (context._handles = {}),
+	        calls = handles[event] || (handles[event] = []);
+	      calls.push(fn);
+	    }
+	    return this;
+	  },
+	  $off: function(event, fn) {
+	    var context = this;
+	    if(!context._handles) return;
+	    if(!event) this._handles = {};
+	    var handles = context._handles,
+	      calls;
+	
+	    if (calls = handles[event]) {
+	      if (!fn) {
+	        handles[event] = [];
+	        return context;
+	      }
+	      for (var i = 0, len = calls.length; i < len; i++) {
+	        if (fn === calls[i]) {
+	          calls.splice(i, 1);
+	          return context;
 	        }
 	      }
-	      return nodes;
 	    }
+	    return context;
 	  },
-	  // @TODO remove _gragContainer
-	  inject: function(node, pos ){
-	    var group = this;
-	    var fragment = combine.node(group.group || group);
-	    if(node === false) {
-	      animate.remove(fragment)
-	      return group;
-	    }else{
-	      if(!fragment) return group;
-	      if(typeof node === 'string') node = dom.find(node);
-	      if(!node) throw Error('injected node is not found');
-	      // use animate to animate firstchildren
-	      animate.inject(fragment, node, pos);
-	    }
-	    // if it is a component
-	    if(group.$emit) {
-	      var preParent = group.parentNode;
-	      var newParent = (pos ==='after' || pos === 'before')? node.parentNode : node;
-	      group.parentNode = newParent;
-	      group.$emit("$inject", node, pos, preParent);
-	    }
-	    return group;
-	  },
+	  // bubble event
+	  $emit: function(event){
+	    // @patch: for list
+	    var context = this;
+	    var handles = context._handles, calls, args, type;
+	    if(!event) return;
+	    var args = slice.call(arguments, 1);
+	    var type = event;
 	
-	  // get the last dom in object(for insertion operation)
-	  last: function(item){
-	    var children = item.children;
-	
-	    if(typeof item.last === "function") return item.last();
-	    if(typeof item.nodeType === "number") return item;
-	
-	    if(children && children.length) return combine.last(children[children.length - 1]);
-	    if(item.group) return combine.last(item.group);
-	
-	  },
-	
-	  destroy: function(item, first){
-	    if(!item) return;
-	    if(Array.isArray(item)){
-	      for(var i = 0, len = item.length; i < len; i++ ){
-	        combine.destroy(item[i], first);
+	    if(!handles) return context;
+	    if(calls = handles[type.slice(1)]){
+	      for (var j = 0, len = calls.length; j < len; j++) {
+	        calls[j].apply(context, args)
 	      }
 	    }
-	    var children = item.children;
-	    if(typeof item.destroy === "function") return item.destroy(first);
-	    if(typeof item.nodeType === "number" && first)  dom.remove(item);
-	    if(children && children.length){
-	      combine.destroy(children, true);
-	      item.children = null;
+	    if (!(calls = handles[type])) return context;
+	    for (var i = 0, len = calls.length; i < len; i++) {
+	      calls[i].apply(context, args)
 	    }
-	  }
-	
+	    // if(calls.length) context.$update();
+	    return context;
+	  },
+	  // capture  event
+	  $one: function(){
+	    
 	}
-	
-	
-	// @TODO: need move to dom.js
-	dom.element = function( component, all ){
-	  if(!component) return !all? null: [];
-	  var nodes = combine.node( component );
-	  if( nodes.nodeType === 1 ) return all? [nodes]: nodes;
-	  var elements = [];
-	  for(var i = 0; i<nodes.length ;i++){
-	    var node = nodes[i];
-	    if( node && node.nodeType === 1){
-	      if(!all) return node;
-	      elements.push(node);
-	    } 
-	  }
-	  return !all? elements[0]: elements;
 	}
+	// container class
+	function Event() {}
+	_.extend(Event.prototype, API)
 	
-	
-	
-
+	Event.mixTo = function(obj){
+	  obj = typeof obj === "function" ? obj.prototype : obj;
+	  _.extend(obj, API)
+	}
+	module.exports = Event;
 
 /***/ },
-/* 21 */
+/* 22 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var exprCache = __webpack_require__(28).exprCache;
@@ -7540,7 +7628,7 @@
 
 
 /***/ },
-/* 22 */
+/* 23 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// shim for es5
@@ -7648,7 +7736,7 @@
 
 
 /***/ },
-/* 23 */
+/* 24 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// (c) 2010-2014 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
@@ -7734,7 +7822,7 @@
 
 
 /***/ },
-/* 24 */
+/* 25 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(18);
@@ -7924,86 +8012,6 @@
 	}
 
 /***/ },
-/* 25 */
-/***/ function(module, exports, __webpack_require__) {
-
-	// simplest event emitter 60 lines
-	// ===============================
-	var slice = [].slice, _ = __webpack_require__(18);
-	var API = {
-	  $on: function(event, fn) {
-	    if(typeof event === "object"){
-	      for (var i in event) {
-	        this.$on(i, event[i]);
-	      }
-	    }else{
-	      // @patch: for list
-	      var context = this;
-	      var handles = context._handles || (context._handles = {}),
-	        calls = handles[event] || (handles[event] = []);
-	      calls.push(fn);
-	    }
-	    return this;
-	  },
-	  $off: function(event, fn) {
-	    var context = this;
-	    if(!context._handles) return;
-	    if(!event) this._handles = {};
-	    var handles = context._handles,
-	      calls;
-	
-	    if (calls = handles[event]) {
-	      if (!fn) {
-	        handles[event] = [];
-	        return context;
-	      }
-	      for (var i = 0, len = calls.length; i < len; i++) {
-	        if (fn === calls[i]) {
-	          calls.splice(i, 1);
-	          return context;
-	        }
-	      }
-	    }
-	    return context;
-	  },
-	  // bubble event
-	  $emit: function(event){
-	    // @patch: for list
-	    var context = this;
-	    var handles = context._handles, calls, args, type;
-	    if(!event) return;
-	    var args = slice.call(arguments, 1);
-	    var type = event;
-	
-	    if(!handles) return context;
-	    if(calls = handles[type.slice(1)]){
-	      for (var j = 0, len = calls.length; j < len; j++) {
-	        calls[j].apply(context, args)
-	      }
-	    }
-	    if (!(calls = handles[type])) return context;
-	    for (var i = 0, len = calls.length; i < len; i++) {
-	      calls[i].apply(context, args)
-	    }
-	    // if(calls.length) context.$update();
-	    return context;
-	  },
-	  // capture  event
-	  $one: function(){
-	    
-	}
-	}
-	// container class
-	function Event() {}
-	_.extend(Event.prototype, API)
-	
-	Event.mixTo = function(obj){
-	  obj = typeof obj === "function" ? obj.prototype : obj;
-	  _.extend(obj, API)
-	}
-	module.exports = Event;
-
-/***/ },
 /* 26 */
 /***/ function(module, exports, __webpack_require__) {
 
@@ -8011,8 +8019,8 @@
 	
 	
 	var _ = __webpack_require__(18);
-	var parser = __webpack_require__(21);
-	var diffArray = __webpack_require__(24).diffArray;
+	var parser = __webpack_require__(22);
+	var diffArray = __webpack_require__(25).diffArray;
 	
 	
 	
@@ -8289,7 +8297,7 @@
 	    if(directive.ssr){
 	
 	      // @TODO: 应该提供hook可以控制节点内部  ,比如r-html
-	      return directive.ssr( name, value );
+	      return directive.ssr( name, _.isExpr(value)? this.get(value): '' );
 	    }
 	  }else{
 	    // @TODO 对于boolean 值
@@ -9661,18 +9669,18 @@
 	var Parser = __webpack_require__(36);
 	var config = __webpack_require__(29);
 	var _ = __webpack_require__(18);
-	var extend = __webpack_require__(23);
+	var extend = __webpack_require__(24);
 	var combine = {};
 	if(env.browser){
 	  var dom = __webpack_require__(17);
 	  var walkers = __webpack_require__(38);
 	  var Group = __webpack_require__(39);
 	  var doc = dom.doc;
-	  combine = __webpack_require__(20);
+	  combine = __webpack_require__(19);
 	}
-	var events = __webpack_require__(25);
+	var events = __webpack_require__(21);
 	var Watcher = __webpack_require__(40);
-	var parse = __webpack_require__(21);
+	var parse = __webpack_require__(22);
 	var filter = __webpack_require__(41);
 	var ERROR = __webpack_require__(42).ERROR;
 	var nodeCursor = __webpack_require__(31);
@@ -10554,7 +10562,7 @@
 	// Regular
 	var _ = __webpack_require__(18);
 	var dom = __webpack_require__(17);
-	var animate = __webpack_require__(19);
+	var animate = __webpack_require__(20);
 	var Regular = __webpack_require__(30);
 	var consts = __webpack_require__(42);
 	
@@ -10669,7 +10677,7 @@
 
 	var // packages
 	  _ = __webpack_require__(18),
-	 animate = __webpack_require__(19),
+	 animate = __webpack_require__(20),
 	 dom = __webpack_require__(17),
 	 Regular = __webpack_require__(30);
 	
@@ -12048,9 +12056,9 @@
 /* 38 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var diffArray = __webpack_require__(24).diffArray;
-	var combine = __webpack_require__(20);
-	var animate = __webpack_require__(19);
+	var diffArray = __webpack_require__(25).diffArray;
+	var combine = __webpack_require__(19);
+	var animate = __webpack_require__(20);
 	var node = __webpack_require__(45);
 	var Group = __webpack_require__(39);
 	var dom = __webpack_require__(17);
@@ -12774,7 +12782,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(18);
-	var combine = __webpack_require__(20)
+	var combine = __webpack_require__(19)
 	
 	function Group(list){
 	  this.children = list || [];
@@ -12808,8 +12816,8 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(18);
-	var parseExpression = __webpack_require__(21).expression;
-	var diff = __webpack_require__(24);
+	var parseExpression = __webpack_require__(22).expression;
+	var diff = __webpack_require__(25);
 	var diffArray = diff.diffArray;
 	var diffObject = diff.diffObject;
 	
@@ -13252,18 +13260,26 @@
 	// two-way binding with r-model
 	// works on input, textarea, checkbox, radio, select
 	
-	Regular.directive("r-model", function(elem, value){
-	  var tag = elem.tagName.toLowerCase();
-	  var sign = tag;
-	  if(sign === "input") sign = elem.type || "text";
-	  else if(sign === "textarea") sign = "text";
-	  if(typeof value === "string") value = this.$expression(value);
+	Regular.directive("r-model", {
+	  link: function(elem, value){
+	    var tag = elem.tagName.toLowerCase();
+	    var sign = tag;
+	    if(sign === "input") sign = elem.type || "text";
+	    else if(sign === "textarea") sign = "text";
+	    if(typeof value === "string") value = this.$expression(value);
 	
-	  if( modelHandlers[sign] ) return modelHandlers[sign].call(this, elem, value);
-	  else if(tag === "input"){
-	    return modelHandlers.text.call(this, elem, value);
+	    if( modelHandlers[sign] ) return modelHandlers[sign].call(this, elem, value);
+	    else if(tag === "input"){
+	      return modelHandlers.text.call(this, elem, value);
+	    }
 	  }
+	  //@TODO
+	  // ssr: function(name, value){
+	  //   return value? "value=" + value: ""
+	  // }
 	});
+	
+	
 	
 	
 	
