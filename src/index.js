@@ -25,6 +25,9 @@ Regular.parse = function(str, options){
 }
 Regular.Cursor =require('./helper/cursor.js') 
 
-Regular.isServer = !Regular.env.browser;
+Regular.isServer = env.node;
+Regular.isRegular = function( Comp ){
+  return !( Comp.prototype instanceof Regular );
+}
 
 
