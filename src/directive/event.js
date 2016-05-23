@@ -2,9 +2,9 @@
  * event directive  bundle
  *
  */
-var _ = require("../util.js");
-var dom = require("../dom.js");
-var Regular = require("../render/component.js");
+var _ = require("../util");
+var dom = require("../dom");
+var Regular = require("../render/component");
 
 Regular._addProtoInheritCache("event");
 

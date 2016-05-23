@@ -1,6 +1,6 @@
 // simplest event emitter 60 lines
 // ===============================
-var slice = [].slice, _ = require("../util.js");
+var slice = [].slice, _ = require("../util");
 var API = {
   $on: function(event, fn) {
     if(typeof event === "object"){

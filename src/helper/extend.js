@@ -8,7 +8,7 @@
 // License MIT (c) Dustin Diaz 2014
   
 // inspired by backbone's extend and klass
-var _ = require("../util.js"),
+var _ = require("../util"),
   fnTest = /xy/.test(function(){"xy";}) ? /\bsupr\b/:/.*/,
   isFn = function(o){return typeof o === "function"};
 

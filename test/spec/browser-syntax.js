@@ -191,3 +191,61 @@ describe("Interplation", function(){
   })
 
 })
+
+describe('String inteplation', function(){
+
+  it("auto covert 'String inteplation' to Expression", function(){
+
+    var component = new Regular({
+      template: "<div ref=div title='haha {name} haha'></div>",
+      data: {
+        name: "hehe",
+        items: [1,2,3]
+      }
+    })
+
+    expect(component.$refs.div.getAttribute('title')).to.equal('haha hehe haha')
+
+  })
+  it("Directive with String inteplation", function(done){
+
+    var Component = Regular.extend({ 
+      template: "<div r-test='haa {name} haha' ></div>"
+    });
+    Component.directive({
+      'r-test': {
+        link: function(elem, value){
+          expect(value.type).equal('expression')
+          done()
+        }
+      }
+    })
+
+    new Component;
+  })
+  it("Directive without PreCompile Interplation", function(done){
+
+    var Component = Regular.extend({ 
+      template: "<div r-test='haa {name} haha' ></div>"
+    });
+
+    Component.directive({
+      'r-test': {
+        nps: true,
+        link: function(elem, value){
+          expect(typeof value).equal('string')
+          done()
+        }
+
+      }
+    })
+
+    new Component();
+
+  })
+})
+
+
+
+
+

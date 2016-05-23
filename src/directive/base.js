@@ -1,8 +1,8 @@
 // Regular
-var _ = require("../util.js");
-var dom = require("../dom.js");
-var animate = require("../helper/animate.js");
-var Regular = require("../render/component.js");
+var _ = require("../util");
+var dom = require("../dom");
+var animate = require("../helper/animate");
+var Regular = require("../render/component");
 var consts = require("../const");
 
 

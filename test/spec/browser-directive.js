@@ -726,19 +726,3 @@ describe("refs attribute", function(){
 
 
 
-describe('the atrributeValue with the string type is valid in most buildin directive', function(){
-  // var container = document.createElement('div');
-  // var template = "da"
-  // var component = new Regular({
-  //   template: template,
-  //   data: {num: 2}
-  // }).$inject(container);
-
-
-  // destroy(component, container);
-})
-
-
-
-
-

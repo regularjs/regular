@@ -1,7 +1,7 @@
 var _ = require("../util");
-var dom  = require("../dom.js");
+var dom  = require("../dom");
 var animate = {};
-var env = require("../env.js");
+var env = require("../env");
 
 
 if(typeof window !== 'undefined'){

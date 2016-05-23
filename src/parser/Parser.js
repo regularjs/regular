@@ -1,8 +1,8 @@
-var _ = require("../util.js");
+var _ = require("../util");
 
-var config = require("../config.js");
-var node = require("./node.js");
-var Lexer = require("./Lexer.js");
+var config = require("../config");
+var node = require("./node");
+var Lexer = require("./Lexer");
 var varName = _.varName;
 var ctxName = _.ctxName;
 var extName = _.extName;
@@ -201,19 +201,6 @@ op.attvalue = function(mdf){
     case "STRING":
       this.next();
       var value = ll.value;
-      if(~value.indexOf(config.BEGIN) && ~value.indexOf(config.END) && mdf!=='cmpl'){
-        var constant = true;
-        var parsed = new Parser(value, { mode: 2 }).parse();
-        if(parsed.length === 1 && parsed[0].type === 'expression') return parsed[0];
-        var body = [];
-        parsed.forEach(function(item){
-          if(!item.constant) constant=false;
-          // silent the mutiple inteplation
-            body.push(item.body || "'" + item.text.replace(/'/g, "\\'") + "'");        
-        });
-        body = "[" + body.join(",") + "].join('')";
-        value = node.expression(body, null, constant);
-      }
       return value;
     case "EXPR_OPEN":
       return this.interplation();

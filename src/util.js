@@ -1,9 +1,9 @@
-require('./helper/shim.js')();
+require('./helper/shim')();
 
 
 
 var _  = module.exports;
-var entities = require('./helper/entities.js');
+var entities = require('./helper/entities');
 var slice = [].slice;
 var o2str = ({}).toString;
 var win = typeof window !=='undefined'? window: global;

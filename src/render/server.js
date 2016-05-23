@@ -2,13 +2,13 @@
 
 
 var _ = require('../util');
-var parser = require('../helper/parse.js');
-var diffArray = require('../helper/diff.js').diffArray;
+var parser = require('../helper/parse');
+var diffArray = require('../helper/diff').diffArray;
 
 
 
 
-// hogan.js
+// hogan
 // https://github.com/twitter/hogan.js
 // MIT
 var escape = (function(){

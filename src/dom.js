@@ -13,7 +13,7 @@
 if(typeof window !== 'undefined'){
   
 var dom = module.exports;
-var env = require("./env.js");
+var env = require("./env");
 var _ = require("./util");
 var tNode = document.createElement('div')
 var addEvent, removeEvent;

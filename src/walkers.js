@@ -1,14 +1,16 @@
-var diffArray = require('./helper/diff.js').diffArray;
-var combine = require('./helper/combine.js');
-var animate = require("./helper/animate.js");
-var node = require("./parser/node.js");
-var Group = require('./group.js');
-var dom = require("./dom.js");
+var diffArray = require('./helper/diff').diffArray;
+var combine = require('./helper/combine');
+var animate = require("./helper/animate");
+var Parser = require('./parser/Parser');
+var node = require("./parser/node");
+var Group = require('./group');
+var dom = require("./dom");
 var _ = require('./util');
 var consts =   require('./const')
 var ERROR = consts.ERROR;
 var MSG = consts.MSG;
-var nodeCursor = require('./helper/cursor.js');
+var nodeCursor = require('./helper/cursor');
+var config = require('./config')
 
 
 
@@ -672,16 +674,21 @@ function walkAttributes(attrs, element, extra){
   return bindings;
 }
 
+
 walkers.attribute = function(ast ,options){
 
   var attr = ast;
+  var Component = this.constructor;
   var name = attr.name;
+  var directive = Component.directive(name);
+
+  prepareAttr(ast, directive);
+
   var value = attr.value || "";
   var constant = value.constant;
-  var Component = this.constructor;
-  var directive = Component.directive(name);
   var element = options.element;
   var self = this;
+
 
 
   value = this._touchExpr(value);
@@ -713,6 +720,29 @@ walkers.attribute = function(ast ,options){
     }
   }
 
+}
+
+function prepareAttr( ast ,directive){
+  if(ast.parsed ) return ast;
+  var value = ast.value;
+  var name=  ast.name;
+  if(typeof value === 'string' && ~value.indexOf(config.BEGIN) && ~value.indexOf(config.END) ){
+    if( !directive || !directive.nps ) {
+      var constant = true;
+      var parsed = new Parser(value, { mode: 2 }).parse();
+      if(parsed.length === 1 && parsed[0].type === 'expression') return parsed[0];
+      var body = [];
+      parsed.forEach(function(item){
+        if(!item.constant) constant=false;
+        // silent the mutiple inteplation
+          body.push(item.body || "'" + item.text.replace(/'/g, "\\'") + "'");        
+      });
+      body = "[" + body.join(",") + "].join('')";
+      ast.value = node.expression(body, null, constant);
+    }
+  }
+  ast.parsed = true;
+  return ast;
 }
 
 

@@ -1,5 +1,5 @@
-var _ = require("../util.js");
-var config = require("../config.js");
+var _ = require("../util");
+var config = require("../config");
 
 // some custom tag  will conflict with the Lexer progress
 var conflictTag = {"}": "{", "]": "["}, map1, map2;

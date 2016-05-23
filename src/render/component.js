@@ -2,26 +2,26 @@
  * render for component in browsers
  */
 
-var env = require('../env.js');
-var Lexer = require('../parser/Lexer.js');
-var Parser = require('../parser/Parser.js');
-var config = require('../config.js');
+var env = require('../env');
+var Lexer = require('../parser/Lexer');
+var Parser = require('../parser/Parser');
+var config = require('../config');
 var _ = require('../util');
-var extend = require('../helper/extend.js');
+var extend = require('../helper/extend');
 var combine = {};
 if(env.browser){
-  var dom = require("../dom.js");
-  var walkers = require('../walkers.js');
-  var Group = require('../group.js');
+  var dom = require("../dom");
+  var walkers = require('../walkers');
+  var Group = require('../group');
   var doc = dom.doc;
-  combine = require('../helper/combine.js');
+  combine = require('../helper/combine');
 }
-var events = require('../helper/event.js');
-var Watcher = require('../helper/watcher.js');
-var parse = require('../helper/parse.js');
-var filter = require('../helper/filter.js');
-var ERROR = require('../const.js').ERROR;
-var nodeCursor = require('../helper/cursor.js');
+var events = require('../helper/event');
+var Watcher = require('../helper/watcher');
+var parse = require('../helper/parse');
+var filter = require('../helper/filter');
+var ERROR = require('../const').ERROR;
+var nodeCursor = require('../helper/cursor');
 
 
 /**

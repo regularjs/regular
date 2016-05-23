@@ -1,7 +1,7 @@
 // Regular
-var _ = require("../util.js");
-var dom = require("../dom.js");
-var Regular = require("../render/component.js");
+var _ = require("../util");
+var dom = require("../dom");
+var Regular = require("../render/component");
 
 var modelHandlers = {
   "text": initText,

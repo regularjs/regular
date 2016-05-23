@@ -1,6 +1,6 @@
-var _ = require('../util.js');
-var parseExpression = require('./parse.js').expression;
-var diff = require('./diff.js');
+var _ = require('../util');
+var parseExpression = require('./parse').expression;
+var diff = require('./diff');
 var diffArray = diff.diffArray;
 var diffObject = diff.diffObject;
 

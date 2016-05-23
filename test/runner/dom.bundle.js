@@ -258,6 +258,64 @@
 	  })
 	
 	})
+	
+	describe('String inteplation', function(){
+	
+	  it("auto covert 'String inteplation' to Expression", function(){
+	
+	    var component = new Regular({
+	      template: "<div ref=div title='haha {name} haha'></div>",
+	      data: {
+	        name: "hehe",
+	        items: [1,2,3]
+	      }
+	    })
+	
+	    expect(component.$refs.div.getAttribute('title')).to.equal('haha hehe haha')
+	
+	  })
+	  it("Directive with String inteplation", function(done){
+	
+	    var Component = Regular.extend({ 
+	      template: "<div r-test='haa {name} haha' ></div>"
+	    });
+	    Component.directive({
+	      'r-test': {
+	        link: function(elem, value){
+	          expect(value.type).equal('expression')
+	          done()
+	        }
+	      }
+	    })
+	
+	    new Component;
+	  })
+	  it("Directive without PreCompile Interplation", function(done){
+	
+	    var Component = Regular.extend({ 
+	      template: "<div r-test='haa {name} haha' ></div>"
+	    });
+	
+	    Component.directive({
+	      'r-test': {
+	        nps: true,
+	        link: function(elem, value){
+	          expect(typeof value).equal('string')
+	          done()
+	        }
+	
+	      }
+	    })
+	
+	    new Component();
+	
+	  })
+	})
+	
+	
+	
+	
+	
 
 
 /***/ },
@@ -850,7 +908,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var Regular = __webpack_require__(16);
-	var animate = __webpack_require__(20);
+	var animate = __webpack_require__(19);
 	var dom = __webpack_require__(17);
 	
 	function destroy(component, container){
@@ -1663,7 +1721,7 @@
 	      var all = dom.element(component, true);
 	      expect(all.length).to.equal(4)
 	      expect(all[1].className).to.equal('list')
-	      expect(all[2].innerHTML).to.equal('list1')
+	      expect( all[2].innerHTML ).to.equal( 'list1' )
 	    })
 	    it("dom.element is changed with its content", function(){
 	      component.data.nodes = [1,2]
@@ -1690,7 +1748,7 @@
 
 	var expect = __webpack_require__(27);
 	var Regular = __webpack_require__(16);
-	var combine = __webpack_require__(19);
+	var combine = __webpack_require__(20);
 	function destroy(component, container){
 	  component.destroy();
 	  expect(container.innerHTML).to.equal('');
@@ -4448,22 +4506,6 @@
 	
 	
 	
-	describe('the atrributeValue with the string type is valid in most buildin directive', function(){
-	  // var container = document.createElement('div');
-	  // var template = "da"
-	  // var component = new Regular({
-	  //   template: template,
-	  //   data: {num: 2}
-	  // }).$inject(container);
-	
-	
-	  // destroy(component, container);
-	})
-	
-	
-	
-	
-	
 
 
 /***/ },
@@ -4674,7 +4716,7 @@
 
 	var expect = __webpack_require__(27);
 	var Regular = __webpack_require__(16);
-	var parse = __webpack_require__(22);
+	var parse = __webpack_require__(21);
 	
 	var Component = Regular.extend();
 	
@@ -5802,9 +5844,9 @@
 
 	var expect = __webpack_require__(27);
 	var _ = __webpack_require__(18);
-	var shim = __webpack_require__(23);
-	var extend = __webpack_require__(24);
-	var diff = __webpack_require__(25)
+	var shim = __webpack_require__(22);
+	var extend = __webpack_require__(23);
+	var diff = __webpack_require__(24)
 	var diffArray = diff.diffArray;
 	var diffObject = diff.diffObject;
 	
@@ -6128,7 +6170,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var expect = __webpack_require__(27);
-	var Event = __webpack_require__(21);
+	var Event = __webpack_require__(25);
 	
 	
 	
@@ -6286,7 +6328,10 @@
 	}
 	Regular.Cursor =__webpack_require__(31) 
 	
-	Regular.isServer = !Regular.env.browser;
+	Regular.isServer = env.node;
+	Regular.isRegular = function( Comp ){
+	  return !( Comp.prototype instanceof Regular );
+	}
 	
 	
 
@@ -6696,7 +6741,7 @@
 /* 18 */
 /***/ function(module, exports, __webpack_require__) {
 
-	/* WEBPACK VAR INJECTION */(function(global) {__webpack_require__(23)();
+	/* WEBPACK VAR INJECTION */(function(global) {__webpack_require__(22)();
 	
 	
 	
@@ -7092,13 +7137,6 @@
 	  return str;
 	}
 	
-	_.indexOf = function(array, filter){
-	  for (var i = 0, len = array.length; i < len; i++) {
-	    if(filter(array[i], i)) return i;
-	  }
-	  return -1;
-	}
-	
 	
 	_.map= function(array, callback){
 	  var res = [];
@@ -7159,117 +7197,6 @@
 
 /***/ },
 /* 19 */
-/***/ function(module, exports, __webpack_require__) {
-
-	// some nested  operation in ast 
-	// --------------------------------
-	
-	var dom = __webpack_require__(17);
-	var animate = __webpack_require__(20);
-	
-	var combine = module.exports = {
-	
-	  // get the initial dom in object
-	  node: function(item){
-	    var children,node, nodes;
-	    if(!item) return;
-	    if(item.element) return item.element;
-	    if(typeof item.node === "function") return item.node();
-	    if(typeof item.nodeType === "number") return item;
-	    if(item.group) return combine.node(item.group)
-	    if(children = item.children){
-	      if(children.length === 1){
-	        return combine.node(children[0]);
-	      }
-	      nodes = [];
-	      for(var i = 0, len = children.length; i < len; i++ ){
-	        node = combine.node(children[i]);
-	        if(Array.isArray(node)){
-	          nodes.push.apply(nodes, node)
-	        }else if(node) {
-	          nodes.push(node)
-	        }
-	      }
-	      return nodes;
-	    }
-	  },
-	  // @TODO remove _gragContainer
-	  inject: function(node, pos ){
-	    var group = this;
-	    var fragment = combine.node(group.group || group);
-	    if(node === false) {
-	      animate.remove(fragment)
-	      return group;
-	    }else{
-	      if(!fragment) return group;
-	      if(typeof node === 'string') node = dom.find(node);
-	      if(!node) throw Error('injected node is not found');
-	      // use animate to animate firstchildren
-	      animate.inject(fragment, node, pos);
-	    }
-	    // if it is a component
-	    if(group.$emit) {
-	      var preParent = group.parentNode;
-	      var newParent = (pos ==='after' || pos === 'before')? node.parentNode : node;
-	      group.parentNode = newParent;
-	      group.$emit("$inject", node, pos, preParent);
-	    }
-	    return group;
-	  },
-	
-	  // get the last dom in object(for insertion operation)
-	  last: function(item){
-	    var children = item.children;
-	
-	    if(typeof item.last === "function") return item.last();
-	    if(typeof item.nodeType === "number") return item;
-	
-	    if(children && children.length) return combine.last(children[children.length - 1]);
-	    if(item.group) return combine.last(item.group);
-	
-	  },
-	
-	  destroy: function(item, first){
-	    if(!item) return;
-	    if(Array.isArray(item)){
-	      for(var i = 0, len = item.length; i < len; i++ ){
-	        combine.destroy(item[i], first);
-	      }
-	    }
-	    var children = item.children;
-	    if(typeof item.destroy === "function") return item.destroy(first);
-	    if(typeof item.nodeType === "number" && first)  dom.remove(item);
-	    if(children && children.length){
-	      combine.destroy(children, true);
-	      item.children = null;
-	    }
-	  }
-	
-	}
-	
-	
-	// @TODO: need move to dom.js
-	dom.element = function( component, all ){
-	  if(!component) return !all? null: [];
-	  var nodes = combine.node( component );
-	  if( nodes.nodeType === 1 ) return all? [nodes]: nodes;
-	  var elements = [];
-	  for(var i = 0; i<nodes.length ;i++){
-	    var node = nodes[i];
-	    if( node && node.nodeType === 1){
-	      if(!all) return node;
-	      elements.push(node);
-	    } 
-	  }
-	  return !all? elements[0]: elements;
-	}
-	
-	
-	
-
-
-/***/ },
-/* 20 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(18);
@@ -7526,87 +7453,118 @@
 	module.exports = animate;
 
 /***/ },
-/* 21 */
+/* 20 */
 /***/ function(module, exports, __webpack_require__) {
 
-	// simplest event emitter 60 lines
-	// ===============================
-	var slice = [].slice, _ = __webpack_require__(18);
-	var API = {
-	  $on: function(event, fn) {
-	    if(typeof event === "object"){
-	      for (var i in event) {
-	        this.$on(i, event[i]);
-	      }
-	    }else{
-	      // @patch: for list
-	      var context = this;
-	      var handles = context._handles || (context._handles = {}),
-	        calls = handles[event] || (handles[event] = []);
-	      calls.push(fn);
-	    }
-	    return this;
-	  },
-	  $off: function(event, fn) {
-	    var context = this;
-	    if(!context._handles) return;
-	    if(!event) this._handles = {};
-	    var handles = context._handles,
-	      calls;
+	// some nested  operation in ast 
+	// --------------------------------
 	
-	    if (calls = handles[event]) {
-	      if (!fn) {
-	        handles[event] = [];
-	        return context;
+	var dom = __webpack_require__(17);
+	var animate = __webpack_require__(19);
+	
+	var combine = module.exports = {
+	
+	  // get the initial dom in object
+	  node: function(item){
+	    var children,node, nodes;
+	    if(!item) return;
+	    if(item.element) return item.element;
+	    if(typeof item.node === "function") return item.node();
+	    if(typeof item.nodeType === "number") return item;
+	    if(item.group) return combine.node(item.group)
+	    if(children = item.children){
+	      if(children.length === 1){
+	        return combine.node(children[0]);
 	      }
-	      for (var i = 0, len = calls.length; i < len; i++) {
-	        if (fn === calls[i]) {
-	          calls.splice(i, 1);
-	          return context;
+	      nodes = [];
+	      for(var i = 0, len = children.length; i < len; i++ ){
+	        node = combine.node(children[i]);
+	        if(Array.isArray(node)){
+	          nodes.push.apply(nodes, node)
+	        }else if(node) {
+	          nodes.push(node)
 	        }
 	      }
+	      return nodes;
 	    }
-	    return context;
 	  },
-	  // bubble event
-	  $emit: function(event){
-	    // @patch: for list
-	    var context = this;
-	    var handles = context._handles, calls, args, type;
-	    if(!event) return;
-	    var args = slice.call(arguments, 1);
-	    var type = event;
+	  // @TODO remove _gragContainer
+	  inject: function(node, pos ){
+	    var group = this;
+	    var fragment = combine.node(group.group || group);
+	    if(node === false) {
+	      animate.remove(fragment)
+	      return group;
+	    }else{
+	      if(!fragment) return group;
+	      if(typeof node === 'string') node = dom.find(node);
+	      if(!node) throw Error('injected node is not found');
+	      // use animate to animate firstchildren
+	      animate.inject(fragment, node, pos);
+	    }
+	    // if it is a component
+	    if(group.$emit) {
+	      var preParent = group.parentNode;
+	      var newParent = (pos ==='after' || pos === 'before')? node.parentNode : node;
+	      group.parentNode = newParent;
+	      group.$emit("$inject", node, pos, preParent);
+	    }
+	    return group;
+	  },
 	
-	    if(!handles) return context;
-	    if(calls = handles[type.slice(1)]){
-	      for (var j = 0, len = calls.length; j < len; j++) {
-	        calls[j].apply(context, args)
+	  // get the last dom in object(for insertion operation)
+	  last: function(item){
+	    var children = item.children;
+	
+	    if(typeof item.last === "function") return item.last();
+	    if(typeof item.nodeType === "number") return item;
+	
+	    if(children && children.length) return combine.last(children[children.length - 1]);
+	    if(item.group) return combine.last(item.group);
+	
+	  },
+	
+	  destroy: function(item, first){
+	    if(!item) return;
+	    if(Array.isArray(item)){
+	      for(var i = 0, len = item.length; i < len; i++ ){
+	        combine.destroy(item[i], first);
 	      }
 	    }
-	    if (!(calls = handles[type])) return context;
-	    for (var i = 0, len = calls.length; i < len; i++) {
-	      calls[i].apply(context, args)
+	    var children = item.children;
+	    if(typeof item.destroy === "function") return item.destroy(first);
+	    if(typeof item.nodeType === "number" && first)  dom.remove(item);
+	    if(children && children.length){
+	      combine.destroy(children, true);
+	      item.children = null;
 	    }
-	    // if(calls.length) context.$update();
-	    return context;
-	  },
-	  // capture  event
-	  $one: function(){
-	    
-	}
-	}
-	// container class
-	function Event() {}
-	_.extend(Event.prototype, API)
+	  }
 	
-	Event.mixTo = function(obj){
-	  obj = typeof obj === "function" ? obj.prototype : obj;
-	  _.extend(obj, API)
 	}
-	module.exports = Event;
+	
+	
+	// @TODO: need move to dom.js
+	dom.element = function( component, all ){
+	  if(!component) return !all? null: [];
+	  var nodes = combine.node( component );
+	  if( nodes.nodeType === 1 ) return all? [nodes]: nodes;
+	  var elements = [];
+	  for(var i = 0; i<nodes.length ;i++){
+	    var node = nodes[i];
+	    if( node && node.nodeType === 1){
+	      if(!all) return node;
+	      elements.push(node);
+	    } 
+	  }
+	  return !all? elements[0]: elements;
+	}
+	
+	
+	
+
 
 /***/ },
-/* 22 */
+/* 21 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var exprCache = __webpack_require__(28).exprCache;
@@ -7628,7 +7586,7 @@
 
 
 /***/ },
-/* 23 */
+/* 22 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// shim for es5
@@ -7736,7 +7694,7 @@
 
 
 /***/ },
-/* 24 */
+/* 23 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// (c) 2010-2014 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
@@ -7822,7 +7780,7 @@
 
 
 /***/ },
-/* 25 */
+/* 24 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(18);
@@ -8012,6 +7970,86 @@
 	}
 
 /***/ },
+/* 25 */
+/***/ function(module, exports, __webpack_require__) {
+
+	// simplest event emitter 60 lines
+	// ===============================
+	var slice = [].slice, _ = __webpack_require__(18);
+	var API = {
+	  $on: function(event, fn) {
+	    if(typeof event === "object"){
+	      for (var i in event) {
+	        this.$on(i, event[i]);
+	      }
+	    }else{
+	      // @patch: for list
+	      var context = this;
+	      var handles = context._handles || (context._handles = {}),
+	        calls = handles[event] || (handles[event] = []);
+	      calls.push(fn);
+	    }
+	    return this;
+	  },
+	  $off: function(event, fn) {
+	    var context = this;
+	    if(!context._handles) return;
+	    if(!event) this._handles = {};
+	    var handles = context._handles,
+	      calls;
+	
+	    if (calls = handles[event]) {
+	      if (!fn) {
+	        handles[event] = [];
+	        return context;
+	      }
+	      for (var i = 0, len = calls.length; i < len; i++) {
+	        if (fn === calls[i]) {
+	          calls.splice(i, 1);
+	          return context;
+	        }
+	      }
+	    }
+	    return context;
+	  },
+	  // bubble event
+	  $emit: function(event){
+	    // @patch: for list
+	    var context = this;
+	    var handles = context._handles, calls, args, type;
+	    if(!event) return;
+	    var args = slice.call(arguments, 1);
+	    var type = event;
+	
+	    if(!handles) return context;
+	    if(calls = handles[type.slice(1)]){
+	      for (var j = 0, len = calls.length; j < len; j++) {
+	        calls[j].apply(context, args)
+	      }
+	    }
+	    if (!(calls = handles[type])) return context;
+	    for (var i = 0, len = calls.length; i < len; i++) {
+	      calls[i].apply(context, args)
+	    }
+	    // if(calls.length) context.$update();
+	    return context;
+	  },
+	  // capture  event
+	  $one: function(){
+	    
+	}
+	}
+	// container class
+	function Event() {}
+	_.extend(Event.prototype, API)
+	
+	Event.mixTo = function(obj){
+	  obj = typeof obj === "function" ? obj.prototype : obj;
+	  _.extend(obj, API)
+	}
+	module.exports = Event;
+
+/***/ },
 /* 26 */
 /***/ function(module, exports, __webpack_require__) {
 
@@ -8019,13 +8057,13 @@
 	
 	
 	var _ = __webpack_require__(18);
-	var parser = __webpack_require__(22);
-	var diffArray = __webpack_require__(25).diffArray;
+	var parser = __webpack_require__(21);
+	var diffArray = __webpack_require__(24).diffArray;
 	
 	
 	
 	
-	// hogan.js
+	// hogan
 	// https://github.com/twitter/hogan.js
 	// MIT
 	var escape = (function(){
@@ -9626,13 +9664,13 @@
 	  , true ? module : {exports: {}}
 	);
 	
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(47)(module), __webpack_require__(46).Buffer))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(48)(module), __webpack_require__(46).Buffer))
 
 /***/ },
 /* 28 */
 /***/ function(module, exports, __webpack_require__) {
 
-	// some fixture test;
+	/* WEBPACK VAR INJECTION */(function(process) {// some fixture test;
 	// ---------------
 	var _ = __webpack_require__(18);
 	exports.svg = (function(){
@@ -9643,8 +9681,10 @@
 	exports.browser = typeof document !== "undefined" && document.nodeType;
 	// whether have component in initializing
 	exports.exprCache = _.cache(1000);
+	exports.node = typeof process !== "undefined" && ( '' + process ) === '[object process]';
 	exports.isRunning = false;
-
+	
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(47)))
 
 /***/ },
 /* 29 */
@@ -9669,18 +9709,18 @@
 	var Parser = __webpack_require__(36);
 	var config = __webpack_require__(29);
 	var _ = __webpack_require__(18);
-	var extend = __webpack_require__(24);
+	var extend = __webpack_require__(23);
 	var combine = {};
 	if(env.browser){
 	  var dom = __webpack_require__(17);
 	  var walkers = __webpack_require__(38);
 	  var Group = __webpack_require__(39);
 	  var doc = dom.doc;
-	  combine = __webpack_require__(19);
+	  combine = __webpack_require__(20);
 	}
-	var events = __webpack_require__(21);
+	var events = __webpack_require__(25);
 	var Watcher = __webpack_require__(40);
-	var parse = __webpack_require__(22);
+	var parse = __webpack_require__(21);
 	var filter = __webpack_require__(41);
 	var ERROR = __webpack_require__(42).ERROR;
 	var nodeCursor = __webpack_require__(31);
@@ -10562,7 +10602,7 @@
 	// Regular
 	var _ = __webpack_require__(18);
 	var dom = __webpack_require__(17);
-	var animate = __webpack_require__(20);
+	var animate = __webpack_require__(19);
 	var Regular = __webpack_require__(30);
 	var consts = __webpack_require__(42);
 	
@@ -10677,7 +10717,7 @@
 
 	var // packages
 	  _ = __webpack_require__(18),
-	 animate = __webpack_require__(20),
+	 animate = __webpack_require__(19),
 	 dom = __webpack_require__(17),
 	 Regular = __webpack_require__(30);
 	
@@ -11163,19 +11203,6 @@
 	    case "STRING":
 	      this.next();
 	      var value = ll.value;
-	      if(~value.indexOf(config.BEGIN) && ~value.indexOf(config.END) && mdf!=='cmpl'){
-	        var constant = true;
-	        var parsed = new Parser(value, { mode: 2 }).parse();
-	        if(parsed.length === 1 && parsed[0].type === 'expression') return parsed[0];
-	        var body = [];
-	        parsed.forEach(function(item){
-	          if(!item.constant) constant=false;
-	          // silent the mutiple inteplation
-	            body.push(item.body || "'" + item.text.replace(/'/g, "\\'") + "'");        
-	        });
-	        body = "[" + body.join(",") + "].join('')";
-	        value = node.expression(body, null, constant);
-	      }
 	      return value;
 	    case "EXPR_OPEN":
 	      return this.interplation();
@@ -12056,9 +12083,10 @@
 /* 38 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var diffArray = __webpack_require__(25).diffArray;
-	var combine = __webpack_require__(19);
-	var animate = __webpack_require__(20);
+	var diffArray = __webpack_require__(24).diffArray;
+	var combine = __webpack_require__(20);
+	var animate = __webpack_require__(19);
+	var Parser = __webpack_require__(36);
 	var node = __webpack_require__(45);
 	var Group = __webpack_require__(39);
 	var dom = __webpack_require__(17);
@@ -12067,6 +12095,7 @@
 	var ERROR = consts.ERROR;
 	var MSG = consts.MSG;
 	var nodeCursor = __webpack_require__(31);
+	var config = __webpack_require__(29)
 	
 	
 	
@@ -12730,16 +12759,21 @@
 	  return bindings;
 	}
 	
+	
 	walkers.attribute = function(ast ,options){
 	
 	  var attr = ast;
+	  var Component = this.constructor;
 	  var name = attr.name;
+	  var directive = Component.directive(name);
+	
+	  prepareAttr(ast, directive);
+	
 	  var value = attr.value || "";
 	  var constant = value.constant;
-	  var Component = this.constructor;
-	  var directive = Component.directive(name);
 	  var element = options.element;
 	  var self = this;
+	
 	
 	
 	  value = this._touchExpr(value);
@@ -12773,6 +12807,29 @@
 	
 	}
 	
+	function prepareAttr( ast ,directive){
+	  if(ast.parsed ) return ast;
+	  var value = ast.value;
+	  var name=  ast.name;
+	  if(typeof value === 'string' && ~value.indexOf(config.BEGIN) && ~value.indexOf(config.END) ){
+	    if( !directive || !directive.nps ) {
+	      var constant = true;
+	      var parsed = new Parser(value, { mode: 2 }).parse();
+	      if(parsed.length === 1 && parsed[0].type === 'expression') return parsed[0];
+	      var body = [];
+	      parsed.forEach(function(item){
+	        if(!item.constant) constant=false;
+	        // silent the mutiple inteplation
+	          body.push(item.body || "'" + item.text.replace(/'/g, "\\'") + "'");        
+	      });
+	      body = "[" + body.join(",") + "].join('')";
+	      ast.value = node.expression(body, null, constant);
+	    }
+	  }
+	  ast.parsed = true;
+	  return ast;
+	}
+	
 	
 	
 
@@ -12782,7 +12839,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(18);
-	var combine = __webpack_require__(19)
+	var combine = __webpack_require__(20)
 	
 	function Group(list){
 	  this.children = list || [];
@@ -12816,8 +12873,8 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(18);
-	var parseExpression = __webpack_require__(22).expression;
-	var diff = __webpack_require__(25);
+	var parseExpression = __webpack_require__(21).expression;
+	var diff = __webpack_require__(24);
 	var diffArray = diff.diffArray;
 	var diffObject = diff.diffObject;
 	
@@ -13490,9 +13547,9 @@
 	 * @license  MIT
 	 */
 	
-	var base64 = __webpack_require__(50)
-	var ieee754 = __webpack_require__(48)
-	var isArray = __webpack_require__(49)
+	var base64 = __webpack_require__(51)
+	var ieee754 = __webpack_require__(49)
+	var isArray = __webpack_require__(50)
 	
 	exports.Buffer = Buffer
 	exports.SlowBuffer = Buffer
@@ -14542,6 +14599,98 @@
 /* 47 */
 /***/ function(module, exports, __webpack_require__) {
 
+	// shim for using process in browser
+	
+	var process = module.exports = {};
+	
+	process.nextTick = (function () {
+	    var canSetImmediate = typeof window !== 'undefined'
+	    && window.setImmediate;
+	    var canMutationObserver = typeof window !== 'undefined'
+	    && window.MutationObserver;
+	    var canPost = typeof window !== 'undefined'
+	    && window.postMessage && window.addEventListener
+	    ;
+	
+	    if (canSetImmediate) {
+	        return function (f) { return window.setImmediate(f) };
+	    }
+	
+	    var queue = [];
+	
+	    if (canMutationObserver) {
+	        var hiddenDiv = document.createElement("div");
+	        var observer = new MutationObserver(function () {
+	            var queueList = queue.slice();
+	            queue.length = 0;
+	            queueList.forEach(function (fn) {
+	                fn();
+	            });
+	        });
+	
+	        observer.observe(hiddenDiv, { attributes: true });
+	
+	        return function nextTick(fn) {
+	            if (!queue.length) {
+	                hiddenDiv.setAttribute('yes', 'no');
+	            }
+	            queue.push(fn);
+	        };
+	    }
+	
+	    if (canPost) {
+	        window.addEventListener('message', function (ev) {
+	            var source = ev.source;
+	            if ((source === window || source === null) && ev.data === 'process-tick') {
+	                ev.stopPropagation();
+	                if (queue.length > 0) {
+	                    var fn = queue.shift();
+	                    fn();
+	                }
+	            }
+	        }, true);
+	
+	        return function nextTick(fn) {
+	            queue.push(fn);
+	            window.postMessage('process-tick', '*');
+	        };
+	    }
+	
+	    return function nextTick(fn) {
+	        setTimeout(fn, 0);
+	    };
+	})();
+	
+	process.title = 'browser';
+	process.browser = true;
+	process.env = {};
+	process.argv = [];
+	
+	function noop() {}
+	
+	process.on = noop;
+	process.addListener = noop;
+	process.once = noop;
+	process.off = noop;
+	process.removeListener = noop;
+	process.removeAllListeners = noop;
+	process.emit = noop;
+	
+	process.binding = function (name) {
+	    throw new Error('process.binding is not supported');
+	};
+	
+	// TODO(shtylman)
+	process.cwd = function () { return '/' };
+	process.chdir = function (dir) {
+	    throw new Error('process.chdir is not supported');
+	};
+
+
+/***/ },
+/* 48 */
+/***/ function(module, exports, __webpack_require__) {
+
 	module.exports = function(module) {
 		if(!module.webpackPolyfill) {
 			module.deprecate = function() {};
@@ -14555,7 +14704,7 @@
 
 
 /***/ },
-/* 48 */
+/* 49 */
 /***/ function(module, exports, __webpack_require__) {
 
 	exports.read = function(buffer, offset, isLE, mLen, nBytes) {
@@ -14645,7 +14794,7 @@
 
 
 /***/ },
-/* 49 */
+/* 50 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
@@ -14684,7 +14833,7 @@
 
 
 /***/ },
-/* 50 */
+/* 51 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var lookup = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
