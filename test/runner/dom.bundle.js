@@ -264,14 +264,15 @@
 	  it("auto covert 'String inteplation' to Expression", function(){
 	
 	    var component = new Regular({
-	      template: "<div ref=div title='haha {name} haha'></div>",
+	      template: "<div ref=div title='haha {name} haha' name='{items.join(\",\")}'></div>",
 	      data: {
 	        name: "hehe",
 	        items: [1,2,3]
 	      }
 	    })
 	
-	    expect(component.$refs.div.getAttribute('title')).to.equal('haha hehe haha')
+	    expect(component.$refs.div.getAttribute('title')).to.equal('haha hehe haha');
+	    expect(component.$refs.div.getAttribute('name')).to.equal('1,2,3');
 	
 	  })
 	  it("Directive with String inteplation", function(done){
@@ -9664,7 +9665,7 @@
 	  , true ? module : {exports: {}}
 	);
 	
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(48)(module), __webpack_require__(46).Buffer))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(47)(module), __webpack_require__(46).Buffer))
 
 /***/ },
 /* 28 */
@@ -9684,7 +9685,7 @@
 	exports.node = typeof process !== "undefined" && ( '' + process ) === '[object process]';
 	exports.isRunning = false;
 	
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(47)))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(48)))
 
 /***/ },
 /* 29 */
@@ -12810,20 +12811,23 @@
 	function prepareAttr( ast ,directive){
 	  if(ast.parsed ) return ast;
 	  var value = ast.value;
-	  var name=  ast.name;
+	  var name=  ast.name, body, constant;
 	  if(typeof value === 'string' && ~value.indexOf(config.BEGIN) && ~value.indexOf(config.END) ){
 	    if( !directive || !directive.nps ) {
-	      var constant = true;
 	      var parsed = new Parser(value, { mode: 2 }).parse();
-	      if(parsed.length === 1 && parsed[0].type === 'expression') return parsed[0];
-	      var body = [];
-	      parsed.forEach(function(item){
-	        if(!item.constant) constant=false;
-	        // silent the mutiple inteplation
-	          body.push(item.body || "'" + item.text.replace(/'/g, "\\'") + "'");        
-	      });
-	      body = "[" + body.join(",") + "].join('')";
-	      ast.value = node.expression(body, null, constant);
+	      if(parsed.length === 1 && parsed[0].type === 'expression'){ 
+	        body = parsed[0];
+	      } else{
+	        constant = true;
+	        body = [];
+	        parsed.forEach(function(item){
+	          if(!item.constant) constant=false;
+	          // silent the mutiple inteplation
+	            body.push(item.body || "'" + item.text.replace(/'/g, "\\'") + "'");        
+	        });
+	        body = node.expression("[" + body.join(",") + "].join('')", null, constant);
+	      }
+	      ast.value = body;
 	    }
 	  }
 	  ast.parsed = true;
@@ -13548,8 +13552,8 @@
 	 */
 	
 	var base64 = __webpack_require__(51)
-	var ieee754 = __webpack_require__(49)
-	var isArray = __webpack_require__(50)
+	var ieee754 = __webpack_require__(50)
+	var isArray = __webpack_require__(49)
 	
 	exports.Buffer = Buffer
 	exports.SlowBuffer = Buffer
@@ -14599,6 +14603,22 @@
 /* 47 */
 /***/ function(module, exports, __webpack_require__) {
 
+	module.exports = function(module) {
+		if(!module.webpackPolyfill) {
+			module.deprecate = function() {};
+			module.paths = [];
+			// module.parent = undefined by default
+			module.children = [];
+			module.webpackPolyfill = 1;
+		}
+		return module;
+	}
+
+
+/***/ },
+/* 48 */
+/***/ function(module, exports, __webpack_require__) {
+
 	// shim for using process in browser
 	
 	var process = module.exports = {};
@@ -14688,23 +14708,46 @@
 
 
 /***/ },
-/* 48 */
+/* 49 */
 /***/ function(module, exports, __webpack_require__) {
 
-	module.exports = function(module) {
-		if(!module.webpackPolyfill) {
-			module.deprecate = function() {};
-			module.paths = [];
-			// module.parent = undefined by default
-			module.children = [];
-			module.webpackPolyfill = 1;
-		}
-		return module;
-	}
+	
+	/**
+	 * isArray
+	 */
+	
+	var isArray = Array.isArray;
+	
+	/**
+	 * toString
+	 */
+	
+	var str = Object.prototype.toString;
+	
+	/**
+	 * Whether or not the given `val`
+	 * is an array.
+	 *
+	 * example:
+	 *
+	 *        isArray([]);
+	 *        // > true
+	 *        isArray(arguments);
+	 *        // > false
+	 *        isArray('');
+	 *        // > false
+	 *
+	 * @param {mixed} val
+	 * @return {bool}
+	 */
+	
+	module.exports = isArray || function (val) {
+	  return !! val && '[object Array]' == str.call(val);
+	};
 
 
 /***/ },
-/* 49 */
+/* 50 */
 /***/ function(module, exports, __webpack_require__) {
 
 	exports.read = function(buffer, offset, isLE, mLen, nBytes) {
@@ -14790,45 +14833,6 @@
 	  for (; eLen > 0; buffer[offset + i] = e & 0xff, i += d, e /= 256, eLen -= 8);
 	
 	  buffer[offset + i - d] |= s * 128;
-	};
-
-
-/***/ },
-/* 50 */
-/***/ function(module, exports, __webpack_require__) {
-
-	
-	/**
-	 * isArray
-	 */
-	
-	var isArray = Array.isArray;
-	
-	/**
-	 * toString
-	 */
-	
-	var str = Object.prototype.toString;
-	
-	/**
-	 * Whether or not the given `val`
-	 * is an array.
-	 *
-	 * example:
-	 *
-	 *        isArray([]);
-	 *        // > true
-	 *        isArray(arguments);
-	 *        // > false
-	 *        isArray('');
-	 *        // > false
-	 *
-	 * @param {mixed} val
-	 * @return {bool}
-	 */
-	
-	module.exports = isArray || function (val) {
-	  return !! val && '[object Array]' == str.call(val);
 	};
 
 

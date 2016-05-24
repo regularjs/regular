@@ -725,20 +725,23 @@ walkers.attribute = function(ast ,options){
 function prepareAttr( ast ,directive){
   if(ast.parsed ) return ast;
   var value = ast.value;
-  var name=  ast.name;
+  var name=  ast.name, body, constant;
   if(typeof value === 'string' && ~value.indexOf(config.BEGIN) && ~value.indexOf(config.END) ){
     if( !directive || !directive.nps ) {
-      var constant = true;
       var parsed = new Parser(value, { mode: 2 }).parse();
-      if(parsed.length === 1 && parsed[0].type === 'expression') return parsed[0];
-      var body = [];
-      parsed.forEach(function(item){
-        if(!item.constant) constant=false;
-        // silent the mutiple inteplation
-          body.push(item.body || "'" + item.text.replace(/'/g, "\\'") + "'");        
-      });
-      body = "[" + body.join(",") + "].join('')";
-      ast.value = node.expression(body, null, constant);
+      if(parsed.length === 1 && parsed[0].type === 'expression'){ 
+        body = parsed[0];
+      } else{
+        constant = true;
+        body = [];
+        parsed.forEach(function(item){
+          if(!item.constant) constant=false;
+          // silent the mutiple inteplation
+            body.push(item.body || "'" + item.text.replace(/'/g, "\\'") + "'");        
+        });
+        body = node.expression("[" + body.join(",") + "].join('')", null, constant);
+      }
+      ast.value = body;
     }
   }
   ast.parsed = true;

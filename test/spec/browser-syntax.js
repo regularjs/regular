@@ -197,14 +197,15 @@ describe('String inteplation', function(){
   it("auto covert 'String inteplation' to Expression", function(){
 
     var component = new Regular({
-      template: "<div ref=div title='haha {name} haha'></div>",
+      template: "<div ref=div title='haha {name} haha' name='{items.join(\",\")}'></div>",
       data: {
         name: "hehe",
         items: [1,2,3]
       }
     })
 
-    expect(component.$refs.div.getAttribute('title')).to.equal('haha hehe haha')
+    expect(component.$refs.div.getAttribute('title')).to.equal('haha hehe haha');
+    expect(component.$refs.div.getAttribute('name')).to.equal('1,2,3');
 
   })
   it("Directive with String inteplation", function(done){
