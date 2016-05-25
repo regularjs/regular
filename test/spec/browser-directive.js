@@ -696,6 +696,7 @@ describe("refs attribute", function(){
     Component.extend({
       name: 'nested'
     })
+    
     var component = new Component({
       template: "<nested ref={name} id='100'></nested>{#list items as item}<nested ref='{name}{item}' value='{item}'></nested>{/list}",
       data: {

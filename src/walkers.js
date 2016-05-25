@@ -536,6 +536,7 @@ walkers.component = function(ast, options){
     isolate, 
     extra = options.extra,
     namespace = options.namespace,
+    refDirective = walkers.Regular.directive('ref'),
     ref, self = this, is;
 
   var data = {}, events;
@@ -543,6 +544,9 @@ walkers.component = function(ast, options){
   for(var i = 0, len = attrs.length; i < len; i++){
     var attr = attrs[i];
     // consider disabled   equlasto  disabled={true}
+
+    prepareAttr( attr, attr.name === 'ref' && refDirective );
+
     var value = this._touchExpr(attr.value === undefined? true: attr.value);
     if(value.constant) value = attr.value = value.get(this);
     if(attr.value && attr.value.constant === true){
@@ -622,10 +626,10 @@ walkers.component = function(ast, options){
 
 
   if(ref && this.$refs){
-    reflink = Component.directive('ref').link
-    this.$on('$destroy', reflink.call(this, component, ref) )
+    reflink = refDirective.link;
+    var refDestroy = reflink.call(this, component, ref);
+    component.$on('$destroy', refDestroy);
   }
-  if(ref &&  self.$refs) self.$refs[ref] = component;
   for(var i = 0, len = attrs.length; i < len; i++){
     var attr = attrs[i];
     var value = attr.value||true;
