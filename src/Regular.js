@@ -31,6 +31,7 @@ var Regular = function(definition, options){
   var prevRunning = env.isRunning;
   env.isRunning = true;
   var node, template;
+  var usePrototyeString = typeof this.template === 'string' && !definition.template;
 
   definition = definition || {};
   options = options || {};
@@ -57,7 +58,15 @@ var Regular = function(definition, options){
   }
   // if template is a xml
   if(template && template.nodeType) template = template.innerHTML;
-  if(typeof template === 'string') this.template = new Parser(template).parse();
+  if(typeof template === 'string') {
+    template = new Parser(template).parse();
+    if(usePrototyeString) {
+    // avoid multiply compile
+      this.constructor.prototype.template = template;
+    }else{
+      delete this.template;
+    }
+  }
 
   this.computed = handleComputed(this.computed);
   this.$root = this.$root || this;
@@ -81,7 +90,7 @@ var Regular = function(definition, options){
   }
   // handle computed
   if(template){
-    this.group = this.$compile(this.template, {namespace: options.namespace});
+    this.group = this.$compile(template, {namespace: options.namespace});
     combine.node(this);
   }
 

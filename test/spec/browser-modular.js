@@ -36,10 +36,13 @@ describe("test Regular's modular mechanism", function(){
       expect(Component.prototype.template).to.an("array");
 
       var component = new Regular({
-        template: templateNode
+        template: templateNode,
+        data: {
+          hello: 1
+        }
       })
 
-      expect(component.template).to.an("array");
+      expect(Regular.dom.element(component).innerHTML).to.equal("1");
 
     })
   })
@@ -223,6 +226,28 @@ describe("hotfix ", function(){
     })
     expect(Component.prototype.template).to.not.be.an('array');
     // reuse
+    Regular.config({
+      'PRECOMPILE': true
+    })
+  })
+  it("with config.PRECOMPILE === false , avoid multiply build", function( ){
+    Regular.config({
+      'PRECOMPILE': false
+    })
+    var Component = Regular.extend({
+      template: "<h2>haha</h2>"
+    })
+    expect(Component.prototype.template).to.be.an('string');
+    var component = new Component({
+      template: "<h2>hehe</h2>"
+    });
+    
+    expect(Component.prototype.template).to.equal('<h2>haha</h2>');
+
+    new Component({ });
+    expect(Component.prototype.template).to.be.an('array');
+
+
     Regular.config({
       'PRECOMPILE': true
     })
