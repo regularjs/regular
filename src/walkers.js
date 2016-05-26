@@ -464,7 +464,7 @@ walkers.component = function(ast, options){
       name = attr.name = _.camelCase(name);
     }
 
-    if(value.type !== 'expression'){
+    if(!value || value.type !== 'expression'){
       data[name] = value;
     }else{
       data[name] = value.get(self); 

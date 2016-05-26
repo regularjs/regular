@@ -481,6 +481,7 @@ var expect = require('expect.js');
       var data = component.$refs.a.data;
       destroy(component, containerAll);
       expect(data.isDisabled).to.equal(true)
+      expect(data.non).to.equal('')
       expect(data.isActived).to.equal(false)
       expect(data.isOld).to.equal(true)
       expect(data.isNew).to.equal(true)

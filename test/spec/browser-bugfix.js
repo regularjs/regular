@@ -572,6 +572,21 @@ it('bugfix #50', function(){
       component.destroy();
 
   })
+
+
+  it("bugfix #72, support pass null and undefined literal in template", function(){
+    var Checked = Regular.extend({
+      name: 'checked',
+      template: "{checked}"
+    }) 
+
+    expect(function(){
+      new Regular({
+        template: "<checked toggled='' checked={null} /> <checked checked={undefined}/ >"
+      })
+    }).to.not.throwException();
+
+  })
 })
 
 

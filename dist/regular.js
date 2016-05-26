@@ -113,7 +113,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	module.exports = {
 	  'BEGIN': '{',
-	  'END': '}'
+	  'END': '}',
+	  'PRECOMPILE': false
 	}
 
 /***/ },
@@ -122,23 +123,23 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	
 	var env = __webpack_require__(1);
-	var Lexer = __webpack_require__(14);
-	var Parser = __webpack_require__(15);
+	var Lexer = __webpack_require__(11);
+	var Parser = __webpack_require__(12);
 	var config = __webpack_require__(2);
 	var _ = __webpack_require__(5);
-	var extend = __webpack_require__(16);
+	var extend = __webpack_require__(13);
 	var combine = {};
 	if(env.browser){
 	  var dom = __webpack_require__(4);
 	  var walkers = __webpack_require__(9);
 	  var Group = __webpack_require__(10);
 	  var doc = dom.doc;
-	  combine = __webpack_require__(17);
+	  combine = __webpack_require__(14);
 	}
-	var events = __webpack_require__(18);
-	var Watcher = __webpack_require__(19);
-	var parse = __webpack_require__(20);
-	var filter = __webpack_require__(21);
+	var events = __webpack_require__(15);
+	var Watcher = __webpack_require__(16);
+	var parse = __webpack_require__(17);
+	var filter = __webpack_require__(18);
 
 
 	/**
@@ -155,6 +156,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  var node, template;
 
 	  definition = definition || {};
+	  var usePrototyeString = typeof this.template === 'string' && !definition.template;
 	  options = options || {};
 
 	  definition.data = definition.data || {};
@@ -179,7 +181,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }
 	  // if template is a xml
 	  if(template && template.nodeType) template = template.innerHTML;
-	  if(typeof template === 'string') this.template = new Parser(template).parse();
+	  if(typeof template === 'string') {
+	    template = new Parser(template).parse();
+	    if(usePrototyeString) {
+	    // avoid multiply compile
+	      this.constructor.prototype.template = template;
+	    }else{
+	      delete this.template;
+	    }
+	  }
 
 	  this.computed = handleComputed(this.computed);
 	  this.$root = this.$root || this;
@@ -204,7 +214,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }
 	  // handle computed
 	  if(template){
-	    this.group = this.$compile(this.template, {namespace: options.namespace});
+	    this.group = this.$compile(template, {namespace: options.namespace});
 	    combine.node(this);
 	  }
 
@@ -245,14 +255,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	    if(template = o.template){
 	      var node, name;
 	      if( typeof template === 'string' && template.length < 16 && ( node = dom.find( template )) ){
-	        template = node.innerHTML;
-	        if(name = dom.attr(node, 'name')) Regular.component(name, this);
+	        template = node ;
 	      }
 
-	      if(template.nodeType) template = template.innerHTML;
+	      if(template && template.nodeType){
+	        if(name = dom.attr(template, 'name')) Regular.component(name, this);
+	        template = template.innerHTML;
+	      } 
 
-	      if(typeof template === 'string'){
-	        this.prototype.template = new Parser(template).parse();
+	      if(typeof template === 'string' ){
+	        this.prototype.template = config.PRECOMPILE? new Parser(template).parse(): template;
 	      }
 	    }
 
@@ -1103,12 +1115,12 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 5 */
 /***/ function(module, exports, __webpack_require__) {
 
-	/* WEBPACK VAR INJECTION */(function(global) {__webpack_require__(22)();
+	/* WEBPACK VAR INJECTION */(function(global) {__webpack_require__(19)();
 
 
 
 	var _  = module.exports;
-	var entities = __webpack_require__(23);
+	var entities = __webpack_require__(20);
 	var slice = [].slice;
 	var o2str = ({}).toString;
 	var win = typeof window !=='undefined'? window: global;
@@ -1550,14 +1562,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	// Regular
 	var _ = __webpack_require__(5);
 	var dom = __webpack_require__(4);
-	var animate = __webpack_require__(24);
+	var animate = __webpack_require__(21);
 	var Regular = __webpack_require__(3);
-	var consts = __webpack_require__(11);
+	var consts = __webpack_require__(22);
 
 
 
-	__webpack_require__(12);
-	__webpack_require__(13);
+	__webpack_require__(23);
+	__webpack_require__(24);
 
 
 	module.exports = {
@@ -1665,7 +1677,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var // packages
 	  _ = __webpack_require__(5),
-	 animate = __webpack_require__(24),
+	 animate = __webpack_require__(21),
 	 dom = __webpack_require__(4),
 	 Regular = __webpack_require__(3);
 
@@ -1949,8 +1961,8 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ function(module, exports, __webpack_require__) {
 
 	var diffArray = __webpack_require__(25).diffArray;
-	var combine = __webpack_require__(17);
-	var animate = __webpack_require__(24);
+	var combine = __webpack_require__(14);
+	var animate = __webpack_require__(21);
 	var node = __webpack_require__(26);
 	var Group = __webpack_require__(10);
 	var dom = __webpack_require__(4);
@@ -2414,7 +2426,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      name = attr.name = _.camelCase(name);
 	    }
 
-	    if(value.type !== 'expression'){
+	    if(!value || value.type !== 'expression'){
 	      data[name] = value;
 	    }else{
 	      data[name] = value.get(self); 
@@ -2555,7 +2567,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(5);
-	var combine = __webpack_require__(17)
+	var combine = __webpack_require__(14)
 
 	function Group(list){
 	  this.children = list || [];
@@ -2586,271 +2598,6 @@ return /******/ (function(modules) { // webpackBootstrap
 
 /***/ },
 /* 11 */
-/***/ function(module, exports, __webpack_require__) {
-
-	module.exports = {
-	  'COMPONENT_TYPE': 1,
-	  'ELEMENT_TYPE': 2
-	}
-
-/***/ },
-/* 12 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/**
-	 * event directive  bundle
-	 *
-	 */
-	var _ = __webpack_require__(5);
-	var dom = __webpack_require__(4);
-	var Regular = __webpack_require__(3);
-
-	Regular._addProtoInheritCache("event");
-
-	Regular.directive( /^on-\w+$/, function( elem, value, name , attrs) {
-	  if ( !name || !value ) return;
-	  var type = name.split("-")[1];
-	  return this._handleEvent( elem, type, value, attrs );
-	});
-	// TODO.
-	/**
-	- $('dx').delegate()
-	*/
-	Regular.directive( /^(delegate|de)-\w+$/, function( elem, value, name ) {
-	  var root = this.$root;
-	  var _delegates = root._delegates || ( root._delegates = {} );
-	  if ( !name || !value ) return;
-	  var type = name.split("-")[1];
-	  var fire = _.handleEvent.call(this, value, type);
-
-	  function delegateEvent(ev){
-	    matchParent(ev, _delegates[type], root.parentNode);
-	  }
-
-	  if( !_delegates[type] ){
-	    _delegates[type] = [];
-
-	    if(root.parentNode){
-	      dom.on(root.parentNode, type, delegateEvent);
-	    }else{
-	      root.$on( "$inject", function( node, position, preParent ){
-	        var newParent = this.parentNode;
-	        if( preParent ){
-	          dom.off(preParent, type, delegateEvent);
-	        }
-	        if(newParent) dom.on(this.parentNode, type, delegateEvent);
-	      })
-	    }
-	    root.$on("$destroy", function(){
-	      if(root.parentNode) dom.off(root.parentNode, type, delegateEvent)
-	      _delegates[type] = null;
-	    })
-	  }
-	  var delegate = {
-	    element: elem,
-	    fire: fire
-	  }
-	  _delegates[type].push( delegate );
-
-	  return function(){
-	    var delegates = _delegates[type];
-	    if(!delegates || !delegates.length) return;
-	    for( var i = 0, len = delegates.length; i < len; i++ ){
-	      if( delegates[i] === delegate ) delegates.splice(i, 1);
-	    }
-	  }
-
-	});
-
-
-	function matchParent(ev , delegates, stop){
-	  if(!stop) return;
-	  var target = ev.target, pair;
-	  while(target && target !== stop){
-	    for( var i = 0, len = delegates.length; i < len; i++ ){
-	      pair = delegates[i];
-	      if(pair && pair.element === target){
-	        pair.fire(ev)
-	      }
-	    }
-	    target = target.parentNode;
-	  }
-	}
-
-/***/ },
-/* 13 */
-/***/ function(module, exports, __webpack_require__) {
-
-	// Regular
-	var _ = __webpack_require__(5);
-	var dom = __webpack_require__(4);
-	var Regular = __webpack_require__(3);
-
-	var modelHandlers = {
-	  "text": initText,
-	  "select": initSelect,
-	  "checkbox": initCheckBox,
-	  "radio": initRadio
-	}
-
-
-	// @TODO
-
-
-	// two-way binding with r-model
-	// works on input, textarea, checkbox, radio, select
-
-	Regular.directive("r-model", function(elem, value){
-	  var tag = elem.tagName.toLowerCase();
-	  var sign = tag;
-	  if(sign === "input") sign = elem.type || "text";
-	  else if(sign === "textarea") sign = "text";
-	  if(typeof value === "string") value = this.$expression(value);
-
-	  if( modelHandlers[sign] ) return modelHandlers[sign].call(this, elem, value);
-	  else if(tag === "input"){
-	    return modelHandlers.text.call(this, elem, value);
-	  }
-	});
-
-
-
-	// binding <select>
-
-	function initSelect( elem, parsed){
-	  var self = this;
-	  var wc =this.$watch(parsed, function(newValue){
-	    var children = _.slice(elem.getElementsByTagName('option'))
-	    children.forEach(function(node, index){
-	      if(node.value == newValue){
-	        elem.selectedIndex = index;
-	      }
-	    })
-	  });
-
-	  function handler(){
-	    parsed.set(self, this.value);
-	    wc.last = this.value;
-	    self.$update();
-	  }
-
-	  dom.on(elem, "change", handler);
-	  
-	  if(parsed.get(self) === undefined && elem.value){
-	     parsed.set(self, elem.value);
-	  }
-	  return function destroy(){
-	    dom.off(elem, "change", handler);
-	  }
-	}
-
-	// input,textarea binding
-
-	function initText(elem, parsed){
-	  var self = this;
-	  var wc = this.$watch(parsed, function(newValue){
-	    if(elem.value !== newValue) elem.value = newValue == null? "": "" + newValue;
-	  });
-
-	  // @TODO to fixed event
-	  var handler = function (ev){
-	    var that = this;
-	    if(ev.type==='cut' || ev.type==='paste'){
-	      _.nextTick(function(){
-	        var value = that.value
-	        parsed.set(self, value);
-	        wc.last = value;
-	        self.$update();
-	      })
-	    }else{
-	        var value = that.value
-	        parsed.set(self, value);
-	        wc.last = value;
-	        self.$update();
-	    }
-	  };
-
-	  if(dom.msie !== 9 && "oninput" in dom.tNode ){
-	    elem.addEventListener("input", handler );
-	  }else{
-	    dom.on(elem, "paste", handler)
-	    dom.on(elem, "keyup", handler)
-	    dom.on(elem, "cut", handler)
-	    dom.on(elem, "change", handler)
-	  }
-	  if(parsed.get(self) === undefined && elem.value){
-	     parsed.set(self, elem.value);
-	  }
-	  return function (){
-	    if(dom.msie !== 9 && "oninput" in dom.tNode ){
-	      elem.removeEventListener("input", handler );
-	    }else{
-	      dom.off(elem, "paste", handler)
-	      dom.off(elem, "keyup", handler)
-	      dom.off(elem, "cut", handler)
-	      dom.off(elem, "change", handler)
-	    }
-	  }
-	}
-
-
-	// input:checkbox  binding
-
-	function initCheckBox(elem, parsed){
-	  var self = this;
-	  var watcher = this.$watch(parsed, function(newValue){
-	    dom.attr(elem, 'checked', !!newValue);
-	  });
-
-	  var handler = function handler(){
-	    var value = this.checked;
-	    parsed.set(self, value);
-	    watcher.last = value;
-	    self.$update();
-	  }
-	  if(parsed.set) dom.on(elem, "change", handler)
-
-	  if(parsed.get(self) === undefined){
-	    parsed.set(self, !!elem.checked);
-	  }
-
-	  return function destroy(){
-	    if(parsed.set) dom.off(elem, "change", handler)
-	  }
-	}
-
-
-	// input:radio binding
-
-	function initRadio(elem, parsed){
-	  var self = this;
-	  var wc = this.$watch(parsed, function( newValue ){
-	    if(newValue == elem.value) elem.checked = true;
-	    else elem.checked = false;
-	  });
-
-
-	  var handler = function handler(){
-	    var value = this.value;
-	    parsed.set(self, value);
-	    self.$update();
-	  }
-	  if(parsed.set) dom.on(elem, "change", handler)
-	  // beacuse only after compile(init), the dom structrue is exsit. 
-	  if(parsed.get(self) === undefined){
-	    if(elem.checked) {
-	      parsed.set(self, elem.value);
-	    }
-	  }
-
-	  return function destroy(){
-	    if(parsed.set) dom.off(elem, "change", handler)
-	  }
-	}
-
-
-/***/ },
-/* 14 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(5);
@@ -3207,14 +2954,14 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 15 */
+/* 12 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(5);
 
 	var config = __webpack_require__(2);
 	var node = __webpack_require__(26);
-	var Lexer = __webpack_require__(14);
+	var Lexer = __webpack_require__(11);
 	var varName = _.varName;
 	var ctxName = _.ctxName;
 	var extName = _.extName;
@@ -3938,7 +3685,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 16 */
+/* 13 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// (c) 2010-2014 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
@@ -4024,14 +3771,14 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 17 */
+/* 14 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// some nested  operation in ast 
 	// --------------------------------
 
 	var dom = __webpack_require__(4);
-	var animate = __webpack_require__(24);
+	var animate = __webpack_require__(21);
 
 	var combine = module.exports = {
 
@@ -4135,7 +3882,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 18 */
+/* 15 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// simplest event emitter 60 lines
@@ -4215,11 +3962,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = Event;
 
 /***/ },
-/* 19 */
+/* 16 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(5);
-	var parseExpression = __webpack_require__(20).expression;
+	var parseExpression = __webpack_require__(17).expression;
 	var diff = __webpack_require__(25);
 	var diffArray = diff.diffArray;
 	var diffObject = diff.diffObject;
@@ -4473,12 +4220,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = Watcher;
 
 /***/ },
-/* 20 */
+/* 17 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var exprCache = __webpack_require__(1).exprCache;
 	var _ = __webpack_require__(5);
-	var Parser = __webpack_require__(15);
+	var Parser = __webpack_require__(12);
 	module.exports = {
 	  expression: function(expr, simple){
 	    // @TODO cache
@@ -4495,7 +4242,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 21 */
+/* 18 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
@@ -4532,7 +4279,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	// total: one-way
 	//  - get: copute the total of the list
-	//  - example: `{ list| average: "score" }`
+	//  - example: `{ list| total: "score" }`
 	f.total = function(array, key){
 	  var total = 0;
 	  if(!array) return;
@@ -4563,7 +4310,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 22 */
+/* 19 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// shim for es5
@@ -4671,7 +4418,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 23 */
+/* 20 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// http://stackoverflow.com/questions/1354064/how-to-convert-characters-to-html-entities-using-plain-javascript
@@ -4936,7 +4683,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports  = entities;
 
 /***/ },
-/* 24 */
+/* 21 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(5);
@@ -5188,6 +4935,271 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 	module.exports = animate;
+
+/***/ },
+/* 22 */
+/***/ function(module, exports, __webpack_require__) {
+
+	module.exports = {
+	  'COMPONENT_TYPE': 1,
+	  'ELEMENT_TYPE': 2
+	}
+
+/***/ },
+/* 23 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/**
+	 * event directive  bundle
+	 *
+	 */
+	var _ = __webpack_require__(5);
+	var dom = __webpack_require__(4);
+	var Regular = __webpack_require__(3);
+
+	Regular._addProtoInheritCache("event");
+
+	Regular.directive( /^on-\w+$/, function( elem, value, name , attrs) {
+	  if ( !name || !value ) return;
+	  var type = name.split("-")[1];
+	  return this._handleEvent( elem, type, value, attrs );
+	});
+	// TODO.
+	/**
+	- $('dx').delegate()
+	*/
+	Regular.directive( /^(delegate|de)-\w+$/, function( elem, value, name ) {
+	  var root = this.$root;
+	  var _delegates = root._delegates || ( root._delegates = {} );
+	  if ( !name || !value ) return;
+	  var type = name.split("-")[1];
+	  var fire = _.handleEvent.call(this, value, type);
+
+	  function delegateEvent(ev){
+	    matchParent(ev, _delegates[type], root.parentNode);
+	  }
+
+	  if( !_delegates[type] ){
+	    _delegates[type] = [];
+
+	    if(root.parentNode){
+	      dom.on(root.parentNode, type, delegateEvent);
+	    }else{
+	      root.$on( "$inject", function( node, position, preParent ){
+	        var newParent = this.parentNode;
+	        if( preParent ){
+	          dom.off(preParent, type, delegateEvent);
+	        }
+	        if(newParent) dom.on(this.parentNode, type, delegateEvent);
+	      })
+	    }
+	    root.$on("$destroy", function(){
+	      if(root.parentNode) dom.off(root.parentNode, type, delegateEvent)
+	      _delegates[type] = null;
+	    })
+	  }
+	  var delegate = {
+	    element: elem,
+	    fire: fire
+	  }
+	  _delegates[type].push( delegate );
+
+	  return function(){
+	    var delegates = _delegates[type];
+	    if(!delegates || !delegates.length) return;
+	    for( var i = 0, len = delegates.length; i < len; i++ ){
+	      if( delegates[i] === delegate ) delegates.splice(i, 1);
+	    }
+	  }
+
+	});
+
+
+	function matchParent(ev , delegates, stop){
+	  if(!stop) return;
+	  var target = ev.target, pair;
+	  while(target && target !== stop){
+	    for( var i = 0, len = delegates.length; i < len; i++ ){
+	      pair = delegates[i];
+	      if(pair && pair.element === target){
+	        pair.fire(ev)
+	      }
+	    }
+	    target = target.parentNode;
+	  }
+	}
+
+/***/ },
+/* 24 */
+/***/ function(module, exports, __webpack_require__) {
+
+	// Regular
+	var _ = __webpack_require__(5);
+	var dom = __webpack_require__(4);
+	var Regular = __webpack_require__(3);
+
+	var modelHandlers = {
+	  "text": initText,
+	  "select": initSelect,
+	  "checkbox": initCheckBox,
+	  "radio": initRadio
+	}
+
+
+	// @TODO
+
+
+	// two-way binding with r-model
+	// works on input, textarea, checkbox, radio, select
+
+	Regular.directive("r-model", function(elem, value){
+	  var tag = elem.tagName.toLowerCase();
+	  var sign = tag;
+	  if(sign === "input") sign = elem.type || "text";
+	  else if(sign === "textarea") sign = "text";
+	  if(typeof value === "string") value = this.$expression(value);
+
+	  if( modelHandlers[sign] ) return modelHandlers[sign].call(this, elem, value);
+	  else if(tag === "input"){
+	    return modelHandlers.text.call(this, elem, value);
+	  }
+	});
+
+
+
+	// binding <select>
+
+	function initSelect( elem, parsed){
+	  var self = this;
+	  var wc =this.$watch(parsed, function(newValue){
+	    var children = _.slice(elem.getElementsByTagName('option'))
+	    children.forEach(function(node, index){
+	      if(node.value == newValue){
+	        elem.selectedIndex = index;
+	      }
+	    })
+	  });
+
+	  function handler(){
+	    parsed.set(self, this.value);
+	    wc.last = this.value;
+	    self.$update();
+	  }
+
+	  dom.on(elem, "change", handler);
+	  
+	  if(parsed.get(self) === undefined && elem.value){
+	     parsed.set(self, elem.value);
+	  }
+	  return function destroy(){
+	    dom.off(elem, "change", handler);
+	  }
+	}
+
+	// input,textarea binding
+
+	function initText(elem, parsed){
+	  var self = this;
+	  var wc = this.$watch(parsed, function(newValue){
+	    if(elem.value !== newValue) elem.value = newValue == null? "": "" + newValue;
+	  });
+
+	  // @TODO to fixed event
+	  var handler = function (ev){
+	    var that = this;
+	    if(ev.type==='cut' || ev.type==='paste'){
+	      _.nextTick(function(){
+	        var value = that.value
+	        parsed.set(self, value);
+	        wc.last = value;
+	        self.$update();
+	      })
+	    }else{
+	        var value = that.value
+	        parsed.set(self, value);
+	        wc.last = value;
+	        self.$update();
+	    }
+	  };
+
+	  if(dom.msie !== 9 && "oninput" in dom.tNode ){
+	    elem.addEventListener("input", handler );
+	  }else{
+	    dom.on(elem, "paste", handler)
+	    dom.on(elem, "keyup", handler)
+	    dom.on(elem, "cut", handler)
+	    dom.on(elem, "change", handler)
+	  }
+	  if(parsed.get(self) === undefined && elem.value){
+	     parsed.set(self, elem.value);
+	  }
+	  return function (){
+	    if(dom.msie !== 9 && "oninput" in dom.tNode ){
+	      elem.removeEventListener("input", handler );
+	    }else{
+	      dom.off(elem, "paste", handler)
+	      dom.off(elem, "keyup", handler)
+	      dom.off(elem, "cut", handler)
+	      dom.off(elem, "change", handler)
+	    }
+	  }
+	}
+
+
+	// input:checkbox  binding
+
+	function initCheckBox(elem, parsed){
+	  var self = this;
+	  var watcher = this.$watch(parsed, function(newValue){
+	    dom.attr(elem, 'checked', !!newValue);
+	  });
+
+	  var handler = function handler(){
+	    var value = this.checked;
+	    parsed.set(self, value);
+	    watcher.last = value;
+	    self.$update();
+	  }
+	  if(parsed.set) dom.on(elem, "change", handler)
+
+	  if(parsed.get(self) === undefined){
+	    parsed.set(self, !!elem.checked);
+	  }
+
+	  return function destroy(){
+	    if(parsed.set) dom.off(elem, "change", handler)
+	  }
+	}
+
+
+	// input:radio binding
+
+	function initRadio(elem, parsed){
+	  var self = this;
+	  var wc = this.$watch(parsed, function( newValue ){
+	    if(newValue == elem.value) elem.checked = true;
+	    else elem.checked = false;
+	  });
+
+
+	  var handler = function handler(){
+	    var value = this.value;
+	    parsed.set(self, value);
+	    self.$update();
+	  }
+	  if(parsed.set) dom.on(elem, "change", handler)
+	  // beacuse only after compile(init), the dom structrue is exsit. 
+	  if(parsed.get(self) === undefined){
+	    if(elem.checked) {
+	      parsed.set(self, elem.value);
+	    }
+	  }
+
+	  return function destroy(){
+	    if(parsed.set) dom.off(elem, "change", handler)
+	  }
+	}
+
 
 /***/ },
 /* 25 */

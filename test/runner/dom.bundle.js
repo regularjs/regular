@@ -825,6 +825,21 @@
 	      component.destroy();
 
 	  })
+
+
+	  it("bugfix #72, support pass null and undefined literal in template", function(){
+	    var Checked = Regular.extend({
+	      name: 'checked',
+	      template: "{checked}"
+	    }) 
+
+	    expect(function(){
+	      new Regular({
+	        template: "<checked toggled='' checked={null} /> <checked checked={undefined}/ >"
+	      })
+	    }).to.not.throwException();
+
+	  })
 	})
 
 
@@ -1863,34 +1878,26 @@
 
 	  describe("Regular definition" , function(){
 
-	    it("should preparse template in Regular.extend", function(){
-	      var Component = Regular.extend({
-	        template: "aa",
-	        computed: {
-	          "len": "left + right" 
-	        }
-	      });
-
-	      expect(Component.prototype.template).to.an("array");
-	      expect(Component.prototype.computed.len.type).to.equal("expression");
-
-	    })
 
 	    it("should accepet [Element] as the template", function(){
 	      var templateNode = document.createElement("div");
 	      
 	      templateNode.innerHTML = "<div>{hello}</div>";
+
 	      var Component = Regular.extend({
 	        template: templateNode
 	      });
 
-	      expect(Component.prototype.template).to.an("array");
+	      expect( Component.prototype.template.toLowerCase() ).to.equal( "<div>{hello}</div>");
 
 	      var component = new Regular({
-	        template: templateNode
+	        template: templateNode,
+	        data: {
+	          hello: 1
+	        }
 	      })
 
-	      expect(component.template).to.an("array");
+	      expect(Regular.dom.element(component).innerHTML).to.equal("1");
 
 	    })
 	  })
@@ -2057,6 +2064,63 @@
 
 	  },100)
 
+	})
+
+	describe("hotfix ", function(){
+	  it("with config.PRECOMPILE === false , wontpreCompile when extend", function( ){
+
+	    Regular.config({
+	      'PRECOMPILE': true
+	    })
+	    var Component = Regular.extend({
+	      template: "<h2>haha</h2>"
+	    })
+	    expect(Component.prototype.template).to.be.an('array');
+	    Regular.config({
+	      'PRECOMPILE': false
+	    })
+	    var Component = Regular.extend({
+	      template: "<h2>haha</h2>"
+	    })
+	    expect(Component.prototype.template).to.not.be.an('array');
+	  })
+	  it("should preparse template in Regular.extend", function(){
+	    Regular.config({
+	      'PRECOMPILE': true
+	    })
+	    var Component = Regular.extend({
+	      template: "aa",
+	      computed: {
+	        "len": "left + right" 
+	      }
+	    });
+
+	    expect(Component.prototype.template).to.an("array");
+	    expect(Component.prototype.computed.len.type).to.equal("expression");
+
+	    Regular.config({
+	      'PRECOMPILE': false
+	    })
+	  })
+	  it("with config.PRECOMPILE === false , avoid multiply parse", function( ){
+	    var Component = Regular.extend({
+	      template: "<h2>haha</h2>"
+	    })
+	    expect(Component.prototype.template).to.be.an('string');
+	    var component = new Component({
+	      template: "<h2>hehe</h2>"
+	    });
+	    
+	    expect(Component.prototype.template).to.equal('<h2>haha</h2>');
+
+	    new Component({ });
+	    expect(Component.prototype.template).to.be.an('array');
+
+
+	    Regular.config({
+	      'PRECOMPILE': true
+	    })
+	  })
 	})
 
 	})
@@ -5723,6 +5787,7 @@
 	      var data = component.$refs.a.data;
 	      destroy(component, containerAll);
 	      expect(data.isDisabled).to.equal(true)
+	      expect(data.non).to.equal('')
 	      expect(data.isActived).to.equal(false)
 	      expect(data.isOld).to.equal(true)
 	      expect(data.isNew).to.equal(true)
@@ -9256,7 +9321,8 @@
 	
 	module.exports = {
 	  'BEGIN': '{',
-	  'END': '}'
+	  'END': '}',
+	  'PRECOMPILE': false
 	}
 
 /***/ },
@@ -9298,6 +9364,7 @@
 	  var node, template;
 
 	  definition = definition || {};
+	  var usePrototyeString = typeof this.template === 'string' && !definition.template;
 	  options = options || {};
 
 	  definition.data = definition.data || {};
@@ -9322,7 +9389,15 @@
 	  }
 	  // if template is a xml
 	  if(template && template.nodeType) template = template.innerHTML;
-	  if(typeof template === 'string') this.template = new Parser(template).parse();
+	  if(typeof template === 'string') {
+	    template = new Parser(template).parse();
+	    if(usePrototyeString) {
+	    // avoid multiply compile
+	      this.constructor.prototype.template = template;
+	    }else{
+	      delete this.template;
+	    }
+	  }
 
 	  this.computed = handleComputed(this.computed);
 	  this.$root = this.$root || this;
@@ -9332,6 +9407,7 @@
 	  }
 	  this.$emit("$config");
 	  this.config && this.config(this.data);
+	  this.$emit("$afterConfig");
 
 	  var body = this._body;
 	  this._body = null;
@@ -9346,7 +9422,7 @@
 	  }
 	  // handle computed
 	  if(template){
-	    this.group = this.$compile(this.template, {namespace: options.namespace});
+	    this.group = this.$compile(template, {namespace: options.namespace});
 	    combine.node(this);
 	  }
 
@@ -9355,6 +9431,7 @@
 	  this.$ready = true;
 	  this.$emit("$init");
 	  if( this.init ) this.init(this.data);
+	  this.$emit("$afterInit");
 
 	  // @TODO: remove, maybe , there is no need to update after init; 
 	  // if(this.$root === this) this.$update();
@@ -9386,14 +9463,16 @@
 	    if(template = o.template){
 	      var node, name;
 	      if( typeof template === 'string' && template.length < 16 && ( node = dom.find( template )) ){
-	        template = node.innerHTML;
-	        if(name = dom.attr(node, 'name')) Regular.component(name, this);
+	        template = node ;
 	      }
 
-	      if(template.nodeType) template = template.innerHTML;
+	      if(template && template.nodeType){
+	        if(name = dom.attr(template, 'name')) Regular.component(name, this);
+	        template = template.innerHTML;
+	      } 
 
-	      if(typeof template === 'string'){
-	        this.prototype.template = new Parser(template).parse();
+	      if(typeof template === 'string' ){
+	        this.prototype.template = config.PRECOMPILE? new Parser(template).parse(): template;
 	      }
 	    }
 
@@ -12069,7 +12148,7 @@
 	      name = attr.name = _.camelCase(name);
 	    }
 
-	    if(value.type !== 'expression'){
+	    if(!value || value.type !== 'expression'){
 	      data[name] = value;
 	    }else{
 	      data[name] = value.get(self); 
@@ -12535,7 +12614,7 @@
 
 	// total: one-way
 	//  - get: copute the total of the list
-	//  - example: `{ list| average: "score" }`
+	//  - example: `{ list| total: "score" }`
 	f.total = function(array, key){
 	  var total = 0;
 	  if(!array) return;
@@ -12904,8 +12983,8 @@
 	 */
 
 	var base64 = __webpack_require__(48)
-	var ieee754 = __webpack_require__(46)
-	var isArray = __webpack_require__(47)
+	var ieee754 = __webpack_require__(47)
+	var isArray = __webpack_require__(46)
 
 	exports.Buffer = Buffer
 	exports.SlowBuffer = Buffer
@@ -13971,6 +14050,45 @@
 /* 46 */
 /***/ function(module, exports, __webpack_require__) {
 
+	
+	/**
+	 * isArray
+	 */
+
+	var isArray = Array.isArray;
+
+	/**
+	 * toString
+	 */
+
+	var str = Object.prototype.toString;
+
+	/**
+	 * Whether or not the given `val`
+	 * is an array.
+	 *
+	 * example:
+	 *
+	 *        isArray([]);
+	 *        // > true
+	 *        isArray(arguments);
+	 *        // > false
+	 *        isArray('');
+	 *        // > false
+	 *
+	 * @param {mixed} val
+	 * @return {bool}
+	 */
+
+	module.exports = isArray || function (val) {
+	  return !! val && '[object Array]' == str.call(val);
+	};
+
+
+/***/ },
+/* 47 */
+/***/ function(module, exports, __webpack_require__) {
+
 	exports.read = function(buffer, offset, isLE, mLen, nBytes) {
 	  var e, m,
 	      eLen = nBytes * 8 - mLen - 1,
@@ -14054,45 +14172,6 @@
 	  for (; eLen > 0; buffer[offset + i] = e & 0xff, i += d, e /= 256, eLen -= 8);
 
 	  buffer[offset + i - d] |= s * 128;
-	};
-
-
-/***/ },
-/* 47 */
-/***/ function(module, exports, __webpack_require__) {
-
-	
-	/**
-	 * isArray
-	 */
-
-	var isArray = Array.isArray;
-
-	/**
-	 * toString
-	 */
-
-	var str = Object.prototype.toString;
-
-	/**
-	 * Whether or not the given `val`
-	 * is an array.
-	 *
-	 * example:
-	 *
-	 *        isArray([]);
-	 *        // > true
-	 *        isArray(arguments);
-	 *        // > false
-	 *        isArray('');
-	 *        // > false
-	 *
-	 * @param {mixed} val
-	 * @return {bool}
-	 */
-
-	module.exports = isArray || function (val) {
-	  return !! val && '[object Array]' == str.call(val);
 	};
 
 

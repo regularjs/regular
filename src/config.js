@@ -1,5 +1,6 @@
 
 module.exports = {
   'BEGIN': '{',
-  'END': '}'
+  'END': '}',
+  'PRECOMPILE': false
 }
