@@ -2,5 +2,5 @@
 module.exports = {
   'BEGIN': '{',
   'END': '}',
-  'PRECOMPILE': true
+  'PRECOMPILE': false
 }

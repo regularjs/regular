@@ -31,9 +31,9 @@ var Regular = function(definition, options){
   var prevRunning = env.isRunning;
   env.isRunning = true;
   var node, template;
-  var usePrototyeString = typeof this.template === 'string' && !definition.template;
 
   definition = definition || {};
+  var usePrototyeString = typeof this.template === 'string' && !definition.template;
   options = options || {};
 
   definition.data = definition.data || {};
@@ -130,14 +130,16 @@ _.extend(Regular, {
     if(template = o.template){
       var node, name;
       if( typeof template === 'string' && template.length < 16 && ( node = dom.find( template )) ){
-        template = node.innerHTML;
-        if(name = dom.attr(node, 'name')) Regular.component(name, this);
+        template = node ;
       }
 
-      if(template.nodeType) template = template.innerHTML;
+      if(template && template.nodeType){
+        if(name = dom.attr(template, 'name')) Regular.component(name, this);
+        template = template.innerHTML;
+      } 
 
-      if(typeof template === 'string' && config.PRECOMPILE ){
-        this.prototype.template = new Parser(template).parse();
+      if(typeof template === 'string' ){
+        this.prototype.template = config.PRECOMPILE? new Parser(template).parse(): template;
       }
     }
 

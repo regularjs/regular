@@ -12,28 +12,17 @@ describe("test Regular's modular mechanism", function(){
 
   describe("Regular definition" , function(){
 
-    it("should preparse template in Regular.extend", function(){
-      var Component = Regular.extend({
-        template: "aa",
-        computed: {
-          "len": "left + right" 
-        }
-      });
-
-      expect(Component.prototype.template).to.an("array");
-      expect(Component.prototype.computed.len.type).to.equal("expression");
-
-    })
 
     it("should accepet [Element] as the template", function(){
       var templateNode = document.createElement("div");
       
       templateNode.innerHTML = "<div>{hello}</div>";
+
       var Component = Regular.extend({
         template: templateNode
       });
 
-      expect(Component.prototype.template).to.an("array");
+      expect( Component.prototype.template ).to.equal( "<div>{hello}</div>");
 
       var component = new Regular({
         template: templateNode,
@@ -214,6 +203,9 @@ it("timeout's $interval should update after callback is act", function(done){
 describe("hotfix ", function(){
   it("with config.PRECOMPILE === false , wontpreCompile when extend", function( ){
 
+    Regular.config({
+      'PRECOMPILE': true
+    })
     var Component = Regular.extend({
       template: "<h2>haha</h2>"
     })
@@ -225,15 +217,26 @@ describe("hotfix ", function(){
       template: "<h2>haha</h2>"
     })
     expect(Component.prototype.template).to.not.be.an('array');
-    // reuse
+  })
+  it("should preparse template in Regular.extend", function(){
     Regular.config({
       'PRECOMPILE': true
     })
-  })
-  it("with config.PRECOMPILE === false , avoid multiply build", function( ){
+    var Component = Regular.extend({
+      template: "aa",
+      computed: {
+        "len": "left + right" 
+      }
+    });
+
+    expect(Component.prototype.template).to.an("array");
+    expect(Component.prototype.computed.len.type).to.equal("expression");
+
     Regular.config({
       'PRECOMPILE': false
     })
+  })
+  it("with config.PRECOMPILE === false , avoid multiply parse", function( ){
     var Component = Regular.extend({
       template: "<h2>haha</h2>"
     })
