@@ -1,6 +1,6 @@
 var env =  require("./env");
 var config = require("./config"); 
-var Regular = module.exports = require("./render/component");
+var Regular = module.exports = require("./render/client");
 var Parser = Regular.Parser;
 var Lexer = Regular.Lexer;
 

@@ -3,6 +3,7 @@
 var slice = [].slice, _ = require("../util");
 var API = {
   $on: function(event, fn) {
+    if(!event) return this;
     if(typeof event === "object"){
       for (var i in event) {
         this.$on(i, event[i]);
@@ -58,11 +59,7 @@ var API = {
     }
     // if(calls.length) context.$update();
     return context;
-  },
-  // capture  event
-  $one: function(){
-    
-}
+  }
 }
 // container class
 function Event() {}

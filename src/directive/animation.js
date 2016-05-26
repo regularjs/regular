@@ -2,7 +2,7 @@ var // packages
   _ = require("../util"),
  animate = require("../helper/animate"),
  dom = require("../dom"),
- Regular = require("../render/component");
+ Regular = require("../render/client");
 
 
 var // variables

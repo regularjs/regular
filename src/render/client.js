@@ -22,6 +22,7 @@ var parse = require('../helper/parse');
 var filter = require('../helper/filter');
 var ERROR = require('../const').ERROR;
 var nodeCursor = require('../helper/cursor');
+var shared = require('./shared');
 
 
 /**
@@ -53,14 +54,20 @@ var Regular = function(definition, options){
     cursor = options.cursor
   }
 
-  definition.data = definition.data || {};
-  definition.computed = definition.computed || {};
-  definition.events = definition.events || {};
-  if(this.data) _.extend(definition.data, this.data);
-  if(this.computed) _.extend(definition.computed, this.computed);
-  if(this.events) _.extend(definition.events, this.events);
+  // definition.data = definition.data || {};
+  // definition.computed = definition.computed || {};
+  // definition.events = definition.events || {};
+  // if(this.data) _.extend(definition.data, this.data);
+  // if(this.computed) _.extend(definition.computed, this.computed);
+  // if(this.events) _.extend(definition.events, this.events);
 
-  _.extend(this, definition, true);
+  // _.extend(this, definition, true);
+
+
+  shared.initDefinition(definition, this, function(context){
+
+  }, )
+
   if(this.$parent){
      this.$parent._append(this);
   }
@@ -68,6 +75,7 @@ var Regular = function(definition, options){
   this.$refs = {};
 
   template = this.template;
+
 
 
   // template is a string (len < 16). we will find it container first
@@ -84,7 +92,9 @@ var Regular = function(definition, options){
   if(this.events){
     this.$on(this.events);
   }
+
   this.$emit("$config");
+
   this.config && this.config(this.data);
 
   var body = this._body;

@@ -54,15 +54,6 @@ function SSR (Component, definition){
   var context = this.context = Object.create(Component.prototype)
 
 
-  context.extra = definition.extra;
-  definition.data = definition.data || {};
-  definition.computed = definition.computed || {};
-  if(context.data) _.extend(definition.data, context.data);
-  if(context.computed) _.extend(definition.computed, context.computed);
-
-  _.extend(context, definition, true);
-
-  context.config( context.data = context.data || {} );
   
 
 }
@@ -316,5 +307,7 @@ SSR.render = function(Component, options){
   return new SSR(Component, options).render();
 
 }
+
+SSR.escape = escape;
 
 module.exports = SSR;
