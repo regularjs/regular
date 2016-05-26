@@ -652,6 +652,24 @@ it('bugfix #50', function(){
 
     expect(i).to.equal(6);
   })
+
+  it('bug #78', function(){
+    var Nest = Regular.extend({
+      name: 'bug-78',
+      config: function(data){
+        data.hello = 100
+      },
+      template: '{hello}'
+    })
+    var comp = new Regular({
+      data: { hello: 200 },
+      template: '<bug-78 ref=nest hello={hello}>{hello}</bug-78>'
+    })
+
+    expect(comp.data.hello).to.equal(100);
+    expect(comp.$refs.nest.data.hello).to.equal(100);
+
+  })
 })
 
 

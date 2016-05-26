@@ -2488,10 +2488,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	      if( !(isolate & 2) ) 
 	        this.$watch(value, (function(name, val){
 	          this.data[name] = val;
-	        }).bind(component, name))
+	        }).bind(component, name), { sync: true })
 	      if( value.set && !(isolate & 1 ) ) 
 	        // sync the data. it force the component don't trigger attr.name's first dirty echeck
-	        component.$watch(name, self.$update.bind(self, value), {sync: true});
+	        component.$watch(name, self.$update.bind(self, value), {init: true});
 	    }
 	  }
 	  if(is && is.type === 'expression'  ){
