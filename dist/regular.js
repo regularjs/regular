@@ -123,23 +123,23 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	
 	var env = __webpack_require__(1);
-	var Lexer = __webpack_require__(11);
-	var Parser = __webpack_require__(12);
+	var Lexer = __webpack_require__(12);
+	var Parser = __webpack_require__(13);
 	var config = __webpack_require__(2);
 	var _ = __webpack_require__(5);
-	var extend = __webpack_require__(13);
+	var extend = __webpack_require__(14);
 	var combine = {};
 	if(env.browser){
 	  var dom = __webpack_require__(4);
 	  var walkers = __webpack_require__(9);
 	  var Group = __webpack_require__(10);
 	  var doc = dom.doc;
-	  combine = __webpack_require__(14);
+	  combine = __webpack_require__(15);
 	}
-	var events = __webpack_require__(15);
-	var Watcher = __webpack_require__(16);
-	var parse = __webpack_require__(17);
-	var filter = __webpack_require__(18);
+	var events = __webpack_require__(16);
+	var Watcher = __webpack_require__(17);
+	var parse = __webpack_require__(18);
+	var filter = __webpack_require__(19);
 
 
 	/**
@@ -734,14 +734,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	var dom = module.exports;
 	var env = __webpack_require__(1);
 	var _ = __webpack_require__(5);
+	var consts = __webpack_require__(11);
 	var tNode = document.createElement('div')
 	var addEvent, removeEvent;
 	var noop = function(){}
 
-	var namespaces = {
-	  html: "http://www.w3.org/1999/xhtml",
-	  svg: "http://www.w3.org/2000/svg"
-	}
+	var namespaces = consts.NAMESPACE;
 
 	dom.body = document.body;
 
@@ -850,7 +848,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var specialAttr = {
 	  'class': function(node, value){
-	    ('className' in node && (node.namespaceURI === namespaces.html || !node.namespaceURI)) ?
+	     ('className' in node && (node.namespaceURI === namespaces.html )) ? 
 	      node.className = (value || '') : node.setAttribute('class', value);
 	  },
 	  'for': function(node, value){
@@ -1115,12 +1113,12 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 5 */
 /***/ function(module, exports, __webpack_require__) {
 
-	/* WEBPACK VAR INJECTION */(function(global) {__webpack_require__(19)();
+	/* WEBPACK VAR INJECTION */(function(global) {__webpack_require__(20)();
 
 
 
 	var _  = module.exports;
-	var entities = __webpack_require__(20);
+	var entities = __webpack_require__(21);
 	var slice = [].slice;
 	var o2str = ({}).toString;
 	var win = typeof window !=='undefined'? window: global;
@@ -1562,9 +1560,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	// Regular
 	var _ = __webpack_require__(5);
 	var dom = __webpack_require__(4);
-	var animate = __webpack_require__(21);
+	var animate = __webpack_require__(22);
 	var Regular = __webpack_require__(3);
-	var consts = __webpack_require__(22);
+	var consts = __webpack_require__(11);
+	var namespaces = consts.NAMESPACE;
+
 
 
 
@@ -1575,18 +1575,26 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = {
 	// **warn**: class inteplation will override this directive 
 	  'r-class': function(elem, value){
+
 	    if(typeof value=== 'string'){
 	      value = _.fixObjStr(value)
 	    }
+	    var isNotHtml =  elem.namespaceURI !== namespaces.html;
 	    this.$watch(value, function(nvalue){
-	      var className = ' '+ elem.className.replace(/\s+/g, ' ') +' ';
+	      var className = isNotHtml? elem.getAttribute('class'): elem.className;
+	      className = ' '+ (className||'').replace(/\s+/g, ' ') +' ';
 	      for(var i in nvalue) if(nvalue.hasOwnProperty(i)){
 	        className = className.replace(' ' + i + ' ',' ');
 	        if(nvalue[i] === true){
 	          className += i+' ';
 	        }
 	      }
-	      elem.className = className.trim();
+	      className = className.trim();
+	      if(isNotHtml){
+	        dom.attr(elem, 'class', className)
+	      }else{
+	        elem.className = className
+	      }
 	    },true);
 	  },
 	  // **warn**: style inteplation will override this directive 
@@ -1677,7 +1685,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var // packages
 	  _ = __webpack_require__(5),
-	 animate = __webpack_require__(21),
+	 animate = __webpack_require__(22),
 	 dom = __webpack_require__(4),
 	 Regular = __webpack_require__(3);
 
@@ -1961,8 +1969,8 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ function(module, exports, __webpack_require__) {
 
 	var diffArray = __webpack_require__(25).diffArray;
-	var combine = __webpack_require__(14);
-	var animate = __webpack_require__(21);
+	var combine = __webpack_require__(15);
+	var animate = __webpack_require__(22);
 	var node = __webpack_require__(26);
 	var Group = __webpack_require__(10);
 	var dom = __webpack_require__(4);
@@ -2567,7 +2575,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(5);
-	var combine = __webpack_require__(14)
+	var combine = __webpack_require__(15)
 
 	function Group(list){
 	  this.children = list || [];
@@ -2598,6 +2606,19 @@ return /******/ (function(modules) { // webpackBootstrap
 
 /***/ },
 /* 11 */
+/***/ function(module, exports, __webpack_require__) {
+
+	module.exports = {
+	  'COMPONENT_TYPE': 1,
+	  'ELEMENT_TYPE': 2,
+	  'NAMESPACE': {
+	    html: "http://www.w3.org/1999/xhtml",
+	    svg: "http://www.w3.org/2000/svg"
+	  }
+	}
+
+/***/ },
+/* 12 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(5);
@@ -2954,14 +2975,14 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 12 */
+/* 13 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(5);
 
 	var config = __webpack_require__(2);
 	var node = __webpack_require__(26);
-	var Lexer = __webpack_require__(11);
+	var Lexer = __webpack_require__(12);
 	var varName = _.varName;
 	var ctxName = _.ctxName;
 	var extName = _.extName;
@@ -3685,7 +3706,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 13 */
+/* 14 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// (c) 2010-2014 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
@@ -3771,14 +3792,14 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 14 */
+/* 15 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// some nested  operation in ast 
 	// --------------------------------
 
 	var dom = __webpack_require__(4);
-	var animate = __webpack_require__(21);
+	var animate = __webpack_require__(22);
 
 	var combine = module.exports = {
 
@@ -3882,7 +3903,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 15 */
+/* 16 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// simplest event emitter 60 lines
@@ -3962,11 +3983,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = Event;
 
 /***/ },
-/* 16 */
+/* 17 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(5);
-	var parseExpression = __webpack_require__(17).expression;
+	var parseExpression = __webpack_require__(18).expression;
 	var diff = __webpack_require__(25);
 	var diffArray = diff.diffArray;
 	var diffObject = diff.diffObject;
@@ -4220,12 +4241,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = Watcher;
 
 /***/ },
-/* 17 */
+/* 18 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var exprCache = __webpack_require__(1).exprCache;
 	var _ = __webpack_require__(5);
-	var Parser = __webpack_require__(12);
+	var Parser = __webpack_require__(13);
 	module.exports = {
 	  expression: function(expr, simple){
 	    // @TODO cache
@@ -4242,7 +4263,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 18 */
+/* 19 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
@@ -4310,7 +4331,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 19 */
+/* 20 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// shim for es5
@@ -4418,7 +4439,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 20 */
+/* 21 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// http://stackoverflow.com/questions/1354064/how-to-convert-characters-to-html-entities-using-plain-javascript
@@ -4683,7 +4704,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports  = entities;
 
 /***/ },
-/* 21 */
+/* 22 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(5);
@@ -4935,15 +4956,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 	module.exports = animate;
-
-/***/ },
-/* 22 */
-/***/ function(module, exports, __webpack_require__) {
-
-	module.exports = {
-	  'COMPONENT_TYPE': 1,
-	  'ELEMENT_TYPE': 2
-	}
 
 /***/ },
 /* 23 */

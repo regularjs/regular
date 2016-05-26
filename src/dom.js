@@ -10,16 +10,14 @@
 
 
 var dom = module.exports;
-var env = require("./env.js");
+var env = require("./env");
 var _ = require("./util");
+var consts = require('./const');
 var tNode = document.createElement('div')
 var addEvent, removeEvent;
 var noop = function(){}
 
-var namespaces = {
-  html: "http://www.w3.org/1999/xhtml",
-  svg: "http://www.w3.org/2000/svg"
-}
+var namespaces = consts.NAMESPACE;
 
 dom.body = document.body;
 
@@ -128,7 +126,7 @@ dom.fragment = function(){
 
 var specialAttr = {
   'class': function(node, value){
-    ('className' in node && (node.namespaceURI === namespaces.html || !node.namespaceURI)) ?
+     ('className' in node && (node.namespaceURI === namespaces.html )) ? 
       node.className = (value || '') : node.setAttribute('class', value);
   },
   'for': function(node, value){

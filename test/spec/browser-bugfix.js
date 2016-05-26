@@ -587,6 +587,31 @@ it('bugfix #50', function(){
     }).to.not.throwException();
 
   })
+
+  it("bugfix #74, r-class should support svg", function(){
+
+
+    if(!Regular.env.svg) return;
+
+    var SVG = Regular.extend({
+      name: 'checked',
+      template:'<svg> <line ref=line id="base" r-class={{"toggle": toggle, "active": active}}/> </svg>'
+    }) 
+    var line = new SVG({
+      data: {
+        toggle: true
+      }
+    })
+
+    expect(line.$refs.line.getAttribute('class')).to.equal('toggle')
+
+    line.data.toggle = false;
+    line.data.active = true;
+    line.$update()
+
+    expect(line.$refs.line.getAttribute('class')).to.equal('active')
+
+  })
 })
 
 
