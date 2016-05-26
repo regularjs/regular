@@ -612,6 +612,46 @@ it('bugfix #50', function(){
     expect(line.$refs.line.getAttribute('class')).to.equal('active')
 
   })
+
+  it('feature #82', function(){
+    var i = 0;
+    var mixins =  {
+      events: {
+        $afterConfig: function(){
+          i++;
+          expect(i).to.equal(3)
+        },
+        $config: function(){
+          i++;
+          expect(i).to.equal(1)
+        },
+        $init: function(){
+          i++;
+          expect(i).to.equal(4)
+
+        },
+        $afterInit: function(){
+          i++;
+          expect(i).to.equal(6)
+        }
+      }
+    }
+
+    var Component = Regular.extend({
+      config: function(){
+          i++;
+          expect(i).to.equal(2)
+      },
+      init: function(){
+          i++;
+          expect(i).to.equal(5)
+      }
+    }).implement(mixins)
+
+    new Component();
+
+    expect(i).to.equal(6);
+  })
 })
 
 
