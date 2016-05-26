@@ -5912,9 +5912,9 @@
 
 	var expect = __webpack_require__(26);
 	var _ = __webpack_require__(18);
-	var shim = __webpack_require__(22);
-	var extend = __webpack_require__(23);
-	var diff = __webpack_require__(24)
+	var shim = __webpack_require__(23);
+	var extend = __webpack_require__(24);
+	var diff = __webpack_require__(25)
 	var diffArray = diff.diffArray;
 	var diffObject = diff.diffObject;
 
@@ -6238,7 +6238,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var expect = __webpack_require__(26);
-	var Event = __webpack_require__(25);
+	var Event = __webpack_require__(22);
 
 
 
@@ -6370,8 +6370,8 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var env =  __webpack_require__(27);
-	var config = __webpack_require__(29); 
-	var Regular = module.exports = __webpack_require__(30);
+	var config = __webpack_require__(28); 
+	var Regular = module.exports = __webpack_require__(29);
 	var Parser = Regular.Parser;
 	var Lexer = Regular.Lexer;
 
@@ -6416,7 +6416,7 @@
 	var dom = module.exports;
 	var env = __webpack_require__(27);
 	var _ = __webpack_require__(18);
-	var consts = __webpack_require__(28);
+	var consts = __webpack_require__(30);
 	var tNode = document.createElement('div')
 	var addEvent, removeEvent;
 	var noop = function(){}
@@ -6795,7 +6795,7 @@
 /* 18 */
 /***/ function(module, exports, __webpack_require__) {
 
-	/* WEBPACK VAR INJECTION */(function(global) {__webpack_require__(22)();
+	/* WEBPACK VAR INJECTION */(function(global) {__webpack_require__(23)();
 
 
 
@@ -7626,6 +7626,86 @@
 /* 22 */
 /***/ function(module, exports, __webpack_require__) {
 
+	// simplest event emitter 60 lines
+	// ===============================
+	var slice = [].slice, _ = __webpack_require__(18);
+	var API = {
+	  $on: function(event, fn) {
+	    if(typeof event === "object"){
+	      for (var i in event) {
+	        this.$on(i, event[i]);
+	      }
+	    }else{
+	      // @patch: for list
+	      var context = this;
+	      var handles = context._handles || (context._handles = {}),
+	        calls = handles[event] || (handles[event] = []);
+	      calls.push(fn);
+	    }
+	    return this;
+	  },
+	  $off: function(event, fn) {
+	    var context = this;
+	    if(!context._handles) return;
+	    if(!event) this._handles = {};
+	    var handles = context._handles,
+	      calls;
+
+	    if (calls = handles[event]) {
+	      if (!fn) {
+	        handles[event] = [];
+	        return context;
+	      }
+	      for (var i = 0, len = calls.length; i < len; i++) {
+	        if (fn === calls[i]) {
+	          calls.splice(i, 1);
+	          return context;
+	        }
+	      }
+	    }
+	    return context;
+	  },
+	  // bubble event
+	  $emit: function(event){
+	    // @patch: for list
+	    var context = this;
+	    var handles = context._handles, calls, args, type;
+	    if(!event) return;
+	    var args = slice.call(arguments, 1);
+	    var type = event;
+
+	    if(!handles) return context;
+	    if(calls = handles[type.slice(1)]){
+	      for (var j = 0, len = calls.length; j < len; j++) {
+	        calls[j].apply(context, args)
+	      }
+	    }
+	    if (!(calls = handles[type])) return context;
+	    for (var i = 0, len = calls.length; i < len; i++) {
+	      calls[i].apply(context, args)
+	    }
+	    // if(calls.length) context.$update();
+	    return context;
+	  },
+	  // capture  event
+	  $one: function(){
+	    
+	}
+	}
+	// container class
+	function Event() {}
+	_.extend(Event.prototype, API)
+
+	Event.mixTo = function(obj){
+	  obj = typeof obj === "function" ? obj.prototype : obj;
+	  _.extend(obj, API)
+	}
+	module.exports = Event;
+
+/***/ },
+/* 23 */
+/***/ function(module, exports, __webpack_require__) {
+
 	// shim for es5
 	var slice = [].slice;
 	var tstr = ({}).toString;
@@ -7731,7 +7811,7 @@
 
 
 /***/ },
-/* 23 */
+/* 24 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// (c) 2010-2014 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
@@ -7817,7 +7897,7 @@
 
 
 /***/ },
-/* 24 */
+/* 25 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(18);
@@ -8005,86 +8085,6 @@
 	  diffArray: diffArray,
 	  diffObject: diffObject
 	}
-
-/***/ },
-/* 25 */
-/***/ function(module, exports, __webpack_require__) {
-
-	// simplest event emitter 60 lines
-	// ===============================
-	var slice = [].slice, _ = __webpack_require__(18);
-	var API = {
-	  $on: function(event, fn) {
-	    if(typeof event === "object"){
-	      for (var i in event) {
-	        this.$on(i, event[i]);
-	      }
-	    }else{
-	      // @patch: for list
-	      var context = this;
-	      var handles = context._handles || (context._handles = {}),
-	        calls = handles[event] || (handles[event] = []);
-	      calls.push(fn);
-	    }
-	    return this;
-	  },
-	  $off: function(event, fn) {
-	    var context = this;
-	    if(!context._handles) return;
-	    if(!event) this._handles = {};
-	    var handles = context._handles,
-	      calls;
-
-	    if (calls = handles[event]) {
-	      if (!fn) {
-	        handles[event] = [];
-	        return context;
-	      }
-	      for (var i = 0, len = calls.length; i < len; i++) {
-	        if (fn === calls[i]) {
-	          calls.splice(i, 1);
-	          return context;
-	        }
-	      }
-	    }
-	    return context;
-	  },
-	  // bubble event
-	  $emit: function(event){
-	    // @patch: for list
-	    var context = this;
-	    var handles = context._handles, calls, args, type;
-	    if(!event) return;
-	    var args = slice.call(arguments, 1);
-	    var type = event;
-
-	    if(!handles) return context;
-	    if(calls = handles[type.slice(1)]){
-	      for (var j = 0, len = calls.length; j < len; j++) {
-	        calls[j].apply(context, args)
-	      }
-	    }
-	    if (!(calls = handles[type])) return context;
-	    for (var i = 0, len = calls.length; i < len; i++) {
-	      calls[i].apply(context, args)
-	    }
-	    // if(calls.length) context.$update();
-	    return context;
-	  },
-	  // capture  event
-	  $one: function(){
-	    
-	}
-	}
-	// container class
-	function Event() {}
-	_.extend(Event.prototype, API)
-
-	Event.mixTo = function(obj){
-	  obj = typeof obj === "function" ? obj.prototype : obj;
-	  _.extend(obj, API)
-	}
-	module.exports = Event;
 
 /***/ },
 /* 26 */
@@ -9399,19 +9399,6 @@
 /* 28 */
 /***/ function(module, exports, __webpack_require__) {
 
-	module.exports = {
-	  'COMPONENT_TYPE': 1,
-	  'ELEMENT_TYPE': 2,
-	  'NAMESPACE': {
-	    html: "http://www.w3.org/1999/xhtml",
-	    svg: "http://www.w3.org/2000/svg"
-	  }
-	}
-
-/***/ },
-/* 29 */
-/***/ function(module, exports, __webpack_require__) {
-
 	
 	module.exports = {
 	  'BEGIN': '{',
@@ -9420,16 +9407,16 @@
 	}
 
 /***/ },
-/* 30 */
+/* 29 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
 	var env = __webpack_require__(27);
 	var Lexer = __webpack_require__(36);
 	var Parser = __webpack_require__(35);
-	var config = __webpack_require__(29);
+	var config = __webpack_require__(28);
 	var _ = __webpack_require__(18);
-	var extend = __webpack_require__(23);
+	var extend = __webpack_require__(24);
 	var combine = {};
 	if(env.browser){
 	  var dom = __webpack_require__(17);
@@ -9438,7 +9425,7 @@
 	  var doc = dom.doc;
 	  combine = __webpack_require__(20);
 	}
-	var events = __webpack_require__(25);
+	var events = __webpack_require__(22);
 	var Watcher = __webpack_require__(39);
 	var parse = __webpack_require__(21);
 	var filter = __webpack_require__(40);
@@ -10019,6 +10006,19 @@
 
 
 /***/ },
+/* 30 */
+/***/ function(module, exports, __webpack_require__) {
+
+	module.exports = {
+	  'COMPONENT_TYPE': 1,
+	  'ELEMENT_TYPE': 2,
+	  'NAMESPACE': {
+	    html: "http://www.w3.org/1999/xhtml",
+	    svg: "http://www.w3.org/2000/svg"
+	  }
+	}
+
+/***/ },
 /* 31 */
 /***/ function(module, exports, __webpack_require__) {
 
@@ -10291,8 +10291,8 @@
 	var _ = __webpack_require__(18);
 	var dom = __webpack_require__(17);
 	var animate = __webpack_require__(19);
-	var Regular = __webpack_require__(30);
-	var consts = __webpack_require__(28);
+	var Regular = __webpack_require__(29);
+	var consts = __webpack_require__(30);
 	var namespaces = consts.NAMESPACE;
 
 
@@ -10417,7 +10417,7 @@
 	  _ = __webpack_require__(18),
 	 animate = __webpack_require__(19),
 	 dom = __webpack_require__(17),
-	 Regular = __webpack_require__(30);
+	 Regular = __webpack_require__(29);
 
 
 	var // variables
@@ -10652,7 +10652,7 @@
 /* 34 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var Regular = __webpack_require__(30);
+	var Regular = __webpack_require__(29);
 
 	/**
 	 * Timeout Module
@@ -10700,7 +10700,7 @@
 
 	var _ = __webpack_require__(18);
 
-	var config = __webpack_require__(29);
+	var config = __webpack_require__(28);
 	var node = __webpack_require__(43);
 	var Lexer = __webpack_require__(36);
 	var varName = _.varName;
@@ -11430,7 +11430,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(18);
-	var config = __webpack_require__(29);
+	var config = __webpack_require__(28);
 
 	// some custom tag  will conflict with the Lexer progress
 	var conflictTag = {"}": "{", "]": "["}, map1, map2;
@@ -11786,7 +11786,7 @@
 /* 37 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var diffArray = __webpack_require__(24).diffArray;
+	var diffArray = __webpack_require__(25).diffArray;
 	var combine = __webpack_require__(20);
 	var animate = __webpack_require__(19);
 	var node = __webpack_require__(43);
@@ -12428,7 +12428,7 @@
 
 	var _ = __webpack_require__(18);
 	var parseExpression = __webpack_require__(21).expression;
-	var diff = __webpack_require__(24);
+	var diff = __webpack_require__(25);
 	var diffArray = diff.diffArray;
 	var diffObject = diff.diffObject;
 
@@ -12758,7 +12758,7 @@
 	 */
 	var _ = __webpack_require__(18);
 	var dom = __webpack_require__(17);
-	var Regular = __webpack_require__(30);
+	var Regular = __webpack_require__(29);
 
 	Regular._addProtoInheritCache("event");
 
@@ -12839,7 +12839,7 @@
 	// Regular
 	var _ = __webpack_require__(18);
 	var dom = __webpack_require__(17);
-	var Regular = __webpack_require__(30);
+	var Regular = __webpack_require__(29);
 
 	var modelHandlers = {
 	  "text": initText,
@@ -13078,8 +13078,8 @@
 	 */
 
 	var base64 = __webpack_require__(48)
-	var ieee754 = __webpack_require__(46)
-	var isArray = __webpack_require__(47)
+	var ieee754 = __webpack_require__(47)
+	var isArray = __webpack_require__(46)
 
 	exports.Buffer = Buffer
 	exports.SlowBuffer = Buffer
@@ -14145,6 +14145,45 @@
 /* 46 */
 /***/ function(module, exports, __webpack_require__) {
 
+	
+	/**
+	 * isArray
+	 */
+
+	var isArray = Array.isArray;
+
+	/**
+	 * toString
+	 */
+
+	var str = Object.prototype.toString;
+
+	/**
+	 * Whether or not the given `val`
+	 * is an array.
+	 *
+	 * example:
+	 *
+	 *        isArray([]);
+	 *        // > true
+	 *        isArray(arguments);
+	 *        // > false
+	 *        isArray('');
+	 *        // > false
+	 *
+	 * @param {mixed} val
+	 * @return {bool}
+	 */
+
+	module.exports = isArray || function (val) {
+	  return !! val && '[object Array]' == str.call(val);
+	};
+
+
+/***/ },
+/* 47 */
+/***/ function(module, exports, __webpack_require__) {
+
 	exports.read = function(buffer, offset, isLE, mLen, nBytes) {
 	  var e, m,
 	      eLen = nBytes * 8 - mLen - 1,
@@ -14228,45 +14267,6 @@
 	  for (; eLen > 0; buffer[offset + i] = e & 0xff, i += d, e /= 256, eLen -= 8);
 
 	  buffer[offset + i - d] |= s * 128;
-	};
-
-
-/***/ },
-/* 47 */
-/***/ function(module, exports, __webpack_require__) {
-
-	
-	/**
-	 * isArray
-	 */
-
-	var isArray = Array.isArray;
-
-	/**
-	 * toString
-	 */
-
-	var str = Object.prototype.toString;
-
-	/**
-	 * Whether or not the given `val`
-	 * is an array.
-	 *
-	 * example:
-	 *
-	 *        isArray([]);
-	 *        // > true
-	 *        isArray(arguments);
-	 *        // > false
-	 *        isArray('');
-	 *        // > false
-	 *
-	 * @param {mixed} val
-	 * @return {bool}
-	 */
-
-	module.exports = isArray || function (val) {
-	  return !! val && '[object Array]' == str.call(val);
 	};
 
 
