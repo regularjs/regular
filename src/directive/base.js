@@ -20,7 +20,7 @@ module.exports = {
     if(typeof value=== 'string'){
       value = _.fixObjStr(value)
     }
-    var isNotHtml =  elem.namespaceURI !== namespaces.html;
+    var isNotHtml = elem.namespaceURI && elem.namespaceURI !== namespaces.html ;
     this.$watch(value, function(nvalue){
       var className = isNotHtml? elem.getAttribute('class'): elem.className;
       className = ' '+ (className||'').replace(/\s+/g, ' ') +' ';

@@ -126,7 +126,7 @@ dom.fragment = function(){
 
 var specialAttr = {
   'class': function(node, value){
-     ('className' in node && (node.namespaceURI === namespaces.html )) ? 
+     ('className' in node && (!node.namespaceURI || node.namespaceURI === namespaces.html  )) ? 
       node.className = (value || '') : node.setAttribute('class', value);
   },
   'for': function(node, value){

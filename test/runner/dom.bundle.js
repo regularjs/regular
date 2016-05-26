@@ -1775,7 +1775,7 @@
 
 	var expect = __webpack_require__(26);
 	var Regular = __webpack_require__(16);
-	var combine = __webpack_require__(25);
+	var combine = __webpack_require__(20);
 	function destroy(component, container){
 	  component.destroy();
 	  expect(container.innerHTML).to.equal('');
@@ -4744,7 +4744,7 @@
 
 	var expect = __webpack_require__(26);
 	var Regular = __webpack_require__(16);
-	var parse = __webpack_require__(20);
+	var parse = __webpack_require__(21);
 
 	var Component = Regular.extend();
 
@@ -5912,9 +5912,9 @@
 
 	var expect = __webpack_require__(26);
 	var _ = __webpack_require__(18);
-	var shim = __webpack_require__(21);
-	var extend = __webpack_require__(22);
-	var diff = __webpack_require__(23)
+	var shim = __webpack_require__(22);
+	var extend = __webpack_require__(23);
+	var diff = __webpack_require__(24)
 	var diffArray = diff.diffArray;
 	var diffObject = diff.diffObject;
 
@@ -6238,7 +6238,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var expect = __webpack_require__(26);
-	var Event = __webpack_require__(24);
+	var Event = __webpack_require__(25);
 
 
 
@@ -6370,8 +6370,8 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var env =  __webpack_require__(27);
-	var config = __webpack_require__(28); 
-	var Regular = module.exports = __webpack_require__(29);
+	var config = __webpack_require__(29); 
+	var Regular = module.exports = __webpack_require__(30);
 	var Parser = Regular.Parser;
 	var Lexer = Regular.Lexer;
 
@@ -6416,7 +6416,7 @@
 	var dom = module.exports;
 	var env = __webpack_require__(27);
 	var _ = __webpack_require__(18);
-	var consts = __webpack_require__(30);
+	var consts = __webpack_require__(28);
 	var tNode = document.createElement('div')
 	var addEvent, removeEvent;
 	var noop = function(){}
@@ -6530,7 +6530,7 @@
 
 	var specialAttr = {
 	  'class': function(node, value){
-	     ('className' in node && (node.namespaceURI === namespaces.html )) ? 
+	     ('className' in node && (!node.namespaceURI || node.namespaceURI === namespaces.html  )) ? 
 	      node.className = (value || '') : node.setAttribute('class', value);
 	  },
 	  'for': function(node, value){
@@ -6795,7 +6795,7 @@
 /* 18 */
 /***/ function(module, exports, __webpack_require__) {
 
-	/* WEBPACK VAR INJECTION */(function(global) {__webpack_require__(21)();
+	/* WEBPACK VAR INJECTION */(function(global) {__webpack_require__(22)();
 
 
 
@@ -7493,6 +7493,117 @@
 /* 20 */
 /***/ function(module, exports, __webpack_require__) {
 
+	// some nested  operation in ast 
+	// --------------------------------
+
+	var dom = __webpack_require__(17);
+	var animate = __webpack_require__(19);
+
+	var combine = module.exports = {
+
+	  // get the initial dom in object
+	  node: function(item){
+	    var children,node, nodes;
+	    if(!item) return;
+	    if(item.element) return item.element;
+	    if(typeof item.node === "function") return item.node();
+	    if(typeof item.nodeType === "number") return item;
+	    if(item.group) return combine.node(item.group)
+	    if(children = item.children){
+	      if(children.length === 1){
+	        return combine.node(children[0]);
+	      }
+	      nodes = [];
+	      for(var i = 0, len = children.length; i < len; i++ ){
+	        node = combine.node(children[i]);
+	        if(Array.isArray(node)){
+	          nodes.push.apply(nodes, node)
+	        }else if(node) {
+	          nodes.push(node)
+	        }
+	      }
+	      return nodes;
+	    }
+	  },
+	  // @TODO remove _gragContainer
+	  inject: function(node, pos ){
+	    var group = this;
+	    var fragment = combine.node(group.group || group);
+	    if(node === false) {
+	      animate.remove(fragment)
+	      return group;
+	    }else{
+	      if(!fragment) return group;
+	      if(typeof node === 'string') node = dom.find(node);
+	      if(!node) throw Error('injected node is not found');
+	      // use animate to animate firstchildren
+	      animate.inject(fragment, node, pos);
+	    }
+	    // if it is a component
+	    if(group.$emit) {
+	      var preParent = group.parentNode;
+	      var newParent = (pos ==='after' || pos === 'before')? node.parentNode : node;
+	      group.parentNode = newParent;
+	      group.$emit("$inject", node, pos, preParent);
+	    }
+	    return group;
+	  },
+
+	  // get the last dom in object(for insertion operation)
+	  last: function(item){
+	    var children = item.children;
+
+	    if(typeof item.last === "function") return item.last();
+	    if(typeof item.nodeType === "number") return item;
+
+	    if(children && children.length) return combine.last(children[children.length - 1]);
+	    if(item.group) return combine.last(item.group);
+
+	  },
+
+	  destroy: function(item, first){
+	    if(!item) return;
+	    if(Array.isArray(item)){
+	      for(var i = 0, len = item.length; i < len; i++ ){
+	        combine.destroy(item[i], first);
+	      }
+	    }
+	    var children = item.children;
+	    if(typeof item.destroy === "function") return item.destroy(first);
+	    if(typeof item.nodeType === "number" && first)  dom.remove(item);
+	    if(children && children.length){
+	      combine.destroy(children, true);
+	      item.children = null;
+	    }
+	  }
+
+	}
+
+
+	// @TODO: need move to dom.js
+	dom.element = function( component, all ){
+	  if(!component) return !all? null: [];
+	  var nodes = combine.node( component );
+	  if( nodes.nodeType === 1 ) return all? [nodes]: nodes;
+	  var elements = [];
+	  for(var i = 0; i<nodes.length ;i++){
+	    var node = nodes[i];
+	    if( node && node.nodeType === 1){
+	      if(!all) return node;
+	      elements.push(node);
+	    } 
+	  }
+	  return !all? elements[0]: elements;
+	}
+
+
+
+
+
+/***/ },
+/* 21 */
+/***/ function(module, exports, __webpack_require__) {
+
 	var exprCache = __webpack_require__(27).exprCache;
 	var _ = __webpack_require__(18);
 	var Parser = __webpack_require__(35);
@@ -7512,7 +7623,7 @@
 
 
 /***/ },
-/* 21 */
+/* 22 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// shim for es5
@@ -7620,7 +7731,7 @@
 
 
 /***/ },
-/* 22 */
+/* 23 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// (c) 2010-2014 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
@@ -7706,7 +7817,7 @@
 
 
 /***/ },
-/* 23 */
+/* 24 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(18);
@@ -7896,7 +8007,7 @@
 	}
 
 /***/ },
-/* 24 */
+/* 25 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// simplest event emitter 60 lines
@@ -7974,117 +8085,6 @@
 	  _.extend(obj, API)
 	}
 	module.exports = Event;
-
-/***/ },
-/* 25 */
-/***/ function(module, exports, __webpack_require__) {
-
-	// some nested  operation in ast 
-	// --------------------------------
-
-	var dom = __webpack_require__(17);
-	var animate = __webpack_require__(19);
-
-	var combine = module.exports = {
-
-	  // get the initial dom in object
-	  node: function(item){
-	    var children,node, nodes;
-	    if(!item) return;
-	    if(item.element) return item.element;
-	    if(typeof item.node === "function") return item.node();
-	    if(typeof item.nodeType === "number") return item;
-	    if(item.group) return combine.node(item.group)
-	    if(children = item.children){
-	      if(children.length === 1){
-	        return combine.node(children[0]);
-	      }
-	      nodes = [];
-	      for(var i = 0, len = children.length; i < len; i++ ){
-	        node = combine.node(children[i]);
-	        if(Array.isArray(node)){
-	          nodes.push.apply(nodes, node)
-	        }else if(node) {
-	          nodes.push(node)
-	        }
-	      }
-	      return nodes;
-	    }
-	  },
-	  // @TODO remove _gragContainer
-	  inject: function(node, pos ){
-	    var group = this;
-	    var fragment = combine.node(group.group || group);
-	    if(node === false) {
-	      animate.remove(fragment)
-	      return group;
-	    }else{
-	      if(!fragment) return group;
-	      if(typeof node === 'string') node = dom.find(node);
-	      if(!node) throw Error('injected node is not found');
-	      // use animate to animate firstchildren
-	      animate.inject(fragment, node, pos);
-	    }
-	    // if it is a component
-	    if(group.$emit) {
-	      var preParent = group.parentNode;
-	      var newParent = (pos ==='after' || pos === 'before')? node.parentNode : node;
-	      group.parentNode = newParent;
-	      group.$emit("$inject", node, pos, preParent);
-	    }
-	    return group;
-	  },
-
-	  // get the last dom in object(for insertion operation)
-	  last: function(item){
-	    var children = item.children;
-
-	    if(typeof item.last === "function") return item.last();
-	    if(typeof item.nodeType === "number") return item;
-
-	    if(children && children.length) return combine.last(children[children.length - 1]);
-	    if(item.group) return combine.last(item.group);
-
-	  },
-
-	  destroy: function(item, first){
-	    if(!item) return;
-	    if(Array.isArray(item)){
-	      for(var i = 0, len = item.length; i < len; i++ ){
-	        combine.destroy(item[i], first);
-	      }
-	    }
-	    var children = item.children;
-	    if(typeof item.destroy === "function") return item.destroy(first);
-	    if(typeof item.nodeType === "number" && first)  dom.remove(item);
-	    if(children && children.length){
-	      combine.destroy(children, true);
-	      item.children = null;
-	    }
-	  }
-
-	}
-
-
-	// @TODO: need move to dom.js
-	dom.element = function( component, all ){
-	  if(!component) return !all? null: [];
-	  var nodes = combine.node( component );
-	  if( nodes.nodeType === 1 ) return all? [nodes]: nodes;
-	  var elements = [];
-	  for(var i = 0; i<nodes.length ;i++){
-	    var node = nodes[i];
-	    if( node && node.nodeType === 1){
-	      if(!all) return node;
-	      elements.push(node);
-	    } 
-	  }
-	  return !all? elements[0]: elements;
-	}
-
-
-
-
 
 /***/ },
 /* 26 */
@@ -9399,6 +9399,19 @@
 /* 28 */
 /***/ function(module, exports, __webpack_require__) {
 
+	module.exports = {
+	  'COMPONENT_TYPE': 1,
+	  'ELEMENT_TYPE': 2,
+	  'NAMESPACE': {
+	    html: "http://www.w3.org/1999/xhtml",
+	    svg: "http://www.w3.org/2000/svg"
+	  }
+	}
+
+/***/ },
+/* 29 */
+/***/ function(module, exports, __webpack_require__) {
+
 	
 	module.exports = {
 	  'BEGIN': '{',
@@ -9407,27 +9420,27 @@
 	}
 
 /***/ },
-/* 29 */
+/* 30 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
 	var env = __webpack_require__(27);
 	var Lexer = __webpack_require__(36);
 	var Parser = __webpack_require__(35);
-	var config = __webpack_require__(28);
+	var config = __webpack_require__(29);
 	var _ = __webpack_require__(18);
-	var extend = __webpack_require__(22);
+	var extend = __webpack_require__(23);
 	var combine = {};
 	if(env.browser){
 	  var dom = __webpack_require__(17);
 	  var walkers = __webpack_require__(37);
 	  var Group = __webpack_require__(38);
 	  var doc = dom.doc;
-	  combine = __webpack_require__(25);
+	  combine = __webpack_require__(20);
 	}
-	var events = __webpack_require__(24);
+	var events = __webpack_require__(25);
 	var Watcher = __webpack_require__(39);
-	var parse = __webpack_require__(20);
+	var parse = __webpack_require__(21);
 	var filter = __webpack_require__(40);
 
 
@@ -10006,19 +10019,6 @@
 
 
 /***/ },
-/* 30 */
-/***/ function(module, exports, __webpack_require__) {
-
-	module.exports = {
-	  'COMPONENT_TYPE': 1,
-	  'ELEMENT_TYPE': 2,
-	  'NAMESPACE': {
-	    html: "http://www.w3.org/1999/xhtml",
-	    svg: "http://www.w3.org/2000/svg"
-	  }
-	}
-
-/***/ },
 /* 31 */
 /***/ function(module, exports, __webpack_require__) {
 
@@ -10291,8 +10291,8 @@
 	var _ = __webpack_require__(18);
 	var dom = __webpack_require__(17);
 	var animate = __webpack_require__(19);
-	var Regular = __webpack_require__(29);
-	var consts = __webpack_require__(30);
+	var Regular = __webpack_require__(30);
+	var consts = __webpack_require__(28);
 	var namespaces = consts.NAMESPACE;
 
 
@@ -10309,7 +10309,7 @@
 	    if(typeof value=== 'string'){
 	      value = _.fixObjStr(value)
 	    }
-	    var isNotHtml =  elem.namespaceURI !== namespaces.html;
+	    var isNotHtml = elem.namespaceURI && elem.namespaceURI !== namespaces.html ;
 	    this.$watch(value, function(nvalue){
 	      var className = isNotHtml? elem.getAttribute('class'): elem.className;
 	      className = ' '+ (className||'').replace(/\s+/g, ' ') +' ';
@@ -10417,7 +10417,7 @@
 	  _ = __webpack_require__(18),
 	 animate = __webpack_require__(19),
 	 dom = __webpack_require__(17),
-	 Regular = __webpack_require__(29);
+	 Regular = __webpack_require__(30);
 
 
 	var // variables
@@ -10652,7 +10652,7 @@
 /* 34 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var Regular = __webpack_require__(29);
+	var Regular = __webpack_require__(30);
 
 	/**
 	 * Timeout Module
@@ -10700,7 +10700,7 @@
 
 	var _ = __webpack_require__(18);
 
-	var config = __webpack_require__(28);
+	var config = __webpack_require__(29);
 	var node = __webpack_require__(43);
 	var Lexer = __webpack_require__(36);
 	var varName = _.varName;
@@ -11430,7 +11430,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(18);
-	var config = __webpack_require__(28);
+	var config = __webpack_require__(29);
 
 	// some custom tag  will conflict with the Lexer progress
 	var conflictTag = {"}": "{", "]": "["}, map1, map2;
@@ -11786,8 +11786,8 @@
 /* 37 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var diffArray = __webpack_require__(23).diffArray;
-	var combine = __webpack_require__(25);
+	var diffArray = __webpack_require__(24).diffArray;
+	var combine = __webpack_require__(20);
 	var animate = __webpack_require__(19);
 	var node = __webpack_require__(43);
 	var Group = __webpack_require__(38);
@@ -12393,7 +12393,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(18);
-	var combine = __webpack_require__(25)
+	var combine = __webpack_require__(20)
 
 	function Group(list){
 	  this.children = list || [];
@@ -12427,8 +12427,8 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(18);
-	var parseExpression = __webpack_require__(20).expression;
-	var diff = __webpack_require__(23);
+	var parseExpression = __webpack_require__(21).expression;
+	var diff = __webpack_require__(24);
 	var diffArray = diff.diffArray;
 	var diffObject = diff.diffObject;
 
@@ -12758,7 +12758,7 @@
 	 */
 	var _ = __webpack_require__(18);
 	var dom = __webpack_require__(17);
-	var Regular = __webpack_require__(29);
+	var Regular = __webpack_require__(30);
 
 	Regular._addProtoInheritCache("event");
 
@@ -12839,7 +12839,7 @@
 	// Regular
 	var _ = __webpack_require__(18);
 	var dom = __webpack_require__(17);
-	var Regular = __webpack_require__(29);
+	var Regular = __webpack_require__(30);
 
 	var modelHandlers = {
 	  "text": initText,
