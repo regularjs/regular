@@ -6,5 +6,9 @@ module.exports = {
   },
   "MSG": {
     101: "Unmatched ast and mountNode, report issue at https://github.com/regularjs/regular/issues"
+  },
+  'NAMESPACE': {
+    html: "http://www.w3.org/1999/xhtml",
+    svg: "http://www.w3.org/2000/svg"
   }
 }

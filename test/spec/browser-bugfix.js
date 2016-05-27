@@ -572,6 +572,104 @@ it('bugfix #50', function(){
       component.destroy();
 
   })
+
+
+  it("bugfix #72, support pass null and undefined literal in template", function(){
+    var Checked = Regular.extend({
+      name: 'checked',
+      template: "{checked}"
+    }) 
+
+    expect(function(){
+      new Regular({
+        template: "<checked toggled='' checked={null} /> <checked checked={undefined}/ >"
+      })
+    }).to.not.throwException();
+
+  })
+
+  it("bugfix #74, r-class should support svg", function(){
+
+
+    if(!Regular.env.svg) return;
+
+    var SVG = Regular.extend({
+      name: 'checked',
+      template:'<svg> <line ref=line id="base" r-class={{"toggle": toggle, "active": active}}/> </svg>'
+    }) 
+    var line = new SVG({
+      data: {
+        toggle: true
+      }
+    })
+
+    expect(line.$refs.line.getAttribute('class')).to.equal('toggle')
+
+    line.data.toggle = false;
+    line.data.active = true;
+    line.$update()
+
+    expect(line.$refs.line.getAttribute('class')).to.equal('active')
+
+  })
+
+  it('feature #82', function(){
+    var i = 0;
+    var mixins =  {
+      events: {
+        $afterConfig: function(){
+          i++;
+          expect(i).to.equal(3)
+        },
+        $config: function(){
+          i++;
+          expect(i).to.equal(1)
+        },
+        $init: function(){
+          i++;
+          expect(i).to.equal(4)
+
+        },
+        $afterInit: function(){
+          i++;
+          expect(i).to.equal(6)
+        }
+      }
+    }
+
+    var Component = Regular.extend({
+      config: function(){
+          i++;
+          expect(i).to.equal(2)
+      },
+      init: function(){
+          i++;
+          expect(i).to.equal(5)
+      }
+    }).implement(mixins)
+
+    new Component();
+
+    expect(i).to.equal(6);
+  })
+
+  it('bug #78', function(){
+    var Nest = Regular.extend({
+      name: 'bug-78',
+      config: function(data){
+        data.hello = 100
+      },
+      template: '{hello}'
+    })
+    var comp = new Regular({
+      data: { hello: 200 },
+      template: '<bug-78 ref=nest hello={hello}>{hello}</bug-78>'
+    })
+
+    expect(comp.data.hello).to.equal(100);
+    expect(comp.$refs.nest.data.hello).to.equal(100);
+
+  })
 })
 
 

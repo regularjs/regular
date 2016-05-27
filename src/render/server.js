@@ -4,6 +4,7 @@
 var _ = require('../util');
 var parser = require('../helper/parse');
 var diffArray = require('../helper/diff').diffArray;
+var shared = require('./shared');
 
 
 
@@ -52,6 +53,8 @@ function SSR (Component, definition){
 
   this.Component = Component;
   var context = this.context = Object.create(Component.prototype)
+
+  shared.initDefinition(context, definition);
 
 
   

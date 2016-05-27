@@ -39,6 +39,7 @@ var Regular = function(definition, options){
   var node, template, cursor;
 
   definition = definition || {};
+  var usePrototyeString = typeof this.template === 'string' && !definition.template;
   options = options || {};
 
   var mountNode = definition.mountNode;
@@ -54,19 +55,17 @@ var Regular = function(definition, options){
     cursor = options.cursor
   }
 
-  // definition.data = definition.data || {};
-  // definition.computed = definition.computed || {};
-  // definition.events = definition.events || {};
-  // if(this.data) _.extend(definition.data, this.data);
-  // if(this.computed) _.extend(definition.computed, this.computed);
-  // if(this.events) _.extend(definition.events, this.events);
+  definition.data = definition.data || {};
+  definition.computed = definition.computed || {};
+  definition.events = definition.events || {};
+  if(this.data) _.extend(definition.data, this.data);
+  if(this.computed) _.extend(definition.computed, this.computed);
+  if(this.events) _.extend(definition.events, this.events);
 
-  // _.extend(this, definition, true);
+  _.extend(this, definition, true);
 
 
-  shared.initDefinition(definition, this, function(context){
-
-  }, )
+ 
 
   if(this.$parent){
      this.$parent._append(this);
@@ -84,7 +83,15 @@ var Regular = function(definition, options){
   }
   // if template is a xml
   if(template && template.nodeType) template = template.innerHTML;
-  if(typeof template === 'string') this.template = new Parser(template).parse();
+  if(typeof template === 'string') {
+    template = new Parser(template).parse();
+    if(usePrototyeString) {
+    // avoid multiply compile
+      this.constructor.prototype.template = template;
+    }else{
+      delete this.template;
+    }
+  }
 
   this.computed = handleComputed(this.computed);
   this.$root = this.$root || this;
@@ -96,6 +103,7 @@ var Regular = function(definition, options){
   this.$emit("$config");
 
   this.config && this.config(this.data);
+  this.$emit("$afterConfig");
 
   var body = this._body;
   this._body = null;
@@ -110,7 +118,7 @@ var Regular = function(definition, options){
   }
   // handle computed
   if(template){
-    this.group = this.$compile(this.template, {
+    this.group = this.$compile(template, {
       namespace: options.namespace,
       cursor: cursor
     });
@@ -122,6 +130,7 @@ var Regular = function(definition, options){
   this.$ready = true;
   this.$emit("$init");
   if( this.init ) this.init(this.data);
+  this.$emit("$afterInit");
 
   // @TODO: remove, maybe , there is no need to update after init; 
   // if(this.$root === this) this.$update();
@@ -153,14 +162,16 @@ _.extend(Regular, {
     if(template = o.template){
       var node, name;
       if( typeof template === 'string' && template.length < 16 && ( node = dom.find( template )) ){
-        template = node.innerHTML;
-        if(name = dom.attr(node, 'name')) Regular.component(name, this);
+        template = node ;
       }
 
-      if(template.nodeType) template = template.innerHTML;
+      if(template && template.nodeType){
+        if(name = dom.attr(template, 'name')) Regular.component(name, this);
+        template = template.innerHTML;
+      } 
 
-      if(typeof template === 'string'){
-        this.prototype.template = new Parser(template).parse();
+      if(typeof template === 'string' ){
+        this.prototype.template = config.PRECOMPILE? new Parser(template).parse(): template;
       }
     }
 

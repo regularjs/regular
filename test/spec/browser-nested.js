@@ -103,6 +103,8 @@ var expect = require('expect.js');
 
     })
 
+
+
     it("transclude-html with $body ", function(){
                   
 
@@ -479,10 +481,36 @@ var expect = require('expect.js');
       var data = component.$refs.a.data;
       destroy(component, containerAll);
       expect(data.isDisabled).to.equal(true)
+      expect(data.non).to.equal('')
       expect(data.isActived).to.equal(false)
       expect(data.isOld).to.equal(true)
       expect(data.isNew).to.equal(true)
       expect(data.normal).to.equal(true)
+    })
+
+
+    it("auto unwatch when component destroy", function(){
+
+      var Component1 = NameSpace.extend({
+        name: 'unwatch_c1',
+        template: "<div></div>"
+      })
+
+      var Component2 = NameSpace.extend({
+        name: 'unwatch_c2',
+        template: "{#if show}<unwatch_c1 a={a} b={b} ref=c></unwatch_c1>{/if}"
+      })
+
+      var component = new Component2({
+        data: {
+          show: true
+        }
+      });
+      expect(component._watchers.length).to.equal(3)
+      var component2 = component.$refs.c;
+      component.$update('show', false);
+      expect(component._watchers.length).to.equal(1)
+      expect(component2._watchers).to.equal(null)
     })
 })
 

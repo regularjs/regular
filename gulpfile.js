@@ -165,6 +165,20 @@ gulp.task('jshint', function(){
 
 })
 
+
+gulp.task('mocha', function() {
+
+
+  return gulp.src(['test/spec/test-*.js'])
+    .pipe(mocha({reporter: 'spec' }) )
+    .on('error', function(){
+      gutil.log.apply(this, arguments);
+      console.log('\u0007');
+    })
+    .on('end', function(){
+    });
+});
+
 gulp.task('cover', function(cb){
   
   gulp.src(['src/**/*.js'])
@@ -177,10 +191,10 @@ gulp.task('cover', function(cb){
     });
 })
 
-gulp.task('test', ['jshint', 'karma'])
+gulp.task('test', ['jshint', 'karma', 'mocha'])
 
 // for travis
-gulp.task('travis', ['jshint' ,'build',  'karma']);
+gulp.task('travis', ['build',  'karma', 'mocha']);
 
 
 gulp.task('casper', function(){

@@ -1,3 +1,4 @@
+var _ = require('../util');
 
 var shared = module.exports = {
   initDefinition: function(context, definition, afterPrepare){

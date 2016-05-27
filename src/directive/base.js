@@ -4,6 +4,8 @@ var dom = require("../dom");
 var animate = require("../helper/animate");
 var Regular = require("../render/client");
 var consts = require("../const");
+var namespaces = consts.NAMESPACE;
+
 
 
 
@@ -14,18 +16,26 @@ require("./form.js");
 module.exports = {
 // **warn**: class inteplation will override this directive 
   'r-class': function(elem, value){
+
     if(typeof value=== 'string'){
       value = _.fixObjStr(value)
     }
+    var isNotHtml = elem.namespaceURI && elem.namespaceURI !== namespaces.html ;
     this.$watch(value, function(nvalue){
-      var className = ' '+ elem.className.replace(/\s+/g, ' ') +' ';
+      var className = isNotHtml? elem.getAttribute('class'): elem.className;
+      className = ' '+ (className||'').replace(/\s+/g, ' ') +' ';
       for(var i in nvalue) if(nvalue.hasOwnProperty(i)){
         className = className.replace(' ' + i + ' ',' ');
         if(nvalue[i] === true){
           className += i+' ';
         }
       }
-      elem.className = className.trim();
+      className = className.trim();
+      if(isNotHtml){
+        dom.attr(elem, 'class', className)
+      }else{
+        elem.className = className
+      }
     },true);
   },
   // **warn**: style inteplation will override this directive 
