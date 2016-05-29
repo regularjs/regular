@@ -44,31 +44,24 @@ var escape = (function(){
  * @param  {[type]} options [description]
  */
 
-
-
-
-function SSR (Component, definition){
-
-  definition = definition || {};
+function SSR (Component){
 
   this.Component = Component;
-  var context = this.context = Object.create(Component.prototype)
-
-  shared.initDefinition(context, definition);
-
-
-  
-
 }
 
 
 var ssr = _.extend(SSR.prototype, {});
 
 
-ssr.render = function(){
+ssr.render = function( definition){
 
-  var self = this;
-  return this.compile(this.context.template);
+  definition = definition || {};
+
+  var context = this.context = Object.create(this.Component.prototype)
+
+  var template = shared.initDefinition(context, definition);
+
+  return this.compile(template);
 
 }
 
@@ -305,9 +298,9 @@ ssr.get = function(expr){
 
 }
 
-SSR.render = function(Component, options){
+SSR.render = function(Component, definition){
 
-  return new SSR(Component, options).render();
+  return new SSR(Component).render( definition );
 
 }
 

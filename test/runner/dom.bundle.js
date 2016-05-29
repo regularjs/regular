@@ -6035,9 +6035,9 @@
 
 	var expect = __webpack_require__(28);
 	var _ = __webpack_require__(19);
-	var shim = __webpack_require__(23);
-	var extend = __webpack_require__(24);
-	var diff = __webpack_require__(25)
+	var shim = __webpack_require__(24);
+	var extend = __webpack_require__(25);
+	var diff = __webpack_require__(26)
 	var diffArray = diff.diffArray;
 	var diffObject = diff.diffObject;
 	
@@ -6361,7 +6361,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var expect = __webpack_require__(28);
-	var Event = __webpack_require__(26);
+	var Event = __webpack_require__(23);
 	
 	
 	
@@ -6982,7 +6982,7 @@
 /* 19 */
 /***/ function(module, exports, __webpack_require__) {
 
-	/* WEBPACK VAR INJECTION */(function(global) {__webpack_require__(23)();
+	/* WEBPACK VAR INJECTION */(function(global) {__webpack_require__(24)();
 	
 	
 	
@@ -7830,6 +7830,83 @@
 /* 23 */
 /***/ function(module, exports, __webpack_require__) {
 
+	// simplest event emitter 60 lines
+	// ===============================
+	var slice = [].slice, _ = __webpack_require__(19);
+	var API = {
+	  $on: function(event, fn) {
+	    if(!event) return this;
+	    if(typeof event === "object"){
+	      for (var i in event) {
+	        this.$on(i, event[i]);
+	      }
+	    }else{
+	      // @patch: for list
+	      var context = this;
+	      var handles = context._handles || (context._handles = {}),
+	        calls = handles[event] || (handles[event] = []);
+	      calls.push(fn);
+	    }
+	    return this;
+	  },
+	  $off: function(event, fn) {
+	    var context = this;
+	    if(!context._handles) return;
+	    if(!event) this._handles = {};
+	    var handles = context._handles,
+	      calls;
+	
+	    if (calls = handles[event]) {
+	      if (!fn) {
+	        handles[event] = [];
+	        return context;
+	      }
+	      for (var i = 0, len = calls.length; i < len; i++) {
+	        if (fn === calls[i]) {
+	          calls.splice(i, 1);
+	          return context;
+	        }
+	      }
+	    }
+	    return context;
+	  },
+	  // bubble event
+	  $emit: function(event){
+	    // @patch: for list
+	    var context = this;
+	    var handles = context._handles, calls, args, type;
+	    if(!event) return;
+	    var args = slice.call(arguments, 1);
+	    var type = event;
+	
+	    if(!handles) return context;
+	    if(calls = handles[type.slice(1)]){
+	      for (var j = 0, len = calls.length; j < len; j++) {
+	        calls[j].apply(context, args)
+	      }
+	    }
+	    if (!(calls = handles[type])) return context;
+	    for (var i = 0, len = calls.length; i < len; i++) {
+	      calls[i].apply(context, args)
+	    }
+	    // if(calls.length) context.$update();
+	    return context;
+	  }
+	}
+	// container class
+	function Event() {}
+	_.extend(Event.prototype, API)
+	
+	Event.mixTo = function(obj){
+	  obj = typeof obj === "function" ? obj.prototype : obj;
+	  _.extend(obj, API)
+	}
+	module.exports = Event;
+
+/***/ },
+/* 24 */
+/***/ function(module, exports, __webpack_require__) {
+
 	// shim for es5
 	var slice = [].slice;
 	var tstr = ({}).toString;
@@ -7935,7 +8012,7 @@
 
 
 /***/ },
-/* 24 */
+/* 25 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// (c) 2010-2014 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
@@ -8021,7 +8098,7 @@
 
 
 /***/ },
-/* 25 */
+/* 26 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(19);
@@ -8211,83 +8288,6 @@
 	}
 
 /***/ },
-/* 26 */
-/***/ function(module, exports, __webpack_require__) {
-
-	// simplest event emitter 60 lines
-	// ===============================
-	var slice = [].slice, _ = __webpack_require__(19);
-	var API = {
-	  $on: function(event, fn) {
-	    if(!event) return this;
-	    if(typeof event === "object"){
-	      for (var i in event) {
-	        this.$on(i, event[i]);
-	      }
-	    }else{
-	      // @patch: for list
-	      var context = this;
-	      var handles = context._handles || (context._handles = {}),
-	        calls = handles[event] || (handles[event] = []);
-	      calls.push(fn);
-	    }
-	    return this;
-	  },
-	  $off: function(event, fn) {
-	    var context = this;
-	    if(!context._handles) return;
-	    if(!event) this._handles = {};
-	    var handles = context._handles,
-	      calls;
-	
-	    if (calls = handles[event]) {
-	      if (!fn) {
-	        handles[event] = [];
-	        return context;
-	      }
-	      for (var i = 0, len = calls.length; i < len; i++) {
-	        if (fn === calls[i]) {
-	          calls.splice(i, 1);
-	          return context;
-	        }
-	      }
-	    }
-	    return context;
-	  },
-	  // bubble event
-	  $emit: function(event){
-	    // @patch: for list
-	    var context = this;
-	    var handles = context._handles, calls, args, type;
-	    if(!event) return;
-	    var args = slice.call(arguments, 1);
-	    var type = event;
-	
-	    if(!handles) return context;
-	    if(calls = handles[type.slice(1)]){
-	      for (var j = 0, len = calls.length; j < len; j++) {
-	        calls[j].apply(context, args)
-	      }
-	    }
-	    if (!(calls = handles[type])) return context;
-	    for (var i = 0, len = calls.length; i < len; i++) {
-	      calls[i].apply(context, args)
-	    }
-	    // if(calls.length) context.$update();
-	    return context;
-	  }
-	}
-	// container class
-	function Event() {}
-	_.extend(Event.prototype, API)
-	
-	Event.mixTo = function(obj){
-	  obj = typeof obj === "function" ? obj.prototype : obj;
-	  _.extend(obj, API)
-	}
-	module.exports = Event;
-
-/***/ },
 /* 27 */
 /***/ function(module, exports, __webpack_require__) {
 
@@ -8296,7 +8296,7 @@
 	
 	var _ = __webpack_require__(19);
 	var parser = __webpack_require__(22);
-	var diffArray = __webpack_require__(25).diffArray;
+	var diffArray = __webpack_require__(26).diffArray;
 	var shared = __webpack_require__(35);
 	
 	
@@ -8337,31 +8337,24 @@
 	 * @param  {[type]} options [description]
 	 */
 	
-	
-	
-	
-	function SSR (Component, definition){
-	
-	  definition = definition || {};
+	function SSR (Component){
 	
 	  this.Component = Component;
-	  var context = this.context = Object.create(Component.prototype)
-	
-	  shared.initDefinition(context, definition);
-	
-	
-	  
-	
 	}
 	
 	
 	var ssr = _.extend(SSR.prototype, {});
 	
 	
-	ssr.render = function(){
+	ssr.render = function( definition){
 	
-	  var self = this;
-	  return this.compile(this.context.template);
+	  definition = definition || {};
+	
+	  var context = this.context = Object.create(this.Component.prototype)
+	
+	  var template = shared.initDefinition(context, definition);
+	
+	  return this.compile(template);
 	
 	}
 	
@@ -8598,9 +8591,9 @@
 	
 	}
 	
-	SSR.render = function(Component, options){
+	SSR.render = function(Component, definition){
 	
-	  return new SSR(Component, options).render();
+	  return new SSR(Component).render( definition );
 	
 	}
 	
@@ -9898,7 +9891,7 @@
 	  , true ? module : {exports: {}}
 	);
 	
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(50)(module), __webpack_require__(48).Buffer))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(50)(module), __webpack_require__(49).Buffer))
 
 /***/ },
 /* 29 */
@@ -9918,7 +9911,7 @@
 	exports.node = typeof process !== "undefined" && ( '' + process ) === '[object process]';
 	exports.isRunning = false;
 	
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(49)))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(48)))
 
 /***/ },
 /* 30 */
@@ -9944,7 +9937,8 @@
 	var Parser = __webpack_require__(39);
 	var config = __webpack_require__(30);
 	var _ = __webpack_require__(19);
-	var extend = __webpack_require__(24);
+	var extend = __webpack_require__(25);
+	var shared = __webpack_require__(35);
 	var combine = {};
 	if(env.browser){
 	  var dom = __webpack_require__(18);
@@ -9953,7 +9947,7 @@
 	  var doc = dom.doc;
 	  combine = __webpack_require__(21);
 	}
-	var events = __webpack_require__(26);
+	var events = __webpack_require__(23);
 	var Watcher = __webpack_require__(43);
 	var parse = __webpack_require__(22);
 	var filter = __webpack_require__(44);
@@ -9973,107 +9967,83 @@
 	var Regular = function(definition, options){
 	  var prevRunning = env.isRunning;
 	  env.isRunning = true;
-	  var node, template, cursor;
+	  var node, template, cursor, context = this, body, mountNode;
 	
-	  definition = definition || {};
-	  var usePrototyeString = typeof this.template === 'string' && !definition.template;
+	 // template is a string (len < 16). we will find it container first
+	
 	  options = options || {};
+	  definition = definition || {};
 	
-	  var mountNode = definition.mountNode;
-	  if(typeof mountNode === 'string'){
-	    mountNode = dom.find( mountNode );
-	    if(!mountNode) throw Error('mountNode ' + mountNode + ' is not found')
-	  } 
+	  var dtemplate = definition.template;
 	
-	  if(mountNode){
-	    cursor = nodeCursor(mountNode.firstChild)
-	    delete definition.mountNode
-	  }else{
-	    cursor = options.cursor
-	  }
+	  if(env.browser) {
 	
-	  definition.data = definition.data || {};
-	  definition.computed = definition.computed || {};
-	  definition.events = definition.events || {};
-	  if(this.data) _.extend(definition.data, this.data);
-	  if(this.computed) _.extend(definition.computed, this.computed);
-	  if(this.events) _.extend(definition.events, this.events);
+	    if( node = tryGetSelector( dtemplate ) ){
+	      dtemplate = node;
+	    }
+	    if( dtemplate && dtemplate.nodeType ){
+	      definition.template = dtemplate.innerHTML
+	    }
+	    
+	    mountNode = definition.mountNode;
+	    if(typeof mountNode === 'string'){
+	      mountNode = dom.find( mountNode );
+	      if(!mountNode) throw Error('mountNode ' + mountNode + ' is not found')
+	    } 
 	
-	  _.extend(this, definition, true);
-	
-	
-	 
-	
-	  if(this.$parent){
-	     this.$parent._append(this);
-	  }
-	  this._children = [];
-	  this.$refs = {};
-	
-	  template = this.template;
-	
-	
-	
-	  // template is a string (len < 16). we will find it container first
-	  if((typeof template === 'string' && template.length < 16) && (node = dom.find(template))) {
-	    template = node.innerHTML;
-	  }
-	  // if template is a xml
-	  if(template && template.nodeType) template = template.innerHTML;
-	  if(typeof template === 'string') {
-	    template = new Parser(template).parse();
-	    if(usePrototyeString) {
-	    // avoid multiply compile
-	      this.constructor.prototype.template = template;
+	    if(mountNode){
+	      cursor = nodeCursor(mountNode.firstChild)
+	      delete definition.mountNode
 	    }else{
-	      delete this.template;
+	      cursor = options.cursor
 	    }
 	  }
 	
-	  this.computed = handleComputed(this.computed);
-	  this.$root = this.$root || this;
-	  // if have events
-	  if(this.events){
-	    this.$on(this.events);
+	
+	  template = shared.initDefinition(context, definition)
+	  
+	
+	  if(context.$parent){
+	     context.$parent._append(context);
+	  }
+	  context._children = [];
+	  context.$refs = {};
+	
+	  context.$root = context.$root || context;
+	
+	
+	  if( body = context._body ){
+	    context._body = null
+	    if(body.ast && body.ast.length){
+	      context.$body = _.getCompileFn(body.ast, body.ctx , {
+	        outer: context,
+	        namespace: options.namespace,
+	        extra: options.extra,
+	        record: true
+	      })
+	    }
 	  }
 	
-	  this.$emit("$config");
-	
-	  this.config && this.config(this.data);
-	  this.$emit("$afterConfig");
-	
-	  var body = this._body;
-	  this._body = null;
-	
-	  if(body && body.ast && body.ast.length){
-	    this.$body = _.getCompileFn(body.ast, body.ctx , {
-	      outer: this,
-	      namespace: options.namespace,
-	      extra: options.extra,
-	      record: true
-	    })
-	  }
 	  // handle computed
 	  if(template){
-	    this.group = this.$compile(template, {
+	    context.group = context.$compile(template, {
 	      namespace: options.namespace,
 	      cursor: cursor
 	    });
-	    combine.node(this);
+	    combine.node(context);
 	  }
 	
 	
-	  if(!this.$parent) this.$update();
-	  this.$ready = true;
-	  this.$emit("$init");
-	  if( this.init ) this.init(this.data);
-	  this.$emit("$afterInit");
+	  // this is outest component
+	  if( !context.$parent ) context.$update();
+	  context.$ready = true;
 	
-	  // @TODO: remove, maybe , there is no need to update after init; 
-	  // if(this.$root === this) this.$update();
+	  context.$emit("$init");
+	  if( context.init ) context.init( context.data );
+	  context.$emit("$afterInit");
+	
 	  env.isRunning = prevRunning;
 	
-	  // children is not required;
 	}
 	
 	
@@ -10098,21 +10068,22 @@
 	    // this.prototype.template = dom.initTemplate(o)
 	    if(template = o.template){
 	      var node, name;
-	      if( typeof template === 'string' && template.length < 16 && ( node = dom.find( template )) ){
-	        template = node ;
-	      }
+	      if( env.browser ){
+	        if( node = tryGetSelector(template) ) template = node ;
+	        if( template && template.nodeType ){
 	
-	      if(template && template.nodeType){
-	        if(name = dom.attr(template, 'name')) Regular.component(name, this);
-	        template = template.innerHTML;
-	      } 
+	          if(name = dom.attr(template, 'name')) Regular.component(name, this);
+	
+	          template = template.innerHTML;
+	        } 
+	      }
 	
 	      if(typeof template === 'string' ){
 	        this.prototype.template = config.PRECOMPILE? new Parser(template).parse(): template;
 	      }
 	    }
 	
-	    if(o.computed) this.prototype.computed = handleComputed(o.computed);
+	    if(o.computed) this.prototype.computed = shared.handleComputed(o.computed);
 	    // inherit directive and other config from supr
 	    Regular._inheritConfig(this, supr);
 	
@@ -10511,7 +10482,7 @@
 	});
 	
 	Regular.prototype.inject = function(){
-	  _.log("use $inject instead of inject", "error");
+	  _.log("use $inject instead of inject", "warn");
 	  return this.$inject.apply(this, arguments);
 	}
 	
@@ -10524,47 +10495,15 @@
 	
 	
 	
-	var handleComputed = (function(){
-	  // wrap the computed getter;
-	  function wrapGet(get){
-	    return function(context){
-	      return get.call(context, context.data );
-	    }
+	function tryGetSelector(tpl){
+	  var node;
+	  if( typeof tpl === 'string' && tpl.length < 16 && (node = dom.find( tpl )) ) {
+	    _.log("pass selector as template has be deprecated, pass node or template string instead", 'warn')
+	    return node
 	  }
-	  // wrap the computed setter;
-	  function wrapSet(set){
-	    return function(context, value){
-	      set.call( context, value, context.data );
-	      return value;
-	    }
-	  }
+	}
 	
-	  return function(computed){
-	    if(!computed) return;
-	    var parsedComputed = {}, handle, pair, type;
-	    for(var i in computed){
-	      handle = computed[i]
-	      type = typeof handle;
 	
-	      if(handle.type === 'expression'){
-	        parsedComputed[i] = handle;
-	        continue;
-	      }
-	      if( type === "string" ){
-	        parsedComputed[i] = parse.expression(handle)
-	      }else{
-	        pair = parsedComputed[i] = {type: 'expression'};
-	        if(type === "function" ){
-	          pair.get = wrapGet(handle);
-	        }else{
-	          if(handle.get) pair.get = wrapGet(handle.get);
-	          if(handle.set) pair.set = wrapSet(handle.set);
-	        }
-	      } 
-	    }
-	    return parsedComputed;
-	  }
-	})();
 
 
 /***/ },
@@ -10876,39 +10815,106 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(19);
-	
-	var shared = module.exports = {
-	  initDefinition: function(context, definition, afterPrepare){
+	var parse = __webpack_require__(22);
 	
 	
-	    context.extra = definition.extra;
+	function initDefinition(context, definition, beforeConfig){
 	
-	    var eventConfig;
+	  var eventConfig, hasInstanceComputed = !!definition.computed, template;
+	  var usePrototyeString = typeof context.template === 'string' && !definition.template;
 	
-	    if(definition.events || context.events){
-	      eventConfig = _.extend(definition.events || {}, context.events);
-	      if(definition.events) delete definition.events;
-	    }
-	
-	    definition.data = definition.data || {};
-	    definition.computed = definition.computed || {};
-	    if(context.data) _.extend(definition.data, context.data);
-	    if(context.computed) _.extend(definition.computed, context.computed);
-	
-	    _.extend(context, definition, true);
-	
-	    if(eventConfig){
-	      context.$on(eventConfig);
-	    }
-	
-	    afterPrepare && afterPrepare();
-	
-	
-	    context.$emit( "$config", context.data);
-	    context.config && context.config(context.data);
-	    context.$emit( "$afterConfig", context.data);
-	
+	  if(definition.events || context.events){
+	    eventConfig = _.extend(definition.events || {}, context.events);
+	    if(definition.events) delete definition.events;
 	  }
+	
+	
+	  definition.data = definition.data || {};
+	  definition.computed = definition.computed || {};
+	  if(context.data) _.extend(definition.data, context.data);
+	  if(context.computed) _.extend(definition.computed, context.computed);
+	
+	  var usePrototyeString = typeof context.template === 'string' && !definition.template;
+	
+	  _.extend(context, definition, true);
+	
+	  if ( eventConfig ) {
+	    context.$on( eventConfig );
+	  }
+	
+	  // we need add some logic at client.
+	  beforeConfig && beforeConfig();
+	
+	  // only have instance computed, we need prepare the property
+	  if( hasInstanceComputed ) context.computed = handleComputed(context.computed);
+	
+	  context.$emit( "$config", context.data );
+	  context.config && context.config( context.data );
+	  context.$emit( "$afterConfig", context.data );
+	
+	  template = context.template;
+	
+	 
+	  if(typeof template === 'string') {
+	    template = parse.parse(template);
+	    if(usePrototyeString) {
+	    // avoid multiply compile
+	      context.constructor.prototype.template = template;
+	    }else{
+	      delete context.template;
+	    }
+	  }
+	  return template;
+	}
+	
+	var handleComputed = (function(){
+	  // wrap the computed getter;
+	  function wrapGet(get){
+	    return function(context){
+	      return get.call(context, context.data );
+	    }
+	  }
+	  // wrap the computed setter;
+	  function wrapSet(set){
+	    return function(context, value){
+	      set.call( context, value, context.data );
+	      return value;
+	    }
+	  }
+	
+	  return function( computed ){
+	    if(!computed) return;
+	    var parsedComputed = {}, handle, pair, type;
+	    for(var i in computed){
+	      handle = computed[i]
+	      type = typeof handle;
+	
+	      if(handle.type === 'expression'){
+	        parsedComputed[i] = handle;
+	        continue;
+	      }
+	      if( type === "string" ){
+	        parsedComputed[i] = parse.expression(handle)
+	      }else{
+	        pair = parsedComputed[i] = {type: 'expression'};
+	        if(type === "function" ){
+	          pair.get = wrapGet(handle);
+	        }else{
+	          if(handle.get) pair.get = wrapGet(handle.get);
+	          if(handle.set) pair.set = wrapSet(handle.set);
+	        }
+	      } 
+	    }
+	    return parsedComputed;
+	  }
+	})();
+	
+	
+	
+	module.exports = {
+	  // share logic between server and client
+	  initDefinition: initDefinition,
+	  handleComputed: handleComputed
 	}
 
 /***/ },
@@ -12401,7 +12407,7 @@
 /* 41 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var diffArray = __webpack_require__(25).diffArray;
+	var diffArray = __webpack_require__(26).diffArray;
 	var combine = __webpack_require__(21);
 	var animate = __webpack_require__(20);
 	var Parser = __webpack_require__(39);
@@ -13199,7 +13205,7 @@
 
 	var _ = __webpack_require__(19);
 	var parseExpression = __webpack_require__(22).expression;
-	var diff = __webpack_require__(25);
+	var diff = __webpack_require__(26);
 	var diffArray = diff.diffArray;
 	var diffObject = diff.diffObject;
 	
@@ -13849,6 +13855,98 @@
 /* 48 */
 /***/ function(module, exports, __webpack_require__) {
 
+	// shim for using process in browser
+	
+	var process = module.exports = {};
+	
+	process.nextTick = (function () {
+	    var canSetImmediate = typeof window !== 'undefined'
+	    && window.setImmediate;
+	    var canMutationObserver = typeof window !== 'undefined'
+	    && window.MutationObserver;
+	    var canPost = typeof window !== 'undefined'
+	    && window.postMessage && window.addEventListener
+	    ;
+	
+	    if (canSetImmediate) {
+	        return function (f) { return window.setImmediate(f) };
+	    }
+	
+	    var queue = [];
+	
+	    if (canMutationObserver) {
+	        var hiddenDiv = document.createElement("div");
+	        var observer = new MutationObserver(function () {
+	            var queueList = queue.slice();
+	            queue.length = 0;
+	            queueList.forEach(function (fn) {
+	                fn();
+	            });
+	        });
+	
+	        observer.observe(hiddenDiv, { attributes: true });
+	
+	        return function nextTick(fn) {
+	            if (!queue.length) {
+	                hiddenDiv.setAttribute('yes', 'no');
+	            }
+	            queue.push(fn);
+	        };
+	    }
+	
+	    if (canPost) {
+	        window.addEventListener('message', function (ev) {
+	            var source = ev.source;
+	            if ((source === window || source === null) && ev.data === 'process-tick') {
+	                ev.stopPropagation();
+	                if (queue.length > 0) {
+	                    var fn = queue.shift();
+	                    fn();
+	                }
+	            }
+	        }, true);
+	
+	        return function nextTick(fn) {
+	            queue.push(fn);
+	            window.postMessage('process-tick', '*');
+	        };
+	    }
+	
+	    return function nextTick(fn) {
+	        setTimeout(fn, 0);
+	    };
+	})();
+	
+	process.title = 'browser';
+	process.browser = true;
+	process.env = {};
+	process.argv = [];
+	
+	function noop() {}
+	
+	process.on = noop;
+	process.addListener = noop;
+	process.once = noop;
+	process.off = noop;
+	process.removeListener = noop;
+	process.removeAllListeners = noop;
+	process.emit = noop;
+	
+	process.binding = function (name) {
+	    throw new Error('process.binding is not supported');
+	};
+	
+	// TODO(shtylman)
+	process.cwd = function () { return '/' };
+	process.chdir = function (dir) {
+	    throw new Error('process.chdir is not supported');
+	};
+
+
+/***/ },
+/* 49 */
+/***/ function(module, exports, __webpack_require__) {
+
 	/* WEBPACK VAR INJECTION */(function(Buffer) {/*!
 	 * The buffer module from node.js, for the browser.
 	 *
@@ -13857,8 +13955,8 @@
 	 */
 	
 	var base64 = __webpack_require__(53)
-	var ieee754 = __webpack_require__(52)
-	var isArray = __webpack_require__(51)
+	var ieee754 = __webpack_require__(51)
+	var isArray = __webpack_require__(52)
 	
 	exports.Buffer = Buffer
 	exports.SlowBuffer = Buffer
@@ -14902,99 +15000,7 @@
 	  }
 	}
 	
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(48).Buffer))
-
-/***/ },
-/* 49 */
-/***/ function(module, exports, __webpack_require__) {
-
-	// shim for using process in browser
-	
-	var process = module.exports = {};
-	
-	process.nextTick = (function () {
-	    var canSetImmediate = typeof window !== 'undefined'
-	    && window.setImmediate;
-	    var canMutationObserver = typeof window !== 'undefined'
-	    && window.MutationObserver;
-	    var canPost = typeof window !== 'undefined'
-	    && window.postMessage && window.addEventListener
-	    ;
-	
-	    if (canSetImmediate) {
-	        return function (f) { return window.setImmediate(f) };
-	    }
-	
-	    var queue = [];
-	
-	    if (canMutationObserver) {
-	        var hiddenDiv = document.createElement("div");
-	        var observer = new MutationObserver(function () {
-	            var queueList = queue.slice();
-	            queue.length = 0;
-	            queueList.forEach(function (fn) {
-	                fn();
-	            });
-	        });
-	
-	        observer.observe(hiddenDiv, { attributes: true });
-	
-	        return function nextTick(fn) {
-	            if (!queue.length) {
-	                hiddenDiv.setAttribute('yes', 'no');
-	            }
-	            queue.push(fn);
-	        };
-	    }
-	
-	    if (canPost) {
-	        window.addEventListener('message', function (ev) {
-	            var source = ev.source;
-	            if ((source === window || source === null) && ev.data === 'process-tick') {
-	                ev.stopPropagation();
-	                if (queue.length > 0) {
-	                    var fn = queue.shift();
-	                    fn();
-	                }
-	            }
-	        }, true);
-	
-	        return function nextTick(fn) {
-	            queue.push(fn);
-	            window.postMessage('process-tick', '*');
-	        };
-	    }
-	
-	    return function nextTick(fn) {
-	        setTimeout(fn, 0);
-	    };
-	})();
-	
-	process.title = 'browser';
-	process.browser = true;
-	process.env = {};
-	process.argv = [];
-	
-	function noop() {}
-	
-	process.on = noop;
-	process.addListener = noop;
-	process.once = noop;
-	process.off = noop;
-	process.removeListener = noop;
-	process.removeAllListeners = noop;
-	process.emit = noop;
-	
-	process.binding = function (name) {
-	    throw new Error('process.binding is not supported');
-	};
-	
-	// TODO(shtylman)
-	process.cwd = function () { return '/' };
-	process.chdir = function (dir) {
-	    throw new Error('process.chdir is not supported');
-	};
-
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(49).Buffer))
 
 /***/ },
 /* 50 */
@@ -15014,45 +15020,6 @@
 
 /***/ },
 /* 51 */
-/***/ function(module, exports, __webpack_require__) {
-
-	
-	/**
-	 * isArray
-	 */
-	
-	var isArray = Array.isArray;
-	
-	/**
-	 * toString
-	 */
-	
-	var str = Object.prototype.toString;
-	
-	/**
-	 * Whether or not the given `val`
-	 * is an array.
-	 *
-	 * example:
-	 *
-	 *        isArray([]);
-	 *        // > true
-	 *        isArray(arguments);
-	 *        // > false
-	 *        isArray('');
-	 *        // > false
-	 *
-	 * @param {mixed} val
-	 * @return {bool}
-	 */
-	
-	module.exports = isArray || function (val) {
-	  return !! val && '[object Array]' == str.call(val);
-	};
-
-
-/***/ },
-/* 52 */
 /***/ function(module, exports, __webpack_require__) {
 
 	exports.read = function(buffer, offset, isLE, mLen, nBytes) {
@@ -15138,6 +15105,45 @@
 	  for (; eLen > 0; buffer[offset + i] = e & 0xff, i += d, e /= 256, eLen -= 8);
 	
 	  buffer[offset + i - d] |= s * 128;
+	};
+
+
+/***/ },
+/* 52 */
+/***/ function(module, exports, __webpack_require__) {
+
+	
+	/**
+	 * isArray
+	 */
+	
+	var isArray = Array.isArray;
+	
+	/**
+	 * toString
+	 */
+	
+	var str = Object.prototype.toString;
+	
+	/**
+	 * Whether or not the given `val`
+	 * is an array.
+	 *
+	 * example:
+	 *
+	 *        isArray([]);
+	 *        // > true
+	 *        isArray(arguments);
+	 *        // > false
+	 *        isArray('');
+	 *        // > false
+	 *
+	 * @param {mixed} val
+	 * @return {bool}
+	 */
+	
+	module.exports = isArray || function (val) {
+	  return !! val && '[object Array]' == str.call(val);
 	};
 
 

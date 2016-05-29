@@ -8,6 +8,7 @@ var Parser = require('../parser/Parser');
 var config = require('../config');
 var _ = require('../util');
 var extend = require('../helper/extend');
+var shared = require('./shared');
 var combine = {};
 if(env.browser){
   var dom = require("../dom");
@@ -36,107 +37,83 @@ var shared = require('./shared');
 var Regular = function(definition, options){
   var prevRunning = env.isRunning;
   env.isRunning = true;
-  var node, template, cursor;
+  var node, template, cursor, context = this, body, mountNode;
 
-  definition = definition || {};
-  var usePrototyeString = typeof this.template === 'string' && !definition.template;
+ // template is a string (len < 16). we will find it container first
+
   options = options || {};
+  definition = definition || {};
 
-  var mountNode = definition.mountNode;
-  if(typeof mountNode === 'string'){
-    mountNode = dom.find( mountNode );
-    if(!mountNode) throw Error('mountNode ' + mountNode + ' is not found')
-  } 
+  var dtemplate = definition.template;
 
-  if(mountNode){
-    cursor = nodeCursor(mountNode.firstChild)
-    delete definition.mountNode
-  }else{
-    cursor = options.cursor
-  }
+  if(env.browser) {
 
-  definition.data = definition.data || {};
-  definition.computed = definition.computed || {};
-  definition.events = definition.events || {};
-  if(this.data) _.extend(definition.data, this.data);
-  if(this.computed) _.extend(definition.computed, this.computed);
-  if(this.events) _.extend(definition.events, this.events);
+    if( node = tryGetSelector( dtemplate ) ){
+      dtemplate = node;
+    }
+    if( dtemplate && dtemplate.nodeType ){
+      definition.template = dtemplate.innerHTML
+    }
+    
+    mountNode = definition.mountNode;
+    if(typeof mountNode === 'string'){
+      mountNode = dom.find( mountNode );
+      if(!mountNode) throw Error('mountNode ' + mountNode + ' is not found')
+    } 
 
-  _.extend(this, definition, true);
-
-
- 
-
-  if(this.$parent){
-     this.$parent._append(this);
-  }
-  this._children = [];
-  this.$refs = {};
-
-  template = this.template;
-
-
-
-  // template is a string (len < 16). we will find it container first
-  if((typeof template === 'string' && template.length < 16) && (node = dom.find(template))) {
-    template = node.innerHTML;
-  }
-  // if template is a xml
-  if(template && template.nodeType) template = template.innerHTML;
-  if(typeof template === 'string') {
-    template = new Parser(template).parse();
-    if(usePrototyeString) {
-    // avoid multiply compile
-      this.constructor.prototype.template = template;
+    if(mountNode){
+      cursor = nodeCursor(mountNode.firstChild)
+      delete definition.mountNode
     }else{
-      delete this.template;
+      cursor = options.cursor
     }
   }
 
-  this.computed = handleComputed(this.computed);
-  this.$root = this.$root || this;
-  // if have events
-  if(this.events){
-    this.$on(this.events);
+
+  template = shared.initDefinition(context, definition)
+  
+
+  if(context.$parent){
+     context.$parent._append(context);
+  }
+  context._children = [];
+  context.$refs = {};
+
+  context.$root = context.$root || context;
+
+
+  if( body = context._body ){
+    context._body = null
+    if(body.ast && body.ast.length){
+      context.$body = _.getCompileFn(body.ast, body.ctx , {
+        outer: context,
+        namespace: options.namespace,
+        extra: options.extra,
+        record: true
+      })
+    }
   }
 
-  this.$emit("$config");
-
-  this.config && this.config(this.data);
-  this.$emit("$afterConfig");
-
-  var body = this._body;
-  this._body = null;
-
-  if(body && body.ast && body.ast.length){
-    this.$body = _.getCompileFn(body.ast, body.ctx , {
-      outer: this,
-      namespace: options.namespace,
-      extra: options.extra,
-      record: true
-    })
-  }
   // handle computed
   if(template){
-    this.group = this.$compile(template, {
+    context.group = context.$compile(template, {
       namespace: options.namespace,
       cursor: cursor
     });
-    combine.node(this);
+    combine.node(context);
   }
 
 
-  if(!this.$parent) this.$update();
-  this.$ready = true;
-  this.$emit("$init");
-  if( this.init ) this.init(this.data);
-  this.$emit("$afterInit");
+  // this is outest component
+  if( !context.$parent ) context.$update();
+  context.$ready = true;
 
-  // @TODO: remove, maybe , there is no need to update after init; 
-  // if(this.$root === this) this.$update();
+  context.$emit("$init");
+  if( context.init ) context.init( context.data );
+  context.$emit("$afterInit");
+
   env.isRunning = prevRunning;
 
-  // children is not required;
 }
 
 
@@ -161,21 +138,22 @@ _.extend(Regular, {
     // this.prototype.template = dom.initTemplate(o)
     if(template = o.template){
       var node, name;
-      if( typeof template === 'string' && template.length < 16 && ( node = dom.find( template )) ){
-        template = node ;
-      }
+      if( env.browser ){
+        if( node = tryGetSelector(template) ) template = node ;
+        if( template && template.nodeType ){
 
-      if(template && template.nodeType){
-        if(name = dom.attr(template, 'name')) Regular.component(name, this);
-        template = template.innerHTML;
-      } 
+          if(name = dom.attr(template, 'name')) Regular.component(name, this);
+
+          template = template.innerHTML;
+        } 
+      }
 
       if(typeof template === 'string' ){
         this.prototype.template = config.PRECOMPILE? new Parser(template).parse(): template;
       }
     }
 
-    if(o.computed) this.prototype.computed = handleComputed(o.computed);
+    if(o.computed) this.prototype.computed = shared.handleComputed(o.computed);
     // inherit directive and other config from supr
     Regular._inheritConfig(this, supr);
 
@@ -574,7 +552,7 @@ Regular.implement({
 });
 
 Regular.prototype.inject = function(){
-  _.log("use $inject instead of inject", "error");
+  _.log("use $inject instead of inject", "warn");
   return this.$inject.apply(this, arguments);
 }
 
@@ -587,44 +565,12 @@ module.exports = Regular;
 
 
 
-var handleComputed = (function(){
-  // wrap the computed getter;
-  function wrapGet(get){
-    return function(context){
-      return get.call(context, context.data );
-    }
+function tryGetSelector(tpl){
+  var node;
+  if( typeof tpl === 'string' && tpl.length < 16 && (node = dom.find( tpl )) ) {
+    _.log("pass selector as template has be deprecated, pass node or template string instead", 'warn')
+    return node
   }
-  // wrap the computed setter;
-  function wrapSet(set){
-    return function(context, value){
-      set.call( context, value, context.data );
-      return value;
-    }
-  }
+}
 
-  return function(computed){
-    if(!computed) return;
-    var parsedComputed = {}, handle, pair, type;
-    for(var i in computed){
-      handle = computed[i]
-      type = typeof handle;
 
-      if(handle.type === 'expression'){
-        parsedComputed[i] = handle;
-        continue;
-      }
-      if( type === "string" ){
-        parsedComputed[i] = parse.expression(handle)
-      }else{
-        pair = parsedComputed[i] = {type: 'expression'};
-        if(type === "function" ){
-          pair.get = wrapGet(handle);
-        }else{
-          if(handle.get) pair.get = wrapGet(handle.get);
-          if(handle.set) pair.set = wrapSet(handle.set);
-        }
-      } 
-    }
-    return parsedComputed;
-  }
-})();
