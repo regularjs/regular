@@ -146,7 +146,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	var dom = module.exports;
 	var env = __webpack_require__(1);
 	var _ = __webpack_require__(4);
-	var consts = __webpack_require__(12);
+	var consts = __webpack_require__(10);
 	var tNode = document.createElement('div')
 	var addEvent, removeEvent;
 	var noop = function(){}
@@ -528,12 +528,12 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 4 */
 /***/ function(module, exports, __webpack_require__) {
 
-	/* WEBPACK VAR INJECTION */(function(global) {__webpack_require__(10)();
+	/* WEBPACK VAR INJECTION */(function(global) {__webpack_require__(11)();
 
 
 
 	var _  = module.exports;
-	var entities = __webpack_require__(11);
+	var entities = __webpack_require__(12);
 	var slice = [].slice;
 	var o2str = ({}).toString;
 	var win = typeof window !=='undefined'? window: global;
@@ -975,6 +975,34 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 
+	// hogan
+	// https://github.com/twitter/hogan.js
+	// MIT
+	_.escape = (function(){
+	  var rAmp = /&/g,
+	      rLt = /</g,
+	      rGt = />/g,
+	      rApos = /\'/g,
+	      rQuot = /\"/g,
+	      hChars = /[&<>\"\']/;
+
+	  function ignoreNullVal(val) {
+	    return String((val === undefined || val == null) ? '' : val);
+	  }
+
+	  return function (str) {
+	    str = ignoreNullVal(str);
+	    return hChars.test(str) ?
+	      str
+	        .replace(rAmp, '&amp;')
+	        .replace(rLt, '&lt;')
+	        .replace(rGt, '&gt;')
+	        .replace(rApos, '&#39;')
+	        .replace(rQuot, '&quot;') :
+	      str;
+	  }
+
+	})();
 
 
 
@@ -1009,7 +1037,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	var Watcher = __webpack_require__(22);
 	var parse = __webpack_require__(23);
 	var filter = __webpack_require__(24);
-	var ERROR = __webpack_require__(12).ERROR;
+	var ERROR = __webpack_require__(10).ERROR;
 	var nodeCursor = __webpack_require__(9);
 	var shared = __webpack_require__(17);
 
@@ -1573,7 +1601,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	var dom = __webpack_require__(3);
 	var animate = __webpack_require__(13);
 	var Regular = __webpack_require__(5);
-	var consts = __webpack_require__(12);
+	var consts = __webpack_require__(10);
 	var namespaces = consts.NAMESPACE;
 
 
@@ -1650,11 +1678,17 @@ return /******/ (function(modules) { // webpackBootstrap
 	      elem.style.display = "none";
 	    }
 	  },
-	  'r-html': function(elem, value){
-	    this.$watch(value, function(nvalue){
-	      nvalue = nvalue || "";
-	      dom.html(elem, nvalue)
-	    }, {force: true});
+	  'r-html': {
+	    ssr: function(value, tag){
+	      tag.body = value;
+	      return "";
+	    },
+	    link: function(elem, value){
+	      this.$watch(value, function(nvalue){
+	        nvalue = nvalue || "";
+	        dom.html(elem, nvalue)
+	      }, {force: true});
+	    }
 	  },
 	  'ref': {
 	    accept: consts.COMPONENT_TYPE + consts.ELEMENT_TYPE,
@@ -1998,6 +2032,26 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 10 */
 /***/ function(module, exports, __webpack_require__) {
 
+	module.exports = {
+	  'COMPONENT_TYPE': 1,
+	  'ELEMENT_TYPE': 2,
+	  'ERROR': {
+	    'UNMATCHED_AST': 101
+	  },
+	  "MSG": {
+	    101: "Unmatched ast and mountNode, report issue at https://github.com/regularjs/regular/issues"
+	  },
+	  'NAMESPACE': {
+	    html: "http://www.w3.org/1999/xhtml",
+	    svg: "http://www.w3.org/2000/svg"
+	  }
+	}
+
+
+/***/ },
+/* 11 */
+/***/ function(module, exports, __webpack_require__) {
+
 	// shim for es5
 	var slice = [].slice;
 	var tstr = ({}).toString;
@@ -2103,7 +2157,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 11 */
+/* 12 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// http://stackoverflow.com/questions/1354064/how-to-convert-characters-to-html-entities-using-plain-javascript
@@ -2366,26 +2420,6 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 	module.exports  = entities;
-
-/***/ },
-/* 12 */
-/***/ function(module, exports, __webpack_require__) {
-
-	module.exports = {
-	  'COMPONENT_TYPE': 1,
-	  'ELEMENT_TYPE': 2,
-	  'ERROR': {
-	    'UNMATCHED_AST': 101
-	  },
-	  "MSG": {
-	    101: "Unmatched ast and mountNode, report issue at https://github.com/regularjs/regular/issues"
-	  },
-	  'NAMESPACE': {
-	    html: "http://www.w3.org/1999/xhtml",
-	    svg: "http://www.w3.org/2000/svg"
-	  }
-	}
-
 
 /***/ },
 /* 13 */
@@ -3113,7 +3147,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	var Group = __webpack_require__(19);
 	var dom = __webpack_require__(3);
 	var _ = __webpack_require__(4);
-	var consts =   __webpack_require__(12)
+	var consts =   __webpack_require__(10)
 	var ERROR = consts.ERROR;
 	var MSG = consts.MSG;
 	var nodeCursor = __webpack_require__(9);

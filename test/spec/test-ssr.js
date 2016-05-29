@@ -4,20 +4,10 @@ var Regular = require('../../src/index');
 
 
 
-var ao = expect.Assertion.prototype;
 
-ao.typeEqual = function(list){
-  if(typeof list == 'string') list = list.split(',')
-  var types = this.obj.map(function(item){
-    return item.type
-  });
-  this.assert(
-      expect.eql(types, list) 
-    , function(){ return 'expected ' + list + ' to equal ' + types }
-    , function(){ return 'expected ' + list + ' to not equal ' + types });
-  return this;
+var clean = function(str){
+
 }
-
 
 
 
@@ -41,7 +31,41 @@ describe("Server Side Rendering", function(){
   })
 
   it('directive with nps should work on SSR', function(){
-    var Namespace = Regular.extend()
+    var Namespace = Regular.extend({
+
+    })
+    Namespace.directive({
+      'r-ssr': {
+        nps: true
+      }
+    })
+  })
+
+
+  it('if statement in tag', function(){
+
+    var Comp = Regular.extend({
+      template: '<div {#if test} div=1 {/if}></div>'
+    })
+
+
+    expect(SSR.render(Comp, {
+      data: {
+        test:true
+      }
+    })).to.eql('<div div="1"></div>')
+  })
+
+
+  it('r-html should work as expect', function(){
+    var Comp = Regular.extend({
+      template: '<div title="haha" r-html={html}></div>'
+    })
+    expect(SSR.render(Comp, {
+      data: {
+        html: "<p>html</p>"
+      }
+    })).to.equal('<div title="haha"><p>html</p></div>')
   })
 
 })

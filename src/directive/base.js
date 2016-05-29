@@ -80,11 +80,17 @@ module.exports = {
       elem.style.display = "none";
     }
   },
-  'r-html': function(elem, value){
-    this.$watch(value, function(nvalue){
-      nvalue = nvalue || "";
-      dom.html(elem, nvalue)
-    }, {force: true});
+  'r-html': {
+    ssr: function(value, tag){
+      tag.body = value;
+      return "";
+    },
+    link: function(elem, value){
+      this.$watch(value, function(nvalue){
+        nvalue = nvalue || "";
+        dom.html(elem, nvalue)
+      }, {force: true});
+    }
   },
   'ref': {
     accept: consts.COMPONENT_TYPE + consts.ELEMENT_TYPE,

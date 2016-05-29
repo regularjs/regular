@@ -6035,9 +6035,9 @@
 
 	var expect = __webpack_require__(28);
 	var _ = __webpack_require__(19);
-	var shim = __webpack_require__(24);
-	var extend = __webpack_require__(25);
-	var diff = __webpack_require__(26)
+	var shim = __webpack_require__(23);
+	var extend = __webpack_require__(24);
+	var diff = __webpack_require__(25)
 	var diffArray = diff.diffArray;
 	var diffObject = diff.diffObject;
 	
@@ -6361,7 +6361,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var expect = __webpack_require__(28);
-	var Event = __webpack_require__(23);
+	var Event = __webpack_require__(26);
 	
 	
 	
@@ -6498,20 +6498,10 @@
 	
 	
 	
-	var ao = expect.Assertion.prototype;
 	
-	ao.typeEqual = function(list){
-	  if(typeof list == 'string') list = list.split(',')
-	  var types = this.obj.map(function(item){
-	    return item.type
-	  });
-	  this.assert(
-	      expect.eql(types, list) 
-	    , function(){ return 'expected ' + list + ' to equal ' + types }
-	    , function(){ return 'expected ' + list + ' to not equal ' + types });
-	  return this;
+	var clean = function(str){
+	
 	}
-	
 	
 	
 	
@@ -6535,7 +6525,41 @@
 	  })
 	
 	  it('directive with nps should work on SSR', function(){
-	    var Namespace = Regular.extend()
+	    var Namespace = Regular.extend({
+	
+	    })
+	    Namespace.directive({
+	      'r-ssr': {
+	        nps: true
+	      }
+	    })
+	  })
+	
+	
+	  it('if statement in tag', function(){
+	
+	    var Comp = Regular.extend({
+	      template: '<div {#if test} div=1 {/if}></div>'
+	    })
+	
+	
+	    expect(SSR.render(Comp, {
+	      data: {
+	        test:true
+	      }
+	    })).to.eql('<div div="1"></div>')
+	  })
+	
+	
+	  it('r-html should work as expect', function(){
+	    var Comp = Regular.extend({
+	      template: '<div title="haha" r-html={html}></div>'
+	    })
+	    expect(SSR.render(Comp, {
+	      data: {
+	        html: "<p>html</p>"
+	      }
+	    })).to.equal('<div title="haha"><p>html</p></div>')
 	  })
 	
 	})
@@ -6545,8 +6569,8 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var env =  __webpack_require__(29);
-	var config = __webpack_require__(30); 
-	var Regular = module.exports = __webpack_require__(31);
+	var config = __webpack_require__(32); 
+	var Regular = module.exports = __webpack_require__(33);
 	var Parser = Regular.Parser;
 	var Lexer = Regular.Lexer;
 	
@@ -6569,7 +6593,7 @@
 	  var ast = new Parser(str).parse();
 	  return !options.stringify? ast : JSON.stringify(ast);
 	}
-	Regular.Cursor =__webpack_require__(32) 
+	Regular.Cursor =__webpack_require__(34) 
 	
 	Regular.isServer = env.node;
 	Regular.isRegular = function( Comp ){
@@ -6600,7 +6624,7 @@
 	var dom = module.exports;
 	var env = __webpack_require__(29);
 	var _ = __webpack_require__(19);
-	var consts = __webpack_require__(33);
+	var consts = __webpack_require__(30);
 	var tNode = document.createElement('div')
 	var addEvent, removeEvent;
 	var noop = function(){}
@@ -6982,12 +7006,12 @@
 /* 19 */
 /***/ function(module, exports, __webpack_require__) {
 
-	/* WEBPACK VAR INJECTION */(function(global) {__webpack_require__(24)();
+	/* WEBPACK VAR INJECTION */(function(global) {__webpack_require__(23)();
 	
 	
 	
 	var _  = module.exports;
-	var entities = __webpack_require__(34);
+	var entities = __webpack_require__(31);
 	var slice = [].slice;
 	var o2str = ({}).toString;
 	var win = typeof window !=='undefined'? window: global;
@@ -7429,6 +7453,34 @@
 	}
 	
 	
+	// hogan
+	// https://github.com/twitter/hogan.js
+	// MIT
+	_.escape = (function(){
+	  var rAmp = /&/g,
+	      rLt = /</g,
+	      rGt = />/g,
+	      rApos = /\'/g,
+	      rQuot = /\"/g,
+	      hChars = /[&<>\"\']/;
+	
+	  function ignoreNullVal(val) {
+	    return String((val === undefined || val == null) ? '' : val);
+	  }
+	
+	  return function (str) {
+	    str = ignoreNullVal(str);
+	    return hChars.test(str) ?
+	      str
+	        .replace(rAmp, '&amp;')
+	        .replace(rLt, '&lt;')
+	        .replace(rGt, '&gt;')
+	        .replace(rApos, '&#39;')
+	        .replace(rQuot, '&quot;') :
+	      str;
+	  }
+	
+	})();
 	
 	
 	
@@ -7830,83 +7882,6 @@
 /* 23 */
 /***/ function(module, exports, __webpack_require__) {
 
-	// simplest event emitter 60 lines
-	// ===============================
-	var slice = [].slice, _ = __webpack_require__(19);
-	var API = {
-	  $on: function(event, fn) {
-	    if(!event) return this;
-	    if(typeof event === "object"){
-	      for (var i in event) {
-	        this.$on(i, event[i]);
-	      }
-	    }else{
-	      // @patch: for list
-	      var context = this;
-	      var handles = context._handles || (context._handles = {}),
-	        calls = handles[event] || (handles[event] = []);
-	      calls.push(fn);
-	    }
-	    return this;
-	  },
-	  $off: function(event, fn) {
-	    var context = this;
-	    if(!context._handles) return;
-	    if(!event) this._handles = {};
-	    var handles = context._handles,
-	      calls;
-	
-	    if (calls = handles[event]) {
-	      if (!fn) {
-	        handles[event] = [];
-	        return context;
-	      }
-	      for (var i = 0, len = calls.length; i < len; i++) {
-	        if (fn === calls[i]) {
-	          calls.splice(i, 1);
-	          return context;
-	        }
-	      }
-	    }
-	    return context;
-	  },
-	  // bubble event
-	  $emit: function(event){
-	    // @patch: for list
-	    var context = this;
-	    var handles = context._handles, calls, args, type;
-	    if(!event) return;
-	    var args = slice.call(arguments, 1);
-	    var type = event;
-	
-	    if(!handles) return context;
-	    if(calls = handles[type.slice(1)]){
-	      for (var j = 0, len = calls.length; j < len; j++) {
-	        calls[j].apply(context, args)
-	      }
-	    }
-	    if (!(calls = handles[type])) return context;
-	    for (var i = 0, len = calls.length; i < len; i++) {
-	      calls[i].apply(context, args)
-	    }
-	    // if(calls.length) context.$update();
-	    return context;
-	  }
-	}
-	// container class
-	function Event() {}
-	_.extend(Event.prototype, API)
-	
-	Event.mixTo = function(obj){
-	  obj = typeof obj === "function" ? obj.prototype : obj;
-	  _.extend(obj, API)
-	}
-	module.exports = Event;
-
-/***/ },
-/* 24 */
-/***/ function(module, exports, __webpack_require__) {
-
 	// shim for es5
 	var slice = [].slice;
 	var tstr = ({}).toString;
@@ -8012,7 +7987,7 @@
 
 
 /***/ },
-/* 25 */
+/* 24 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// (c) 2010-2014 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
@@ -8098,7 +8073,7 @@
 
 
 /***/ },
-/* 26 */
+/* 25 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(19);
@@ -8288,6 +8263,83 @@
 	}
 
 /***/ },
+/* 26 */
+/***/ function(module, exports, __webpack_require__) {
+
+	// simplest event emitter 60 lines
+	// ===============================
+	var slice = [].slice, _ = __webpack_require__(19);
+	var API = {
+	  $on: function(event, fn) {
+	    if(!event) return this;
+	    if(typeof event === "object"){
+	      for (var i in event) {
+	        this.$on(i, event[i]);
+	      }
+	    }else{
+	      // @patch: for list
+	      var context = this;
+	      var handles = context._handles || (context._handles = {}),
+	        calls = handles[event] || (handles[event] = []);
+	      calls.push(fn);
+	    }
+	    return this;
+	  },
+	  $off: function(event, fn) {
+	    var context = this;
+	    if(!context._handles) return;
+	    if(!event) this._handles = {};
+	    var handles = context._handles,
+	      calls;
+	
+	    if (calls = handles[event]) {
+	      if (!fn) {
+	        handles[event] = [];
+	        return context;
+	      }
+	      for (var i = 0, len = calls.length; i < len; i++) {
+	        if (fn === calls[i]) {
+	          calls.splice(i, 1);
+	          return context;
+	        }
+	      }
+	    }
+	    return context;
+	  },
+	  // bubble event
+	  $emit: function(event){
+	    // @patch: for list
+	    var context = this;
+	    var handles = context._handles, calls, args, type;
+	    if(!event) return;
+	    var args = slice.call(arguments, 1);
+	    var type = event;
+	
+	    if(!handles) return context;
+	    if(calls = handles[type.slice(1)]){
+	      for (var j = 0, len = calls.length; j < len; j++) {
+	        calls[j].apply(context, args)
+	      }
+	    }
+	    if (!(calls = handles[type])) return context;
+	    for (var i = 0, len = calls.length; i < len; i++) {
+	      calls[i].apply(context, args)
+	    }
+	    // if(calls.length) context.$update();
+	    return context;
+	  }
+	}
+	// container class
+	function Event() {}
+	_.extend(Event.prototype, API)
+	
+	Event.mixTo = function(obj){
+	  obj = typeof obj === "function" ? obj.prototype : obj;
+	  _.extend(obj, API)
+	}
+	module.exports = Event;
+
+/***/ },
 /* 27 */
 /***/ function(module, exports, __webpack_require__) {
 
@@ -8296,40 +8348,13 @@
 	
 	var _ = __webpack_require__(19);
 	var parser = __webpack_require__(22);
-	var diffArray = __webpack_require__(26).diffArray;
+	var diffArray = __webpack_require__(25).diffArray;
 	var shared = __webpack_require__(35);
 	
 	
 	
 	
-	// hogan
-	// https://github.com/twitter/hogan.js
-	// MIT
-	var escape = (function(){
-	  var rAmp = /&/g,
-	      rLt = /</g,
-	      rGt = />/g,
-	      rApos = /\'/g,
-	      rQuot = /\"/g,
-	      hChars = /[&<>\"\']/;
 	
-	  function ignoreNullVal(val) {
-	    return String((val === undefined || val == null) ? '' : val);
-	  }
-	
-	  return function (str) {
-	    str = ignoreNullVal(str);
-	    return hChars.test(str) ?
-	      str
-	        .replace(rAmp, '&amp;')
-	        .replace(rLt, '&lt;')
-	        .replace(rGt, '&gt;')
-	        .replace(rApos, '&#39;')
-	        .replace(rQuot, '&quot;') :
-	      str;
-	  }
-	
-	})();
 	
 	/**
 	 * [compile description]
@@ -8413,11 +8438,13 @@
 	  } );
 	
 	
-	  var attrStr = this.attrs(attrs);
-	  var body = (children && children.length? this.compile(children): "")
+	  var tagObj = {
+	    body: (children && children.length? this.compile(children): "")
+	  }
+	  var attrStr = this.walk(attrs, tagObj).trim();
 	
 	  return "<" + tag + (attrStr? " " + attrStr: ""  ) + ">" +  
-	        body +
+	        tagObj.body +
 	    "</" + tag + ">"
 	
 	}
@@ -8519,35 +8546,28 @@
 	  var test = this.get(ast.test);  
 	  if(test){
 	    if(ast.consequent){
-	      return this.compile( ast.consequent );
+	      return this.walk( ast.consequent, options );
 	    }
 	  }else{
 	    if(ast.alternate){
-	      return this.compile( ast.alternate );
+	      return this.walk( ast.alternate, options );
 	    }
 	  }
-	
 	}
 	
 	
 	ssr.expression = function(ast, options){
 	  var str = this.get(ast);
-	  return escape(str);
+	  return _.escape(str);
 	}
 	
 	ssr.text = function(ast, options){
-	  return escape(ast.text) 
+	  return _.escape(ast.text) 
 	}
 	
 	
 	
-	ssr.attrs = function(attrs){
-	  return attrs.map(function(attr){
-	    return this.attr(attr);
-	  }.bind(this)).join("").replace(/\s+$/,"");
-	}
-	
-	ssr.attr = function(attr){
+	ssr.attribute = function(attr, options){
 	
 	  var name = attr.name, 
 	    value = attr.value || "",
@@ -8560,7 +8580,7 @@
 	    if(directive.ssr){
 	
 	      // @TODO: 应该提供hook可以控制节点内部  ,比如r-html
-	      return directive.ssr( name, _.isExpr(value)? this.get(value): '' );
+	      return directive.ssr.call(this.context, _.isExpr(value)? this.get(value): value ,options);
 	    }
 	  }else{
 	    // @TODO 对于boolean 值
@@ -8568,7 +8588,7 @@
 	    if(_.isBooleanAttr(name) || value === undefined || value === null){
 	      return name + " ";
 	    }else{
-	      return name + '="' + escape(value) + '" ';
+	      return name + '="' + _.escape(value) + '" ';
 	    }
 	  }
 	}
@@ -8597,7 +8617,7 @@
 	
 	}
 	
-	SSR.escape = escape;
+	SSR.escape = _.escape;
 	
 	module.exports = SSR;
 
@@ -9891,7 +9911,7 @@
 	  , true ? module : {exports: {}}
 	);
 	
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(50)(module), __webpack_require__(49).Buffer))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(50)(module), __webpack_require__(48).Buffer))
 
 /***/ },
 /* 29 */
@@ -9911,10 +9931,295 @@
 	exports.node = typeof process !== "undefined" && ( '' + process ) === '[object process]';
 	exports.isRunning = false;
 	
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(48)))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(49)))
 
 /***/ },
 /* 30 */
+/***/ function(module, exports, __webpack_require__) {
+
+	module.exports = {
+	  'COMPONENT_TYPE': 1,
+	  'ELEMENT_TYPE': 2,
+	  'ERROR': {
+	    'UNMATCHED_AST': 101
+	  },
+	  "MSG": {
+	    101: "Unmatched ast and mountNode, report issue at https://github.com/regularjs/regular/issues"
+	  },
+	  'NAMESPACE': {
+	    html: "http://www.w3.org/1999/xhtml",
+	    svg: "http://www.w3.org/2000/svg"
+	  }
+	}
+
+
+/***/ },
+/* 31 */
+/***/ function(module, exports, __webpack_require__) {
+
+	// http://stackoverflow.com/questions/1354064/how-to-convert-characters-to-html-entities-using-plain-javascript
+	var entities = {
+	  'quot':34, 
+	  'amp':38, 
+	  'apos':39, 
+	  'lt':60, 
+	  'gt':62, 
+	  'nbsp':160, 
+	  'iexcl':161, 
+	  'cent':162, 
+	  'pound':163, 
+	  'curren':164, 
+	  'yen':165, 
+	  'brvbar':166, 
+	  'sect':167, 
+	  'uml':168, 
+	  'copy':169, 
+	  'ordf':170, 
+	  'laquo':171, 
+	  'not':172, 
+	  'shy':173, 
+	  'reg':174, 
+	  'macr':175, 
+	  'deg':176, 
+	  'plusmn':177, 
+	  'sup2':178, 
+	  'sup3':179, 
+	  'acute':180, 
+	  'micro':181, 
+	  'para':182, 
+	  'middot':183, 
+	  'cedil':184, 
+	  'sup1':185, 
+	  'ordm':186, 
+	  'raquo':187, 
+	  'frac14':188, 
+	  'frac12':189, 
+	  'frac34':190, 
+	  'iquest':191, 
+	  'Agrave':192, 
+	  'Aacute':193, 
+	  'Acirc':194, 
+	  'Atilde':195, 
+	  'Auml':196, 
+	  'Aring':197, 
+	  'AElig':198, 
+	  'Ccedil':199, 
+	  'Egrave':200, 
+	  'Eacute':201, 
+	  'Ecirc':202, 
+	  'Euml':203, 
+	  'Igrave':204, 
+	  'Iacute':205, 
+	  'Icirc':206, 
+	  'Iuml':207, 
+	  'ETH':208, 
+	  'Ntilde':209, 
+	  'Ograve':210, 
+	  'Oacute':211, 
+	  'Ocirc':212, 
+	  'Otilde':213, 
+	  'Ouml':214, 
+	  'times':215, 
+	  'Oslash':216, 
+	  'Ugrave':217, 
+	  'Uacute':218, 
+	  'Ucirc':219, 
+	  'Uuml':220, 
+	  'Yacute':221, 
+	  'THORN':222, 
+	  'szlig':223, 
+	  'agrave':224, 
+	  'aacute':225, 
+	  'acirc':226, 
+	  'atilde':227, 
+	  'auml':228, 
+	  'aring':229, 
+	  'aelig':230, 
+	  'ccedil':231, 
+	  'egrave':232, 
+	  'eacute':233, 
+	  'ecirc':234, 
+	  'euml':235, 
+	  'igrave':236, 
+	  'iacute':237, 
+	  'icirc':238, 
+	  'iuml':239, 
+	  'eth':240, 
+	  'ntilde':241, 
+	  'ograve':242, 
+	  'oacute':243, 
+	  'ocirc':244, 
+	  'otilde':245, 
+	  'ouml':246, 
+	  'divide':247, 
+	  'oslash':248, 
+	  'ugrave':249, 
+	  'uacute':250, 
+	  'ucirc':251, 
+	  'uuml':252, 
+	  'yacute':253, 
+	  'thorn':254, 
+	  'yuml':255, 
+	  'fnof':402, 
+	  'Alpha':913, 
+	  'Beta':914, 
+	  'Gamma':915, 
+	  'Delta':916, 
+	  'Epsilon':917, 
+	  'Zeta':918, 
+	  'Eta':919, 
+	  'Theta':920, 
+	  'Iota':921, 
+	  'Kappa':922, 
+	  'Lambda':923, 
+	  'Mu':924, 
+	  'Nu':925, 
+	  'Xi':926, 
+	  'Omicron':927, 
+	  'Pi':928, 
+	  'Rho':929, 
+	  'Sigma':931, 
+	  'Tau':932, 
+	  'Upsilon':933, 
+	  'Phi':934, 
+	  'Chi':935, 
+	  'Psi':936, 
+	  'Omega':937, 
+	  'alpha':945, 
+	  'beta':946, 
+	  'gamma':947, 
+	  'delta':948, 
+	  'epsilon':949, 
+	  'zeta':950, 
+	  'eta':951, 
+	  'theta':952, 
+	  'iota':953, 
+	  'kappa':954, 
+	  'lambda':955, 
+	  'mu':956, 
+	  'nu':957, 
+	  'xi':958, 
+	  'omicron':959, 
+	  'pi':960, 
+	  'rho':961, 
+	  'sigmaf':962, 
+	  'sigma':963, 
+	  'tau':964, 
+	  'upsilon':965, 
+	  'phi':966, 
+	  'chi':967, 
+	  'psi':968, 
+	  'omega':969, 
+	  'thetasym':977, 
+	  'upsih':978, 
+	  'piv':982, 
+	  'bull':8226, 
+	  'hellip':8230, 
+	  'prime':8242, 
+	  'Prime':8243, 
+	  'oline':8254, 
+	  'frasl':8260, 
+	  'weierp':8472, 
+	  'image':8465, 
+	  'real':8476, 
+	  'trade':8482, 
+	  'alefsym':8501, 
+	  'larr':8592, 
+	  'uarr':8593, 
+	  'rarr':8594, 
+	  'darr':8595, 
+	  'harr':8596, 
+	  'crarr':8629, 
+	  'lArr':8656, 
+	  'uArr':8657, 
+	  'rArr':8658, 
+	  'dArr':8659, 
+	  'hArr':8660, 
+	  'forall':8704, 
+	  'part':8706, 
+	  'exist':8707, 
+	  'empty':8709, 
+	  'nabla':8711, 
+	  'isin':8712, 
+	  'notin':8713, 
+	  'ni':8715, 
+	  'prod':8719, 
+	  'sum':8721, 
+	  'minus':8722, 
+	  'lowast':8727, 
+	  'radic':8730, 
+	  'prop':8733, 
+	  'infin':8734, 
+	  'ang':8736, 
+	  'and':8743, 
+	  'or':8744, 
+	  'cap':8745, 
+	  'cup':8746, 
+	  'int':8747, 
+	  'there4':8756, 
+	  'sim':8764, 
+	  'cong':8773, 
+	  'asymp':8776, 
+	  'ne':8800, 
+	  'equiv':8801, 
+	  'le':8804, 
+	  'ge':8805, 
+	  'sub':8834, 
+	  'sup':8835, 
+	  'nsub':8836, 
+	  'sube':8838, 
+	  'supe':8839, 
+	  'oplus':8853, 
+	  'otimes':8855, 
+	  'perp':8869, 
+	  'sdot':8901, 
+	  'lceil':8968, 
+	  'rceil':8969, 
+	  'lfloor':8970, 
+	  'rfloor':8971, 
+	  'lang':9001, 
+	  'rang':9002, 
+	  'loz':9674, 
+	  'spades':9824, 
+	  'clubs':9827, 
+	  'hearts':9829, 
+	  'diams':9830, 
+	  'OElig':338, 
+	  'oelig':339, 
+	  'Scaron':352, 
+	  'scaron':353, 
+	  'Yuml':376, 
+	  'circ':710, 
+	  'tilde':732, 
+	  'ensp':8194, 
+	  'emsp':8195, 
+	  'thinsp':8201, 
+	  'zwnj':8204, 
+	  'zwj':8205, 
+	  'lrm':8206, 
+	  'rlm':8207, 
+	  'ndash':8211, 
+	  'mdash':8212, 
+	  'lsquo':8216, 
+	  'rsquo':8217, 
+	  'sbquo':8218, 
+	  'ldquo':8220, 
+	  'rdquo':8221, 
+	  'bdquo':8222, 
+	  'dagger':8224, 
+	  'Dagger':8225, 
+	  'permil':8240, 
+	  'lsaquo':8249, 
+	  'rsaquo':8250, 
+	  'euro':8364
+	}
+	
+	
+	
+	module.exports  = entities;
+
+/***/ },
+/* 32 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
@@ -9925,7 +10230,7 @@
 	}
 
 /***/ },
-/* 31 */
+/* 33 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -9935,9 +10240,9 @@
 	var env = __webpack_require__(29);
 	var Lexer = __webpack_require__(40);
 	var Parser = __webpack_require__(39);
-	var config = __webpack_require__(30);
+	var config = __webpack_require__(32);
 	var _ = __webpack_require__(19);
-	var extend = __webpack_require__(25);
+	var extend = __webpack_require__(24);
 	var shared = __webpack_require__(35);
 	var combine = {};
 	if(env.browser){
@@ -9947,12 +10252,12 @@
 	  var doc = dom.doc;
 	  combine = __webpack_require__(21);
 	}
-	var events = __webpack_require__(23);
+	var events = __webpack_require__(26);
 	var Watcher = __webpack_require__(43);
 	var parse = __webpack_require__(22);
 	var filter = __webpack_require__(44);
-	var ERROR = __webpack_require__(33).ERROR;
-	var nodeCursor = __webpack_require__(32);
+	var ERROR = __webpack_require__(30).ERROR;
+	var nodeCursor = __webpack_require__(34);
 	var shared = __webpack_require__(35);
 	
 	
@@ -10507,7 +10812,7 @@
 
 
 /***/ },
-/* 32 */
+/* 34 */
 /***/ function(module, exports, __webpack_require__) {
 
 	function NodeCursor(node){
@@ -10524,291 +10829,6 @@
 	
 	module.exports = function(n){ return new NodeCursor(n)}
 
-
-/***/ },
-/* 33 */
-/***/ function(module, exports, __webpack_require__) {
-
-	module.exports = {
-	  'COMPONENT_TYPE': 1,
-	  'ELEMENT_TYPE': 2,
-	  'ERROR': {
-	    'UNMATCHED_AST': 101
-	  },
-	  "MSG": {
-	    101: "Unmatched ast and mountNode, report issue at https://github.com/regularjs/regular/issues"
-	  },
-	  'NAMESPACE': {
-	    html: "http://www.w3.org/1999/xhtml",
-	    svg: "http://www.w3.org/2000/svg"
-	  }
-	}
-
-
-/***/ },
-/* 34 */
-/***/ function(module, exports, __webpack_require__) {
-
-	// http://stackoverflow.com/questions/1354064/how-to-convert-characters-to-html-entities-using-plain-javascript
-	var entities = {
-	  'quot':34, 
-	  'amp':38, 
-	  'apos':39, 
-	  'lt':60, 
-	  'gt':62, 
-	  'nbsp':160, 
-	  'iexcl':161, 
-	  'cent':162, 
-	  'pound':163, 
-	  'curren':164, 
-	  'yen':165, 
-	  'brvbar':166, 
-	  'sect':167, 
-	  'uml':168, 
-	  'copy':169, 
-	  'ordf':170, 
-	  'laquo':171, 
-	  'not':172, 
-	  'shy':173, 
-	  'reg':174, 
-	  'macr':175, 
-	  'deg':176, 
-	  'plusmn':177, 
-	  'sup2':178, 
-	  'sup3':179, 
-	  'acute':180, 
-	  'micro':181, 
-	  'para':182, 
-	  'middot':183, 
-	  'cedil':184, 
-	  'sup1':185, 
-	  'ordm':186, 
-	  'raquo':187, 
-	  'frac14':188, 
-	  'frac12':189, 
-	  'frac34':190, 
-	  'iquest':191, 
-	  'Agrave':192, 
-	  'Aacute':193, 
-	  'Acirc':194, 
-	  'Atilde':195, 
-	  'Auml':196, 
-	  'Aring':197, 
-	  'AElig':198, 
-	  'Ccedil':199, 
-	  'Egrave':200, 
-	  'Eacute':201, 
-	  'Ecirc':202, 
-	  'Euml':203, 
-	  'Igrave':204, 
-	  'Iacute':205, 
-	  'Icirc':206, 
-	  'Iuml':207, 
-	  'ETH':208, 
-	  'Ntilde':209, 
-	  'Ograve':210, 
-	  'Oacute':211, 
-	  'Ocirc':212, 
-	  'Otilde':213, 
-	  'Ouml':214, 
-	  'times':215, 
-	  'Oslash':216, 
-	  'Ugrave':217, 
-	  'Uacute':218, 
-	  'Ucirc':219, 
-	  'Uuml':220, 
-	  'Yacute':221, 
-	  'THORN':222, 
-	  'szlig':223, 
-	  'agrave':224, 
-	  'aacute':225, 
-	  'acirc':226, 
-	  'atilde':227, 
-	  'auml':228, 
-	  'aring':229, 
-	  'aelig':230, 
-	  'ccedil':231, 
-	  'egrave':232, 
-	  'eacute':233, 
-	  'ecirc':234, 
-	  'euml':235, 
-	  'igrave':236, 
-	  'iacute':237, 
-	  'icirc':238, 
-	  'iuml':239, 
-	  'eth':240, 
-	  'ntilde':241, 
-	  'ograve':242, 
-	  'oacute':243, 
-	  'ocirc':244, 
-	  'otilde':245, 
-	  'ouml':246, 
-	  'divide':247, 
-	  'oslash':248, 
-	  'ugrave':249, 
-	  'uacute':250, 
-	  'ucirc':251, 
-	  'uuml':252, 
-	  'yacute':253, 
-	  'thorn':254, 
-	  'yuml':255, 
-	  'fnof':402, 
-	  'Alpha':913, 
-	  'Beta':914, 
-	  'Gamma':915, 
-	  'Delta':916, 
-	  'Epsilon':917, 
-	  'Zeta':918, 
-	  'Eta':919, 
-	  'Theta':920, 
-	  'Iota':921, 
-	  'Kappa':922, 
-	  'Lambda':923, 
-	  'Mu':924, 
-	  'Nu':925, 
-	  'Xi':926, 
-	  'Omicron':927, 
-	  'Pi':928, 
-	  'Rho':929, 
-	  'Sigma':931, 
-	  'Tau':932, 
-	  'Upsilon':933, 
-	  'Phi':934, 
-	  'Chi':935, 
-	  'Psi':936, 
-	  'Omega':937, 
-	  'alpha':945, 
-	  'beta':946, 
-	  'gamma':947, 
-	  'delta':948, 
-	  'epsilon':949, 
-	  'zeta':950, 
-	  'eta':951, 
-	  'theta':952, 
-	  'iota':953, 
-	  'kappa':954, 
-	  'lambda':955, 
-	  'mu':956, 
-	  'nu':957, 
-	  'xi':958, 
-	  'omicron':959, 
-	  'pi':960, 
-	  'rho':961, 
-	  'sigmaf':962, 
-	  'sigma':963, 
-	  'tau':964, 
-	  'upsilon':965, 
-	  'phi':966, 
-	  'chi':967, 
-	  'psi':968, 
-	  'omega':969, 
-	  'thetasym':977, 
-	  'upsih':978, 
-	  'piv':982, 
-	  'bull':8226, 
-	  'hellip':8230, 
-	  'prime':8242, 
-	  'Prime':8243, 
-	  'oline':8254, 
-	  'frasl':8260, 
-	  'weierp':8472, 
-	  'image':8465, 
-	  'real':8476, 
-	  'trade':8482, 
-	  'alefsym':8501, 
-	  'larr':8592, 
-	  'uarr':8593, 
-	  'rarr':8594, 
-	  'darr':8595, 
-	  'harr':8596, 
-	  'crarr':8629, 
-	  'lArr':8656, 
-	  'uArr':8657, 
-	  'rArr':8658, 
-	  'dArr':8659, 
-	  'hArr':8660, 
-	  'forall':8704, 
-	  'part':8706, 
-	  'exist':8707, 
-	  'empty':8709, 
-	  'nabla':8711, 
-	  'isin':8712, 
-	  'notin':8713, 
-	  'ni':8715, 
-	  'prod':8719, 
-	  'sum':8721, 
-	  'minus':8722, 
-	  'lowast':8727, 
-	  'radic':8730, 
-	  'prop':8733, 
-	  'infin':8734, 
-	  'ang':8736, 
-	  'and':8743, 
-	  'or':8744, 
-	  'cap':8745, 
-	  'cup':8746, 
-	  'int':8747, 
-	  'there4':8756, 
-	  'sim':8764, 
-	  'cong':8773, 
-	  'asymp':8776, 
-	  'ne':8800, 
-	  'equiv':8801, 
-	  'le':8804, 
-	  'ge':8805, 
-	  'sub':8834, 
-	  'sup':8835, 
-	  'nsub':8836, 
-	  'sube':8838, 
-	  'supe':8839, 
-	  'oplus':8853, 
-	  'otimes':8855, 
-	  'perp':8869, 
-	  'sdot':8901, 
-	  'lceil':8968, 
-	  'rceil':8969, 
-	  'lfloor':8970, 
-	  'rfloor':8971, 
-	  'lang':9001, 
-	  'rang':9002, 
-	  'loz':9674, 
-	  'spades':9824, 
-	  'clubs':9827, 
-	  'hearts':9829, 
-	  'diams':9830, 
-	  'OElig':338, 
-	  'oelig':339, 
-	  'Scaron':352, 
-	  'scaron':353, 
-	  'Yuml':376, 
-	  'circ':710, 
-	  'tilde':732, 
-	  'ensp':8194, 
-	  'emsp':8195, 
-	  'thinsp':8201, 
-	  'zwnj':8204, 
-	  'zwj':8205, 
-	  'lrm':8206, 
-	  'rlm':8207, 
-	  'ndash':8211, 
-	  'mdash':8212, 
-	  'lsquo':8216, 
-	  'rsquo':8217, 
-	  'sbquo':8218, 
-	  'ldquo':8220, 
-	  'rdquo':8221, 
-	  'bdquo':8222, 
-	  'dagger':8224, 
-	  'Dagger':8225, 
-	  'permil':8240, 
-	  'lsaquo':8249, 
-	  'rsaquo':8250, 
-	  'euro':8364
-	}
-	
-	
-	
-	module.exports  = entities;
 
 /***/ },
 /* 35 */
@@ -10925,8 +10945,8 @@
 	var _ = __webpack_require__(19);
 	var dom = __webpack_require__(18);
 	var animate = __webpack_require__(20);
-	var Regular = __webpack_require__(31);
-	var consts = __webpack_require__(33);
+	var Regular = __webpack_require__(33);
+	var consts = __webpack_require__(30);
 	var namespaces = consts.NAMESPACE;
 	
 	
@@ -11003,11 +11023,17 @@
 	      elem.style.display = "none";
 	    }
 	  },
-	  'r-html': function(elem, value){
-	    this.$watch(value, function(nvalue){
-	      nvalue = nvalue || "";
-	      dom.html(elem, nvalue)
-	    }, {force: true});
+	  'r-html': {
+	    ssr: function(value, tag){
+	      tag.body = value;
+	      return "";
+	    },
+	    link: function(elem, value){
+	      this.$watch(value, function(nvalue){
+	        nvalue = nvalue || "";
+	        dom.html(elem, nvalue)
+	      }, {force: true});
+	    }
 	  },
 	  'ref': {
 	    accept: consts.COMPONENT_TYPE + consts.ELEMENT_TYPE,
@@ -11051,7 +11077,7 @@
 	  _ = __webpack_require__(19),
 	 animate = __webpack_require__(20),
 	 dom = __webpack_require__(18),
-	 Regular = __webpack_require__(31);
+	 Regular = __webpack_require__(33);
 	
 	
 	var // variables
@@ -11286,7 +11312,7 @@
 /* 38 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var Regular = __webpack_require__(31);
+	var Regular = __webpack_require__(33);
 	
 	/**
 	 * Timeout Module
@@ -11334,7 +11360,7 @@
 
 	var _ = __webpack_require__(19);
 	
-	var config = __webpack_require__(30);
+	var config = __webpack_require__(32);
 	var node = __webpack_require__(47);
 	var Lexer = __webpack_require__(40);
 	var varName = _.varName;
@@ -12050,7 +12076,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(19);
-	var config = __webpack_require__(30);
+	var config = __webpack_require__(32);
 	
 	// some custom tag  will conflict with the Lexer progress
 	var conflictTag = {"}": "{", "]": "["}, map1, map2;
@@ -12407,7 +12433,7 @@
 /* 41 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var diffArray = __webpack_require__(26).diffArray;
+	var diffArray = __webpack_require__(25).diffArray;
 	var combine = __webpack_require__(21);
 	var animate = __webpack_require__(20);
 	var Parser = __webpack_require__(39);
@@ -12415,11 +12441,11 @@
 	var Group = __webpack_require__(42);
 	var dom = __webpack_require__(18);
 	var _ = __webpack_require__(19);
-	var consts =   __webpack_require__(33)
+	var consts =   __webpack_require__(30)
 	var ERROR = consts.ERROR;
 	var MSG = consts.MSG;
-	var nodeCursor = __webpack_require__(32);
-	var config = __webpack_require__(30)
+	var nodeCursor = __webpack_require__(34);
+	var config = __webpack_require__(32)
 	
 	
 	
@@ -13205,7 +13231,7 @@
 
 	var _ = __webpack_require__(19);
 	var parseExpression = __webpack_require__(22).expression;
-	var diff = __webpack_require__(26);
+	var diff = __webpack_require__(25);
 	var diffArray = diff.diffArray;
 	var diffObject = diff.diffObject;
 	
@@ -13535,7 +13561,7 @@
 	 */
 	var _ = __webpack_require__(19);
 	var dom = __webpack_require__(18);
-	var Regular = __webpack_require__(31);
+	var Regular = __webpack_require__(33);
 	
 	Regular._addProtoInheritCache("event");
 	
@@ -13616,7 +13642,7 @@
 	// Regular
 	var _ = __webpack_require__(19);
 	var dom = __webpack_require__(18);
-	var Regular = __webpack_require__(31);
+	var Regular = __webpack_require__(33);
 	
 	var modelHandlers = {
 	  "text": initText,
@@ -13853,98 +13879,6 @@
 
 /***/ },
 /* 48 */
-/***/ function(module, exports, __webpack_require__) {
-
-	// shim for using process in browser
-	
-	var process = module.exports = {};
-	
-	process.nextTick = (function () {
-	    var canSetImmediate = typeof window !== 'undefined'
-	    && window.setImmediate;
-	    var canMutationObserver = typeof window !== 'undefined'
-	    && window.MutationObserver;
-	    var canPost = typeof window !== 'undefined'
-	    && window.postMessage && window.addEventListener
-	    ;
-	
-	    if (canSetImmediate) {
-	        return function (f) { return window.setImmediate(f) };
-	    }
-	
-	    var queue = [];
-	
-	    if (canMutationObserver) {
-	        var hiddenDiv = document.createElement("div");
-	        var observer = new MutationObserver(function () {
-	            var queueList = queue.slice();
-	            queue.length = 0;
-	            queueList.forEach(function (fn) {
-	                fn();
-	            });
-	        });
-	
-	        observer.observe(hiddenDiv, { attributes: true });
-	
-	        return function nextTick(fn) {
-	            if (!queue.length) {
-	                hiddenDiv.setAttribute('yes', 'no');
-	            }
-	            queue.push(fn);
-	        };
-	    }
-	
-	    if (canPost) {
-	        window.addEventListener('message', function (ev) {
-	            var source = ev.source;
-	            if ((source === window || source === null) && ev.data === 'process-tick') {
-	                ev.stopPropagation();
-	                if (queue.length > 0) {
-	                    var fn = queue.shift();
-	                    fn();
-	                }
-	            }
-	        }, true);
-	
-	        return function nextTick(fn) {
-	            queue.push(fn);
-	            window.postMessage('process-tick', '*');
-	        };
-	    }
-	
-	    return function nextTick(fn) {
-	        setTimeout(fn, 0);
-	    };
-	})();
-	
-	process.title = 'browser';
-	process.browser = true;
-	process.env = {};
-	process.argv = [];
-	
-	function noop() {}
-	
-	process.on = noop;
-	process.addListener = noop;
-	process.once = noop;
-	process.off = noop;
-	process.removeListener = noop;
-	process.removeAllListeners = noop;
-	process.emit = noop;
-	
-	process.binding = function (name) {
-	    throw new Error('process.binding is not supported');
-	};
-	
-	// TODO(shtylman)
-	process.cwd = function () { return '/' };
-	process.chdir = function (dir) {
-	    throw new Error('process.chdir is not supported');
-	};
-
-
-/***/ },
-/* 49 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(Buffer) {/*!
@@ -15000,7 +14934,99 @@
 	  }
 	}
 	
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(49).Buffer))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(48).Buffer))
+
+/***/ },
+/* 49 */
+/***/ function(module, exports, __webpack_require__) {
+
+	// shim for using process in browser
+	
+	var process = module.exports = {};
+	
+	process.nextTick = (function () {
+	    var canSetImmediate = typeof window !== 'undefined'
+	    && window.setImmediate;
+	    var canMutationObserver = typeof window !== 'undefined'
+	    && window.MutationObserver;
+	    var canPost = typeof window !== 'undefined'
+	    && window.postMessage && window.addEventListener
+	    ;
+	
+	    if (canSetImmediate) {
+	        return function (f) { return window.setImmediate(f) };
+	    }
+	
+	    var queue = [];
+	
+	    if (canMutationObserver) {
+	        var hiddenDiv = document.createElement("div");
+	        var observer = new MutationObserver(function () {
+	            var queueList = queue.slice();
+	            queue.length = 0;
+	            queueList.forEach(function (fn) {
+	                fn();
+	            });
+	        });
+	
+	        observer.observe(hiddenDiv, { attributes: true });
+	
+	        return function nextTick(fn) {
+	            if (!queue.length) {
+	                hiddenDiv.setAttribute('yes', 'no');
+	            }
+	            queue.push(fn);
+	        };
+	    }
+	
+	    if (canPost) {
+	        window.addEventListener('message', function (ev) {
+	            var source = ev.source;
+	            if ((source === window || source === null) && ev.data === 'process-tick') {
+	                ev.stopPropagation();
+	                if (queue.length > 0) {
+	                    var fn = queue.shift();
+	                    fn();
+	                }
+	            }
+	        }, true);
+	
+	        return function nextTick(fn) {
+	            queue.push(fn);
+	            window.postMessage('process-tick', '*');
+	        };
+	    }
+	
+	    return function nextTick(fn) {
+	        setTimeout(fn, 0);
+	    };
+	})();
+	
+	process.title = 'browser';
+	process.browser = true;
+	process.env = {};
+	process.argv = [];
+	
+	function noop() {}
+	
+	process.on = noop;
+	process.addListener = noop;
+	process.once = noop;
+	process.off = noop;
+	process.removeListener = noop;
+	process.removeAllListeners = noop;
+	process.emit = noop;
+	
+	process.binding = function (name) {
+	    throw new Error('process.binding is not supported');
+	};
+	
+	// TODO(shtylman)
+	process.cwd = function () { return '/' };
+	process.chdir = function (dir) {
+	    throw new Error('process.chdir is not supported');
+	};
+
 
 /***/ },
 /* 50 */

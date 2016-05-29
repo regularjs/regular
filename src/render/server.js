@@ -9,34 +9,7 @@ var shared = require('./shared');
 
 
 
-// hogan
-// https://github.com/twitter/hogan.js
-// MIT
-var escape = (function(){
-  var rAmp = /&/g,
-      rLt = /</g,
-      rGt = />/g,
-      rApos = /\'/g,
-      rQuot = /\"/g,
-      hChars = /[&<>\"\']/;
 
-  function ignoreNullVal(val) {
-    return String((val === undefined || val == null) ? '' : val);
-  }
-
-  return function (str) {
-    str = ignoreNullVal(str);
-    return hChars.test(str) ?
-      str
-        .replace(rAmp, '&amp;')
-        .replace(rLt, '&lt;')
-        .replace(rGt, '&gt;')
-        .replace(rApos, '&#39;')
-        .replace(rQuot, '&quot;') :
-      str;
-  }
-
-})();
 
 /**
  * [compile description]
@@ -120,11 +93,13 @@ ssr.element = function(ast ){
   } );
 
 
-  var attrStr = this.attrs(attrs);
-  var body = (children && children.length? this.compile(children): "")
+  var tagObj = {
+    body: (children && children.length? this.compile(children): "")
+  }
+  var attrStr = this.walk(attrs, tagObj).trim();
 
   return "<" + tag + (attrStr? " " + attrStr: ""  ) + ">" +  
-        body +
+        tagObj.body +
     "</" + tag + ">"
 
 }
@@ -226,35 +201,28 @@ ssr.if = function(ast, options){
   var test = this.get(ast.test);  
   if(test){
     if(ast.consequent){
-      return this.compile( ast.consequent );
+      return this.walk( ast.consequent, options );
     }
   }else{
     if(ast.alternate){
-      return this.compile( ast.alternate );
+      return this.walk( ast.alternate, options );
     }
   }
-
 }
 
 
 ssr.expression = function(ast, options){
   var str = this.get(ast);
-  return escape(str);
+  return _.escape(str);
 }
 
 ssr.text = function(ast, options){
-  return escape(ast.text) 
+  return _.escape(ast.text) 
 }
 
 
 
-ssr.attrs = function(attrs){
-  return attrs.map(function(attr){
-    return this.attr(attr);
-  }.bind(this)).join("").replace(/\s+$/,"");
-}
-
-ssr.attr = function(attr){
+ssr.attribute = function(attr, options){
 
   var name = attr.name, 
     value = attr.value || "",
@@ -267,7 +235,7 @@ ssr.attr = function(attr){
     if(directive.ssr){
 
       // @TODO: 应该提供hook可以控制节点内部  ,比如r-html
-      return directive.ssr( name, _.isExpr(value)? this.get(value): '' );
+      return directive.ssr.call(this.context, _.isExpr(value)? this.get(value): value ,options);
     }
   }else{
     // @TODO 对于boolean 值
@@ -275,7 +243,7 @@ ssr.attr = function(attr){
     if(_.isBooleanAttr(name) || value === undefined || value === null){
       return name + " ";
     }else{
-      return name + '="' + escape(value) + '" ';
+      return name + '="' + _.escape(value) + '" ';
     }
   }
 }
@@ -304,6 +272,6 @@ SSR.render = function(Component, definition){
 
 }
 
-SSR.escape = escape;
+SSR.escape = _.escape;
 
 module.exports = SSR;

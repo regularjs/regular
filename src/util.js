@@ -445,6 +445,34 @@ _.toText = function(obj){
 }
 
 
+// hogan
+// https://github.com/twitter/hogan.js
+// MIT
+_.escape = (function(){
+  var rAmp = /&/g,
+      rLt = /</g,
+      rGt = />/g,
+      rApos = /\'/g,
+      rQuot = /\"/g,
+      hChars = /[&<>\"\']/;
+
+  function ignoreNullVal(val) {
+    return String((val === undefined || val == null) ? '' : val);
+  }
+
+  return function (str) {
+    str = ignoreNullVal(str);
+    return hChars.test(str) ?
+      str
+        .replace(rAmp, '&amp;')
+        .replace(rLt, '&lt;')
+        .replace(rGt, '&gt;')
+        .replace(rApos, '&#39;')
+        .replace(rQuot, '&quot;') :
+      str;
+  }
+
+})();
 
 
 
