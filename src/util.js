@@ -7,6 +7,7 @@ var entities = require('./helper/entities');
 var slice = [].slice;
 var o2str = ({}).toString;
 var win = typeof window !=='undefined'? window: global;
+var config = require('./config');
 
 
 _.noop = function(){};
@@ -473,6 +474,9 @@ _.escape = (function(){
   }
 
 })();
+
+
+
 
 
 

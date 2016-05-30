@@ -1,5 +1,7 @@
 var _ = require('../util');
+var config = require('../config');
 var parse = require('../helper/parse');
+var node = require('../parser/node');
 
 
 function initDefinition(context, definition, beforeConfig){
@@ -94,9 +96,35 @@ var handleComputed = (function(){
 })();
 
 
+function prepareAttr ( ast ,directive){
+  if(ast.parsed ) return ast;
+  var value = ast.value;
+  var name=  ast.name, body, constant;
+  if(typeof value === 'string' && ~value.indexOf(config.BEGIN) && ~value.indexOf(config.END) ){
+    if( !directive || !directive.nps ) {
+      var parsed = parse.parse(value, { mode: 2 });
+      if(parsed.length === 1 && parsed[0].type === 'expression'){ 
+        body = parsed[0];
+      } else{
+        constant = true;
+        body = [];
+        parsed.forEach(function(item){
+          if(!item.constant) constant=false;
+          // silent the mutiple inteplation
+            body.push(item.body || "'" + item.text.replace(/'/g, "\\'") + "'");        
+        });
+        body = node.expression("[" + body.join(",") + "].join('')", null, constant);
+      }
+      ast.value = body;
+    }
+  }
+  ast.parsed = true;
+  return ast;
+}
 
 module.exports = {
   // share logic between server and client
   initDefinition: initDefinition,
-  handleComputed: handleComputed
+  handleComputed: handleComputed,
+  prepareAttr: prepareAttr
 }

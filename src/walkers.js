@@ -11,6 +11,7 @@ var ERROR = consts.ERROR;
 var MSG = consts.MSG;
 var nodeCursor = require('./helper/cursor');
 var config = require('./config')
+var shared = require('./render/shared');
 
 
 
@@ -545,7 +546,7 @@ walkers.component = function(ast, options){
     var attr = attrs[i];
     // consider disabled   equlasto  disabled={true}
 
-    prepareAttr( attr, attr.name === 'ref' && refDirective );
+    shared.prepareAttr( attr, attr.name === 'ref' && refDirective );
 
     var value = this._touchExpr(attr.value === undefined? true: attr.value);
     if(value.constant) value = attr.value = value.get(this);
@@ -686,7 +687,7 @@ walkers.attribute = function(ast ,options){
   var name = attr.name;
   var directive = Component.directive(name);
 
-  prepareAttr(ast, directive);
+  shared.prepareAttr(ast, directive);
 
   var value = attr.value || "";
   var constant = value.constant;
@@ -724,32 +725,6 @@ walkers.attribute = function(ast ,options){
     }
   }
 
-}
-
-function prepareAttr( ast ,directive){
-  if(ast.parsed ) return ast;
-  var value = ast.value;
-  var name=  ast.name, body, constant;
-  if(typeof value === 'string' && ~value.indexOf(config.BEGIN) && ~value.indexOf(config.END) ){
-    if( !directive || !directive.nps ) {
-      var parsed = new Parser(value, { mode: 2 }).parse();
-      if(parsed.length === 1 && parsed[0].type === 'expression'){ 
-        body = parsed[0];
-      } else{
-        constant = true;
-        body = [];
-        parsed.forEach(function(item){
-          if(!item.constant) constant=false;
-          // silent the mutiple inteplation
-            body.push(item.body || "'" + item.text.replace(/'/g, "\\'") + "'");        
-        });
-        body = node.expression("[" + body.join(",") + "].join('')", null, constant);
-      }
-      ast.value = body;
-    }
-  }
-  ast.parsed = true;
-  return ast;
 }
 
 

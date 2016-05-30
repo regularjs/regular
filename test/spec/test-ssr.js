@@ -32,13 +32,21 @@ describe("Server Side Rendering", function(){
 
   it('directive with nps should work on SSR', function(){
     var Namespace = Regular.extend({
-
+      template: '<div r-ssr="1{gmail@163}2"></div>'
     })
     Namespace.directive({
       'r-ssr': {
-        nps: true
+        nps: true,
+        ssr: function(value, tag){
+          return "title=\""+ Regular.util.escape(value) + "\"";
+        }
       }
     })
+    expect(SSR.render(Namespace, {
+      data: {
+        test:true
+      }
+    })).to.eql('<div title="1{gmail@163}2"></div>')
   })
 
 
@@ -66,6 +74,18 @@ describe("Server Side Rendering", function(){
         html: "<p>html</p>"
       }
     })).to.equal('<div title="haha"><p>html</p></div>')
+  })
+
+  it("string inteplation should work at server", function(){
+    var Comp = Regular.extend({
+      template: '<div title="haha {hehe}" ></div>'
+    })
+    expect(SSR.render(Comp, {
+      data: {
+        hehe: "heihei"
+
+      }
+    })).to.equal('<div title="haha heihei"></div>')
   })
 
 })

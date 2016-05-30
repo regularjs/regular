@@ -224,12 +224,15 @@ ssr.text = function(ast, options){
 
 ssr.attribute = function(attr, options){
 
-  var name = attr.name, 
-    value = attr.value || "",
+  var
     Component = this.Component,
-    directive = Component.directive(name);
+    directive = Component.directive(attr.name);
 
   
+  shared.prepareAttr(attr, directive);
+  
+  var name = attr.name, 
+    value = attr.value || "";
 
   if( directive ){
     if(directive.ssr){
