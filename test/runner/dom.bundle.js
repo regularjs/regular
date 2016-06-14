@@ -1848,7 +1848,7 @@
 
 	var expect = __webpack_require__(28);
 	var Regular = __webpack_require__(17);
-	var combine = __webpack_require__(19);
+	var combine = __webpack_require__(21);
 	function destroy(component, container){
 	  component.destroy();
 	  expect(container.innerHTML).to.equal('');
@@ -2031,6 +2031,8 @@
 	}
 	
 	describe("test Regular's modular mechanism", function(){
+	
+	
 	
 	  describe("Regular definition" , function(){
 	
@@ -2291,7 +2293,7 @@
 
 	var expect = __webpack_require__(28);
 	var Regular = __webpack_require__(17);
-	var SSR = __webpack_require__(22);
+	var SSR = __webpack_require__(27);
 	var _ = Regular.util;
 	
 	function destroy(component, container){
@@ -4867,7 +4869,7 @@
 
 	var expect = __webpack_require__(28);
 	var Regular = __webpack_require__(17);
-	var parse = __webpack_require__(21);
+	var parse = __webpack_require__(26);
 	
 	var Component = Regular.extend();
 	
@@ -6034,10 +6036,10 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var expect = __webpack_require__(28);
-	var _ = __webpack_require__(23);
-	var shim = __webpack_require__(24);
-	var extend = __webpack_require__(25);
-	var diff = __webpack_require__(26)
+	var _ = __webpack_require__(19);
+	var shim = __webpack_require__(23);
+	var extend = __webpack_require__(24);
+	var diff = __webpack_require__(25)
 	var diffArray = diff.diffArray;
 	var diffObject = diff.diffObject;
 	
@@ -6361,7 +6363,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var expect = __webpack_require__(28);
-	var Event = __webpack_require__(27);
+	var Event = __webpack_require__(22);
 	
 	
 	
@@ -6493,7 +6495,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var expect = __webpack_require__(28);
-	var SSR = __webpack_require__(22);
+	var SSR = __webpack_require__(27);
 	var Regular = __webpack_require__(17);
 	
 	
@@ -6589,8 +6591,8 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var env =  __webpack_require__(29);
-	var config = __webpack_require__(31); 
-	var Regular = module.exports = __webpack_require__(32);
+	var config = __webpack_require__(30); 
+	var Regular = module.exports = __webpack_require__(31);
 	var Parser = Regular.Parser;
 	var Lexer = Regular.Lexer;
 	
@@ -6601,7 +6603,7 @@
 	    Regular.dom = __webpack_require__(18);
 	// }
 	Regular.env = env;
-	Regular.util = __webpack_require__(23);
+	Regular.util = __webpack_require__(19);
 	Regular.parse = function(str, options){
 	  options = options || {};
 	
@@ -6613,7 +6615,7 @@
 	  var ast = new Parser(str).parse();
 	  return !options.stringify? ast : JSON.stringify(ast);
 	}
-	Regular.Cursor =__webpack_require__(33) 
+	Regular.Cursor =__webpack_require__(32) 
 	
 	Regular.isServer = env.node;
 	Regular.isRegular = function( Comp ){
@@ -6643,8 +6645,8 @@
 	  
 	var dom = module.exports;
 	var env = __webpack_require__(29);
-	var _ = __webpack_require__(23);
-	var consts = __webpack_require__(30);
+	var _ = __webpack_require__(19);
+	var consts = __webpack_require__(33);
 	var tNode = document.createElement('div')
 	var addEvent, removeEvent;
 	var noop = function(){}
@@ -7026,692 +7028,16 @@
 /* 19 */
 /***/ function(module, exports, __webpack_require__) {
 
-	// some nested  operation in ast 
-	// --------------------------------
-	
-	var dom = __webpack_require__(18);
-	var animate = __webpack_require__(20);
-	
-	var combine = module.exports = {
-	
-	  // get the initial dom in object
-	  node: function(item){
-	    var children,node, nodes;
-	    if(!item) return;
-	    if(item.element) return item.element;
-	    if(typeof item.node === "function") return item.node();
-	    if(typeof item.nodeType === "number") return item;
-	    if(item.group) return combine.node(item.group)
-	    if(children = item.children){
-	      if(children.length === 1){
-	        return combine.node(children[0]);
-	      }
-	      nodes = [];
-	      for(var i = 0, len = children.length; i < len; i++ ){
-	        node = combine.node(children[i]);
-	        if(Array.isArray(node)){
-	          nodes.push.apply(nodes, node)
-	        }else if(node) {
-	          nodes.push(node)
-	        }
-	      }
-	      return nodes;
-	    }
-	  },
-	  // @TODO remove _gragContainer
-	  inject: function(node, pos ){
-	    var group = this;
-	    var fragment = combine.node(group.group || group);
-	    if(node === false) {
-	      animate.remove(fragment)
-	      return group;
-	    }else{
-	      if(!fragment) return group;
-	      if(typeof node === 'string') node = dom.find(node);
-	      if(!node) throw Error('injected node is not found');
-	      // use animate to animate firstchildren
-	      animate.inject(fragment, node, pos);
-	    }
-	    // if it is a component
-	    if(group.$emit) {
-	      var preParent = group.parentNode;
-	      var newParent = (pos ==='after' || pos === 'before')? node.parentNode : node;
-	      group.parentNode = newParent;
-	      group.$emit("$inject", node, pos, preParent);
-	    }
-	    return group;
-	  },
-	
-	  // get the last dom in object(for insertion operation)
-	  last: function(item){
-	    var children = item.children;
-	
-	    if(typeof item.last === "function") return item.last();
-	    if(typeof item.nodeType === "number") return item;
-	
-	    if(children && children.length) return combine.last(children[children.length - 1]);
-	    if(item.group) return combine.last(item.group);
-	
-	  },
-	
-	  destroy: function(item, first){
-	    if(!item) return;
-	    if(Array.isArray(item)){
-	      for(var i = 0, len = item.length; i < len; i++ ){
-	        combine.destroy(item[i], first);
-	      }
-	    }
-	    var children = item.children;
-	    if(typeof item.destroy === "function") return item.destroy(first);
-	    if(typeof item.nodeType === "number" && first)  dom.remove(item);
-	    if(children && children.length){
-	      combine.destroy(children, true);
-	      item.children = null;
-	    }
-	  }
-	
-	}
-	
-	
-	// @TODO: need move to dom.js
-	dom.element = function( component, all ){
-	  if(!component) return !all? null: [];
-	  var nodes = combine.node( component );
-	  if( nodes.nodeType === 1 ) return all? [nodes]: nodes;
-	  var elements = [];
-	  for(var i = 0; i<nodes.length ;i++){
-	    var node = nodes[i];
-	    if( node && node.nodeType === 1){
-	      if(!all) return node;
-	      elements.push(node);
-	    } 
-	  }
-	  return !all? elements[0]: elements;
-	}
-	
-	
-	
-
-
-/***/ },
-/* 20 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var _ = __webpack_require__(23);
-	var dom  = __webpack_require__(18);
-	var animate = {};
-	var env = __webpack_require__(29);
-	
-	
-	if(typeof window !== 'undefined'){
-	var 
-	  transitionEnd = 'transitionend', 
-	  animationEnd = 'animationend', 
-	  transitionProperty = 'transition', 
-	  animationProperty = 'animation';
-	
-	if(!('ontransitionend' in window)){
-	  if('onwebkittransitionend' in window) {
-	    
-	    // Chrome/Saf (+ Mobile Saf)/Android
-	    transitionEnd += ' webkitTransitionEnd';
-	    transitionProperty = 'webkitTransition'
-	  } else if('onotransitionend' in dom.tNode || navigator.appName === 'Opera') {
-	
-	    // Opera
-	    transitionEnd += ' oTransitionEnd';
-	    transitionProperty = 'oTransition';
-	  }
-	}
-	if(!('onanimationend' in window)){
-	  if ('onwebkitanimationend' in window){
-	    // Chrome/Saf (+ Mobile Saf)/Android
-	    animationEnd += ' webkitAnimationEnd';
-	    animationProperty = 'webkitAnimation';
-	
-	  }else if ('onoanimationend' in dom.tNode){
-	    // Opera
-	    animationEnd += ' oAnimationEnd';
-	    animationProperty = 'oAnimation';
-	  }
-	}
-	}
-	
-	/**
-	 * inject node with animation
-	 * @param  {[type]} node      [description]
-	 * @param  {[type]} refer     [description]
-	 * @param  {[type]} direction [description]
-	 * @return {[type]}           [description]
-	 */
-	animate.inject = function( node, refer ,direction, callback ){
-	  callback = callback || _.noop;
-	  if( Array.isArray(node) ){
-	    var fragment = dom.fragment();
-	    var count=0;
-	
-	    for(var i = 0,len = node.length;i < len; i++ ){
-	      fragment.appendChild(node[i]); 
-	    }
-	    dom.inject(fragment, refer, direction);
-	
-	    // if all nodes is done, we call the callback
-	    var enterCallback = function (){
-	      count++;
-	      if( count === len ) callback();
-	    }
-	    if(len === count) callback();
-	    for( i = 0; i < len; i++ ){
-	      if(node[i].onenter){
-	        node[i].onenter(enterCallback);
-	      }else{
-	        enterCallback();
-	      }
-	    }
-	  }else{
-	    if(!node) return;
-	    dom.inject( node, refer, direction );
-	    if(node.onenter){
-	      node.onenter(callback)
-	    }else{
-	      callback();
-	    }
-	  }
-	}
-	
-	/**
-	 * remove node with animation
-	 * @param  {[type]}   node     [description]
-	 * @param  {Function} callback [description]
-	 * @return {[type]}            [description]
-	 */
-	animate.remove = function(node, callback){
-	  if(!node) return;
-	  var count = 0;
-	  function loop(){
-	    count++;
-	    if(count === len) callback && callback()
-	  }
-	  if(Array.isArray(node)){
-	    for(var i = 0, len = node.length; i < len ; i++){
-	      animate.remove(node[i], loop)
-	    }
-	    return node;
-	  }
-	  if(node.onleave){
-	    node.onleave(function(){
-	      removeDone(node, callback)
-	    })
-	  }else{
-	    removeDone(node, callback)
-	  }
-	}
-	
-	var removeDone = function (node, callback){
-	    dom.remove(node);
-	    callback && callback();
-	}
-	
-	
-	
-	animate.startClassAnimate = function ( node, className,  callback, mode ){
-	  var activeClassName, timeout, tid, onceAnim;
-	  if( (!animationEnd && !transitionEnd) || env.isRunning ){
-	    return callback();
-	  }
-	
-	  if(mode !== 4){
-	    onceAnim = _.once(function onAnimateEnd(){
-	      if(tid) clearTimeout(tid);
-	
-	      if(mode === 2) {
-	        dom.delClass(node, activeClassName);
-	      }
-	      if(mode !== 3){ // mode hold the class
-	        dom.delClass(node, className);
-	      }
-	      dom.off(node, animationEnd, onceAnim)
-	      dom.off(node, transitionEnd, onceAnim)
-	
-	      callback();
-	
-	    });
-	  }else{
-	    onceAnim = _.once(function onAnimateEnd(){
-	      if(tid) clearTimeout(tid);
-	      callback();
-	    });
-	  }
-	  if(mode === 2){ // auto removed
-	    dom.addClass( node, className );
-	
-	    activeClassName = _.map(className.split(/\s+/), function(name){
-	       return name + '-active';
-	    }).join(" ");
-	
-	    dom.nextReflow(function(){
-	      dom.addClass( node, activeClassName );
-	      timeout = getMaxTimeout( node );
-	      tid = setTimeout( onceAnim, timeout );
-	    });
-	
-	  }else if(mode===4){
-	    dom.nextReflow(function(){
-	      dom.delClass( node, className );
-	      timeout = getMaxTimeout( node );
-	      tid = setTimeout( onceAnim, timeout );
-	    });
-	
-	  }else{
-	    dom.nextReflow(function(){
-	      dom.addClass( node, className );
-	      timeout = getMaxTimeout( node );
-	      tid = setTimeout( onceAnim, timeout );
-	    });
-	  }
-	
-	
-	
-	  dom.on( node, animationEnd, onceAnim )
-	  dom.on( node, transitionEnd, onceAnim )
-	  return onceAnim;
-	}
-	
-	
-	animate.startStyleAnimate = function(node, styles, callback){
-	  var timeout, onceAnim, tid;
-	
-	  dom.nextReflow(function(){
-	    dom.css( node, styles );
-	    timeout = getMaxTimeout( node );
-	    tid = setTimeout( onceAnim, timeout );
-	  });
-	
-	
-	  onceAnim = _.once(function onAnimateEnd(){
-	    if(tid) clearTimeout(tid);
-	
-	    dom.off(node, animationEnd, onceAnim)
-	    dom.off(node, transitionEnd, onceAnim)
-	
-	    callback();
-	
-	  });
-	
-	  dom.on( node, animationEnd, onceAnim )
-	  dom.on( node, transitionEnd, onceAnim )
-	
-	  return onceAnim;
-	}
-	
-	
-	/**
-	 * get maxtimeout
-	 * @param  {Node} node 
-	 * @return {[type]}   [description]
-	 */
-	function getMaxTimeout(node){
-	  var timeout = 0,
-	    tDuration = 0,
-	    tDelay = 0,
-	    aDuration = 0,
-	    aDelay = 0,
-	    ratio = 5 / 3,
-	    styles ;
-	
-	  if(window.getComputedStyle){
-	
-	    styles = window.getComputedStyle(node),
-	    tDuration = getMaxTime( styles[transitionProperty + 'Duration']) || tDuration;
-	    tDelay = getMaxTime( styles[transitionProperty + 'Delay']) || tDelay;
-	    aDuration = getMaxTime( styles[animationProperty + 'Duration']) || aDuration;
-	    aDelay = getMaxTime( styles[animationProperty + 'Delay']) || aDelay;
-	    timeout = Math.max( tDuration+tDelay, aDuration + aDelay );
-	
-	  }
-	  return timeout * 1000 * ratio;
-	}
-	
-	function getMaxTime(str){
-	
-	  var maxTimeout = 0, time;
-	
-	  if(!str) return 0;
-	
-	  str.split(",").forEach(function(str){
-	
-	    time = parseFloat(str);
-	    if( time > maxTimeout ) maxTimeout = time;
-	
-	  });
-	
-	  return maxTimeout;
-	}
-	
-	module.exports = animate;
-
-/***/ },
-/* 21 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var exprCache = __webpack_require__(29).exprCache;
-	var _ = __webpack_require__(23);
-	var Parser = __webpack_require__(39);
-	module.exports = {
-	  expression: function(expr, simple){
-	    // @TODO cache
-	    if( typeof expr === 'string' && ( expr = expr.trim() ) ){
-	      expr = exprCache.get( expr ) || exprCache.set( expr, new Parser( expr, { mode: 2, expression: true } ).expression() )
-	    }
-	    if(expr) return expr;
-	  },
-	  parse: function(template){
-	    return new Parser(template).parse();
-	  }
-	}
-	
-
-
-/***/ },
-/* 22 */
-/***/ function(module, exports, __webpack_require__) {
-
-	// server side rendering for regularjs
-	
-	
-	var _ = __webpack_require__(23);
-	var parser = __webpack_require__(21);
-	var diffArray = __webpack_require__(26).diffArray;
-	var shared = __webpack_require__(34);
-	
-	
-	
-	
-	
-	
-	/**
-	 * [compile description]
-	 * @param  {[type]} ast     [description]
-	 * @param  {[type]} options [description]
-	 */
-	
-	function SSR (Component){
-	
-	  this.Component = Component;
-	}
-	
-	
-	var ssr = _.extend(SSR.prototype, {});
-	
-	
-	ssr.render = function( definition){
-	
-	  definition = definition || {};
-	
-	  var context = this.context = Object.create(this.Component.prototype)
-	
-	  var template = shared.initDefinition(context, definition);
-	
-	  return this.compile(template);
-	
-	}
-	
-	ssr.compile = function(ast){
-	
-	  if(typeof ast === 'string'){
-	    ast = parser.parse(ast);
-	  }
-	  return this.walk(ast)
-	}
-	
-	
-	ssr.walk = function(ast, options){
-	
-	  var type = ast.type; 
-	
-	  if(Array.isArray(ast)){
-	
-	    return ast.map(function(item){
-	
-	      return this.walk(item, options)
-	
-	    }.bind(this)).join('');
-	
-	  }
-	
-	  return this[ast.type](ast, options)
-	
-	}
-	
-	
-	ssr.element = function(ast ){
-	
-	  var children = ast.children,
-	    attrs = ast.attrs,
-	    tag = ast.tag;
-	
-	  if( tag === 'r-component' ){
-	    attrs.some(function(attr){
-	      if(attr.name === 'is'){
-	        tag = attr.value;
-	        if( _.isExpr(attr.value)) tag = this.get(attr.value);
-	        return true;
-	      }
-	    }.bind(this))
-	  }
-	
-	  var Component = this.Component.component(tag);
-	
-	  if(ast.tag === 'r-component' && !Component){
-	    throw Error('r-component with unregister component ' + tag)
-	  }
-	
-	  if( Component ) return this.component( ast, { 
-	    Component: Component 
-	  } );
-	
-	
-	  var tagObj = {
-	    body: (children && children.length? this.compile(children): "")
-	  }
-	  var attrStr = this.walk(attrs, tagObj).trim();
-	
-	  return "<" + tag + (attrStr? " " + attrStr: ""  ) + ">" +  
-	        tagObj.body +
-	    "</" + tag + ">"
-	
-	}
-	
-	
-	
-	ssr.component = function(ast, options){
-	
-	  var children = ast.children,
-	    attrs = ast.attrs,
-	    data = {},
-	    Component = options.Component, body;
-	
-	  if(children && children.length){
-	    body = function(){
-	      return this.compile(children)
-	    }.bind(this)
-	  }
-	
-	  attrs.forEach(function(attr){
-	    if(!_.eventReg.test(attr.name)){
-	      data[attr.name] = _.isExpr(attr.value)? this.get(attr.value): attr.value
-	    }
-	  }.bind(this))
-	
-	
-	  return SSR.render(Component, {
-	    $body: body,
-	    data: data,
-	    extra: this.extra
-	  })
-	}
-	
-	
-	
-	ssr.list = function(ast){
-	
-	  var 
-	    alternate = ast.alternate,
-	    variable = ast.variable,
-	    indexName = variable + '_index',
-	    keyName = variable + '_key',
-	    body = ast.body,
-	    context = this.context,
-	    self = this,
-	    prevExtra = context.extra;
-	
-	  var sequence = this.get(ast.sequence);
-	  var keys, list; 
-	
-	  var type = _.typeOf(sequence);
-	
-	  if( type === 'object'){
-	
-	    keys = Object.keys(list);
-	    list = keys.map(function(key){return sequence[key]})
-	
-	  }else{
-	
-	    list = sequence || [];
-	
-	  }
-	
-	  return list.map(function(item, item_index){
-	
-	    var sectionData = {};
-	    sectionData[variable] = item;
-	    sectionData[indexName] = item_index;
-	    if(keys) sectionData[keyName] = sequence[item_index];
-	    context.extra = _.extend(
-	      prevExtra? Object.create(prevExtra): {}, sectionData );
-	    var section =  this.compile( body );
-	    context.extra = prevExtra;
-	    return section;
-	
-	  }.bind(this)).join('');
-	
-	}
-	
-	
-	
-	
-	// {#include } or {#inc template}
-	ssr.template = function(ast, options){
-	  var content = this.get(ast.content);
-	  var type = typeof content;
-	
-	
-	  if(!content) return '';
-	  if(type === 'function' ){
-	    return content();
-	  }else{
-	    return this.compile(type !== 'object'? String(content): content)
-	  }
-	
-	};
-	
-	ssr.if = function(ast, options){
-	  var test = this.get(ast.test);  
-	  if(test){
-	    if(ast.consequent){
-	      return this.walk( ast.consequent, options );
-	    }
-	  }else{
-	    if(ast.alternate){
-	      return this.walk( ast.alternate, options );
-	    }
-	  }
-	}
-	
-	
-	ssr.expression = function(ast, options){
-	  var str = this.get(ast);
-	  return _.escape(str);
-	}
-	
-	ssr.text = function(ast, options){
-	  return _.escape(ast.text) 
-	}
-	
-	
-	
-	ssr.attribute = function(attr, options){
-	
-	  var
-	    Component = this.Component,
-	    directive = Component.directive(attr.name);
-	
-	  
-	  shared.prepareAttr(attr, directive);
-	  
-	  var name = attr.name, 
-	    value = attr.value || "";
-	
-	  if( directive ){
-	    if(directive.ssr){
-	
-	      // @TODO: 应该提供hook可以控制节点内部  ,比如r-html
-	      return directive.ssr.call(this.context, _.isExpr(value)? this.get(value): value ,options);
-	    }
-	  }else{
-	    // @TODO 对于boolean 值
-	    if(_.isExpr(value)) value = this.get(value); 
-	    if(_.isBooleanAttr(name) || value === undefined || value === null){
-	      return name + " ";
-	    }else{
-	      return name + '="' + _.escape(value) + '" ';
-	    }
-	  }
-	}
-	
-	ssr.get = function(expr){
-	
-	  var rawget, 
-	    self = this,
-	    context = this.context,
-	    touched = {};
-	
-	  if(expr.get) return expr.get(context);
-	  else {
-	    var rawget = new Function(_.ctxName, _.extName , _.prefix+ "return (" + expr.body + ")")
-	    expr.get = function(context){
-	      return rawget(context, context.extra)
-	    }
-	    return expr.get(this.context)
-	  }
-	
-	}
-	
-	SSR.render = function(Component, definition){
-	
-	  return new SSR(Component).render( definition );
-	
-	}
-	
-	SSR.escape = _.escape;
-	
-	module.exports = SSR;
-
-
-/***/ },
-/* 23 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/* WEBPACK VAR INJECTION */(function(global) {__webpack_require__(24)();
+	/* WEBPACK VAR INJECTION */(function(global) {__webpack_require__(23)();
 	
 	
 	
 	var _  = module.exports;
-	var entities = __webpack_require__(35);
+	var entities = __webpack_require__(34);
 	var slice = [].slice;
 	var o2str = ({}).toString;
 	var win = typeof window !=='undefined'? window: global;
-	var config = __webpack_require__(31);
+	var config = __webpack_require__(30);
 	
 	
 	_.noop = function(){};
@@ -8189,7 +7515,452 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
 
 /***/ },
-/* 24 */
+/* 20 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var _ = __webpack_require__(19);
+	var dom  = __webpack_require__(18);
+	var animate = {};
+	var env = __webpack_require__(29);
+	
+	
+	if(typeof window !== 'undefined'){
+	var 
+	  transitionEnd = 'transitionend', 
+	  animationEnd = 'animationend', 
+	  transitionProperty = 'transition', 
+	  animationProperty = 'animation';
+	
+	if(!('ontransitionend' in window)){
+	  if('onwebkittransitionend' in window) {
+	    
+	    // Chrome/Saf (+ Mobile Saf)/Android
+	    transitionEnd += ' webkitTransitionEnd';
+	    transitionProperty = 'webkitTransition'
+	  } else if('onotransitionend' in dom.tNode || navigator.appName === 'Opera') {
+	
+	    // Opera
+	    transitionEnd += ' oTransitionEnd';
+	    transitionProperty = 'oTransition';
+	  }
+	}
+	if(!('onanimationend' in window)){
+	  if ('onwebkitanimationend' in window){
+	    // Chrome/Saf (+ Mobile Saf)/Android
+	    animationEnd += ' webkitAnimationEnd';
+	    animationProperty = 'webkitAnimation';
+	
+	  }else if ('onoanimationend' in dom.tNode){
+	    // Opera
+	    animationEnd += ' oAnimationEnd';
+	    animationProperty = 'oAnimation';
+	  }
+	}
+	}
+	
+	/**
+	 * inject node with animation
+	 * @param  {[type]} node      [description]
+	 * @param  {[type]} refer     [description]
+	 * @param  {[type]} direction [description]
+	 * @return {[type]}           [description]
+	 */
+	animate.inject = function( node, refer ,direction, callback ){
+	  callback = callback || _.noop;
+	  if( Array.isArray(node) ){
+	    var fragment = dom.fragment();
+	    var count=0;
+	
+	    for(var i = 0,len = node.length;i < len; i++ ){
+	      fragment.appendChild(node[i]); 
+	    }
+	    dom.inject(fragment, refer, direction);
+	
+	    // if all nodes is done, we call the callback
+	    var enterCallback = function (){
+	      count++;
+	      if( count === len ) callback();
+	    }
+	    if(len === count) callback();
+	    for( i = 0; i < len; i++ ){
+	      if(node[i].onenter){
+	        node[i].onenter(enterCallback);
+	      }else{
+	        enterCallback();
+	      }
+	    }
+	  }else{
+	    if(!node) return;
+	    dom.inject( node, refer, direction );
+	    if(node.onenter){
+	      node.onenter(callback)
+	    }else{
+	      callback();
+	    }
+	  }
+	}
+	
+	/**
+	 * remove node with animation
+	 * @param  {[type]}   node     [description]
+	 * @param  {Function} callback [description]
+	 * @return {[type]}            [description]
+	 */
+	animate.remove = function(node, callback){
+	  if(!node) return;
+	  var count = 0;
+	  function loop(){
+	    count++;
+	    if(count === len) callback && callback()
+	  }
+	  if(Array.isArray(node)){
+	    for(var i = 0, len = node.length; i < len ; i++){
+	      animate.remove(node[i], loop)
+	    }
+	    return node;
+	  }
+	  if(node.onleave){
+	    node.onleave(function(){
+	      removeDone(node, callback)
+	    })
+	  }else{
+	    removeDone(node, callback)
+	  }
+	}
+	
+	var removeDone = function (node, callback){
+	    dom.remove(node);
+	    callback && callback();
+	}
+	
+	
+	
+	animate.startClassAnimate = function ( node, className,  callback, mode ){
+	  var activeClassName, timeout, tid, onceAnim;
+	  if( (!animationEnd && !transitionEnd) || env.isRunning ){
+	    return callback();
+	  }
+	
+	  if(mode !== 4){
+	    onceAnim = _.once(function onAnimateEnd(){
+	      if(tid) clearTimeout(tid);
+	
+	      if(mode === 2) {
+	        dom.delClass(node, activeClassName);
+	      }
+	      if(mode !== 3){ // mode hold the class
+	        dom.delClass(node, className);
+	      }
+	      dom.off(node, animationEnd, onceAnim)
+	      dom.off(node, transitionEnd, onceAnim)
+	
+	      callback();
+	
+	    });
+	  }else{
+	    onceAnim = _.once(function onAnimateEnd(){
+	      if(tid) clearTimeout(tid);
+	      callback();
+	    });
+	  }
+	  if(mode === 2){ // auto removed
+	    dom.addClass( node, className );
+	
+	    activeClassName = _.map(className.split(/\s+/), function(name){
+	       return name + '-active';
+	    }).join(" ");
+	
+	    dom.nextReflow(function(){
+	      dom.addClass( node, activeClassName );
+	      timeout = getMaxTimeout( node );
+	      tid = setTimeout( onceAnim, timeout );
+	    });
+	
+	  }else if(mode===4){
+	    dom.nextReflow(function(){
+	      dom.delClass( node, className );
+	      timeout = getMaxTimeout( node );
+	      tid = setTimeout( onceAnim, timeout );
+	    });
+	
+	  }else{
+	    dom.nextReflow(function(){
+	      dom.addClass( node, className );
+	      timeout = getMaxTimeout( node );
+	      tid = setTimeout( onceAnim, timeout );
+	    });
+	  }
+	
+	
+	
+	  dom.on( node, animationEnd, onceAnim )
+	  dom.on( node, transitionEnd, onceAnim )
+	  return onceAnim;
+	}
+	
+	
+	animate.startStyleAnimate = function(node, styles, callback){
+	  var timeout, onceAnim, tid;
+	
+	  dom.nextReflow(function(){
+	    dom.css( node, styles );
+	    timeout = getMaxTimeout( node );
+	    tid = setTimeout( onceAnim, timeout );
+	  });
+	
+	
+	  onceAnim = _.once(function onAnimateEnd(){
+	    if(tid) clearTimeout(tid);
+	
+	    dom.off(node, animationEnd, onceAnim)
+	    dom.off(node, transitionEnd, onceAnim)
+	
+	    callback();
+	
+	  });
+	
+	  dom.on( node, animationEnd, onceAnim )
+	  dom.on( node, transitionEnd, onceAnim )
+	
+	  return onceAnim;
+	}
+	
+	
+	/**
+	 * get maxtimeout
+	 * @param  {Node} node 
+	 * @return {[type]}   [description]
+	 */
+	function getMaxTimeout(node){
+	  var timeout = 0,
+	    tDuration = 0,
+	    tDelay = 0,
+	    aDuration = 0,
+	    aDelay = 0,
+	    ratio = 5 / 3,
+	    styles ;
+	
+	  if(window.getComputedStyle){
+	
+	    styles = window.getComputedStyle(node),
+	    tDuration = getMaxTime( styles[transitionProperty + 'Duration']) || tDuration;
+	    tDelay = getMaxTime( styles[transitionProperty + 'Delay']) || tDelay;
+	    aDuration = getMaxTime( styles[animationProperty + 'Duration']) || aDuration;
+	    aDelay = getMaxTime( styles[animationProperty + 'Delay']) || aDelay;
+	    timeout = Math.max( tDuration+tDelay, aDuration + aDelay );
+	
+	  }
+	  return timeout * 1000 * ratio;
+	}
+	
+	function getMaxTime(str){
+	
+	  var maxTimeout = 0, time;
+	
+	  if(!str) return 0;
+	
+	  str.split(",").forEach(function(str){
+	
+	    time = parseFloat(str);
+	    if( time > maxTimeout ) maxTimeout = time;
+	
+	  });
+	
+	  return maxTimeout;
+	}
+	
+	module.exports = animate;
+
+/***/ },
+/* 21 */
+/***/ function(module, exports, __webpack_require__) {
+
+	// some nested  operation in ast 
+	// --------------------------------
+	
+	var dom = __webpack_require__(18);
+	var animate = __webpack_require__(20);
+	
+	var combine = module.exports = {
+	
+	  // get the initial dom in object
+	  node: function(item){
+	    var children,node, nodes;
+	    if(!item) return;
+	    if(item.element) return item.element;
+	    if(typeof item.node === "function") return item.node();
+	    if(typeof item.nodeType === "number") return item;
+	    if(item.group) return combine.node(item.group)
+	    if(children = item.children){
+	      if(children.length === 1){
+	        return combine.node(children[0]);
+	      }
+	      nodes = [];
+	      for(var i = 0, len = children.length; i < len; i++ ){
+	        node = combine.node(children[i]);
+	        if(Array.isArray(node)){
+	          nodes.push.apply(nodes, node)
+	        }else if(node) {
+	          nodes.push(node)
+	        }
+	      }
+	      return nodes;
+	    }
+	  },
+	  // @TODO remove _gragContainer
+	  inject: function(node, pos ){
+	    var group = this;
+	    var fragment = combine.node(group.group || group);
+	    if(node === false) {
+	      animate.remove(fragment)
+	      return group;
+	    }else{
+	      if(!fragment) return group;
+	      if(typeof node === 'string') node = dom.find(node);
+	      if(!node) throw Error('injected node is not found');
+	      // use animate to animate firstchildren
+	      animate.inject(fragment, node, pos);
+	    }
+	    // if it is a component
+	    if(group.$emit) {
+	      var preParent = group.parentNode;
+	      var newParent = (pos ==='after' || pos === 'before')? node.parentNode : node;
+	      group.parentNode = newParent;
+	      group.$emit("$inject", node, pos, preParent);
+	    }
+	    return group;
+	  },
+	
+	  // get the last dom in object(for insertion operation)
+	  last: function(item){
+	    var children = item.children;
+	
+	    if(typeof item.last === "function") return item.last();
+	    if(typeof item.nodeType === "number") return item;
+	
+	    if(children && children.length) return combine.last(children[children.length - 1]);
+	    if(item.group) return combine.last(item.group);
+	
+	  },
+	
+	  destroy: function(item, first){
+	    if(!item) return;
+	    if(Array.isArray(item)){
+	      for(var i = 0, len = item.length; i < len; i++ ){
+	        combine.destroy(item[i], first);
+	      }
+	    }
+	    var children = item.children;
+	    if(typeof item.destroy === "function") return item.destroy(first);
+	    if(typeof item.nodeType === "number" && first)  dom.remove(item);
+	    if(children && children.length){
+	      combine.destroy(children, true);
+	      item.children = null;
+	    }
+	  }
+	
+	}
+	
+	
+	// @TODO: need move to dom.js
+	dom.element = function( component, all ){
+	  if(!component) return !all? null: [];
+	  var nodes = combine.node( component );
+	  if( nodes.nodeType === 1 ) return all? [nodes]: nodes;
+	  var elements = [];
+	  for(var i = 0; i<nodes.length ;i++){
+	    var node = nodes[i];
+	    if( node && node.nodeType === 1){
+	      if(!all) return node;
+	      elements.push(node);
+	    } 
+	  }
+	  return !all? elements[0]: elements;
+	}
+	
+	
+	
+
+
+/***/ },
+/* 22 */
+/***/ function(module, exports, __webpack_require__) {
+
+	// simplest event emitter 60 lines
+	// ===============================
+	var slice = [].slice, _ = __webpack_require__(19);
+	var API = {
+	  $on: function(event, fn) {
+	    if(!event) return this;
+	    if(typeof event === "object"){
+	      for (var i in event) {
+	        this.$on(i, event[i]);
+	      }
+	    }else{
+	      // @patch: for list
+	      var context = this;
+	      var handles = context._handles || (context._handles = {}),
+	        calls = handles[event] || (handles[event] = []);
+	      calls.push(fn);
+	    }
+	    return this;
+	  },
+	  $off: function(event, fn) {
+	    var context = this;
+	    if(!context._handles) return;
+	    if(!event) this._handles = {};
+	    var handles = context._handles,
+	      calls;
+	
+	    if (calls = handles[event]) {
+	      if (!fn) {
+	        handles[event] = [];
+	        return context;
+	      }
+	      for (var i = 0, len = calls.length; i < len; i++) {
+	        if (fn === calls[i]) {
+	          calls.splice(i, 1);
+	          return context;
+	        }
+	      }
+	    }
+	    return context;
+	  },
+	  // bubble event
+	  $emit: function(event){
+	    // @patch: for list
+	    var context = this;
+	    var handles = context._handles, calls, args, type;
+	    if(!event) return;
+	    var args = slice.call(arguments, 1);
+	    var type = event;
+	
+	    if(!handles) return context;
+	    if(calls = handles[type.slice(1)]){
+	      for (var j = 0, len = calls.length; j < len; j++) {
+	        calls[j].apply(context, args)
+	      }
+	    }
+	    if (!(calls = handles[type])) return context;
+	    for (var i = 0, len = calls.length; i < len; i++) {
+	      calls[i].apply(context, args)
+	    }
+	    // if(calls.length) context.$update();
+	    return context;
+	  }
+	}
+	// container class
+	function Event() {}
+	_.extend(Event.prototype, API)
+	
+	Event.mixTo = function(obj){
+	  obj = typeof obj === "function" ? obj.prototype : obj;
+	  _.extend(obj, API)
+	}
+	module.exports = Event;
+
+/***/ },
+/* 23 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// shim for es5
@@ -8297,7 +8068,7 @@
 
 
 /***/ },
-/* 25 */
+/* 24 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// (c) 2010-2014 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
@@ -8310,7 +8081,7 @@
 	// License MIT (c) Dustin Diaz 2014
 	  
 	// inspired by backbone's extend and klass
-	var _ = __webpack_require__(23),
+	var _ = __webpack_require__(19),
 	  fnTest = /xy/.test(function(){"xy";}) ? /\bsupr\b/:/.*/,
 	  isFn = function(o){return typeof o === "function"};
 	
@@ -8383,10 +8154,10 @@
 
 
 /***/ },
-/* 26 */
+/* 25 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var _ = __webpack_require__(23);
+	var _ = __webpack_require__(19);
 	
 	function simpleDiff(now, old){
 	  var nlen = now.length;
@@ -8573,81 +8344,312 @@
 	}
 
 /***/ },
+/* 26 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var exprCache = __webpack_require__(29).exprCache;
+	var _ = __webpack_require__(19);
+	var Parser = __webpack_require__(39);
+	module.exports = {
+	  expression: function(expr, simple){
+	    // @TODO cache
+	    if( typeof expr === 'string' && ( expr = expr.trim() ) ){
+	      expr = exprCache.get( expr ) || exprCache.set( expr, new Parser( expr, { mode: 2, expression: true } ).expression() )
+	    }
+	    if(expr) return expr;
+	  },
+	  parse: function(template){
+	    return new Parser(template).parse();
+	  }
+	}
+	
+
+
+/***/ },
 /* 27 */
 /***/ function(module, exports, __webpack_require__) {
 
-	// simplest event emitter 60 lines
-	// ===============================
-	var slice = [].slice, _ = __webpack_require__(23);
-	var API = {
-	  $on: function(event, fn) {
-	    if(!event) return this;
-	    if(typeof event === "object"){
-	      for (var i in event) {
-	        this.$on(i, event[i]);
-	      }
-	    }else{
-	      // @patch: for list
-	      var context = this;
-	      var handles = context._handles || (context._handles = {}),
-	        calls = handles[event] || (handles[event] = []);
-	      calls.push(fn);
-	    }
-	    return this;
-	  },
-	  $off: function(event, fn) {
-	    var context = this;
-	    if(!context._handles) return;
-	    if(!event) this._handles = {};
-	    var handles = context._handles,
-	      calls;
+	// server side rendering for regularjs
 	
-	    if (calls = handles[event]) {
-	      if (!fn) {
-	        handles[event] = [];
-	        return context;
-	      }
-	      for (var i = 0, len = calls.length; i < len; i++) {
-	        if (fn === calls[i]) {
-	          calls.splice(i, 1);
-	          return context;
-	        }
-	      }
-	    }
-	    return context;
-	  },
-	  // bubble event
-	  $emit: function(event){
-	    // @patch: for list
-	    var context = this;
-	    var handles = context._handles, calls, args, type;
-	    if(!event) return;
-	    var args = slice.call(arguments, 1);
-	    var type = event;
 	
-	    if(!handles) return context;
-	    if(calls = handles[type.slice(1)]){
-	      for (var j = 0, len = calls.length; j < len; j++) {
-	        calls[j].apply(context, args)
+	var _ = __webpack_require__(19);
+	var parser = __webpack_require__(26);
+	var diffArray = __webpack_require__(25).diffArray;
+	var shared = __webpack_require__(35);
+	
+	
+	
+	
+	
+	
+	/**
+	 * [compile description]
+	 * @param  {[type]} ast     [description]
+	 * @param  {[type]} options [description]
+	 */
+	
+	function SSR (Component){
+	
+	  this.Component = Component;
+	}
+	
+	
+	var ssr = _.extend(SSR.prototype, {});
+	
+	
+	ssr.render = function( definition){
+	
+	  definition = definition || {};
+	
+	  var context = this.context = Object.create(this.Component.prototype)
+	
+	  var template = shared.initDefinition(context, definition);
+	
+	  return this.compile(template);
+	
+	}
+	
+	ssr.compile = function(ast){
+	
+	  if(typeof ast === 'string'){
+	    ast = parser.parse(ast);
+	  }
+	  return this.walk(ast)
+	}
+	
+	
+	ssr.walk = function(ast, options){
+	
+	  var type = ast.type; 
+	
+	  if(Array.isArray(ast)){
+	
+	    return ast.map(function(item){
+	
+	      return this.walk(item, options)
+	
+	    }.bind(this)).join('');
+	
+	  }
+	
+	  return this[ast.type](ast, options)
+	
+	}
+	
+	
+	ssr.element = function(ast ){
+	
+	  var children = ast.children,
+	    attrs = ast.attrs,
+	    tag = ast.tag;
+	
+	  if( tag === 'r-component' ){
+	    attrs.some(function(attr){
+	      if(attr.name === 'is'){
+	        tag = attr.value;
+	        if( _.isExpr(attr.value)) tag = this.get(attr.value);
+	        return true;
 	      }
+	    }.bind(this))
+	  }
+	
+	  var Component = this.Component.component(tag);
+	
+	  if(ast.tag === 'r-component' && !Component){
+	    throw Error('r-component with unregister component ' + tag)
+	  }
+	
+	  if( Component ) return this.component( ast, { 
+	    Component: Component 
+	  } );
+	
+	
+	  var tagObj = {
+	    body: (children && children.length? this.compile(children): "")
+	  }
+	  var attrStr = this.walk(attrs, tagObj).trim();
+	
+	  return "<" + tag + (attrStr? " " + attrStr: ""  ) + ">" +  
+	        tagObj.body +
+	    "</" + tag + ">"
+	
+	}
+	
+	
+	
+	ssr.component = function(ast, options){
+	
+	  var children = ast.children,
+	    attrs = ast.attrs,
+	    data = {},
+	    Component = options.Component, body;
+	
+	  if(children && children.length){
+	    body = function(){
+	      return this.compile(children)
+	    }.bind(this)
+	  }
+	
+	  attrs.forEach(function(attr){
+	    if(!_.eventReg.test(attr.name)){
+	      data[attr.name] = _.isExpr(attr.value)? this.get(attr.value): attr.value
 	    }
-	    if (!(calls = handles[type])) return context;
-	    for (var i = 0, len = calls.length; i < len; i++) {
-	      calls[i].apply(context, args)
+	  }.bind(this))
+	
+	
+	  return SSR.render(Component, {
+	    $body: body,
+	    data: data,
+	    extra: this.extra
+	  })
+	}
+	
+	
+	
+	ssr.list = function(ast){
+	
+	  var 
+	    alternate = ast.alternate,
+	    variable = ast.variable,
+	    indexName = variable + '_index',
+	    keyName = variable + '_key',
+	    body = ast.body,
+	    context = this.context,
+	    self = this,
+	    prevExtra = context.extra;
+	
+	  var sequence = this.get(ast.sequence);
+	  var keys, list; 
+	
+	  var type = _.typeOf(sequence);
+	
+	  if( type === 'object'){
+	
+	    keys = Object.keys(list);
+	    list = keys.map(function(key){return sequence[key]})
+	
+	  }else{
+	
+	    list = sequence || [];
+	
+	  }
+	
+	  return list.map(function(item, item_index){
+	
+	    var sectionData = {};
+	    sectionData[variable] = item;
+	    sectionData[indexName] = item_index;
+	    if(keys) sectionData[keyName] = sequence[item_index];
+	    context.extra = _.extend(
+	      prevExtra? Object.create(prevExtra): {}, sectionData );
+	    var section =  this.compile( body );
+	    context.extra = prevExtra;
+	    return section;
+	
+	  }.bind(this)).join('');
+	
+	}
+	
+	
+	
+	
+	// {#include } or {#inc template}
+	ssr.template = function(ast, options){
+	  var content = this.get(ast.content);
+	  var type = typeof content;
+	
+	
+	  if(!content) return '';
+	  if(type === 'function' ){
+	    return content();
+	  }else{
+	    return this.compile(type !== 'object'? String(content): content)
+	  }
+	
+	};
+	
+	ssr.if = function(ast, options){
+	  var test = this.get(ast.test);  
+	  if(test){
+	    if(ast.consequent){
+	      return this.walk( ast.consequent, options );
 	    }
-	    // if(calls.length) context.$update();
-	    return context;
+	  }else{
+	    if(ast.alternate){
+	      return this.walk( ast.alternate, options );
+	    }
 	  }
 	}
-	// container class
-	function Event() {}
-	_.extend(Event.prototype, API)
 	
-	Event.mixTo = function(obj){
-	  obj = typeof obj === "function" ? obj.prototype : obj;
-	  _.extend(obj, API)
+	
+	ssr.expression = function(ast, options){
+	  var str = this.get(ast);
+	  return _.escape(str);
 	}
-	module.exports = Event;
+	
+	ssr.text = function(ast, options){
+	  return _.escape(ast.text) 
+	}
+	
+	
+	
+	ssr.attribute = function(attr, options){
+	
+	  var
+	    Component = this.Component,
+	    directive = Component.directive(attr.name);
+	
+	  
+	  shared.prepareAttr(attr, directive);
+	  
+	  var name = attr.name, 
+	    value = attr.value || "";
+	
+	  if( directive ){
+	    if(directive.ssr){
+	
+	      // @TODO: 应该提供hook可以控制节点内部  ,比如r-html
+	      return directive.ssr.call(this.context, _.isExpr(value)? this.get(value): value ,options);
+	    }
+	  }else{
+	    // @TODO 对于boolean 值
+	    if(_.isExpr(value)) value = this.get(value); 
+	    if(_.isBooleanAttr(name) || value === undefined || value === null){
+	      return name + " ";
+	    }else{
+	      return name + '="' + _.escape(value) + '" ';
+	    }
+	  }
+	}
+	
+	ssr.get = function(expr){
+	
+	  var rawget, 
+	    self = this,
+	    context = this.context,
+	    touched = {};
+	
+	  if(expr.get) return expr.get(context);
+	  else {
+	    var rawget = new Function(_.ctxName, _.extName , _.prefix+ "return (" + expr.body + ")")
+	    expr.get = function(context){
+	      return rawget(context, context.extra)
+	    }
+	    return expr.get(this.context)
+	  }
+	
+	}
+	
+	SSR.render = function(Component, definition){
+	
+	  return new SSR(Component).render( definition );
+	
+	}
+	
+	SSR.escape = _.escape;
+	
+	module.exports = SSR;
+
 
 /***/ },
 /* 28 */
@@ -9946,7 +9948,7 @@
 
 	/* WEBPACK VAR INJECTION */(function(process) {// some fixture test;
 	// ---------------
-	var _ = __webpack_require__(23);
+	var _ = __webpack_require__(19);
 	exports.svg = (function(){
 	  return typeof document !== "undefined" && document.implementation.hasFeature( "http://www.w3.org/TR/SVG11/feature#BasicStructure", "1.1" );
 	})();
@@ -9964,26 +9966,6 @@
 /* 30 */
 /***/ function(module, exports, __webpack_require__) {
 
-	module.exports = {
-	  'COMPONENT_TYPE': 1,
-	  'ELEMENT_TYPE': 2,
-	  'ERROR': {
-	    'UNMATCHED_AST': 101
-	  },
-	  "MSG": {
-	    101: "Unmatched ast and mountNode, report issue at https://github.com/regularjs/regular/issues"
-	  },
-	  'NAMESPACE': {
-	    html: "http://www.w3.org/1999/xhtml",
-	    svg: "http://www.w3.org/2000/svg"
-	  }
-	}
-
-
-/***/ },
-/* 31 */
-/***/ function(module, exports, __webpack_require__) {
-
 	
 	module.exports = {
 	  'BEGIN': '{',
@@ -9992,7 +9974,7 @@
 	}
 
 /***/ },
-/* 32 */
+/* 31 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -10002,25 +9984,25 @@
 	var env = __webpack_require__(29);
 	var Lexer = __webpack_require__(40);
 	var Parser = __webpack_require__(39);
-	var config = __webpack_require__(31);
-	var _ = __webpack_require__(23);
-	var extend = __webpack_require__(25);
-	var shared = __webpack_require__(34);
+	var config = __webpack_require__(30);
+	var _ = __webpack_require__(19);
+	var extend = __webpack_require__(24);
+	var shared = __webpack_require__(35);
 	var combine = {};
 	if(env.browser){
 	  var dom = __webpack_require__(18);
 	  var walkers = __webpack_require__(41);
 	  var Group = __webpack_require__(42);
 	  var doc = dom.doc;
-	  combine = __webpack_require__(19);
+	  combine = __webpack_require__(21);
 	}
-	var events = __webpack_require__(27);
+	var events = __webpack_require__(22);
 	var Watcher = __webpack_require__(43);
-	var parse = __webpack_require__(21);
+	var parse = __webpack_require__(26);
 	var filter = __webpack_require__(44);
-	var ERROR = __webpack_require__(30).ERROR;
-	var nodeCursor = __webpack_require__(33);
-	var shared = __webpack_require__(34);
+	var ERROR = __webpack_require__(33).ERROR;
+	var nodeCursor = __webpack_require__(32);
+	var shared = __webpack_require__(35);
 	
 	
 	/**
@@ -10574,7 +10556,7 @@
 
 
 /***/ },
-/* 33 */
+/* 32 */
 /***/ function(module, exports, __webpack_require__) {
 
 	function NodeCursor(node){
@@ -10593,142 +10575,27 @@
 
 
 /***/ },
-/* 34 */
+/* 33 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var _ = __webpack_require__(23);
-	var config = __webpack_require__(31);
-	var parse = __webpack_require__(21);
-	var node = __webpack_require__(45);
-	
-	
-	function initDefinition(context, definition, beforeConfig){
-	
-	  var eventConfig, hasInstanceComputed = !!definition.computed, template;
-	  var usePrototyeString = typeof context.template === 'string' && !definition.template;
-	
-	  if(definition.events || context.events){
-	    eventConfig = _.extend(definition.events || {}, context.events);
-	    if(definition.events) delete definition.events;
-	  }
-	
-	
-	  definition.data = definition.data || {};
-	  definition.computed = definition.computed || {};
-	  if(context.data) _.extend(definition.data, context.data);
-	  if(context.computed) _.extend(definition.computed, context.computed);
-	
-	  var usePrototyeString = typeof context.template === 'string' && !definition.template;
-	
-	  _.extend(context, definition, true);
-	
-	  if ( eventConfig ) {
-	    context.$on( eventConfig );
-	  }
-	
-	  // we need add some logic at client.
-	  beforeConfig && beforeConfig();
-	
-	  // only have instance computed, we need prepare the property
-	  if( hasInstanceComputed ) context.computed = handleComputed(context.computed);
-	
-	  context.$emit( "$config", context.data );
-	  context.config && context.config( context.data );
-	  context.$emit( "$afterConfig", context.data );
-	
-	  template = context.template;
-	
-	 
-	  if(typeof template === 'string') {
-	    template = parse.parse(template);
-	    if(usePrototyeString) {
-	    // avoid multiply compile
-	      context.constructor.prototype.template = template;
-	    }else{
-	      delete context.template;
-	    }
-	  }
-	  return template;
-	}
-	
-	var handleComputed = (function(){
-	  // wrap the computed getter;
-	  function wrapGet(get){
-	    return function(context){
-	      return get.call(context, context.data );
-	    }
-	  }
-	  // wrap the computed setter;
-	  function wrapSet(set){
-	    return function(context, value){
-	      set.call( context, value, context.data );
-	      return value;
-	    }
-	  }
-	
-	  return function( computed ){
-	    if(!computed) return;
-	    var parsedComputed = {}, handle, pair, type;
-	    for(var i in computed){
-	      handle = computed[i]
-	      type = typeof handle;
-	
-	      if(handle.type === 'expression'){
-	        parsedComputed[i] = handle;
-	        continue;
-	      }
-	      if( type === "string" ){
-	        parsedComputed[i] = parse.expression(handle)
-	      }else{
-	        pair = parsedComputed[i] = {type: 'expression'};
-	        if(type === "function" ){
-	          pair.get = wrapGet(handle);
-	        }else{
-	          if(handle.get) pair.get = wrapGet(handle.get);
-	          if(handle.set) pair.set = wrapSet(handle.set);
-	        }
-	      } 
-	    }
-	    return parsedComputed;
-	  }
-	})();
-	
-	
-	function prepareAttr ( ast ,directive){
-	  if(ast.parsed ) return ast;
-	  var value = ast.value;
-	  var name=  ast.name, body, constant;
-	  if(typeof value === 'string' && ~value.indexOf(config.BEGIN) && ~value.indexOf(config.END) ){
-	    if( !directive || !directive.nps ) {
-	      var parsed = parse.parse(value, { mode: 2 });
-	      if(parsed.length === 1 && parsed[0].type === 'expression'){ 
-	        body = parsed[0];
-	      } else{
-	        constant = true;
-	        body = [];
-	        parsed.forEach(function(item){
-	          if(!item.constant) constant=false;
-	          // silent the mutiple inteplation
-	            body.push(item.body || "'" + item.text.replace(/'/g, "\\'") + "'");        
-	        });
-	        body = node.expression("[" + body.join(",") + "].join('')", null, constant);
-	      }
-	      ast.value = body;
-	    }
-	  }
-	  ast.parsed = true;
-	  return ast;
-	}
-	
 	module.exports = {
-	  // share logic between server and client
-	  initDefinition: initDefinition,
-	  handleComputed: handleComputed,
-	  prepareAttr: prepareAttr
+	  'COMPONENT_TYPE': 1,
+	  'ELEMENT_TYPE': 2,
+	  'ERROR': {
+	    'UNMATCHED_AST': 101
+	  },
+	  "MSG": {
+	    101: "Unmatched ast and mountNode, report issue at https://github.com/regularjs/regular/issues"
+	  },
+	  'NAMESPACE': {
+	    html: "http://www.w3.org/1999/xhtml",
+	    svg: "http://www.w3.org/2000/svg"
+	  }
 	}
 
+
 /***/ },
-/* 35 */
+/* 34 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// http://stackoverflow.com/questions/1354064/how-to-convert-characters-to-html-entities-using-plain-javascript
@@ -10993,15 +10860,150 @@
 	module.exports  = entities;
 
 /***/ },
+/* 35 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var _ = __webpack_require__(19);
+	var config = __webpack_require__(30);
+	var parse = __webpack_require__(26);
+	var node = __webpack_require__(45);
+	
+	
+	function initDefinition(context, definition, beforeConfig){
+	
+	  var eventConfig, hasInstanceComputed = !!definition.computed, template;
+	  var usePrototyeString = typeof context.template === 'string' && !definition.template;
+	
+	  if(definition.events || context.events){
+	    eventConfig = _.extend(definition.events || {}, context.events);
+	    if(definition.events) delete definition.events;
+	  }
+	
+	
+	  definition.data = definition.data || {};
+	  definition.computed = definition.computed || {};
+	  if(context.data) _.extend(definition.data, context.data);
+	  if(context.computed) _.extend(definition.computed, context.computed);
+	
+	  var usePrototyeString = typeof context.template === 'string' && !definition.template;
+	
+	  _.extend(context, definition, true);
+	
+	  if ( eventConfig ) {
+	    context.$on( eventConfig );
+	  }
+	
+	  // we need add some logic at client.
+	  beforeConfig && beforeConfig();
+	
+	  // only have instance computed, we need prepare the property
+	  if( hasInstanceComputed ) context.computed = handleComputed(context.computed);
+	
+	  context.$emit( "$config", context.data );
+	  context.config && context.config( context.data );
+	  context.$emit( "$afterConfig", context.data );
+	
+	  template = context.template;
+	
+	 
+	  if(typeof template === 'string') {
+	    template = parse.parse(template);
+	    if(usePrototyeString) {
+	    // avoid multiply compile
+	      context.constructor.prototype.template = template;
+	    }else{
+	      delete context.template;
+	    }
+	  }
+	  return template;
+	}
+	
+	var handleComputed = (function(){
+	  // wrap the computed getter;
+	  function wrapGet(get){
+	    return function(context){
+	      return get.call(context, context.data );
+	    }
+	  }
+	  // wrap the computed setter;
+	  function wrapSet(set){
+	    return function(context, value){
+	      set.call( context, value, context.data );
+	      return value;
+	    }
+	  }
+	
+	  return function( computed ){
+	    if(!computed) return;
+	    var parsedComputed = {}, handle, pair, type;
+	    for(var i in computed){
+	      handle = computed[i]
+	      type = typeof handle;
+	
+	      if(handle.type === 'expression'){
+	        parsedComputed[i] = handle;
+	        continue;
+	      }
+	      if( type === "string" ){
+	        parsedComputed[i] = parse.expression(handle)
+	      }else{
+	        pair = parsedComputed[i] = {type: 'expression'};
+	        if(type === "function" ){
+	          pair.get = wrapGet(handle);
+	        }else{
+	          if(handle.get) pair.get = wrapGet(handle.get);
+	          if(handle.set) pair.set = wrapSet(handle.set);
+	        }
+	      } 
+	    }
+	    return parsedComputed;
+	  }
+	})();
+	
+	
+	function prepareAttr ( ast ,directive ){
+	  if(ast.parsed ) return ast;
+	  var value = ast.value;
+	  var name=  ast.name, body, constant;
+	  if(typeof value === 'string' && ~value.indexOf(config.BEGIN) && ~value.indexOf(config.END) ){
+	    if( !directive || !directive.nps ) {
+	      var parsed = parse.parse(value, { mode: 2 });
+	      if(parsed.length === 1 && parsed[0].type === 'expression'){ 
+	        body = parsed[0];
+	      } else{
+	        constant = true;
+	        body = [];
+	        parsed.forEach(function(item){
+	          if(!item.constant) constant=false;
+	          // silent the mutiple inteplation
+	            body.push(item.body || "'" + item.text.replace(/'/g, "\\'") + "'");        
+	        });
+	        body = node.expression("[" + body.join(",") + "].join('')", null, constant);
+	      }
+	      ast.value = body;
+	    }
+	  }
+	  ast.parsed = true;
+	  return ast;
+	}
+	
+	module.exports = {
+	  // share logic between server and client
+	  initDefinition: initDefinition,
+	  handleComputed: handleComputed,
+	  prepareAttr: prepareAttr
+	}
+
+/***/ },
 /* 36 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// Regular
-	var _ = __webpack_require__(23);
+	var _ = __webpack_require__(19);
 	var dom = __webpack_require__(18);
 	var animate = __webpack_require__(20);
-	var Regular = __webpack_require__(32);
-	var consts = __webpack_require__(30);
+	var Regular = __webpack_require__(31);
+	var consts = __webpack_require__(33);
 	var namespaces = consts.NAMESPACE;
 	
 	
@@ -11129,10 +11131,10 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var // packages
-	  _ = __webpack_require__(23),
+	  _ = __webpack_require__(19),
 	 animate = __webpack_require__(20),
 	 dom = __webpack_require__(18),
-	 Regular = __webpack_require__(32);
+	 Regular = __webpack_require__(31);
 	
 	
 	var // variables
@@ -11367,7 +11369,7 @@
 /* 38 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var Regular = __webpack_require__(32);
+	var Regular = __webpack_require__(31);
 	
 	/**
 	 * Timeout Module
@@ -11413,9 +11415,9 @@
 /* 39 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var _ = __webpack_require__(23);
+	var _ = __webpack_require__(19);
 	
-	var config = __webpack_require__(31);
+	var config = __webpack_require__(30);
 	var node = __webpack_require__(45);
 	var Lexer = __webpack_require__(40);
 	var varName = _.varName;
@@ -12130,8 +12132,8 @@
 /* 40 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var _ = __webpack_require__(23);
-	var config = __webpack_require__(31);
+	var _ = __webpack_require__(19);
+	var config = __webpack_require__(30);
 	
 	// some custom tag  will conflict with the Lexer progress
 	var conflictTag = {"}": "{", "]": "["}, map1, map2;
@@ -12488,20 +12490,20 @@
 /* 41 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var diffArray = __webpack_require__(26).diffArray;
-	var combine = __webpack_require__(19);
+	var diffArray = __webpack_require__(25).diffArray;
+	var combine = __webpack_require__(21);
 	var animate = __webpack_require__(20);
 	var Parser = __webpack_require__(39);
 	var node = __webpack_require__(45);
 	var Group = __webpack_require__(42);
 	var dom = __webpack_require__(18);
-	var _ = __webpack_require__(23);
-	var consts =   __webpack_require__(30)
+	var _ = __webpack_require__(19);
+	var consts =   __webpack_require__(33)
 	var ERROR = consts.ERROR;
 	var MSG = consts.MSG;
-	var nodeCursor = __webpack_require__(33);
-	var config = __webpack_require__(31)
-	var shared = __webpack_require__(34);
+	var nodeCursor = __webpack_require__(32);
+	var config = __webpack_require__(30)
+	var shared = __webpack_require__(35);
 	
 	
 	
@@ -13225,8 +13227,8 @@
 /* 42 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var _ = __webpack_require__(23);
-	var combine = __webpack_require__(19)
+	var _ = __webpack_require__(19);
+	var combine = __webpack_require__(21)
 	
 	function Group(list){
 	  this.children = list || [];
@@ -13259,9 +13261,9 @@
 /* 43 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var _ = __webpack_require__(23);
-	var parseExpression = __webpack_require__(21).expression;
-	var diff = __webpack_require__(26);
+	var _ = __webpack_require__(19);
+	var parseExpression = __webpack_require__(26).expression;
+	var diff = __webpack_require__(25);
 	var diffArray = diff.diffArray;
 	var diffObject = diff.diffObject;
 	
@@ -13651,9 +13653,9 @@
 	 * event directive  bundle
 	 *
 	 */
-	var _ = __webpack_require__(23);
+	var _ = __webpack_require__(19);
 	var dom = __webpack_require__(18);
-	var Regular = __webpack_require__(32);
+	var Regular = __webpack_require__(31);
 	
 	Regular._addProtoInheritCache("event");
 	
@@ -13732,9 +13734,9 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	// Regular
-	var _ = __webpack_require__(23);
+	var _ = __webpack_require__(19);
 	var dom = __webpack_require__(18);
-	var Regular = __webpack_require__(32);
+	var Regular = __webpack_require__(31);
 	
 	var modelHandlers = {
 	  "text": initText,
@@ -13919,8 +13921,8 @@
 	 */
 	
 	var base64 = __webpack_require__(53)
-	var ieee754 = __webpack_require__(52)
-	var isArray = __webpack_require__(51)
+	var ieee754 = __webpack_require__(51)
+	var isArray = __webpack_require__(52)
 	
 	exports.Buffer = Buffer
 	exports.SlowBuffer = Buffer
@@ -15078,45 +15080,6 @@
 /* 51 */
 /***/ function(module, exports, __webpack_require__) {
 
-	
-	/**
-	 * isArray
-	 */
-	
-	var isArray = Array.isArray;
-	
-	/**
-	 * toString
-	 */
-	
-	var str = Object.prototype.toString;
-	
-	/**
-	 * Whether or not the given `val`
-	 * is an array.
-	 *
-	 * example:
-	 *
-	 *        isArray([]);
-	 *        // > true
-	 *        isArray(arguments);
-	 *        // > false
-	 *        isArray('');
-	 *        // > false
-	 *
-	 * @param {mixed} val
-	 * @return {bool}
-	 */
-	
-	module.exports = isArray || function (val) {
-	  return !! val && '[object Array]' == str.call(val);
-	};
-
-
-/***/ },
-/* 52 */
-/***/ function(module, exports, __webpack_require__) {
-
 	exports.read = function(buffer, offset, isLE, mLen, nBytes) {
 	  var e, m,
 	      eLen = nBytes * 8 - mLen - 1,
@@ -15200,6 +15163,45 @@
 	  for (; eLen > 0; buffer[offset + i] = e & 0xff, i += d, e /= 256, eLen -= 8);
 	
 	  buffer[offset + i - d] |= s * 128;
+	};
+
+
+/***/ },
+/* 52 */
+/***/ function(module, exports, __webpack_require__) {
+
+	
+	/**
+	 * isArray
+	 */
+	
+	var isArray = Array.isArray;
+	
+	/**
+	 * toString
+	 */
+	
+	var str = Object.prototype.toString;
+	
+	/**
+	 * Whether or not the given `val`
+	 * is an array.
+	 *
+	 * example:
+	 *
+	 *        isArray([]);
+	 *        // > true
+	 *        isArray(arguments);
+	 *        // > false
+	 *        isArray('');
+	 *        // > false
+	 *
+	 * @param {mixed} val
+	 * @return {bool}
+	 */
+	
+	module.exports = isArray || function (val) {
+	  return !! val && '[object Array]' == str.call(val);
 	};
 
 

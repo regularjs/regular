@@ -27,7 +27,7 @@ Regular.Cursor =require('./helper/cursor')
 
 Regular.isServer = env.node;
 Regular.isRegular = function( Comp ){
-  return !( Comp.prototype instanceof Regular );
+  return  Comp.prototype instanceof Regular;
 }
 
 
