@@ -49,6 +49,7 @@ ssr.compile = function(ast){
 
 ssr.walk = function(ast, options){
 
+  if(!ast) return '';
   var type = ast.type; 
 
   if(Array.isArray(ast)){

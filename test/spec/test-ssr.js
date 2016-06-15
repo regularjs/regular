@@ -13,6 +13,17 @@ var clean = function(str){
 
 describe("Server Side Rendering", function(){
 
+  it("template with null won't throw error", function(){
+
+    var Component = Regular.extend({ })
+    expect(SSR.render(Component, {
+      data: {
+        computed: 'hehe'
+      }
+    })).to.equal('')
+
+  })
+
   it("Server side with computed", function(){
     var Component = Regular.extend({
       computed: {
