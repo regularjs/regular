@@ -1,6 +1,6 @@
 /**
 @author	leeluolee
-@version	0.4.3
+@version	0.4.4
 @homepage	http://regularjs.github.io
 */
 (function webpackUniversalModuleDefinition(root, factory) {
@@ -392,10 +392,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	  destroy: function(){
 	    // destroy event wont propgation;
 	    this.$emit("$destroy");
+	    this._watchers = [];
 	    this.group && this.group.destroy(true);
 	    this.group = null;
 	    this.parentNode = null;
-	    this._watchers = null;
 	    this._children = [];
 	    var parent = this.$parent;
 	    if(parent){
