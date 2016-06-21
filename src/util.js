@@ -4,9 +4,8 @@ require('./helper/shim')();
 
 var _  = module.exports;
 var entities = require('./helper/entities');
-var slice = [].slice;
 var o2str = ({}).toString;
-var win = typeof window !=='undefined'? window: global;
+var win = typeof window !== 'undefined'? window: global;
 var config = require('./config');
 
 
@@ -23,7 +22,7 @@ _.extend = function( o1, o2, override ){
   //  for(var i = 0, len = override.length; i < len; i++ ){
   //   var key = override[i];
   //   o1[key] = o2[key];
-  //  } 
+  //  }
   // }else{
   for(var i in o2){
     if( typeof o1[i] === "undefined" || override === true ){
@@ -51,10 +50,10 @@ _.extName = 'e';
 _.rWord = /^[\$\w]+$/;
 _.rSimpleAccessor = /^[\$\w]+(\.[\$\w]+)*$/;
 
-_.nextTick = typeof setImmediate === 'function'? 
-  setImmediate.bind(win) : 
+_.nextTick = typeof setImmediate === 'function'?
+  setImmediate.bind(win) :
   function(callback) {
-    setTimeout(callback, 0) 
+    setTimeout(callback, 0)
   }
 
 
@@ -159,8 +158,8 @@ _.trackErrorPos = (function (){
     var line = findLine(lines,pos);
     var start = line.start, num = line.num;
 
-    return (line.prev? formatLine(line.prev, start, num-1 ) + '\n': '' ) + 
-      formatLine(line.line, start, num, true) + '\n' + 
+    return (line.prev? formatLine(line.prev, start, num-1 ) + '\n': '' ) +
+      formatLine(line.line, start, num, true) + '\n' +
       (line.next? formatLine(line.next, start, num+1 ) + '\n': '' );
 
   }
@@ -177,7 +176,7 @@ _.findSubCapture = function (regStr) {
   else ignored = 0;
   for (; len--;) {
     var letter = regStr.charAt(len);
-    if (len === 0 || regStr.charAt(len - 1) !== "\\" ) { 
+    if (len === 0 || regStr.charAt(len - 1) !== "\\" ) {
       if (letter === "(") left++;
       if (letter === ")") right++;
     }
@@ -325,7 +324,7 @@ _.cache = function(max){
       if (keys.length > this.max) {
         cache[keys.shift()] = undefined;
       }
-      // 
+      //
       if(cache[key] === undefined){
         keys.push(key);
       }
@@ -371,7 +370,12 @@ _.handleEvent = function(value, type ){
     }
   }else{
     return function fire(){
-      var args = slice.call(arguments)      
+      // optimization for arguments
+      var i = arguments.length;
+      var args = new Array(i);
+      while (i--) {
+        args[i] = arguments[i];
+      }
       args.unshift(value);
       self.$update(function(){
         self.$emit.apply(self, args);
@@ -428,7 +432,7 @@ _.isGroup = function(group){
   return group.inject || group.$inject;
 }
 
-_.blankReg = /\s+/; 
+_.blankReg = /\s+/;
 
 _.getCompileFn = function(source, ctx, options){
   return function( passedOptions ){
@@ -474,10 +478,3 @@ _.escape = (function(){
   }
 
 })();
-
-
-
-
-
-
-
