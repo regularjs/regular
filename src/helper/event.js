@@ -1,6 +1,6 @@
 // simplest event emitter 60 lines
 // ===============================
-var slice = [].slice, _ = require("../util");
+var _ = require("../util");
 var API = {
   $on: function(event, fn) {
     if(!event) return this;
@@ -44,8 +44,14 @@ var API = {
     var context = this;
     var handles = context._handles, calls, args, type;
     if(!event) return;
-    var args = slice.call(arguments, 1);
     var type = event;
+
+    // optimization for arguments
+    var i = arguments.length - 1;
+    var args = new Array(i);
+    while (i--) {
+      args[i] = arguments[i + 1];
+    }
 
     if(!handles) return context;
     if(calls = handles[type.slice(1)]){
