@@ -366,16 +366,6 @@ walkers.element = function(ast, options){
 
   // sort before
   if(!ast.touched){
-    attrs.sort(function(a1, a2){
-      var d1 = Constructor.directive(a1.name),
-        d2 = Constructor.directive(a2.name);
-      if( d1 && d2 ) return (d2.priority || 1) - (d1.priority || 1);
-      if(d1) return 1;
-      if(d2) return -1;
-      if(a2.name === "type") return 1;
-      return -1;
-    })
-    ast.touched = true;
   }
   // may distinct with if else
   var destroies = walkAttributes.call(this, attrs, element, extra);

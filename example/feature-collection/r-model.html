@@ -56,13 +56,45 @@
           <option value='5'>5</option>
         </select>
 
+        <select class='form-control' id='select' r-model='select2'>
+          <r-option value="2">2</r-option>
+          <r-option value='3'>3</r-option>
+          <r-option value="4">4</r-option>
+          <r-option value='5'>5</r-option>
+        </select>
+
         <button type="submit" class="btn btn-default">Submit</button>
       </form>
     </script>
 
     <script>
-    var Modal = Regular.extend({
-      template: '#form'})
+
+    var RegularOption = Regular.extend({
+      name: 'r-option',
+      template: '<option ref=option value={value}>{#inc this.$body}</option>',
+      init: function(){
+        this.$watch('value', this._checkSelect.bind(this))
+      },
+      _checkSelect: function(){
+        var selectNode = this.findParent();
+        if(selectNode._tid) return;
+        selectNode._tid = setTimeout(function(){
+          selectNode._tid = 0;
+
+        },0)
+      },
+      findParent: function(){
+        var selectNode = this.$refs.option.parentNode;
+        if(selectNode && selectNode.tagName === 'SELECT') return selectNode;
+      },
+      destroy: function(){
+        this.supr(  )
+        this._checkSelect();
+      }
+
+
+    })
+    var Modal = Regular.extend({ template: '#form'})
       .filter("join", {
         set: function(str){
           return str.split(",");
@@ -74,7 +106,8 @@
 
     var app = new Modal({
       data: {
-        list: [{}]
+        list: [{}],
+        select: '11'
       }
     }).$inject("#app");
 

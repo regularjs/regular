@@ -431,6 +431,83 @@ _.getCompileFn = function(source, ctx, options){
   return ctx.$compile.bind(ctx,source, options)
 }
 
+// remove directive param from AST
+_.fixTagAST = (function(){
+
+
+    return function( tagAST, Component ){
+
+      var attrs = tagAST.attrs;
+      if(!attrs) return;
+
+
+      // Maybe multiple directive need same param, 
+      // We place all param in totalParamMap
+      var len = attrs.length, totalParamMap;
+      if(!len) return;
+      var normalAttrs = [];
+      var directives = [];
+      var directives = attrs.forEach(function(attr){
+        var directive = Component.directive( attr.name ),
+        if(directive) {
+          attr.priority = directive.priority || 1;
+          attr.type = 'd';
+          directives.push(attr)
+        }else{
+          normalAttrs.push(attr)
+        }
+      })
+      if(directives.length && normalAttrs.length){
+        
+      }
+      for(;len--;){
+        var attr = attrs[ len ];
+        var directive = Component.directive(attr.name),
+        if( directive ) {
+          attr.priority = directive.priority || 1;
+          attr.type = 'd';
+          var params = directive.parms, alen = len,plen;
+          if(!params || !(plen = params.length)) continue;
+          var compeleted = 0;
+
+          for(;alen--;){
+            if(!params.length) 
+            var targetAttr = attrs[alen];
+            var targetName =  targetAttr.name;
+            var paramIndex =  params.indexOf(targetName);
+            if(~paramIndex){
+              completed++;
+
+              if(completed === plen) break;
+            }
+          }
+
+          for(plen =)
+          if(params) {
+            params.forEach(function(){
+
+            })
+          }
+        }
+
+      }
+      attrs.sort(function(a1, a2){
+        var d1 = Component.directive(a1.name),
+          d2 = Component.directive(a2.name);
+        if( d1 && d2 ) return (d2.priority || 1) - (d1.priority || 1);
+        if(d1) return 1;
+        if(d2) return -1;
+        if(a2.name === "type") return 1;
+        return -1;
+      })
+
+      ast.touched = true;
+    if( tagAST.touched) return;
+    var attrs = tagAST.attrs;
+  }
+})();
+
+
 
 
 
