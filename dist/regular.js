@@ -161,12 +161,22 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	  definition.data = definition.data || {};
 	  definition.computed = definition.computed || {};
-	  definition.events = definition.events || {};
-	  if(this.data) _.extend(definition.data, this.data);
-	  if(this.computed) _.extend(definition.computed, this.computed);
-	  if(this.events) _.extend(definition.events, this.events);
+	  if( this.data ) _.extend( definition.data, this.data );
+	  if( this.computed ) _.extend( definition.computed, this.computed );
+
+	  var listeners = this._eventListeners || [];
+	  var normListener;
+	  // hanle initialized event binding
+	  if( definition.events){
+	    normListener = _.normListener(definition.events);
+	    if(normListener.length){
+	      listeners = listeners.concat(normListener)
+	    }
+	    delete definition.events;
+	  }
 
 	  _.extend(this, definition, true);
+
 	  if(this.$parent){
 	     this.$parent._append(this);
 	  }
@@ -194,8 +204,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	  this.computed = handleComputed(this.computed);
 	  this.$root = this.$root || this;
 	  // if have events
-	  if(this.events){
-	    this.$on(this.events);
+
+	  if(listeners && listeners.length){
+	    listeners.forEach(function( item ){
+	      this.$on(item.type, item.listener)
+	    }.bind(this))
 	  }
 	  this.$emit("$config");
 	  this.config && this.config(this.data);
@@ -392,7 +405,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  destroy: function(){
 	    // destroy event wont propgation;
 	    this.$emit("$destroy");
-	    this._watchers = [];
+	    this._watchers = null;
 	    this.group && this.group.destroy(true);
 	    this.group = null;
 	    this.parentNode = null;
@@ -1525,6 +1538,21 @@ return /******/ (function(modules) { // webpackBootstrap
 	_.log = log;
 
 
+	_.normListener = function( events  ){
+	    var eventListeners = [];
+	    var pType = _.typeOf( events );
+	    if( pType === 'array' ){
+	      return events;
+	    }else if ( pType === 'object' ){
+	      for( var i in events ) if ( events.hasOwnProperty(i) ){
+	        eventListeners.push({
+	          type: i,
+	          listener: events[i]
+	        })
+	      }
+	    }
+	    return eventListeners;
+	}
 
 
 	//http://www.w3.org/html/wg/drafts/html/master/single-page.html#void-elements
@@ -3723,8 +3751,20 @@ return /******/ (function(modules) { // webpackBootstrap
 	  fnTest = /xy/.test(function(){"xy";}) ? /\bsupr\b/:/.*/,
 	  isFn = function(o){return typeof o === "function"};
 
+	var hooks = {
+	  events: function( propertyValue, proto, supro ){
+	    var eventListeners = proto._eventListeners || [];
+	    var normedEvents = _.normListener(propertyValue);
 
-	function wrap(k, fn, supro) {
+	    if(normedEvents.length) {
+	      proto._eventListeners = eventListeners.concat( normedEvents );
+	    }
+	    delete proto.events ;
+	  }
+	}
+
+
+	function wrap( k, fn, supro ) {
 	  return function () {
 	    var tmp = this.supr;
 	    this.supr = supro[k];
@@ -3737,7 +3777,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	function process( what, o, supro ) {
 	  for ( var k in o ) {
 	    if (o.hasOwnProperty(k)) {
-
+	      if(hooks[k]) {
+	        hooks[k](o[k], what, supro)
+	        delete o[k];
+	      }
 	      what[k] = isFn( o[k] ) && isFn( supro[k] ) && 
 	        fnTest.test( o[k] ) ? wrap(k, o[k], supro) : o[k];
 	    }
@@ -3745,7 +3788,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 	// if the property is ["events", "data", "computed"] , we should merge them
-	var merged = ["events", "data", "computed"], mlen = merged.length;
+	var merged = ["data", "computed"], mlen = merged.length;
 	module.exports = function extend(o){
 	  o = o || {};
 	  var supr = this, proto,
@@ -3769,7 +3812,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var len = mlen;
 	    for(;len--;){
 	      var prop = merged[len];
-	      if(o.hasOwnProperty(prop) && proto.hasOwnProperty(prop)){
+	      if(proto[prop] && o.hasOwnProperty(prop) && proto.hasOwnProperty(prop)){
 	        _.extend(proto[prop], o[prop], true) 
 	        delete o[prop];
 	      }

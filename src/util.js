@@ -410,6 +410,21 @@ function log(msg, type){
 _.log = log;
 
 
+_.normListener = function( events  ){
+    var eventListeners = [];
+    var pType = _.typeOf( events );
+    if( pType === 'array' ){
+      return events;
+    }else if ( pType === 'object' ){
+      for( var i in events ) if ( events.hasOwnProperty(i) ){
+        eventListeners.push({
+          type: i,
+          listener: events[i]
+        })
+      }
+    }
+    return eventListeners;
+}
 
 
 //http://www.w3.org/html/wg/drafts/html/master/single-page.html#void-elements

@@ -10,6 +10,7 @@
 
     <div id="app">
       <div id="app"></div>
+      <div id='svg'></div>
     </div>
 
     <!-- Templates -->
@@ -17,11 +18,15 @@
       <div class="modal show {clazz}">
         <div class="modal-dialog">
           <div class="modal-content">
+
             <div class="modal-header">
               <button type="button" class="close" on-click={this.close()} data-dismiss="modal" aria-hidden="true">×</button>
               <h4 class="modal-title">{title}</h4>
             </div>
             <div class="modal-body">
+            <svg>
+           <image href="http://img0.imgtn.bdimg.com/it/u=2090979813,2728843729&fm=21&gp=0.jpg" width="200" height="200" />  
+            </svg>
               {#include content }
             </div>
             <div class="modal-footer">
@@ -34,6 +39,25 @@
     </script>
     
     <script>
+
+
+    Modal.implement({
+      events: {
+        $config: function(){
+
+        }
+      },
+      events: [{
+        type: '$config',
+        listener: function(){
+
+        }
+      }]
+    })
+
+
+
+
     var Modal = Regular.extend({
       template: '#modal',
       init: function(){

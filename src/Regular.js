@@ -38,12 +38,22 @@ var Regular = function(definition, options){
 
   definition.data = definition.data || {};
   definition.computed = definition.computed || {};
-  definition.events = definition.events || {};
-  if(this.data) _.extend(definition.data, this.data);
-  if(this.computed) _.extend(definition.computed, this.computed);
-  if(this.events) _.extend(definition.events, this.events);
+  if( this.data ) _.extend( definition.data, this.data );
+  if( this.computed ) _.extend( definition.computed, this.computed );
+
+  var listeners = this._eventListeners || [];
+  var normListener;
+  // hanle initialized event binding
+  if( definition.events){
+    normListener = _.normListener(definition.events);
+    if(normListener.length){
+      listeners = listeners.concat(normListener)
+    }
+    delete definition.events;
+  }
 
   _.extend(this, definition, true);
+
   if(this.$parent){
      this.$parent._append(this);
   }
@@ -71,8 +81,11 @@ var Regular = function(definition, options){
   this.computed = handleComputed(this.computed);
   this.$root = this.$root || this;
   // if have events
-  if(this.events){
-    this.$on(this.events);
+
+  if(listeners && listeners.length){
+    listeners.forEach(function( item ){
+      this.$on(item.type, item.listener)
+    }.bind(this))
   }
   this.$emit("$config");
   this.config && this.config(this.data);
@@ -269,7 +282,7 @@ Regular.implement({
   destroy: function(){
     // destroy event wont propgation;
     this.$emit("$destroy");
-    this._watchers = [];
+    this._watchers = null;
     this.group && this.group.destroy(true);
     this.group = null;
     this.parentNode = null;

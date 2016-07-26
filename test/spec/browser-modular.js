@@ -128,15 +128,13 @@ describe("test Regular's modular mechanism", function(){
 
       expect(component.some).to.equal(hello);
     })
-    it('data, events, computed, should merged throw extend and initialize', function(){
+    it('data computed, should merged throw extend and initialize', function(){
       reset();
       var Component = Regular.extend({
         data: {a:1},
-        events: {b:1},
         computed: {c: "a+b"}
       }).implement({
         data: {a: 2, b:1},
-        events: {c: 1},
         computed: {c: "a-b"}
       })
 
@@ -145,8 +143,6 @@ describe("test Regular's modular mechanism", function(){
         computed: {c: "a*b"}
       })
 
-      expect(component.events.c).to.equal(1);
-      expect(component.events.b).to.equal(1);
       expect(component.data.a).to.equal(3);
       expect(component.data.b).to.equal(2);
       expect(component.$get("c")).to.equal(6);
@@ -254,6 +250,128 @@ describe("hotfix ", function(){
     Regular.config({
       'PRECOMPILE': true
     })
+  })
+
+})
+describe("events: extend & implement", function(){
+  it("extend events with Object", function(  ){
+    var processStack = []
+    var Comp1 = Regular.extend({
+      events: {
+        $config: function(){
+          processStack.push('config1')
+        },
+        $afterConfig: function(){
+          processStack.push('afterConfig1')
+        }
+      }
+    })
+
+    Comp1.implement({
+      events: {
+        $config: function(){
+          processStack.push('config2')
+        },
+        $afterConfig: function(){
+          processStack.push('afterConfig2')
+        }
+      }
+    })
+    new Comp1();
+
+    expect(processStack).to.eql([ 'config1', 'config2', 'afterConfig1', 'afterConfig2' ])
+
+  })
+  it("extend events with Array", function(  ){
+    var processStack = []
+    var Comp1 = Regular.extend({
+      events: [
+        {
+          type: '$config',
+          listener: function(){
+            processStack.push('config1')
+          }
+        },
+        {
+          type: '$afterConfig',
+          listener: function(){
+            processStack.push('afterConfig1')
+          }
+        }
+      ]
+      
+    })
+
+    Comp1.implement({
+      events: [
+        {
+          type: '$config',
+          listener: function(){
+            processStack.push('config2')
+          }
+        },
+        {
+          type: '$afterConfig',
+          listener: function(){
+            processStack.push('afterConfig2')
+          }
+        }
+      ]
+    })
+    new Comp1();
+
+    expect(processStack).to.eql([ 'config1', 'config2', 'afterConfig1', 'afterConfig2' ])
+
+  })
+
+  it('events with Array and Object, and At initialize', function(){
+    var processStack = []
+    var Comp1 = Regular.extend({
+
+      events: {
+        $config: function(){
+          processStack.push('config1')
+        },
+        $afterConfig: function(){
+          processStack.push('afterConfig1')
+        }
+      }
+    })
+
+    Comp1.implement({
+      events: [
+        {
+          type: '$config',
+          listener: function(){
+            processStack.push('config2')
+          }
+        },
+        {
+          type: '$afterConfig',
+          listener: function(){
+            processStack.push('afterConfig2')
+          }
+        }
+      ]
+    });
+    new Comp1({
+      events: [
+        {
+          type: '$config',
+          listener: function(){
+            processStack.push('config3')
+          }
+        },
+        {
+          type: '$afterConfig',
+          listener: function(){
+            processStack.push('afterConfig3')
+          }
+        }
+      ]
+    });
+
+    expect(processStack).to.eql([ 'config1', 'config2', 'config3', 'afterConfig1', 'afterConfig2', 'afterConfig3' ])
   })
 })
 
