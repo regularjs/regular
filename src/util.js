@@ -18,18 +18,11 @@ _.uid = (function(){
 })();
 
 _.extend = function( o1, o2, override ){
-  // if(_.typeOf(override) === 'array'){
-  //  for(var i = 0, len = override.length; i < len; i++ ){
-  //   var key = override[i];
-  //   o1[key] = o2[key];
-  //  } 
-  // }else{
-  for(var i in o2){
-    if( typeof o1[i] === "undefined" || override === true ){
+  for(var i in o2) if (o2.hasOwnProperty(i)){
+    if( o1[i] === undefined || override === true ){
       o1[i] = o2[i]
     }
   }
-  // }
   return o1;
 }
 
@@ -225,6 +218,16 @@ _.createProto = function(fn, o){
     return (fn.prototype = new Foo());
 }
 
+
+_.removeOne = function(list , filter){
+  var len = list.length;
+  for(;len--;){
+    if(filter(list[len])) {
+      list.splice(len, 1)
+      return;
+    }
+  }
+}
 
 
 /**
@@ -431,8 +434,6 @@ _.normListener = function( events  ){
 _.isVoidTag = _.makePredicate("area base br col embed hr img input keygen link menuitem meta param source track wbr r-content");
 _.isBooleanAttr = _.makePredicate('selected checked disabled readonly required open autofocus controls autoplay compact loop defer multiple');
 
-_.isFalse - function(){return false}
-_.isTrue - function(){return true}
 
 _.isExpr = function(expr){
   return expr && expr.type === 'expression';
@@ -445,6 +446,81 @@ _.isGroup = function(group){
 _.getCompileFn = function(source, ctx, options){
   return ctx.$compile.bind(ctx,source, options)
 }
+
+// remove directive param from AST
+_.fixTagAST = function( tagAST, Component ){
+
+  if( tagAST.touched ) return;
+
+  var attrs = tagAST.attrs;
+
+  if( !attrs ) return;
+
+  // Maybe multiple directive need same param, 
+  // We place all param in totalParamMap
+  var len = attrs.length;
+  if(!len) return;
+  var directives=[], otherAttrMap = {};
+  for(;len--;){
+
+    var attr = attrs[ len ];
+
+    var directive = Component.directive( attr.name );
+    if( directive ) {
+
+      attr.priority = directive.priority || 1;
+      attr.directive = true;
+      directives.push(attr);
+
+    }else if(attr.type === 'attribute'){
+      otherAttrMap[attr.name] = attr.value;
+    }
+  }
+
+  directives.forEach( function( attr ){
+    var directive = Component.directive(attr.name);
+    var param = directive.param;
+    if(param && param.length){
+      attr.param = {};
+      param.forEach(function( name ){
+        if( name in otherAttrMap ){
+          attr.param[name] = otherAttrMap[name] === undefined? true: otherAttrMap[name]
+          _.removeOne(attrs, function(attr){
+            return attr.name === name
+          })
+        }
+      })
+    }
+  });
+
+  attrs.sort(function(a1, a2){
+    // fix IE9- input type can't assign after value
+    if(a2.name === "type") return 1;
+
+    var p1 = a1.priority;
+    var p2 = a2.priority;
+
+    if(p1 == null) p1 = 10000;
+    if(p2 == null) p2 = 10000;
+
+    return p2 - p1;
+
+  })
+
+  tagAST.touched = true;
+}
+
+_.getParamObj = function(component, param){
+  var paramObj = {};
+  if(param) {
+    for(var i in param) if(param.hasOwnProperty(i)){
+      var value = param[i];
+      paramObj[i] =  value && value.type==='expression'? component.$get(value): value;
+    }
+  }
+  return paramObj;
+}
+
 
 
 

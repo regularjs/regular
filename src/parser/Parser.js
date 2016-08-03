@@ -645,10 +645,12 @@ op.primary = function(){
     // literal or ident
     case 'STRING':
       this.next();
-      return this.getset("'" + ll.value + "'")
+      var value = "" + ll.value;
+      var quota = ~value.indexOf("'")? "\"": "'" ;
+      return this.getset(quota + value + quota);
     case 'NUMBER':
       this.next();
-      return this.getset(""+ll.value);
+      return this.getset( "" + value );
     case "IDENT":
       this.next();
       if(isKeyWord(ll.value)){

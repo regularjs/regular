@@ -923,6 +923,38 @@
 	    expect(comp.$refs.nest.data.hello).to.equal(100);
 
 	  })
+
+	  // it("bug #96", function(){
+	  //   var Nest = Regular.extend({
+	  //     name: 'bug-96'
+	  //   })
+	  //   var component = new Regular({
+	  //     template: '<div class="list-row-sub">{#list params  as item}\
+	  //             <bug-96 field="defaultValue" source={item} ></bug-96>\
+	  //      {/list}</div>',
+	  //      data: {
+	  //       params: [{}]
+	  //      }
+	  //   })
+
+	  //   expect(component.data.item).to.equal(undefined);
+	  // })
+	  it("bug #93", function(){
+	    var Nest = Regular.extend({
+	      name: 'bug-96'
+	    })
+	    var component = new Regular({
+	      template: '<div>{"{\'event\': \'delete-progroup\', \'id\': "+name+"}"}</div>',
+	      data: {
+	        name: '1' 
+	      }
+	    })
+
+	  })
+
+	  // it('bug :directive return value that not function will throw error', function(){
+	  //   throw Error()
+	  // })
 	})
 
 
@@ -3995,7 +4027,8 @@
 
 	    it('the whole attributes should be get in directive handler', function(done){
 	      var tmpName = "t-" + Regular.util.uid();
-	      Regular.directive(tmpName, function(elem, value, name, attrs){
+	      Regular.directive(tmpName, function(elem, value, name, extra){
+	        var attrs = extra.attrs;
 	        expect(value.type).to.equal('expression')        
 	        expect(value.get).to.be.a('function');
 	        expect(value.set).to.be.a('function');
@@ -4010,30 +4043,37 @@
 	      })
 
 	    })
-	    it('the whole attributes should be get in event handler', function(done){
-	      var tmpName = "on-upload2";
-	      Regular.event("upload2", function(elem, fire, attrs){
-	        expect(attrs.length).to.equal(3);
-	        done()
-	      })
-	      var component = new Regular({
-	        template: "<div class='m-class' on-upload2={content} t-randomAttr={1}></div>",
-	        data: {
-	          content:'hello'
-	        }
-	      })
-
-	    })
+	  
 
 
 	  })
 
-
-
+	  
+	  
 	});
 
 	describe('r-model directive', function(){
 
+	  describe("directive param", function(){
+	    it(" behavior purpose here ", function( done){
+	      var Component = Regular.extend({
+	        template: '<div need-param="hello" param1="value1" param2="value2" ></div>'
+	      }).directive({
+	        'need-param': {
+	          param: ['param1', 'param2'],
+	          link: function( elem, value, attrs, extra ){
+	            var param = extra.param;
+	            expect(param.param1).to.equal('value1');
+	            expect(param.param2).to.equal('value2');
+	            done();
+	          }
+	        }
+	      });
+
+	      new Component({ });
+
+	    })
+	  })
 
 	  var container = document.createElement('form');
 
@@ -4057,6 +4097,31 @@
 
 	      destroy(component, container)
 
+	    })
+	    
+	    it("input[r-model] should have  throttle param", function(){
+	      var container = document.createElement('div')
+	      var Component = Regular.extend({});
+	      var component = new Regular({
+	        data: {test: true, hello: {} } ,
+	        template: "<input ref=input r-model={hello.name} throttle={1000} />"
+	      }).$inject(container)
+
+	      expect(component.$refs.input.getAttribute('throttle')).to.equal(null)
+	    })
+
+
+
+
+	    it("input[r-model] should have lazy param", function(){
+	      var container = document.createElement('div')
+	      var Component = Regular.extend({});
+	      var component = new Regular({
+	        data: {test: true, hello: {} } ,
+	        template: "<input ref=input r-model={hello.name} lazy />"
+	      }).$inject(container)
+
+	      expect(component.$refs.input.getAttribute('lazy')).to.equal(null)
 	    })
 
 	    it("input:password and text with 'r-model' should works", function(){
@@ -4118,15 +4183,12 @@
 	  describe('checkbox binding', function(){
 	    it('input:checkbox"s initial state should be correct', function(){
 	      var template = 
-	        "<input checked  type='checkbox' r-model={nontype} >"+
-	        "<input type='checkbox' r-model={nontype3}>"+
-	        "<input type='checkbox' r-model={nontype2} checked=checked>";
+	        "<input checked class='c1'  type='checkbox' r-model={nontype} >"+
+	        "<input class='c2' type='checkbox' r-model={nontype3}>"+
+	        "<input class='c3'  type='checkbox' r-model={nontype2} checked=checked>";
 	      var component = new Regular({
 	        template: template
 	      }).$inject(container);
-
-
-
 
 	      expect($('input', container).length).to.equal(3)
 	      expect($('input:first-child', container)[0].checked).to.equal(true)
@@ -4336,6 +4398,8 @@
 	      destroy(component, container);
 
 	    });
+
+
 
 	  })
 
@@ -4632,21 +4696,93 @@
 
 	    destroy(component, container);
 	  })
+	  
+
 	})
 
 
+	describe("Directive extra", function(){
 
-	describe('the atrributeValue with the string type is valid in most buildin directive', function(){
-	  // var container = document.createElement('div');
-	  // var template = "da"
-	  // var component = new Regular({
-	  //   template: template,
-	  //   data: {num: 2}
-	  // }).$inject(container);
+	  it("directive param should work", function( done){
 
+	    var container = document.createElement('div');
+	    var Component = Regular.extend({
+	      name: 'nested'
+	    }).directive('param-directive', {
+	      param: ['param0', 'param1' , 'param2'],
+	      link: function(element, value, name, extra){
+	        expect(extra.param.param0).to.equal(1)
+	        expect(extra.param.param1).to.equal("1")
+	        expect(extra.param.param2).to.equal("haha")
+	        expect(extra.param.param3).to.equal(undefined)
+	        done()
+	      }
+	    })
+	    var component = new Component({
+	      template: "<div param0={1} param-directive=1 param1 = 1  param2={name} ></div>",
+	      data: {
+	        name: "haha"
+	      }
+	    }).$inject(container)
+	  })
 
-	  // destroy(component, container);
+	  it("directive update should work", function( done){
+	    
+	    var container = document.createElement('div');
+	    var checked = [], i =0;
+	    var Component = Regular.extend({
+	      name: 'nested'
+	    }).directive('update-directive', {
+	      link: function(element, value, name, extra){
+	        extra.num = i++;
+	      },
+	      update: function(element, value, oldvalue, extra){
+	        element.setAttribute('data-update', value)
+	        checked.push({
+	          old: oldvalue,
+	          value: value,
+	          num: extra.num 
+	        })
+	      }
+	    })
+
+	    var component = new Component({
+	      template: "<div update-directive=1></div><div update-directive={name}></div>",
+	      data: {
+	        name: "haha"
+	      }
+	    }).$inject(container)
+
+	    expect(checked[0].value).to.equal('1')
+	    expect(checked[0].old).to.equal(undefined)
+	    expect(checked[0].num).to.equal(0)
+	    expect(checked[1].value).to.equal('haha')
+	    expect(checked[1].num).to.equal(1)
+
+	    component.$update('name', 'hehe')
+
+	    expect(checked[2].value).to.equal('hehe')
+	    expect(checked[2].old).to.equal('haha')
+	    expect(checked[2].num).to.equal(1)
+
+	    var divs = nes.all('div', container);
+	    expect( divs[0].getAttribute('data-update') ).to.equal('1')
+	    expect( divs[1].getAttribute('data-update') ).to.equal('hehe')
+	    done();
+	  })
 	})
+
+	// describe('the atrributeValue with the string type is valid in most buildin directive', function(){
+	//   // var container = document.createElement('div');
+	//   // var template = "da"
+	//   // var component = new Regular({
+	//   //   template: template,
+	//   //   data: {num: 2}
+	//   // }).$inject(container);
+
+
+	//   // destroy(component, container);
+	// })
 
 
 
@@ -4862,7 +4998,7 @@
 
 	var expect = __webpack_require__(26);
 	var Regular = __webpack_require__(16);
-	var parse = __webpack_require__(24);
+	var parse = __webpack_require__(21);
 
 	var Component = Regular.extend();
 
@@ -6030,9 +6166,9 @@
 
 	var expect = __webpack_require__(26);
 	var _ = __webpack_require__(18);
-	var shim = __webpack_require__(21);
-	var extend = __webpack_require__(22);
-	var diff = __webpack_require__(23)
+	var shim = __webpack_require__(22);
+	var extend = __webpack_require__(23);
+	var diff = __webpack_require__(24)
 	var diffArray = diff.diffArray;
 	var diffObject = diff.diffObject;
 
@@ -6672,7 +6808,7 @@
 	        node.setAttribute(name, name);
 	        // lt ie7 . the javascript checked setting is in valid
 	        //http://bytes.com/topic/javascript/insights/799167-browser-quirk-dynamically-appended-checked-checkbox-does-not-appear-checked-ie
-	        if(dom.msie && dom.msie <=7 ) node.defaultChecked = true
+	        if(dom.msie && dom.msie <=7 && name === 'checked' ) node.defaultChecked = true
 	      } else {
 	        node[name] = false;
 	        node.removeAttribute(name);
@@ -6707,6 +6843,7 @@
 	    type = fixEventName(node, type);
 	    addEvent(node, type, handler.real);
 	  });
+	  return dom;
 	}
 	dom.off = function(node, type, handler){
 	  var types = type.split(' ');
@@ -6854,7 +6991,6 @@
 	}
 
 	_.extend(Event.prototype, {
-	  immediateStop: _.isFalse,
 	  stop: function(){
 	    this.preventDefault().stopPropagation();
 	  },
@@ -6879,7 +7015,7 @@
 	                  window.webkitRequestAnimationFrame ||
 	                  window.mozRequestAnimationFrame|| 
 	                  function(callback){
-	                    setTimeout(callback, 16)
+	                    return setTimeout(callback, 16)
 	                  }
 
 	    var cancel = window.cancelAnimationFrame ||
@@ -6913,7 +7049,7 @@
 /* 18 */
 /***/ function(module, exports, __webpack_require__) {
 
-	/* WEBPACK VAR INJECTION */(function(global) {__webpack_require__(21)();
+	/* WEBPACK VAR INJECTION */(function(global) {__webpack_require__(22)();
 
 
 
@@ -6933,18 +7069,11 @@
 	})();
 
 	_.extend = function( o1, o2, override ){
-	  // if(_.typeOf(override) === 'array'){
-	  //  for(var i = 0, len = override.length; i < len; i++ ){
-	  //   var key = override[i];
-	  //   o1[key] = o2[key];
-	  //  } 
-	  // }else{
-	  for(var i in o2){
-	    if( typeof o1[i] === "undefined" || override === true ){
+	  for(var i in o2) if (o2.hasOwnProperty(i)){
+	    if( o1[i] === undefined || override === true ){
 	      o1[i] = o2[i]
 	    }
 	  }
-	  // }
 	  return o1;
 	}
 
@@ -7140,6 +7269,16 @@
 	    return (fn.prototype = new Foo());
 	}
 
+
+	_.removeOne = function(list , filter){
+	  var len = list.length;
+	  for(;len--;){
+	    if(filter(list[len])) {
+	      list.splice(len, 1)
+	      return;
+	    }
+	  }
+	}
 
 
 	/**
@@ -7346,8 +7485,6 @@
 	_.isVoidTag = _.makePredicate("area base br col embed hr img input keygen link menuitem meta param source track wbr r-content");
 	_.isBooleanAttr = _.makePredicate('selected checked disabled readonly required open autofocus controls autoplay compact loop defer multiple');
 
-	_.isFalse - function(){return false}
-	_.isTrue - function(){return true}
 
 	_.isExpr = function(expr){
 	  return expr && expr.type === 'expression';
@@ -7360,6 +7497,81 @@
 	_.getCompileFn = function(source, ctx, options){
 	  return ctx.$compile.bind(ctx,source, options)
 	}
+
+	// remove directive param from AST
+	_.fixTagAST = function( tagAST, Component ){
+
+	  if( tagAST.touched ) return;
+
+	  var attrs = tagAST.attrs;
+
+	  if( !attrs ) return;
+
+	  // Maybe multiple directive need same param, 
+	  // We place all param in totalParamMap
+	  var len = attrs.length;
+	  if(!len) return;
+	  var directives=[], otherAttrMap = {};
+	  for(;len--;){
+
+	    var attr = attrs[ len ];
+
+	    var directive = Component.directive( attr.name );
+	    if( directive ) {
+
+	      attr.priority = directive.priority || 1;
+	      attr.directive = true;
+	      directives.push(attr);
+
+	    }else if(attr.type === 'attribute'){
+	      otherAttrMap[attr.name] = attr.value;
+	    }
+	  }
+
+	  directives.forEach( function( attr ){
+	    var directive = Component.directive(attr.name);
+	    var param = directive.param;
+	    if(param && param.length){
+	      attr.param = {};
+	      param.forEach(function( name ){
+	        if( name in otherAttrMap ){
+	          attr.param[name] = otherAttrMap[name] === undefined? true: otherAttrMap[name]
+	          _.removeOne(attrs, function(attr){
+	            return attr.name === name
+	          })
+	        }
+	      })
+	    }
+	  });
+
+	  attrs.sort(function(a1, a2){
+	    // fix IE9- input type can't assign after value
+	    if(a2.name === "type") return 1;
+
+	    var p1 = a1.priority;
+	    var p2 = a2.priority;
+
+	    if(p1 == null) p1 = 10000;
+	    if(p2 == null) p2 = 10000;
+
+	    return p2 - p1;
+
+	  })
+
+	  tagAST.touched = true;
+	}
+
+	_.getParamObj = function(component, param){
+	  var paramObj = {};
+	  if(param) {
+	    for(var i in param) if(param.hasOwnProperty(i)){
+	      var value = param[i];
+	      paramObj[i] =  value && value.type==='expression'? component.$get(value): value;
+	    }
+	  }
+	  return paramObj;
+	}
+
 
 
 
@@ -7737,6 +7949,28 @@
 /* 21 */
 /***/ function(module, exports, __webpack_require__) {
 
+	var exprCache = __webpack_require__(27).exprCache;
+	var _ = __webpack_require__(18);
+	var Parser = __webpack_require__(35);
+	module.exports = {
+	  expression: function(expr, simple){
+	    // @TODO cache
+	    if( typeof expr === 'string' && ( expr = expr.trim() ) ){
+	      expr = exprCache.get( expr ) || exprCache.set( expr, new Parser( expr, { mode: 2, expression: true } ).expression() )
+	    }
+	    if(expr) return expr;
+	  },
+	  parse: function(template){
+	    return new Parser(template).parse();
+	  }
+	}
+
+
+
+/***/ },
+/* 22 */
+/***/ function(module, exports, __webpack_require__) {
+
 	// shim for es5
 	var slice = [].slice;
 	var tstr = ({}).toString;
@@ -7842,7 +8076,7 @@
 
 
 /***/ },
-/* 22 */
+/* 23 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// (c) 2010-2014 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
@@ -7943,7 +8177,7 @@
 
 
 /***/ },
-/* 23 */
+/* 24 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(18);
@@ -8131,28 +8365,6 @@
 	  diffArray: diffArray,
 	  diffObject: diffObject
 	}
-
-/***/ },
-/* 24 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var exprCache = __webpack_require__(27).exprCache;
-	var _ = __webpack_require__(18);
-	var Parser = __webpack_require__(35);
-	module.exports = {
-	  expression: function(expr, simple){
-	    // @TODO cache
-	    if( typeof expr === 'string' && ( expr = expr.trim() ) ){
-	      expr = exprCache.get( expr ) || exprCache.set( expr, new Parser( expr, { mode: 2, expression: true } ).expression() )
-	    }
-	    if(expr) return expr;
-	  },
-	  parse: function(template){
-	    return new Parser(template).parse();
-	  }
-	}
-
-
 
 /***/ },
 /* 25 */
@@ -9564,7 +9776,7 @@
 	var Parser = __webpack_require__(35);
 	var config = __webpack_require__(28);
 	var _ = __webpack_require__(18);
-	var extend = __webpack_require__(22);
+	var extend = __webpack_require__(23);
 	var combine = {};
 	if(env.browser){
 	  var dom = __webpack_require__(17);
@@ -9575,7 +9787,7 @@
 	}
 	var events = __webpack_require__(25);
 	var Watcher = __webpack_require__(39);
-	var parse = __webpack_require__(24);
+	var parse = __webpack_require__(21);
 	var filter = __webpack_require__(40);
 
 
@@ -11506,10 +11718,12 @@
 	    // literal or ident
 	    case 'STRING':
 	      this.next();
-	      return this.getset("'" + ll.value + "'")
+	      var value = "" + ll.value;
+	      var quota = ~value.indexOf("'")? "\"": "'" ;
+	      return this.getset(quota + value + quota);
 	    case 'NUMBER':
 	      this.next();
-	      return this.getset(""+ll.value);
+	      return this.getset( "" + value );
 	    case "IDENT":
 	      this.next();
 	      if(isKeyWord(ll.value)){
@@ -11947,7 +12161,7 @@
 /* 37 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var diffArray = __webpack_require__(23).diffArray;
+	var diffArray = __webpack_require__(24).diffArray;
 	var combine = __webpack_require__(20);
 	var animate = __webpack_require__(19);
 	var node = __webpack_require__(43);
@@ -12313,20 +12527,9 @@
 	    dom.inject( combine.node(group) , element)
 	  }
 
-	  // sort before
-	  if(!ast.touched){
-	    attrs.sort(function(a1, a2){
-	      var d1 = Constructor.directive(a1.name),
-	        d2 = Constructor.directive(a2.name);
-	      if( d1 && d2 ) return (d2.priority || 1) - (d1.priority || 1);
-	      if(d1) return 1;
-	      if(d2) return -1;
-	      if(a2.name === "type") return 1;
-	      return -1;
-	    })
-	    ast.touched = true;
-	  }
-	  // may distinct with if else
+	  // fix tag ast, some infomation only avaliable at runtime (directive etc..)
+	  _.fixTagAST(ast, Constructor)
+
 	  var destroies = walkAttributes.call(this, attrs, element, extra);
 
 	  return {
@@ -12470,7 +12673,7 @@
 	        }).bind(component, name), { sync: true })
 	      if( value.set && !(isolate & 1 ) ) 
 	        // sync the data. it force the component don't trigger attr.name's first dirty echeck
-	        component.$watch(name, self.$update.bind(self, value), {init: true});
+	        component.$watch(name, self.$update.bind(self, value), { init: true });
 	    }
 	  }
 	  if(is && is.type === 'expression'  ){
@@ -12521,7 +12724,21 @@
 	  if(constant) value = value.get(this);
 
 	  if(directive && directive.link){
-	    var binding = directive.link.call(self, element, value, name, options.attrs);
+	    var extra = {
+	      attrs: options.attrs,
+	      param: _.getParamObj(this, attr.param) 
+	    }
+	    var binding = directive.link.call(self, element, value, name, extra);
+	    // if update has been passed in , we will  automately watch value for user
+	    if( typeof directive.update === 'function'){
+	      if(_.isExpr(value)){
+	        this.$watch(value, function(val, old){
+	          directive.update.call(self, element, val, old, extra); 
+	        })
+	      }else{
+	        directive.update.call(self, element, value, undefined, extra );
+	      }
+	    }
 	    if(typeof binding === 'function') binding = {destroy: binding}; 
 	    return binding;
 	  } else{
@@ -12546,6 +12763,7 @@
 	  }
 
 	}
+
 
 
 
@@ -12588,8 +12806,8 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(18);
-	var parseExpression = __webpack_require__(24).expression;
-	var diff = __webpack_require__(23);
+	var parseExpression = __webpack_require__(21).expression;
+	var diff = __webpack_require__(24);
 	var diffArray = diff.diffArray;
 	var diffObject = diff.diffObject;
 
@@ -13001,6 +13219,7 @@
 	var _ = __webpack_require__(18);
 	var dom = __webpack_require__(17);
 	var Regular = __webpack_require__(29);
+	var hasInput;
 
 	var modelHandlers = {
 	  "text": initText,
@@ -13013,35 +13232,51 @@
 	// @TODO
 
 
+	// autoUpdate directive for select element
+	// to fix r-model issue , when handle dynamic options
+
+
+	/**
+	 * <select r-model={name}> 
+	 *   <r-option value={value} ></r-option>
+	 * </select>
+	 */
+
+
 	// two-way binding with r-model
 	// works on input, textarea, checkbox, radio, select
 
-	Regular.directive("r-model", function(elem, value){
-	  var tag = elem.tagName.toLowerCase();
-	  var sign = tag;
-	  if(sign === "input") sign = elem.type || "text";
-	  else if(sign === "textarea") sign = "text";
-	  if(typeof value === "string") value = this.$expression(value);
 
-	  if( modelHandlers[sign] ) return modelHandlers[sign].call(this, elem, value);
-	  else if(tag === "input"){
-	    return modelHandlers.text.call(this, elem, value);
+	Regular.directive("r-model", {
+	  param: ['throttle', 'lazy'],
+	  link: function( elem, value, name, extra ){
+	    var tag = elem.tagName.toLowerCase();
+	    var sign = tag;
+	    if(sign === "input") sign = elem.type || "text";
+	    else if(sign === "textarea") sign = "text";
+	    if(typeof value === "string") value = this.$expression(value);
+
+	    if( modelHandlers[sign] ) return modelHandlers[sign].call(this, elem, value, extra);
+	    else if(tag === "input"){
+	      return modelHandlers.text.call(this, elem, value, extra);
+	    }
 	  }
-	});
+	})
 
 
 
 	// binding <select>
 
-	function initSelect( elem, parsed){
+	function initSelect( elem, parsed, extra){
 	  var self = this;
-	  var wc =this.$watch(parsed, function(newValue){
-	    var children = _.slice(elem.getElementsByTagName('option'))
-	    children.forEach(function(node, index){
-	      if(node.value == newValue){
-	        elem.selectedIndex = index;
+	  var wc = this.$watch(parsed, function(newValue){
+	    var children = elem.getElementsByTagName('option');
+	    for(var i =0, len = children.length ; i < len; i++){
+	      if(children[i].value == newValue){
+	        elem.selectedIndex = i;
+	        break;
 	      }
-	    })
+	    }
 	  });
 
 	  function handler(){
@@ -13050,19 +13285,31 @@
 	    self.$update();
 	  }
 
-	  dom.on(elem, "change", handler);
+	  dom.on( elem, "change", handler );
 	  
 	  if(parsed.get(self) === undefined && elem.value){
-	     parsed.set(self, elem.value);
+	    parsed.set(self, elem.value);
 	  }
+
 	  return function destroy(){
 	    dom.off(elem, "change", handler);
 	  }
 	}
 
 	// input,textarea binding
+	function initText(elem, parsed, extra){
+	  var param = extra.param;
+	  var throttle, lazy = param.lazy
 
-	function initText(elem, parsed){
+	  if('throttle' in param){
+	    // <input throttle r-model>
+	    if(param[throttle] === true){
+	      throttle = 400;
+	    }else{
+	      throttle = parseInt(param.throttle , 10)
+	    }
+	  }
+
 	  var self = this;
 	  var wc = this.$watch(parsed, function(newValue){
 	    if(elem.value !== newValue) elem.value = newValue == null? "": "" + newValue;
@@ -13086,25 +13333,33 @@
 	    }
 	  };
 
-	  if(dom.msie !== 9 && "oninput" in dom.tNode ){
-	    elem.addEventListener("input", handler );
+	  if(throttle && !lazy){
+	    var preHandle = handler, tid;
+	    handler = _.throttle(handler, throttle);
+	  }
+
+	  if(hasInput === undefined){
+	    hasInput = dom.msie !== 9 && "oninput" in dom.tNode;
+	  }
+
+	  if(lazy){
+	    elem.addEventListener("change", handler );
 	  }else{
-	    dom.on(elem, "paste", handler)
-	    dom.on(elem, "keyup", handler)
-	    dom.on(elem, "cut", handler)
-	    dom.on(elem, "change", handler)
+	    if( hasInput){
+	      elem.addEventListener("input", handler );
+	    }else{
+	      dom.on(elem, "paste keyup cut change", handler)
+	    }
 	  }
 	  if(parsed.get(self) === undefined && elem.value){
 	     parsed.set(self, elem.value);
 	  }
 	  return function (){
+	    if(lazy) return elem.removeEventListener("change", handler);
 	    if(dom.msie !== 9 && "oninput" in dom.tNode ){
 	      elem.removeEventListener("input", handler );
 	    }else{
-	      dom.off(elem, "paste", handler)
-	      dom.off(elem, "keyup", handler)
-	      dom.off(elem, "cut", handler)
-	      dom.off(elem, "change", handler)
+	      dom.off(elem, "paste keyup cut change", handler)
 	    }
 	  }
 	}
@@ -13163,6 +13418,9 @@
 	    if(parsed.set) dom.off(elem, "change", handler)
 	  }
 	}
+
+
+
 
 
 /***/ },

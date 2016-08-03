@@ -123,8 +123,8 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	
 	var env = __webpack_require__(1);
-	var Lexer = __webpack_require__(20);
-	var Parser = __webpack_require__(21);
+	var Lexer = __webpack_require__(12);
+	var Parser = __webpack_require__(13);
 	var config = __webpack_require__(2);
 	var _ = __webpack_require__(5);
 	var extend = __webpack_require__(14);
@@ -885,7 +885,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        node.setAttribute(name, name);
 	        // lt ie7 . the javascript checked setting is in valid
 	        //http://bytes.com/topic/javascript/insights/799167-browser-quirk-dynamically-appended-checked-checkbox-does-not-appear-checked-ie
-	        if(dom.msie && dom.msie <=7 ) node.defaultChecked = true
+	        if(dom.msie && dom.msie <=7 && name === 'checked' ) node.defaultChecked = true
 	      } else {
 	        node[name] = false;
 	        node.removeAttribute(name);
@@ -920,6 +920,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    type = fixEventName(node, type);
 	    addEvent(node, type, handler.real);
 	  });
+	  return dom;
 	}
 	dom.off = function(node, type, handler){
 	  var types = type.split(' ');
@@ -1067,7 +1068,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 	_.extend(Event.prototype, {
-	  immediateStop: _.isFalse,
 	  stop: function(){
 	    this.preventDefault().stopPropagation();
 	  },
@@ -1092,7 +1092,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                  window.webkitRequestAnimationFrame ||
 	                  window.mozRequestAnimationFrame|| 
 	                  function(callback){
-	                    setTimeout(callback, 16)
+	                    return setTimeout(callback, 16)
 	                  }
 
 	    var cancel = window.cancelAnimationFrame ||
@@ -1126,12 +1126,12 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 5 */
 /***/ function(module, exports, __webpack_require__) {
 
-	/* WEBPACK VAR INJECTION */(function(global) {__webpack_require__(12)();
+	/* WEBPACK VAR INJECTION */(function(global) {__webpack_require__(20)();
 
 
 
 	var _  = module.exports;
-	var entities = __webpack_require__(13);
+	var entities = __webpack_require__(21);
 	var slice = [].slice;
 	var o2str = ({}).toString;
 	var win = typeof window !=='undefined'? window: global;
@@ -1146,18 +1146,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	})();
 
 	_.extend = function( o1, o2, override ){
-	  // if(_.typeOf(override) === 'array'){
-	  //  for(var i = 0, len = override.length; i < len; i++ ){
-	  //   var key = override[i];
-	  //   o1[key] = o2[key];
-	  //  } 
-	  // }else{
-	  for(var i in o2){
-	    if( typeof o1[i] === "undefined" || override === true ){
+	  for(var i in o2) if (o2.hasOwnProperty(i)){
+	    if( o1[i] === undefined || override === true ){
 	      o1[i] = o2[i]
 	    }
 	  }
-	  // }
 	  return o1;
 	}
 
@@ -1353,6 +1346,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return (fn.prototype = new Foo());
 	}
 
+
+	_.removeOne = function(list , filter){
+	  var len = list.length;
+	  for(;len--;){
+	    if(filter(list[len])) {
+	      list.splice(len, 1)
+	      return;
+	    }
+	  }
+	}
 
 
 	/**
@@ -1559,8 +1562,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	_.isVoidTag = _.makePredicate("area base br col embed hr img input keygen link menuitem meta param source track wbr r-content");
 	_.isBooleanAttr = _.makePredicate('selected checked disabled readonly required open autofocus controls autoplay compact loop defer multiple');
 
-	_.isFalse - function(){return false}
-	_.isTrue - function(){return true}
 
 	_.isExpr = function(expr){
 	  return expr && expr.type === 'expression';
@@ -1573,6 +1574,81 @@ return /******/ (function(modules) { // webpackBootstrap
 	_.getCompileFn = function(source, ctx, options){
 	  return ctx.$compile.bind(ctx,source, options)
 	}
+
+	// remove directive param from AST
+	_.fixTagAST = function( tagAST, Component ){
+
+	  if( tagAST.touched ) return;
+
+	  var attrs = tagAST.attrs;
+
+	  if( !attrs ) return;
+
+	  // Maybe multiple directive need same param, 
+	  // We place all param in totalParamMap
+	  var len = attrs.length;
+	  if(!len) return;
+	  var directives=[], otherAttrMap = {};
+	  for(;len--;){
+
+	    var attr = attrs[ len ];
+
+	    var directive = Component.directive( attr.name );
+	    if( directive ) {
+
+	      attr.priority = directive.priority || 1;
+	      attr.directive = true;
+	      directives.push(attr);
+
+	    }else if(attr.type === 'attribute'){
+	      otherAttrMap[attr.name] = attr.value;
+	    }
+	  }
+
+	  directives.forEach( function( attr ){
+	    var directive = Component.directive(attr.name);
+	    var param = directive.param;
+	    if(param && param.length){
+	      attr.param = {};
+	      param.forEach(function( name ){
+	        if( name in otherAttrMap ){
+	          attr.param[name] = otherAttrMap[name] === undefined? true: otherAttrMap[name]
+	          _.removeOne(attrs, function(attr){
+	            return attr.name === name
+	          })
+	        }
+	      })
+	    }
+	  });
+
+	  attrs.sort(function(a1, a2){
+	    // fix IE9- input type can't assign after value
+	    if(a2.name === "type") return 1;
+
+	    var p1 = a1.priority;
+	    var p2 = a2.priority;
+
+	    if(p1 == null) p1 = 10000;
+	    if(p2 == null) p2 = 10000;
+
+	    return p2 - p1;
+
+	  })
+
+	  tagAST.touched = true;
+	}
+
+	_.getParamObj = function(component, param){
+	  var paramObj = {};
+	  if(param) {
+	    for(var i in param) if(param.hasOwnProperty(i)){
+	      var value = param[i];
+	      paramObj[i] =  value && value.type==='expression'? component.$get(value): value;
+	    }
+	  }
+	  return paramObj;
+	}
+
 
 
 
@@ -2362,20 +2438,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	    dom.inject( combine.node(group) , element)
 	  }
 
-	  // sort before
-	  if(!ast.touched){
-	    attrs.sort(function(a1, a2){
-	      var d1 = Constructor.directive(a1.name),
-	        d2 = Constructor.directive(a2.name);
-	      if( d1 && d2 ) return (d2.priority || 1) - (d1.priority || 1);
-	      if(d1) return 1;
-	      if(d2) return -1;
-	      if(a2.name === "type") return 1;
-	      return -1;
-	    })
-	    ast.touched = true;
-	  }
-	  // may distinct with if else
+	  // fix tag ast, some infomation only avaliable at runtime (directive etc..)
+	  _.fixTagAST(ast, Constructor)
+
 	  var destroies = walkAttributes.call(this, attrs, element, extra);
 
 	  return {
@@ -2519,7 +2584,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        }).bind(component, name), { sync: true })
 	      if( value.set && !(isolate & 1 ) ) 
 	        // sync the data. it force the component don't trigger attr.name's first dirty echeck
-	        component.$watch(name, self.$update.bind(self, value), {init: true});
+	        component.$watch(name, self.$update.bind(self, value), { init: true });
 	    }
 	  }
 	  if(is && is.type === 'expression'  ){
@@ -2570,7 +2635,21 @@ return /******/ (function(modules) { // webpackBootstrap
 	  if(constant) value = value.get(this);
 
 	  if(directive && directive.link){
-	    var binding = directive.link.call(self, element, value, name, options.attrs);
+	    var extra = {
+	      attrs: options.attrs,
+	      param: _.getParamObj(this, attr.param) 
+	    }
+	    var binding = directive.link.call(self, element, value, name, extra);
+	    // if update has been passed in , we will  automately watch value for user
+	    if( typeof directive.update === 'function'){
+	      if(_.isExpr(value)){
+	        this.$watch(value, function(val, old){
+	          directive.update.call(self, element, val, old, extra); 
+	        })
+	      }else{
+	        directive.update.call(self, element, value, undefined, extra );
+	      }
+	    }
 	    if(typeof binding === 'function') binding = {destroy: binding}; 
 	    return binding;
 	  } else{
@@ -2595,6 +2674,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }
 
 	}
+
 
 
 
@@ -2647,1019 +2727,6 @@ return /******/ (function(modules) { // webpackBootstrap
 
 /***/ },
 /* 12 */
-/***/ function(module, exports, __webpack_require__) {
-
-	// shim for es5
-	var slice = [].slice;
-	var tstr = ({}).toString;
-
-	function extend(o1, o2 ){
-	  for(var i in o2) if( o1[i] === undefined){
-	    o1[i] = o2[i]
-	  }
-	  return o2;
-	}
-
-
-	module.exports = function(){
-	  // String proto ;
-	  extend(String.prototype, {
-	    trim: function(){
-	      return this.replace(/^\s+|\s+$/g, '');
-	    }
-	  });
-
-
-	  // Array proto;
-	  extend(Array.prototype, {
-	    indexOf: function(obj, from){
-	      from = from || 0;
-	      for (var i = from, len = this.length; i < len; i++) {
-	        if (this[i] === obj) return i;
-	      }
-	      return -1;
-	    },
-	    // polyfill from MDN 
-	    // https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Array/forEach
-	    forEach: function(callback, ctx){
-	      var k = 0;
-
-	      // 1. Let O be the result of calling ToObject passing the |this| value as the argument.
-	      var O = Object(this);
-
-	      var len = O.length >>> 0; 
-
-	      if ( typeof callback !== "function" ) {
-	        throw new TypeError( callback + " is not a function" );
-	      }
-
-	      // 7. Repeat, while k < len
-	      while( k < len ) {
-
-	        var kValue;
-
-	        if ( k in O ) {
-
-	          kValue = O[ k ];
-
-	          callback.call( ctx, kValue, k, O );
-	        }
-	        k++;
-	      }
-	    },
-	    // @deprecated
-	    //  will be removed at 0.5.0
-	    filter: function(fun, context){
-
-	      var t = Object(this);
-	      var len = t.length >>> 0;
-	      if (typeof fun !== "function")
-	        throw new TypeError();
-
-	      var res = [];
-	      for (var i = 0; i < len; i++)
-	      {
-	        if (i in t)
-	        {
-	          var val = t[i];
-	          if (fun.call(context, val, i, t))
-	            res.push(val);
-	        }
-	      }
-
-	      return res;
-	    }
-	  });
-
-	  // Function proto;
-	  extend(Function.prototype, {
-	    bind: function(context){
-	      var fn = this;
-	      var preArgs = slice.call(arguments, 1);
-	      return function(){
-	        var args = preArgs.concat(slice.call(arguments));
-	        return fn.apply(context, args);
-	      }
-	    }
-	  })
-	  
-	  // Array
-	  extend(Array, {
-	    isArray: function(arr){
-	      return tstr.call(arr) === "[object Array]";
-	    }
-	  })
-	}
-
-
-
-/***/ },
-/* 13 */
-/***/ function(module, exports, __webpack_require__) {
-
-	// http://stackoverflow.com/questions/1354064/how-to-convert-characters-to-html-entities-using-plain-javascript
-	var entities = {
-	  'quot':34, 
-	  'amp':38, 
-	  'apos':39, 
-	  'lt':60, 
-	  'gt':62, 
-	  'nbsp':160, 
-	  'iexcl':161, 
-	  'cent':162, 
-	  'pound':163, 
-	  'curren':164, 
-	  'yen':165, 
-	  'brvbar':166, 
-	  'sect':167, 
-	  'uml':168, 
-	  'copy':169, 
-	  'ordf':170, 
-	  'laquo':171, 
-	  'not':172, 
-	  'shy':173, 
-	  'reg':174, 
-	  'macr':175, 
-	  'deg':176, 
-	  'plusmn':177, 
-	  'sup2':178, 
-	  'sup3':179, 
-	  'acute':180, 
-	  'micro':181, 
-	  'para':182, 
-	  'middot':183, 
-	  'cedil':184, 
-	  'sup1':185, 
-	  'ordm':186, 
-	  'raquo':187, 
-	  'frac14':188, 
-	  'frac12':189, 
-	  'frac34':190, 
-	  'iquest':191, 
-	  'Agrave':192, 
-	  'Aacute':193, 
-	  'Acirc':194, 
-	  'Atilde':195, 
-	  'Auml':196, 
-	  'Aring':197, 
-	  'AElig':198, 
-	  'Ccedil':199, 
-	  'Egrave':200, 
-	  'Eacute':201, 
-	  'Ecirc':202, 
-	  'Euml':203, 
-	  'Igrave':204, 
-	  'Iacute':205, 
-	  'Icirc':206, 
-	  'Iuml':207, 
-	  'ETH':208, 
-	  'Ntilde':209, 
-	  'Ograve':210, 
-	  'Oacute':211, 
-	  'Ocirc':212, 
-	  'Otilde':213, 
-	  'Ouml':214, 
-	  'times':215, 
-	  'Oslash':216, 
-	  'Ugrave':217, 
-	  'Uacute':218, 
-	  'Ucirc':219, 
-	  'Uuml':220, 
-	  'Yacute':221, 
-	  'THORN':222, 
-	  'szlig':223, 
-	  'agrave':224, 
-	  'aacute':225, 
-	  'acirc':226, 
-	  'atilde':227, 
-	  'auml':228, 
-	  'aring':229, 
-	  'aelig':230, 
-	  'ccedil':231, 
-	  'egrave':232, 
-	  'eacute':233, 
-	  'ecirc':234, 
-	  'euml':235, 
-	  'igrave':236, 
-	  'iacute':237, 
-	  'icirc':238, 
-	  'iuml':239, 
-	  'eth':240, 
-	  'ntilde':241, 
-	  'ograve':242, 
-	  'oacute':243, 
-	  'ocirc':244, 
-	  'otilde':245, 
-	  'ouml':246, 
-	  'divide':247, 
-	  'oslash':248, 
-	  'ugrave':249, 
-	  'uacute':250, 
-	  'ucirc':251, 
-	  'uuml':252, 
-	  'yacute':253, 
-	  'thorn':254, 
-	  'yuml':255, 
-	  'fnof':402, 
-	  'Alpha':913, 
-	  'Beta':914, 
-	  'Gamma':915, 
-	  'Delta':916, 
-	  'Epsilon':917, 
-	  'Zeta':918, 
-	  'Eta':919, 
-	  'Theta':920, 
-	  'Iota':921, 
-	  'Kappa':922, 
-	  'Lambda':923, 
-	  'Mu':924, 
-	  'Nu':925, 
-	  'Xi':926, 
-	  'Omicron':927, 
-	  'Pi':928, 
-	  'Rho':929, 
-	  'Sigma':931, 
-	  'Tau':932, 
-	  'Upsilon':933, 
-	  'Phi':934, 
-	  'Chi':935, 
-	  'Psi':936, 
-	  'Omega':937, 
-	  'alpha':945, 
-	  'beta':946, 
-	  'gamma':947, 
-	  'delta':948, 
-	  'epsilon':949, 
-	  'zeta':950, 
-	  'eta':951, 
-	  'theta':952, 
-	  'iota':953, 
-	  'kappa':954, 
-	  'lambda':955, 
-	  'mu':956, 
-	  'nu':957, 
-	  'xi':958, 
-	  'omicron':959, 
-	  'pi':960, 
-	  'rho':961, 
-	  'sigmaf':962, 
-	  'sigma':963, 
-	  'tau':964, 
-	  'upsilon':965, 
-	  'phi':966, 
-	  'chi':967, 
-	  'psi':968, 
-	  'omega':969, 
-	  'thetasym':977, 
-	  'upsih':978, 
-	  'piv':982, 
-	  'bull':8226, 
-	  'hellip':8230, 
-	  'prime':8242, 
-	  'Prime':8243, 
-	  'oline':8254, 
-	  'frasl':8260, 
-	  'weierp':8472, 
-	  'image':8465, 
-	  'real':8476, 
-	  'trade':8482, 
-	  'alefsym':8501, 
-	  'larr':8592, 
-	  'uarr':8593, 
-	  'rarr':8594, 
-	  'darr':8595, 
-	  'harr':8596, 
-	  'crarr':8629, 
-	  'lArr':8656, 
-	  'uArr':8657, 
-	  'rArr':8658, 
-	  'dArr':8659, 
-	  'hArr':8660, 
-	  'forall':8704, 
-	  'part':8706, 
-	  'exist':8707, 
-	  'empty':8709, 
-	  'nabla':8711, 
-	  'isin':8712, 
-	  'notin':8713, 
-	  'ni':8715, 
-	  'prod':8719, 
-	  'sum':8721, 
-	  'minus':8722, 
-	  'lowast':8727, 
-	  'radic':8730, 
-	  'prop':8733, 
-	  'infin':8734, 
-	  'ang':8736, 
-	  'and':8743, 
-	  'or':8744, 
-	  'cap':8745, 
-	  'cup':8746, 
-	  'int':8747, 
-	  'there4':8756, 
-	  'sim':8764, 
-	  'cong':8773, 
-	  'asymp':8776, 
-	  'ne':8800, 
-	  'equiv':8801, 
-	  'le':8804, 
-	  'ge':8805, 
-	  'sub':8834, 
-	  'sup':8835, 
-	  'nsub':8836, 
-	  'sube':8838, 
-	  'supe':8839, 
-	  'oplus':8853, 
-	  'otimes':8855, 
-	  'perp':8869, 
-	  'sdot':8901, 
-	  'lceil':8968, 
-	  'rceil':8969, 
-	  'lfloor':8970, 
-	  'rfloor':8971, 
-	  'lang':9001, 
-	  'rang':9002, 
-	  'loz':9674, 
-	  'spades':9824, 
-	  'clubs':9827, 
-	  'hearts':9829, 
-	  'diams':9830, 
-	  'OElig':338, 
-	  'oelig':339, 
-	  'Scaron':352, 
-	  'scaron':353, 
-	  'Yuml':376, 
-	  'circ':710, 
-	  'tilde':732, 
-	  'ensp':8194, 
-	  'emsp':8195, 
-	  'thinsp':8201, 
-	  'zwnj':8204, 
-	  'zwj':8205, 
-	  'lrm':8206, 
-	  'rlm':8207, 
-	  'ndash':8211, 
-	  'mdash':8212, 
-	  'lsquo':8216, 
-	  'rsquo':8217, 
-	  'sbquo':8218, 
-	  'ldquo':8220, 
-	  'rdquo':8221, 
-	  'bdquo':8222, 
-	  'dagger':8224, 
-	  'Dagger':8225, 
-	  'permil':8240, 
-	  'lsaquo':8249, 
-	  'rsaquo':8250, 
-	  'euro':8364
-	}
-
-
-
-	module.exports  = entities;
-
-/***/ },
-/* 14 */
-/***/ function(module, exports, __webpack_require__) {
-
-	// (c) 2010-2014 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
-	// Backbone may be freely distributed under the MIT license.
-	// For all details and documentation:
-	// http://backbonejs.org
-
-	// klass: a classical JS OOP façade
-	// https://github.com/ded/klass
-	// License MIT (c) Dustin Diaz 2014
-	  
-	// inspired by backbone's extend and klass
-	var _ = __webpack_require__(5),
-	  fnTest = /xy/.test(function(){"xy";}) ? /\bsupr\b/:/.*/,
-	  isFn = function(o){return typeof o === "function"};
-
-	var hooks = {
-	  events: function( propertyValue, proto, supro ){
-	    var eventListeners = proto._eventListeners || [];
-	    var normedEvents = _.normListener(propertyValue);
-
-	    if(normedEvents.length) {
-	      proto._eventListeners = eventListeners.concat( normedEvents );
-	    }
-	    delete proto.events ;
-	  }
-	}
-
-
-	function wrap( k, fn, supro ) {
-	  return function () {
-	    var tmp = this.supr;
-	    this.supr = supro[k];
-	    var ret = fn.apply(this, arguments);
-	    this.supr = tmp;
-	    return ret;
-	  }
-	}
-
-	function process( what, o, supro ) {
-	  for ( var k in o ) {
-	    if (o.hasOwnProperty(k)) {
-	      if(hooks[k]) {
-	        hooks[k](o[k], what, supro)
-	        delete o[k];
-	      }
-	      what[k] = isFn( o[k] ) && isFn( supro[k] ) && 
-	        fnTest.test( o[k] ) ? wrap(k, o[k], supro) : o[k];
-	    }
-	  }
-	}
-
-	// if the property is ["events", "data", "computed"] , we should merge them
-	var merged = ["data", "computed"], mlen = merged.length;
-	module.exports = function extend(o){
-	  o = o || {};
-	  var supr = this, proto,
-	    supro = supr && supr.prototype || {};
-
-	  if(typeof o === 'function'){
-	    proto = o.prototype;
-	    o.implement = implement;
-	    o.extend = extend;
-	    return o;
-	  } 
-	  
-	  function fn() {
-	    supr.apply(this, arguments);
-	  }
-
-	  proto = _.createProto(fn, supro);
-
-	  function implement(o){
-	    // we need merge the merged property
-	    var len = mlen;
-	    for(;len--;){
-	      var prop = merged[len];
-	      if(proto[prop] && o.hasOwnProperty(prop) && proto.hasOwnProperty(prop)){
-	        _.extend(proto[prop], o[prop], true) 
-	        delete o[prop];
-	      }
-	    }
-
-
-	    process(proto, o, supro); 
-	    return this;
-	  }
-
-
-
-	  fn.implement = implement
-	  fn.implement(o)
-	  if(supr.__after__) supr.__after__.call(fn, supr, o);
-	  fn.extend = extend;
-	  return fn;
-	}
-
-
-
-/***/ },
-/* 15 */
-/***/ function(module, exports, __webpack_require__) {
-
-	// some nested  operation in ast 
-	// --------------------------------
-
-	var dom = __webpack_require__(4);
-	var animate = __webpack_require__(22);
-
-	var combine = module.exports = {
-
-	  // get the initial dom in object
-	  node: function(item){
-	    var children,node, nodes;
-	    if(!item) return;
-	    if(item.element) return item.element;
-	    if(typeof item.node === "function") return item.node();
-	    if(typeof item.nodeType === "number") return item;
-	    if(item.group) return combine.node(item.group)
-	    if(children = item.children){
-	      if(children.length === 1){
-	        return combine.node(children[0]);
-	      }
-	      nodes = [];
-	      for(var i = 0, len = children.length; i < len; i++ ){
-	        node = combine.node(children[i]);
-	        if(Array.isArray(node)){
-	          nodes.push.apply(nodes, node)
-	        }else if(node) {
-	          nodes.push(node)
-	        }
-	      }
-	      return nodes;
-	    }
-	  },
-	  // @TODO remove _gragContainer
-	  inject: function(node, pos ){
-	    var group = this;
-	    var fragment = combine.node(group.group || group);
-	    if(node === false) {
-	      animate.remove(fragment)
-	      return group;
-	    }else{
-	      if(!fragment) return group;
-	      if(typeof node === 'string') node = dom.find(node);
-	      if(!node) throw Error('injected node is not found');
-	      // use animate to animate firstchildren
-	      animate.inject(fragment, node, pos);
-	    }
-	    // if it is a component
-	    if(group.$emit) {
-	      var preParent = group.parentNode;
-	      var newParent = (pos ==='after' || pos === 'before')? node.parentNode : node;
-	      group.parentNode = newParent;
-	      group.$emit("$inject", node, pos, preParent);
-	    }
-	    return group;
-	  },
-
-	  // get the last dom in object(for insertion operation)
-	  last: function(item){
-	    var children = item.children;
-
-	    if(typeof item.last === "function") return item.last();
-	    if(typeof item.nodeType === "number") return item;
-
-	    if(children && children.length) return combine.last(children[children.length - 1]);
-	    if(item.group) return combine.last(item.group);
-
-	  },
-
-	  destroy: function(item, first){
-	    if(!item) return;
-	    if(Array.isArray(item)){
-	      for(var i = 0, len = item.length; i < len; i++ ){
-	        combine.destroy(item[i], first);
-	      }
-	    }
-	    var children = item.children;
-	    if(typeof item.destroy === "function") return item.destroy(first);
-	    if(typeof item.nodeType === "number" && first)  dom.remove(item);
-	    if(children && children.length){
-	      combine.destroy(children, true);
-	      item.children = null;
-	    }
-	  }
-
-	}
-
-
-	// @TODO: need move to dom.js
-	dom.element = function( component, all ){
-	  if(!component) return !all? null: [];
-	  var nodes = combine.node( component );
-	  if( nodes.nodeType === 1 ) return all? [nodes]: nodes;
-	  var elements = [];
-	  for(var i = 0; i<nodes.length ;i++){
-	    var node = nodes[i];
-	    if( node && node.nodeType === 1){
-	      if(!all) return node;
-	      elements.push(node);
-	    } 
-	  }
-	  return !all? elements[0]: elements;
-	}
-
-
-
-
-
-/***/ },
-/* 16 */
-/***/ function(module, exports, __webpack_require__) {
-
-	// simplest event emitter 60 lines
-	// ===============================
-	var slice = [].slice, _ = __webpack_require__(5);
-	var API = {
-	  $on: function(event, fn) {
-	    if(typeof event === "object"){
-	      for (var i in event) {
-	        this.$on(i, event[i]);
-	      }
-	    }else{
-	      // @patch: for list
-	      var context = this;
-	      var handles = context._handles || (context._handles = {}),
-	        calls = handles[event] || (handles[event] = []);
-	      calls.push(fn);
-	    }
-	    return this;
-	  },
-	  $off: function(event, fn) {
-	    var context = this;
-	    if(!context._handles) return;
-	    if(!event) this._handles = {};
-	    var handles = context._handles,
-	      calls;
-
-	    if (calls = handles[event]) {
-	      if (!fn) {
-	        handles[event] = [];
-	        return context;
-	      }
-	      for (var i = 0, len = calls.length; i < len; i++) {
-	        if (fn === calls[i]) {
-	          calls.splice(i, 1);
-	          return context;
-	        }
-	      }
-	    }
-	    return context;
-	  },
-	  // bubble event
-	  $emit: function(event){
-	    // @patch: for list
-	    var context = this;
-	    var handles = context._handles, calls, args, type;
-	    if(!event) return;
-	    var args = slice.call(arguments, 1);
-	    var type = event;
-
-	    if(!handles) return context;
-	    if(calls = handles[type.slice(1)]){
-	      for (var j = 0, len = calls.length; j < len; j++) {
-	        calls[j].apply(context, args)
-	      }
-	    }
-	    if (!(calls = handles[type])) return context;
-	    for (var i = 0, len = calls.length; i < len; i++) {
-	      calls[i].apply(context, args)
-	    }
-	    // if(calls.length) context.$update();
-	    return context;
-	  },
-	  // capture  event
-	  $one: function(){
-	    
-	}
-	}
-	// container class
-	function Event() {}
-	_.extend(Event.prototype, API)
-
-	Event.mixTo = function(obj){
-	  obj = typeof obj === "function" ? obj.prototype : obj;
-	  _.extend(obj, API)
-	}
-	module.exports = Event;
-
-/***/ },
-/* 17 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var _ = __webpack_require__(5);
-	var parseExpression = __webpack_require__(18).expression;
-	var diff = __webpack_require__(25);
-	var diffArray = diff.diffArray;
-	var diffObject = diff.diffObject;
-
-	function Watcher(){}
-
-	var methods = {
-	  $watch: function(expr, fn, options){
-	    var get, once, test, rlen, extra = this.__ext__; //records length
-	    if(!this._watchers) this._watchers = [];
-
-	    options = options || {};
-	    if(options === true){
-	       options = { deep: true }
-	    }
-	    var uid = _.uid('w_');
-	    if(Array.isArray(expr)){
-	      var tests = [];
-	      for(var i = 0,len = expr.length; i < len; i++){
-	          tests.push(this.$expression(expr[i]).get)
-	      }
-	      var prev = [];
-	      test = function(context){
-	        var equal = true;
-	        for(var i =0, len = tests.length; i < len; i++){
-	          var splice = tests[i](context, extra);
-	          if(!_.equals(splice, prev[i])){
-	             equal = false;
-	             prev[i] = _.clone(splice);
-	          }
-	        }
-	        return equal? false: prev;
-	      }
-	    }else{
-	      if(typeof expr === 'function'){
-	        get = expr.bind(this);      
-	      }else{
-	        expr = this._touchExpr( parseExpression(expr) );
-	        get = expr.get;
-	        once = expr.once;
-	      }
-	    }
-
-	    var watcher = {
-	      id: uid, 
-	      get: get, 
-	      fn: fn, 
-	      once: once, 
-	      force: options.force,
-	      // don't use ld to resolve array diff
-	      diff: options.diff,
-	      test: test,
-	      deep: options.deep,
-	      last: options.sync? get(this): options.last
-	    }
-	    
-	    this._watchers.push( watcher );
-
-	    rlen = this._records && this._records.length;
-	    if(rlen) this._records[rlen-1].push(uid)
-	    // init state.
-	    if(options.init === true){
-	      var prephase = this.$phase;
-	      this.$phase = 'digest';
-	      this._checkSingleWatch( watcher, this._watchers.length-1 );
-	      this.$phase = prephase;
-	    }
-	    return watcher;
-	  },
-	  $unwatch: function(uid){
-	    uid = uid.id || uid;
-	    if(!this._watchers) this._watchers = [];
-	    if(Array.isArray(uid)){
-	      for(var i =0, len = uid.length; i < len; i++){
-	        this.$unwatch(uid[i]);
-	      }
-	    }else{
-	      var watchers = this._watchers, watcher, wlen;
-	      if(!uid || !watchers || !(wlen = watchers.length)) return;
-	      for(;wlen--;){
-	        watcher = watchers[wlen];
-	        if(watcher && watcher.id === uid ){
-	          watchers.splice(wlen, 1);
-	        }
-	      }
-	    }
-	  },
-	  $expression: function(value){
-	    return this._touchExpr(parseExpression(value))
-	  },
-	  /**
-	   * the whole digest loop ,just like angular, it just a dirty-check loop;
-	   * @param  {String} path  now regular process a pure dirty-check loop, but in parse phase, 
-	   *                  Regular's parser extract the dependencies, in future maybe it will change to dirty-check combine with path-aware update;
-	   * @return {Void}   
-	   */
-
-	  $digest: function(){
-	    if(this.$phase === 'digest' || this._mute) return;
-	    this.$phase = 'digest';
-	    var dirty = false, n =0;
-	    while(dirty = this._digest()){
-
-	      if((++n) > 20){ // max loop
-	        throw Error('there may a circular dependencies reaches')
-	      }
-	    }
-	    if( n > 0 && this.$emit) this.$emit("$update");
-	    this.$phase = null;
-	  },
-	  // private digest logic
-	  _digest: function(){
-
-	    var watchers = this._watchers;
-	    var dirty = false, children, watcher, watcherDirty;
-	    if(watchers && watchers.length){
-	      for(var i = 0, len = watchers.length;i < len; i++){
-	        watcher = watchers[i];
-	        watcherDirty = this._checkSingleWatch(watcher, i);
-	        if(watcherDirty) dirty = true;
-	      }
-	    }
-	    // check children's dirty.
-	    children = this._children;
-	    if(children && children.length){
-	      for(var m = 0, mlen = children.length; m < mlen; m++){
-	        var child = children[m];
-	        
-	        if(child && child._digest()) dirty = true;
-	      }
-	    }
-	    return dirty;
-	  },
-	  // check a single one watcher 
-	  _checkSingleWatch: function(watcher, i){
-	    var dirty = false;
-	    if(!watcher) return;
-
-	    var now, last, tlast, tnow,  eq, diff;
-
-	    if(!watcher.test){
-
-	      now = watcher.get(this);
-	      last = watcher.last;
-	      tlast = _.typeOf(last);
-	      tnow = _.typeOf(now);
-	      eq = true, diff;
-
-	      // !Object
-	      if( !(tnow === 'object' && tlast==='object' && watcher.deep) ){
-	        // Array
-	        if( tnow === 'array' && ( tlast=='undefined' || tlast === 'array') ){
-	          diff = diffArray(now, watcher.last || [], watcher.diff)
-	          if( tlast !== 'array' || diff === true || diff.length ) dirty = true;
-	        }else{
-	          eq = _.equals( now, last );
-	          if( !eq || watcher.force ){
-	            watcher.force = null;
-	            dirty = true; 
-	          }
-	        }
-	      }else{
-	        diff =  diffObject( now, last, watcher.diff );
-	        if( diff === true || diff.length ) dirty = true;
-	      }
-	    } else{
-	      // @TODO 是否把多重改掉
-	      var result = watcher.test(this);
-	      if(result){
-	        dirty = true;
-	        watcher.fn.apply(this, result)
-	      }
-	    }
-	    if(dirty && !watcher.test){
-	      if(tnow === 'object' && watcher.deep || tnow === 'array'){
-	        watcher.last = _.clone(now);
-	      }else{
-	        watcher.last = now;
-	      }
-	      watcher.fn.call(this, now, last, diff)
-	      if(watcher.once) this._watchers.splice(i, 1);
-	    }
-
-	    return dirty;
-	  },
-
-	  /**
-	   * **tips**: whatever param you passed in $update, after the function called, dirty-check(digest) phase will enter;
-	   * 
-	   * @param  {Function|String|Expression} path  
-	   * @param  {Whatever} value optional, when path is Function, the value is ignored
-	   * @return {this}     this 
-	   */
-	  $set: function(path, value){
-	    if(path != null){
-	      var type = _.typeOf(path);
-	      if( type === 'string' || path.type === 'expression' ){
-	        path = this.$expression(path);
-	        path.set(this, value);
-	      }else if(type === 'function'){
-	        path.call(this, this.data);
-	      }else{
-	        for(var i in path) {
-	          this.$set(i, path[i])
-	        }
-	      }
-	    }
-	  },
-	  // 1. expr canbe string or a Expression
-	  // 2. detect: if true, if expr is a string will directly return;
-	  $get: function(expr, detect)  {
-	    if(detect && typeof expr === 'string') return expr;
-	    return this.$expression(expr).get(this);
-	  },
-	  $update: function(){
-	    var rootParent = this;
-	    do{
-	      if(rootParent.data.isolate || !rootParent.$parent) break;
-	      rootParent = rootParent.$parent;
-	    } while(rootParent)
-
-	    var prephase =rootParent.$phase;
-	    rootParent.$phase = 'digest'
-
-	    this.$set.apply(this, arguments);
-
-	    rootParent.$phase = prephase
-
-	    rootParent.$digest();
-	    return this;
-	  },
-	  // auto collect watchers for logic-control.
-	  _record: function(){
-	    if(!this._records) this._records = [];
-	    this._records.push([]);
-	  },
-	  _release: function(){
-	    return this._records.pop();
-	  }
-	}
-
-
-	_.extend(Watcher.prototype, methods)
-
-
-	Watcher.mixTo = function(obj){
-	  obj = typeof obj === "function" ? obj.prototype : obj;
-	  return _.extend(obj, methods)
-	}
-
-	module.exports = Watcher;
-
-/***/ },
-/* 18 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var exprCache = __webpack_require__(1).exprCache;
-	var _ = __webpack_require__(5);
-	var Parser = __webpack_require__(21);
-	module.exports = {
-	  expression: function(expr, simple){
-	    // @TODO cache
-	    if( typeof expr === 'string' && ( expr = expr.trim() ) ){
-	      expr = exprCache.get( expr ) || exprCache.set( expr, new Parser( expr, { mode: 2, expression: true } ).expression() )
-	    }
-	    if(expr) return expr;
-	  },
-	  parse: function(template){
-	    return new Parser(template).parse();
-	  }
-	}
-
-
-
-/***/ },
-/* 19 */
-/***/ function(module, exports, __webpack_require__) {
-
-	
-	var f = module.exports = {};
-
-	// json:  two way 
-	//  - get: JSON.stringify
-	//  - set: JSON.parse
-	//  - example: `{ title|json }`
-	f.json = {
-	  get: function( value ){
-	    return typeof JSON !== 'undefined'? JSON.stringify(value): value;
-	  },
-	  set: function( value ){
-	    return typeof JSON !== 'undefined'? JSON.parse(value) : value;
-	  }
-	}
-
-	// last: one-way
-	//  - get: return the last item in list
-	//  - example: `{ list|last }`
-	f.last = function(arr){
-	  return arr && arr[arr.length - 1];
-	}
-
-	// average: one-way
-	//  - get: copute the average of the list
-	//  - example: `{ list| average: "score" }`
-	f.average = function(array, key){
-	  array = array || [];
-	  return array.length? f.total(array, key)/ array.length : 0;
-	}
-
-
-	// total: one-way
-	//  - get: copute the total of the list
-	//  - example: `{ list| total: "score" }`
-	f.total = function(array, key){
-	  var total = 0;
-	  if(!array) return;
-	  array.forEach(function( item ){
-	    total += key? item[key] : item;
-	  })
-	  return total;
-	}
-
-	// var basicSortFn = function(a, b){return b - a}
-
-	// f.sort = function(array, key, reverse){
-	//   var type = typeof key, sortFn; 
-	//   switch(type){
-	//     case 'function': sortFn = key; break;
-	//     case 'string': sortFn = function(a, b){};break;
-	//     default:
-	//       sortFn = basicSortFn;
-	//   }
-	//   // need other refernce.
-	//   return array.slice().sort(function(a,b){
-	//     return reverse? -sortFn(a, b): sortFn(a, b);
-	//   })
-	//   return array
-	// }
-
-
-
-
-/***/ },
-/* 20 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(5);
@@ -4016,14 +3083,14 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 21 */
+/* 13 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(5);
 
 	var config = __webpack_require__(2);
 	var node = __webpack_require__(26);
-	var Lexer = __webpack_require__(20);
+	var Lexer = __webpack_require__(12);
 	var varName = _.varName;
 	var ctxName = _.ctxName;
 	var extName = _.extName;
@@ -4666,10 +3733,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	    // literal or ident
 	    case 'STRING':
 	      this.next();
-	      return this.getset("'" + ll.value + "'")
+	      var value = "" + ll.value;
+	      var quota = ~value.indexOf("'")? "\"": "'" ;
+	      return this.getset(quota + value + quota);
 	    case 'NUMBER':
 	      this.next();
-	      return this.getset(""+ll.value);
+	      return this.getset( "" + value );
 	    case "IDENT":
 	      this.next();
 	      if(isKeyWord(ll.value)){
@@ -4745,6 +3814,1019 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	module.exports = Parser;
 
+
+/***/ },
+/* 14 */
+/***/ function(module, exports, __webpack_require__) {
+
+	// (c) 2010-2014 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
+	// Backbone may be freely distributed under the MIT license.
+	// For all details and documentation:
+	// http://backbonejs.org
+
+	// klass: a classical JS OOP façade
+	// https://github.com/ded/klass
+	// License MIT (c) Dustin Diaz 2014
+	  
+	// inspired by backbone's extend and klass
+	var _ = __webpack_require__(5),
+	  fnTest = /xy/.test(function(){"xy";}) ? /\bsupr\b/:/.*/,
+	  isFn = function(o){return typeof o === "function"};
+
+	var hooks = {
+	  events: function( propertyValue, proto, supro ){
+	    var eventListeners = proto._eventListeners || [];
+	    var normedEvents = _.normListener(propertyValue);
+
+	    if(normedEvents.length) {
+	      proto._eventListeners = eventListeners.concat( normedEvents );
+	    }
+	    delete proto.events ;
+	  }
+	}
+
+
+	function wrap( k, fn, supro ) {
+	  return function () {
+	    var tmp = this.supr;
+	    this.supr = supro[k];
+	    var ret = fn.apply(this, arguments);
+	    this.supr = tmp;
+	    return ret;
+	  }
+	}
+
+	function process( what, o, supro ) {
+	  for ( var k in o ) {
+	    if (o.hasOwnProperty(k)) {
+	      if(hooks[k]) {
+	        hooks[k](o[k], what, supro)
+	        delete o[k];
+	      }
+	      what[k] = isFn( o[k] ) && isFn( supro[k] ) && 
+	        fnTest.test( o[k] ) ? wrap(k, o[k], supro) : o[k];
+	    }
+	  }
+	}
+
+	// if the property is ["events", "data", "computed"] , we should merge them
+	var merged = ["data", "computed"], mlen = merged.length;
+	module.exports = function extend(o){
+	  o = o || {};
+	  var supr = this, proto,
+	    supro = supr && supr.prototype || {};
+
+	  if(typeof o === 'function'){
+	    proto = o.prototype;
+	    o.implement = implement;
+	    o.extend = extend;
+	    return o;
+	  } 
+	  
+	  function fn() {
+	    supr.apply(this, arguments);
+	  }
+
+	  proto = _.createProto(fn, supro);
+
+	  function implement(o){
+	    // we need merge the merged property
+	    var len = mlen;
+	    for(;len--;){
+	      var prop = merged[len];
+	      if(proto[prop] && o.hasOwnProperty(prop) && proto.hasOwnProperty(prop)){
+	        _.extend(proto[prop], o[prop], true) 
+	        delete o[prop];
+	      }
+	    }
+
+
+	    process(proto, o, supro); 
+	    return this;
+	  }
+
+
+
+	  fn.implement = implement
+	  fn.implement(o)
+	  if(supr.__after__) supr.__after__.call(fn, supr, o);
+	  fn.extend = extend;
+	  return fn;
+	}
+
+
+
+/***/ },
+/* 15 */
+/***/ function(module, exports, __webpack_require__) {
+
+	// some nested  operation in ast 
+	// --------------------------------
+
+	var dom = __webpack_require__(4);
+	var animate = __webpack_require__(22);
+
+	var combine = module.exports = {
+
+	  // get the initial dom in object
+	  node: function(item){
+	    var children,node, nodes;
+	    if(!item) return;
+	    if(item.element) return item.element;
+	    if(typeof item.node === "function") return item.node();
+	    if(typeof item.nodeType === "number") return item;
+	    if(item.group) return combine.node(item.group)
+	    if(children = item.children){
+	      if(children.length === 1){
+	        return combine.node(children[0]);
+	      }
+	      nodes = [];
+	      for(var i = 0, len = children.length; i < len; i++ ){
+	        node = combine.node(children[i]);
+	        if(Array.isArray(node)){
+	          nodes.push.apply(nodes, node)
+	        }else if(node) {
+	          nodes.push(node)
+	        }
+	      }
+	      return nodes;
+	    }
+	  },
+	  // @TODO remove _gragContainer
+	  inject: function(node, pos ){
+	    var group = this;
+	    var fragment = combine.node(group.group || group);
+	    if(node === false) {
+	      animate.remove(fragment)
+	      return group;
+	    }else{
+	      if(!fragment) return group;
+	      if(typeof node === 'string') node = dom.find(node);
+	      if(!node) throw Error('injected node is not found');
+	      // use animate to animate firstchildren
+	      animate.inject(fragment, node, pos);
+	    }
+	    // if it is a component
+	    if(group.$emit) {
+	      var preParent = group.parentNode;
+	      var newParent = (pos ==='after' || pos === 'before')? node.parentNode : node;
+	      group.parentNode = newParent;
+	      group.$emit("$inject", node, pos, preParent);
+	    }
+	    return group;
+	  },
+
+	  // get the last dom in object(for insertion operation)
+	  last: function(item){
+	    var children = item.children;
+
+	    if(typeof item.last === "function") return item.last();
+	    if(typeof item.nodeType === "number") return item;
+
+	    if(children && children.length) return combine.last(children[children.length - 1]);
+	    if(item.group) return combine.last(item.group);
+
+	  },
+
+	  destroy: function(item, first){
+	    if(!item) return;
+	    if(Array.isArray(item)){
+	      for(var i = 0, len = item.length; i < len; i++ ){
+	        combine.destroy(item[i], first);
+	      }
+	    }
+	    var children = item.children;
+	    if(typeof item.destroy === "function") return item.destroy(first);
+	    if(typeof item.nodeType === "number" && first)  dom.remove(item);
+	    if(children && children.length){
+	      combine.destroy(children, true);
+	      item.children = null;
+	    }
+	  }
+
+	}
+
+
+	// @TODO: need move to dom.js
+	dom.element = function( component, all ){
+	  if(!component) return !all? null: [];
+	  var nodes = combine.node( component );
+	  if( nodes.nodeType === 1 ) return all? [nodes]: nodes;
+	  var elements = [];
+	  for(var i = 0; i<nodes.length ;i++){
+	    var node = nodes[i];
+	    if( node && node.nodeType === 1){
+	      if(!all) return node;
+	      elements.push(node);
+	    } 
+	  }
+	  return !all? elements[0]: elements;
+	}
+
+
+
+
+
+/***/ },
+/* 16 */
+/***/ function(module, exports, __webpack_require__) {
+
+	// simplest event emitter 60 lines
+	// ===============================
+	var slice = [].slice, _ = __webpack_require__(5);
+	var API = {
+	  $on: function(event, fn) {
+	    if(typeof event === "object"){
+	      for (var i in event) {
+	        this.$on(i, event[i]);
+	      }
+	    }else{
+	      // @patch: for list
+	      var context = this;
+	      var handles = context._handles || (context._handles = {}),
+	        calls = handles[event] || (handles[event] = []);
+	      calls.push(fn);
+	    }
+	    return this;
+	  },
+	  $off: function(event, fn) {
+	    var context = this;
+	    if(!context._handles) return;
+	    if(!event) this._handles = {};
+	    var handles = context._handles,
+	      calls;
+
+	    if (calls = handles[event]) {
+	      if (!fn) {
+	        handles[event] = [];
+	        return context;
+	      }
+	      for (var i = 0, len = calls.length; i < len; i++) {
+	        if (fn === calls[i]) {
+	          calls.splice(i, 1);
+	          return context;
+	        }
+	      }
+	    }
+	    return context;
+	  },
+	  // bubble event
+	  $emit: function(event){
+	    // @patch: for list
+	    var context = this;
+	    var handles = context._handles, calls, args, type;
+	    if(!event) return;
+	    var args = slice.call(arguments, 1);
+	    var type = event;
+
+	    if(!handles) return context;
+	    if(calls = handles[type.slice(1)]){
+	      for (var j = 0, len = calls.length; j < len; j++) {
+	        calls[j].apply(context, args)
+	      }
+	    }
+	    if (!(calls = handles[type])) return context;
+	    for (var i = 0, len = calls.length; i < len; i++) {
+	      calls[i].apply(context, args)
+	    }
+	    // if(calls.length) context.$update();
+	    return context;
+	  },
+	  // capture  event
+	  $one: function(){
+	    
+	}
+	}
+	// container class
+	function Event() {}
+	_.extend(Event.prototype, API)
+
+	Event.mixTo = function(obj){
+	  obj = typeof obj === "function" ? obj.prototype : obj;
+	  _.extend(obj, API)
+	}
+	module.exports = Event;
+
+/***/ },
+/* 17 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var _ = __webpack_require__(5);
+	var parseExpression = __webpack_require__(18).expression;
+	var diff = __webpack_require__(25);
+	var diffArray = diff.diffArray;
+	var diffObject = diff.diffObject;
+
+	function Watcher(){}
+
+	var methods = {
+	  $watch: function(expr, fn, options){
+	    var get, once, test, rlen, extra = this.__ext__; //records length
+	    if(!this._watchers) this._watchers = [];
+
+	    options = options || {};
+	    if(options === true){
+	       options = { deep: true }
+	    }
+	    var uid = _.uid('w_');
+	    if(Array.isArray(expr)){
+	      var tests = [];
+	      for(var i = 0,len = expr.length; i < len; i++){
+	          tests.push(this.$expression(expr[i]).get)
+	      }
+	      var prev = [];
+	      test = function(context){
+	        var equal = true;
+	        for(var i =0, len = tests.length; i < len; i++){
+	          var splice = tests[i](context, extra);
+	          if(!_.equals(splice, prev[i])){
+	             equal = false;
+	             prev[i] = _.clone(splice);
+	          }
+	        }
+	        return equal? false: prev;
+	      }
+	    }else{
+	      if(typeof expr === 'function'){
+	        get = expr.bind(this);      
+	      }else{
+	        expr = this._touchExpr( parseExpression(expr) );
+	        get = expr.get;
+	        once = expr.once;
+	      }
+	    }
+
+	    var watcher = {
+	      id: uid, 
+	      get: get, 
+	      fn: fn, 
+	      once: once, 
+	      force: options.force,
+	      // don't use ld to resolve array diff
+	      diff: options.diff,
+	      test: test,
+	      deep: options.deep,
+	      last: options.sync? get(this): options.last
+	    }
+	    
+	    this._watchers.push( watcher );
+
+	    rlen = this._records && this._records.length;
+	    if(rlen) this._records[rlen-1].push(uid)
+	    // init state.
+	    if(options.init === true){
+	      var prephase = this.$phase;
+	      this.$phase = 'digest';
+	      this._checkSingleWatch( watcher, this._watchers.length-1 );
+	      this.$phase = prephase;
+	    }
+	    return watcher;
+	  },
+	  $unwatch: function(uid){
+	    uid = uid.id || uid;
+	    if(!this._watchers) this._watchers = [];
+	    if(Array.isArray(uid)){
+	      for(var i =0, len = uid.length; i < len; i++){
+	        this.$unwatch(uid[i]);
+	      }
+	    }else{
+	      var watchers = this._watchers, watcher, wlen;
+	      if(!uid || !watchers || !(wlen = watchers.length)) return;
+	      for(;wlen--;){
+	        watcher = watchers[wlen];
+	        if(watcher && watcher.id === uid ){
+	          watchers.splice(wlen, 1);
+	        }
+	      }
+	    }
+	  },
+	  $expression: function(value){
+	    return this._touchExpr(parseExpression(value))
+	  },
+	  /**
+	   * the whole digest loop ,just like angular, it just a dirty-check loop;
+	   * @param  {String} path  now regular process a pure dirty-check loop, but in parse phase, 
+	   *                  Regular's parser extract the dependencies, in future maybe it will change to dirty-check combine with path-aware update;
+	   * @return {Void}   
+	   */
+
+	  $digest: function(){
+	    if(this.$phase === 'digest' || this._mute) return;
+	    this.$phase = 'digest';
+	    var dirty = false, n =0;
+	    while(dirty = this._digest()){
+
+	      if((++n) > 20){ // max loop
+	        throw Error('there may a circular dependencies reaches')
+	      }
+	    }
+	    if( n > 0 && this.$emit) this.$emit("$update");
+	    this.$phase = null;
+	  },
+	  // private digest logic
+	  _digest: function(){
+
+	    var watchers = this._watchers;
+	    var dirty = false, children, watcher, watcherDirty;
+	    if(watchers && watchers.length){
+	      for(var i = 0, len = watchers.length;i < len; i++){
+	        watcher = watchers[i];
+	        watcherDirty = this._checkSingleWatch(watcher, i);
+	        if(watcherDirty) dirty = true;
+	      }
+	    }
+	    // check children's dirty.
+	    children = this._children;
+	    if(children && children.length){
+	      for(var m = 0, mlen = children.length; m < mlen; m++){
+	        var child = children[m];
+	        
+	        if(child && child._digest()) dirty = true;
+	      }
+	    }
+	    return dirty;
+	  },
+	  // check a single one watcher 
+	  _checkSingleWatch: function(watcher, i){
+	    var dirty = false;
+	    if(!watcher) return;
+
+	    var now, last, tlast, tnow,  eq, diff;
+
+	    if(!watcher.test){
+
+	      now = watcher.get(this);
+	      last = watcher.last;
+	      tlast = _.typeOf(last);
+	      tnow = _.typeOf(now);
+	      eq = true, diff;
+
+	      // !Object
+	      if( !(tnow === 'object' && tlast==='object' && watcher.deep) ){
+	        // Array
+	        if( tnow === 'array' && ( tlast=='undefined' || tlast === 'array') ){
+	          diff = diffArray(now, watcher.last || [], watcher.diff)
+	          if( tlast !== 'array' || diff === true || diff.length ) dirty = true;
+	        }else{
+	          eq = _.equals( now, last );
+	          if( !eq || watcher.force ){
+	            watcher.force = null;
+	            dirty = true; 
+	          }
+	        }
+	      }else{
+	        diff =  diffObject( now, last, watcher.diff );
+	        if( diff === true || diff.length ) dirty = true;
+	      }
+	    } else{
+	      // @TODO 是否把多重改掉
+	      var result = watcher.test(this);
+	      if(result){
+	        dirty = true;
+	        watcher.fn.apply(this, result)
+	      }
+	    }
+	    if(dirty && !watcher.test){
+	      if(tnow === 'object' && watcher.deep || tnow === 'array'){
+	        watcher.last = _.clone(now);
+	      }else{
+	        watcher.last = now;
+	      }
+	      watcher.fn.call(this, now, last, diff)
+	      if(watcher.once) this._watchers.splice(i, 1);
+	    }
+
+	    return dirty;
+	  },
+
+	  /**
+	   * **tips**: whatever param you passed in $update, after the function called, dirty-check(digest) phase will enter;
+	   * 
+	   * @param  {Function|String|Expression} path  
+	   * @param  {Whatever} value optional, when path is Function, the value is ignored
+	   * @return {this}     this 
+	   */
+	  $set: function(path, value){
+	    if(path != null){
+	      var type = _.typeOf(path);
+	      if( type === 'string' || path.type === 'expression' ){
+	        path = this.$expression(path);
+	        path.set(this, value);
+	      }else if(type === 'function'){
+	        path.call(this, this.data);
+	      }else{
+	        for(var i in path) {
+	          this.$set(i, path[i])
+	        }
+	      }
+	    }
+	  },
+	  // 1. expr canbe string or a Expression
+	  // 2. detect: if true, if expr is a string will directly return;
+	  $get: function(expr, detect)  {
+	    if(detect && typeof expr === 'string') return expr;
+	    return this.$expression(expr).get(this);
+	  },
+	  $update: function(){
+	    var rootParent = this;
+	    do{
+	      if(rootParent.data.isolate || !rootParent.$parent) break;
+	      rootParent = rootParent.$parent;
+	    } while(rootParent)
+
+	    var prephase =rootParent.$phase;
+	    rootParent.$phase = 'digest'
+
+	    this.$set.apply(this, arguments);
+
+	    rootParent.$phase = prephase
+
+	    rootParent.$digest();
+	    return this;
+	  },
+	  // auto collect watchers for logic-control.
+	  _record: function(){
+	    if(!this._records) this._records = [];
+	    this._records.push([]);
+	  },
+	  _release: function(){
+	    return this._records.pop();
+	  }
+	}
+
+
+	_.extend(Watcher.prototype, methods)
+
+
+	Watcher.mixTo = function(obj){
+	  obj = typeof obj === "function" ? obj.prototype : obj;
+	  return _.extend(obj, methods)
+	}
+
+	module.exports = Watcher;
+
+/***/ },
+/* 18 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var exprCache = __webpack_require__(1).exprCache;
+	var _ = __webpack_require__(5);
+	var Parser = __webpack_require__(13);
+	module.exports = {
+	  expression: function(expr, simple){
+	    // @TODO cache
+	    if( typeof expr === 'string' && ( expr = expr.trim() ) ){
+	      expr = exprCache.get( expr ) || exprCache.set( expr, new Parser( expr, { mode: 2, expression: true } ).expression() )
+	    }
+	    if(expr) return expr;
+	  },
+	  parse: function(template){
+	    return new Parser(template).parse();
+	  }
+	}
+
+
+
+/***/ },
+/* 19 */
+/***/ function(module, exports, __webpack_require__) {
+
+	
+	var f = module.exports = {};
+
+	// json:  two way 
+	//  - get: JSON.stringify
+	//  - set: JSON.parse
+	//  - example: `{ title|json }`
+	f.json = {
+	  get: function( value ){
+	    return typeof JSON !== 'undefined'? JSON.stringify(value): value;
+	  },
+	  set: function( value ){
+	    return typeof JSON !== 'undefined'? JSON.parse(value) : value;
+	  }
+	}
+
+	// last: one-way
+	//  - get: return the last item in list
+	//  - example: `{ list|last }`
+	f.last = function(arr){
+	  return arr && arr[arr.length - 1];
+	}
+
+	// average: one-way
+	//  - get: copute the average of the list
+	//  - example: `{ list| average: "score" }`
+	f.average = function(array, key){
+	  array = array || [];
+	  return array.length? f.total(array, key)/ array.length : 0;
+	}
+
+
+	// total: one-way
+	//  - get: copute the total of the list
+	//  - example: `{ list| total: "score" }`
+	f.total = function(array, key){
+	  var total = 0;
+	  if(!array) return;
+	  array.forEach(function( item ){
+	    total += key? item[key] : item;
+	  })
+	  return total;
+	}
+
+	// var basicSortFn = function(a, b){return b - a}
+
+	// f.sort = function(array, key, reverse){
+	//   var type = typeof key, sortFn; 
+	//   switch(type){
+	//     case 'function': sortFn = key; break;
+	//     case 'string': sortFn = function(a, b){};break;
+	//     default:
+	//       sortFn = basicSortFn;
+	//   }
+	//   // need other refernce.
+	//   return array.slice().sort(function(a,b){
+	//     return reverse? -sortFn(a, b): sortFn(a, b);
+	//   })
+	//   return array
+	// }
+
+
+
+
+/***/ },
+/* 20 */
+/***/ function(module, exports, __webpack_require__) {
+
+	// shim for es5
+	var slice = [].slice;
+	var tstr = ({}).toString;
+
+	function extend(o1, o2 ){
+	  for(var i in o2) if( o1[i] === undefined){
+	    o1[i] = o2[i]
+	  }
+	  return o2;
+	}
+
+
+	module.exports = function(){
+	  // String proto ;
+	  extend(String.prototype, {
+	    trim: function(){
+	      return this.replace(/^\s+|\s+$/g, '');
+	    }
+	  });
+
+
+	  // Array proto;
+	  extend(Array.prototype, {
+	    indexOf: function(obj, from){
+	      from = from || 0;
+	      for (var i = from, len = this.length; i < len; i++) {
+	        if (this[i] === obj) return i;
+	      }
+	      return -1;
+	    },
+	    // polyfill from MDN 
+	    // https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Array/forEach
+	    forEach: function(callback, ctx){
+	      var k = 0;
+
+	      // 1. Let O be the result of calling ToObject passing the |this| value as the argument.
+	      var O = Object(this);
+
+	      var len = O.length >>> 0; 
+
+	      if ( typeof callback !== "function" ) {
+	        throw new TypeError( callback + " is not a function" );
+	      }
+
+	      // 7. Repeat, while k < len
+	      while( k < len ) {
+
+	        var kValue;
+
+	        if ( k in O ) {
+
+	          kValue = O[ k ];
+
+	          callback.call( ctx, kValue, k, O );
+	        }
+	        k++;
+	      }
+	    },
+	    // @deprecated
+	    //  will be removed at 0.5.0
+	    filter: function(fun, context){
+
+	      var t = Object(this);
+	      var len = t.length >>> 0;
+	      if (typeof fun !== "function")
+	        throw new TypeError();
+
+	      var res = [];
+	      for (var i = 0; i < len; i++)
+	      {
+	        if (i in t)
+	        {
+	          var val = t[i];
+	          if (fun.call(context, val, i, t))
+	            res.push(val);
+	        }
+	      }
+
+	      return res;
+	    }
+	  });
+
+	  // Function proto;
+	  extend(Function.prototype, {
+	    bind: function(context){
+	      var fn = this;
+	      var preArgs = slice.call(arguments, 1);
+	      return function(){
+	        var args = preArgs.concat(slice.call(arguments));
+	        return fn.apply(context, args);
+	      }
+	    }
+	  })
+	  
+	  // Array
+	  extend(Array, {
+	    isArray: function(arr){
+	      return tstr.call(arr) === "[object Array]";
+	    }
+	  })
+	}
+
+
+
+/***/ },
+/* 21 */
+/***/ function(module, exports, __webpack_require__) {
+
+	// http://stackoverflow.com/questions/1354064/how-to-convert-characters-to-html-entities-using-plain-javascript
+	var entities = {
+	  'quot':34, 
+	  'amp':38, 
+	  'apos':39, 
+	  'lt':60, 
+	  'gt':62, 
+	  'nbsp':160, 
+	  'iexcl':161, 
+	  'cent':162, 
+	  'pound':163, 
+	  'curren':164, 
+	  'yen':165, 
+	  'brvbar':166, 
+	  'sect':167, 
+	  'uml':168, 
+	  'copy':169, 
+	  'ordf':170, 
+	  'laquo':171, 
+	  'not':172, 
+	  'shy':173, 
+	  'reg':174, 
+	  'macr':175, 
+	  'deg':176, 
+	  'plusmn':177, 
+	  'sup2':178, 
+	  'sup3':179, 
+	  'acute':180, 
+	  'micro':181, 
+	  'para':182, 
+	  'middot':183, 
+	  'cedil':184, 
+	  'sup1':185, 
+	  'ordm':186, 
+	  'raquo':187, 
+	  'frac14':188, 
+	  'frac12':189, 
+	  'frac34':190, 
+	  'iquest':191, 
+	  'Agrave':192, 
+	  'Aacute':193, 
+	  'Acirc':194, 
+	  'Atilde':195, 
+	  'Auml':196, 
+	  'Aring':197, 
+	  'AElig':198, 
+	  'Ccedil':199, 
+	  'Egrave':200, 
+	  'Eacute':201, 
+	  'Ecirc':202, 
+	  'Euml':203, 
+	  'Igrave':204, 
+	  'Iacute':205, 
+	  'Icirc':206, 
+	  'Iuml':207, 
+	  'ETH':208, 
+	  'Ntilde':209, 
+	  'Ograve':210, 
+	  'Oacute':211, 
+	  'Ocirc':212, 
+	  'Otilde':213, 
+	  'Ouml':214, 
+	  'times':215, 
+	  'Oslash':216, 
+	  'Ugrave':217, 
+	  'Uacute':218, 
+	  'Ucirc':219, 
+	  'Uuml':220, 
+	  'Yacute':221, 
+	  'THORN':222, 
+	  'szlig':223, 
+	  'agrave':224, 
+	  'aacute':225, 
+	  'acirc':226, 
+	  'atilde':227, 
+	  'auml':228, 
+	  'aring':229, 
+	  'aelig':230, 
+	  'ccedil':231, 
+	  'egrave':232, 
+	  'eacute':233, 
+	  'ecirc':234, 
+	  'euml':235, 
+	  'igrave':236, 
+	  'iacute':237, 
+	  'icirc':238, 
+	  'iuml':239, 
+	  'eth':240, 
+	  'ntilde':241, 
+	  'ograve':242, 
+	  'oacute':243, 
+	  'ocirc':244, 
+	  'otilde':245, 
+	  'ouml':246, 
+	  'divide':247, 
+	  'oslash':248, 
+	  'ugrave':249, 
+	  'uacute':250, 
+	  'ucirc':251, 
+	  'uuml':252, 
+	  'yacute':253, 
+	  'thorn':254, 
+	  'yuml':255, 
+	  'fnof':402, 
+	  'Alpha':913, 
+	  'Beta':914, 
+	  'Gamma':915, 
+	  'Delta':916, 
+	  'Epsilon':917, 
+	  'Zeta':918, 
+	  'Eta':919, 
+	  'Theta':920, 
+	  'Iota':921, 
+	  'Kappa':922, 
+	  'Lambda':923, 
+	  'Mu':924, 
+	  'Nu':925, 
+	  'Xi':926, 
+	  'Omicron':927, 
+	  'Pi':928, 
+	  'Rho':929, 
+	  'Sigma':931, 
+	  'Tau':932, 
+	  'Upsilon':933, 
+	  'Phi':934, 
+	  'Chi':935, 
+	  'Psi':936, 
+	  'Omega':937, 
+	  'alpha':945, 
+	  'beta':946, 
+	  'gamma':947, 
+	  'delta':948, 
+	  'epsilon':949, 
+	  'zeta':950, 
+	  'eta':951, 
+	  'theta':952, 
+	  'iota':953, 
+	  'kappa':954, 
+	  'lambda':955, 
+	  'mu':956, 
+	  'nu':957, 
+	  'xi':958, 
+	  'omicron':959, 
+	  'pi':960, 
+	  'rho':961, 
+	  'sigmaf':962, 
+	  'sigma':963, 
+	  'tau':964, 
+	  'upsilon':965, 
+	  'phi':966, 
+	  'chi':967, 
+	  'psi':968, 
+	  'omega':969, 
+	  'thetasym':977, 
+	  'upsih':978, 
+	  'piv':982, 
+	  'bull':8226, 
+	  'hellip':8230, 
+	  'prime':8242, 
+	  'Prime':8243, 
+	  'oline':8254, 
+	  'frasl':8260, 
+	  'weierp':8472, 
+	  'image':8465, 
+	  'real':8476, 
+	  'trade':8482, 
+	  'alefsym':8501, 
+	  'larr':8592, 
+	  'uarr':8593, 
+	  'rarr':8594, 
+	  'darr':8595, 
+	  'harr':8596, 
+	  'crarr':8629, 
+	  'lArr':8656, 
+	  'uArr':8657, 
+	  'rArr':8658, 
+	  'dArr':8659, 
+	  'hArr':8660, 
+	  'forall':8704, 
+	  'part':8706, 
+	  'exist':8707, 
+	  'empty':8709, 
+	  'nabla':8711, 
+	  'isin':8712, 
+	  'notin':8713, 
+	  'ni':8715, 
+	  'prod':8719, 
+	  'sum':8721, 
+	  'minus':8722, 
+	  'lowast':8727, 
+	  'radic':8730, 
+	  'prop':8733, 
+	  'infin':8734, 
+	  'ang':8736, 
+	  'and':8743, 
+	  'or':8744, 
+	  'cap':8745, 
+	  'cup':8746, 
+	  'int':8747, 
+	  'there4':8756, 
+	  'sim':8764, 
+	  'cong':8773, 
+	  'asymp':8776, 
+	  'ne':8800, 
+	  'equiv':8801, 
+	  'le':8804, 
+	  'ge':8805, 
+	  'sub':8834, 
+	  'sup':8835, 
+	  'nsub':8836, 
+	  'sube':8838, 
+	  'supe':8839, 
+	  'oplus':8853, 
+	  'otimes':8855, 
+	  'perp':8869, 
+	  'sdot':8901, 
+	  'lceil':8968, 
+	  'rceil':8969, 
+	  'lfloor':8970, 
+	  'rfloor':8971, 
+	  'lang':9001, 
+	  'rang':9002, 
+	  'loz':9674, 
+	  'spades':9824, 
+	  'clubs':9827, 
+	  'hearts':9829, 
+	  'diams':9830, 
+	  'OElig':338, 
+	  'oelig':339, 
+	  'Scaron':352, 
+	  'scaron':353, 
+	  'Yuml':376, 
+	  'circ':710, 
+	  'tilde':732, 
+	  'ensp':8194, 
+	  'emsp':8195, 
+	  'thinsp':8201, 
+	  'zwnj':8204, 
+	  'zwj':8205, 
+	  'lrm':8206, 
+	  'rlm':8207, 
+	  'ndash':8211, 
+	  'mdash':8212, 
+	  'lsquo':8216, 
+	  'rsquo':8217, 
+	  'sbquo':8218, 
+	  'ldquo':8220, 
+	  'rdquo':8221, 
+	  'bdquo':8222, 
+	  'dagger':8224, 
+	  'Dagger':8225, 
+	  'permil':8240, 
+	  'lsaquo':8249, 
+	  'rsaquo':8250, 
+	  'euro':8364
+	}
+
+
+
+	module.exports  = entities;
 
 /***/ },
 /* 22 */
@@ -5092,6 +5174,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	var _ = __webpack_require__(5);
 	var dom = __webpack_require__(4);
 	var Regular = __webpack_require__(3);
+	var hasInput;
 
 	var modelHandlers = {
 	  "text": initText,
@@ -5104,35 +5187,51 @@ return /******/ (function(modules) { // webpackBootstrap
 	// @TODO
 
 
+	// autoUpdate directive for select element
+	// to fix r-model issue , when handle dynamic options
+
+
+	/**
+	 * <select r-model={name}> 
+	 *   <r-option value={value} ></r-option>
+	 * </select>
+	 */
+
+
 	// two-way binding with r-model
 	// works on input, textarea, checkbox, radio, select
 
-	Regular.directive("r-model", function(elem, value){
-	  var tag = elem.tagName.toLowerCase();
-	  var sign = tag;
-	  if(sign === "input") sign = elem.type || "text";
-	  else if(sign === "textarea") sign = "text";
-	  if(typeof value === "string") value = this.$expression(value);
 
-	  if( modelHandlers[sign] ) return modelHandlers[sign].call(this, elem, value);
-	  else if(tag === "input"){
-	    return modelHandlers.text.call(this, elem, value);
+	Regular.directive("r-model", {
+	  param: ['throttle', 'lazy'],
+	  link: function( elem, value, name, extra ){
+	    var tag = elem.tagName.toLowerCase();
+	    var sign = tag;
+	    if(sign === "input") sign = elem.type || "text";
+	    else if(sign === "textarea") sign = "text";
+	    if(typeof value === "string") value = this.$expression(value);
+
+	    if( modelHandlers[sign] ) return modelHandlers[sign].call(this, elem, value, extra);
+	    else if(tag === "input"){
+	      return modelHandlers.text.call(this, elem, value, extra);
+	    }
 	  }
-	});
+	})
 
 
 
 	// binding <select>
 
-	function initSelect( elem, parsed){
+	function initSelect( elem, parsed, extra){
 	  var self = this;
-	  var wc =this.$watch(parsed, function(newValue){
-	    var children = _.slice(elem.getElementsByTagName('option'))
-	    children.forEach(function(node, index){
-	      if(node.value == newValue){
-	        elem.selectedIndex = index;
+	  var wc = this.$watch(parsed, function(newValue){
+	    var children = elem.getElementsByTagName('option');
+	    for(var i =0, len = children.length ; i < len; i++){
+	      if(children[i].value == newValue){
+	        elem.selectedIndex = i;
+	        break;
 	      }
-	    })
+	    }
 	  });
 
 	  function handler(){
@@ -5141,19 +5240,31 @@ return /******/ (function(modules) { // webpackBootstrap
 	    self.$update();
 	  }
 
-	  dom.on(elem, "change", handler);
+	  dom.on( elem, "change", handler );
 	  
 	  if(parsed.get(self) === undefined && elem.value){
-	     parsed.set(self, elem.value);
+	    parsed.set(self, elem.value);
 	  }
+
 	  return function destroy(){
 	    dom.off(elem, "change", handler);
 	  }
 	}
 
 	// input,textarea binding
+	function initText(elem, parsed, extra){
+	  var param = extra.param;
+	  var throttle, lazy = param.lazy
 
-	function initText(elem, parsed){
+	  if('throttle' in param){
+	    // <input throttle r-model>
+	    if(param[throttle] === true){
+	      throttle = 400;
+	    }else{
+	      throttle = parseInt(param.throttle , 10)
+	    }
+	  }
+
 	  var self = this;
 	  var wc = this.$watch(parsed, function(newValue){
 	    if(elem.value !== newValue) elem.value = newValue == null? "": "" + newValue;
@@ -5177,25 +5288,33 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	  };
 
-	  if(dom.msie !== 9 && "oninput" in dom.tNode ){
-	    elem.addEventListener("input", handler );
+	  if(throttle && !lazy){
+	    var preHandle = handler, tid;
+	    handler = _.throttle(handler, throttle);
+	  }
+
+	  if(hasInput === undefined){
+	    hasInput = dom.msie !== 9 && "oninput" in dom.tNode;
+	  }
+
+	  if(lazy){
+	    elem.addEventListener("change", handler );
 	  }else{
-	    dom.on(elem, "paste", handler)
-	    dom.on(elem, "keyup", handler)
-	    dom.on(elem, "cut", handler)
-	    dom.on(elem, "change", handler)
+	    if( hasInput){
+	      elem.addEventListener("input", handler );
+	    }else{
+	      dom.on(elem, "paste keyup cut change", handler)
+	    }
 	  }
 	  if(parsed.get(self) === undefined && elem.value){
 	     parsed.set(self, elem.value);
 	  }
 	  return function (){
+	    if(lazy) return elem.removeEventListener("change", handler);
 	    if(dom.msie !== 9 && "oninput" in dom.tNode ){
 	      elem.removeEventListener("input", handler );
 	    }else{
-	      dom.off(elem, "paste", handler)
-	      dom.off(elem, "keyup", handler)
-	      dom.off(elem, "cut", handler)
-	      dom.off(elem, "change", handler)
+	      dom.off(elem, "paste keyup cut change", handler)
 	    }
 	  }
 	}
@@ -5254,6 +5373,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	    if(parsed.set) dom.off(elem, "change", handler)
 	  }
 	}
+
+
+
 
 
 /***/ },

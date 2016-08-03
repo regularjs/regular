@@ -670,6 +670,38 @@ it('bugfix #50', function(){
     expect(comp.$refs.nest.data.hello).to.equal(100);
 
   })
+
+  // it("bug #96", function(){
+  //   var Nest = Regular.extend({
+  //     name: 'bug-96'
+  //   })
+  //   var component = new Regular({
+  //     template: '<div class="list-row-sub">{#list params  as item}\
+  //             <bug-96 field="defaultValue" source={item} ></bug-96>\
+  //      {/list}</div>',
+  //      data: {
+  //       params: [{}]
+  //      }
+  //   })
+
+  //   expect(component.data.item).to.equal(undefined);
+  // })
+  it("bug #93", function(){
+    var Nest = Regular.extend({
+      name: 'bug-96'
+    })
+    var component = new Regular({
+      template: '<div>{"{\'event\': \'delete-progroup\', \'id\': "+name+"}"}</div>',
+      data: {
+        name: '1' 
+      }
+    })
+
+  })
+
+  // it('bug :directive return value that not function will throw error', function(){
+  //   throw Error()
+  // })
 })
 
 
