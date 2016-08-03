@@ -2,6 +2,7 @@
 var _ = require("../util.js");
 var dom = require("../dom.js");
 var Regular = require("../Regular.js");
+var hasInput;
 
 var modelHandlers = {
   "text": initText,
@@ -30,8 +31,8 @@ var modelHandlers = {
 
 
 Regular.directive("r-model", {
-  params: ['delay', 'debounce'],
-  link: function( elem, value, attr, extra ){
+  param: ['throttle', 'lazy'],
+  link: function( elem, value, name, extra ){
     var tag = elem.tagName.toLowerCase();
     var sign = tag;
     if(sign === "input") sign = elem.type || "text";
@@ -55,7 +56,7 @@ function initSelect( elem, parsed, extra){
     var children = elem.getElementsByTagName('option');
     for(var i =0, len = children.length ; i < len; i++){
       if(children[i].value == newValue){
-        elem.selectedIndex = index;
+        elem.selectedIndex = i;
         break;
       }
     }
@@ -79,18 +80,17 @@ function initSelect( elem, parsed, extra){
 }
 
 // input,textarea binding
-
 function initText(elem, parsed, extra){
-  var params = extra.params;
-  var debounce = params.debounce;
-  var delay = params.delay;
+  var param = extra.param;
+  var throttle, lazy = param.lazy
 
-  if(delay){
-    delay = this.$get( delay, true);
-  }
-
-  if(debounce){
-    debounce = parseInt(this.$get(debounce, true), 10);
+  if('throttle' in param){
+    // <input throttle r-model>
+    if(param[throttle] === true){
+      throttle = 400;
+    }else{
+      throttle = parseInt(param.throttle , 10)
+    }
   }
 
   var self = this;
@@ -116,42 +116,33 @@ function initText(elem, parsed, extra){
     }
   };
 
-  if(debounce && !delay){
+  if(throttle && !lazy){
     var preHandle = handler, tid;
-    handler = function(ev){
-      if(tid) clearTimeout(tid);
-      tid = setTimeout(function(){
-        preHandle(ev);
-        tid = null;
-      })
-    }
+    handler = _.throttle(handler, throttle);
   }
 
-  if(delay){
+  if(hasInput === undefined){
+    hasInput = dom.msie !== 9 && "oninput" in dom.tNode;
+  }
+
+  if(lazy){
     elem.addEventListener("change", handler );
   }else{
-    if(dom.msie !== 9 && "oninput" in dom.tNode ){
+    if( hasInput){
       elem.addEventListener("input", handler );
-      
     }else{
-      dom.on(elem, "paste", handler)
-      dom.on(elem, "keyup", handler)
-      dom.on(elem, "cut", handler)
-      dom.on(elem, "change", handler)
+      dom.on(elem, "paste keyup cut change", handler)
     }
   }
   if(parsed.get(self) === undefined && elem.value){
      parsed.set(self, elem.value);
   }
   return function (){
-    if(delay) return elem.removeEventListener("change", handler);
+    if(lazy) return elem.removeEventListener("change", handler);
     if(dom.msie !== 9 && "oninput" in dom.tNode ){
       elem.removeEventListener("input", handler );
     }else{
-      dom.off(elem, "paste", handler)
-      dom.off(elem, "keyup", handler)
-      dom.off(elem, "cut", handler)
-      dom.off(elem, "change", handler)
+      dom.off(elem, "paste keyup cut change", handler)
     }
   }
 }

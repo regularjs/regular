@@ -13,6 +13,10 @@
     <script id="form" type="text/regular">
       <form role="form">
         <div class="form-group">
+          <input r-model={lazy} lazy> lazy: {lazy}
+          <input r-model={throttle} throttle={100} > throttle: {throttle}
+        </div>
+        <div class="form-group">
           <label for="exampleInputEmail1">Email address(value: {email})</label>
           <input r-model={email}>
           <input r-model={list|join}> {list|json}

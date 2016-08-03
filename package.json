@@ -17,7 +17,8 @@
   },
   "homepage": "http://regularjs.github.io",
   "scripts": {
-    "test": "gulp travis --phantomjs"
+    "test": "gulp travis --phantomjs",
+    "prepublish": "gulp build"
   },
   "bin": {
     "regular": "./bin/regular"

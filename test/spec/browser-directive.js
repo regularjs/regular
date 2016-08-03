@@ -85,7 +85,8 @@ describe("Directive", function(){
 
     it('the whole attributes should be get in directive handler', function(done){
       var tmpName = "t-" + Regular.util.uid();
-      Regular.directive(tmpName, function(elem, value, name, attrs){
+      Regular.directive(tmpName, function(elem, value, name, extra){
+        var attrs = extra.attrs;
         expect(value.type).to.equal('expression')        
         expect(value.get).to.be.a('function');
         expect(value.set).to.be.a('function');
@@ -100,30 +101,37 @@ describe("Directive", function(){
       })
 
     })
-    it('the whole attributes should be get in event handler', function(done){
-      var tmpName = "on-upload2";
-      Regular.event("upload2", function(elem, fire, attrs){
-        expect(attrs.length).to.equal(3);
-        done()
-      })
-      var component = new Regular({
-        template: "<div class='m-class' on-upload2={content} t-randomAttr={1}></div>",
-        data: {
-          content:'hello'
-        }
-      })
-
-    })
+  
 
 
   })
 
-
-
+  
+  
 });
 
 describe('r-model directive', function(){
 
+  describe("directive param", function(){
+    it(" behavior purpose here ", function( done){
+      var Component = Regular.extend({
+        template: '<div need-param="hello" param1="value1" param2="value2" ></div>'
+      }).directive({
+        'need-param': {
+          param: ['param1', 'param2'],
+          link: function( elem, value, attrs, extra ){
+            var param = extra.param;
+            expect(param.param1).to.equal('value1');
+            expect(param.param2).to.equal('value2');
+            done();
+          }
+        }
+      });
+
+      new Component({ });
+
+    })
+  })
 
   var container = document.createElement('form');
 
@@ -147,6 +155,31 @@ describe('r-model directive', function(){
 
       destroy(component, container)
 
+    })
+    
+    it("input[r-model] should have  throttle param", function(){
+      var container = document.createElement('div')
+      var Component = Regular.extend({});
+      var component = new Regular({
+        data: {test: true, hello: {} } ,
+        template: "<input ref=input r-model={hello.name} throttle={1000} />"
+      }).$inject(container)
+
+      expect(component.$refs.input.getAttribute('throttle')).to.equal(null)
+    })
+
+
+
+
+    it("input[r-model] should have lazy param", function(){
+      var container = document.createElement('div')
+      var Component = Regular.extend({});
+      var component = new Regular({
+        data: {test: true, hello: {} } ,
+        template: "<input ref=input r-model={hello.name} lazy />"
+      }).$inject(container)
+
+      expect(component.$refs.input.getAttribute('lazy')).to.equal(null)
     })
 
     it("input:password and text with 'r-model' should works", function(){
@@ -208,15 +241,12 @@ describe('r-model directive', function(){
   describe('checkbox binding', function(){
     it('input:checkbox"s initial state should be correct', function(){
       var template = 
-        "<input checked  type='checkbox' r-model={nontype} >"+
-        "<input type='checkbox' r-model={nontype3}>"+
-        "<input type='checkbox' r-model={nontype2} checked=checked>";
+        "<input checked class='c1'  type='checkbox' r-model={nontype} >"+
+        "<input class='c2' type='checkbox' r-model={nontype3}>"+
+        "<input class='c3'  type='checkbox' r-model={nontype2} checked=checked>";
       var component = new Regular({
         template: template
       }).$inject(container);
-
-
-
 
       expect($('input', container).length).to.equal(3)
       expect($('input:first-child', container)[0].checked).to.equal(true)
@@ -426,6 +456,8 @@ describe('r-model directive', function(){
       destroy(component, container);
 
     });
+
+
 
   })
 
@@ -722,21 +754,93 @@ describe("refs attribute", function(){
 
     destroy(component, container);
   })
+  
+
 })
 
 
+describe("Directive extra", function(){
 
-describe('the atrributeValue with the string type is valid in most buildin directive', function(){
-  // var container = document.createElement('div');
-  // var template = "da"
-  // var component = new Regular({
-  //   template: template,
-  //   data: {num: 2}
-  // }).$inject(container);
+  it("directive param should work", function( done){
 
+    var container = document.createElement('div');
+    var Component = Regular.extend({
+      name: 'nested'
+    }).directive('param-directive', {
+      param: ['param0', 'param1' , 'param2'],
+      link: function(element, value, name, extra){
+        expect(extra.param.param0).to.equal(1)
+        expect(extra.param.param1).to.equal("1")
+        expect(extra.param.param2).to.equal("haha")
+        expect(extra.param.param3).to.equal(undefined)
+        done()
+      }
+    })
+    var component = new Component({
+      template: "<div param0={1} param-directive=1 param1 = 1  param2={name} ></div>",
+      data: {
+        name: "haha"
+      }
+    }).$inject(container)
+  })
 
-  // destroy(component, container);
+  it("directive update should work", function( done){
+    
+    var container = document.createElement('div');
+    var checked = [], i =0;
+    var Component = Regular.extend({
+      name: 'nested'
+    }).directive('update-directive', {
+      link: function(element, value, name, extra){
+        extra.num = i++;
+      },
+      update: function(element, value, oldvalue, extra){
+        element.setAttribute('data-update', value)
+        checked.push({
+          old: oldvalue,
+          value: value,
+          num: extra.num 
+        })
+      }
+    })
+
+    var component = new Component({
+      template: "<div update-directive=1></div><div update-directive={name}></div>",
+      data: {
+        name: "haha"
+      }
+    }).$inject(container)
+
+    expect(checked[0].value).to.equal('1')
+    expect(checked[0].old).to.equal(undefined)
+    expect(checked[0].num).to.equal(0)
+    expect(checked[1].value).to.equal('haha')
+    expect(checked[1].num).to.equal(1)
+
+    component.$update('name', 'hehe')
+
+    expect(checked[2].value).to.equal('hehe')
+    expect(checked[2].old).to.equal('haha')
+    expect(checked[2].num).to.equal(1)
+
+    var divs = nes.all('div', container);
+    expect( divs[0].getAttribute('data-update') ).to.equal('1')
+    expect( divs[1].getAttribute('data-update') ).to.equal('hehe')
+    done();
+  })
 })
+
+// describe('the atrributeValue with the string type is valid in most buildin directive', function(){
+//   // var container = document.createElement('div');
+//   // var template = "da"
+//   // var component = new Regular({
+//   //   template: template,
+//   //   data: {num: 2}
+//   // }).$inject(container);
+
+
+//   // destroy(component, container);
+// })
 
 
 

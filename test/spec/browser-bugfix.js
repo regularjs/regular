@@ -671,9 +671,9 @@ it('bugfix #50', function(){
 
   })
 
-  it('bug :directive return value that not function will throw error', function(){
-    throw Error()
-  })
+  // it('bug :directive return value that not function will throw error', function(){
+  //   throw Error()
+  // })
 })
 
 

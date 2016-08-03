@@ -364,10 +364,9 @@ walkers.element = function(ast, options){
     dom.inject( combine.node(group) , element)
   }
 
-  // sort before
-  if(!ast.touched){
-  }
-  // may distinct with if else
+  // fix tag ast, some infomation only avaliable at runtime (directive etc..)
+  _.fixTagAST(ast, Constructor)
+
   var destroies = walkAttributes.call(this, attrs, element, extra);
 
   return {
@@ -562,7 +561,21 @@ walkers.attribute = function(ast ,options){
   if(constant) value = value.get(this);
 
   if(directive && directive.link){
-    var binding = directive.link.call(self, element, value, name, options.attrs);
+    var extra = {
+      attrs: options.attrs,
+      param: _.getParamObj(this, attr.param) 
+    }
+    var binding = directive.link.call(self, element, value, name, extra);
+    // if update has been passed in , we will  automately watch value for user
+    if( typeof directive.update === 'function'){
+      if(_.isExpr(value)){
+        this.$watch(value, function(val, old){
+          directive.update.call(self, element, val, old, extra); 
+        })
+      }else{
+        directive.update.call(self, element, value, undefined, extra );
+      }
+    }
     if(typeof binding === 'function') binding = {destroy: binding}; 
     return binding;
   } else{
@@ -587,4 +600,5 @@ walkers.attribute = function(ast ,options){
   }
 
 }
+
 

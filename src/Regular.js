@@ -269,7 +269,7 @@ Regular.implement({
   destroy: function(){
     // destroy event wont propgation;
     this.$emit("$destroy");
-    this._watchers = [];
+    this._watchers = null;
     this.group && this.group.destroy(true);
     this.group = null;
     this.parentNode = null;

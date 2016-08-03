@@ -31,7 +31,9 @@ var wpConfig = {
 }
 
 var testConfig = {
+  devtool: 'source-map',
   output: {
+
     filename: "dom.bundle.js"
   }
 }
@@ -149,8 +151,8 @@ gulp.task('v', function(fn){
 
 
 gulp.task('watch', ["build", 'testbundle'], function(){
-  gulp.watch(['src/**/*.js'], ['build']);
-  gulp.watch(['test/spec/*.js', 'src/**/*.js'], ['testbundle'])
+  // gulp.watch(['src/**/*.js'], ['build']);
+  gulp.watch(['test/spec/*.js', 'src/**/*.js'], ['jshint','testbundle'])
 })
 
 

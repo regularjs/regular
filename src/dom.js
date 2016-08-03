@@ -150,7 +150,7 @@ dom.attr = function(node, name, value){
         node.setAttribute(name, name);
         // lt ie7 . the javascript checked setting is in valid
         //http://bytes.com/topic/javascript/insights/799167-browser-quirk-dynamically-appended-checked-checkbox-does-not-appear-checked-ie
-        if(dom.msie && dom.msie <=7 ) node.defaultChecked = true
+        if(dom.msie && dom.msie <=7 && name === 'checked' ) node.defaultChecked = true
       } else {
         node[name] = false;
         node.removeAttribute(name);
@@ -185,6 +185,7 @@ dom.on = function(node, type, handler){
     type = fixEventName(node, type);
     addEvent(node, type, handler.real);
   });
+  return dom;
 }
 dom.off = function(node, type, handler){
   var types = type.split(' ');

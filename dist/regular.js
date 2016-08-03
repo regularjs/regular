@@ -392,7 +392,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  destroy: function(){
 	    // destroy event wont propgation;
 	    this.$emit("$destroy");
-	    this._watchers = [];
+	    this._watchers = null;
 	    this.group && this.group.destroy(true);
 	    this.group = null;
 	    this.parentNode = null;
@@ -872,7 +872,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        node.setAttribute(name, name);
 	        // lt ie7 . the javascript checked setting is in valid
 	        //http://bytes.com/topic/javascript/insights/799167-browser-quirk-dynamically-appended-checked-checkbox-does-not-appear-checked-ie
-	        if(dom.msie && dom.msie <=7 ) node.defaultChecked = true
+	        if(dom.msie && dom.msie <=7 && name === 'checked' ) node.defaultChecked = true
 	      } else {
 	        node[name] = false;
 	        node.removeAttribute(name);
@@ -907,6 +907,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    type = fixEventName(node, type);
 	    addEvent(node, type, handler.real);
 	  });
+	  return dom;
 	}
 	dom.off = function(node, type, handler){
 	  var types = type.split(' ');
@@ -1133,18 +1134,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	})();
 
 	_.extend = function( o1, o2, override ){
-	  // if(_.typeOf(override) === 'array'){
-	  //  for(var i = 0, len = override.length; i < len; i++ ){
-	  //   var key = override[i];
-	  //   o1[key] = o2[key];
-	  //  } 
-	  // }else{
-	  for(var i in o2){
-	    if( typeof o1[i] === "undefined" || override === true ){
+	  for(var i in o2) if (o2.hasOwnProperty(i)){
+	    if( o1[i] === undefined || override === true ){
 	      o1[i] = o2[i]
 	    }
 	  }
-	  // }
 	  return o1;
 	}
 
@@ -1340,6 +1334,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return (fn.prototype = new Foo());
 	}
 
+
+	_.removeOne = function(list , filter){
+	  var len = list.length;
+	  for(;len--;){
+	    if(filter(list[len])) {
+	      list.splice(len, 1)
+	      return;
+	    }
+	  }
+	}
 
 
 	/**
@@ -1545,6 +1549,81 @@ return /******/ (function(modules) { // webpackBootstrap
 	_.getCompileFn = function(source, ctx, options){
 	  return ctx.$compile.bind(ctx,source, options)
 	}
+
+	// remove directive param from AST
+	_.fixTagAST = function( tagAST, Component ){
+
+	  if( tagAST.touched ) return;
+
+	  var attrs = tagAST.attrs;
+
+	  if( !attrs ) return;
+
+	  // Maybe multiple directive need same param, 
+	  // We place all param in totalParamMap
+	  var len = attrs.length;
+	  if(!len) return;
+	  var directives=[], otherAttrMap = {};
+	  for(;len--;){
+
+	    var attr = attrs[ len ];
+
+	    var directive = Component.directive( attr.name );
+	    if( directive ) {
+
+	      attr.priority = directive.priority || 1;
+	      attr.directive = true;
+	      directives.push(attr);
+
+	    }else if(attr.type === 'attribute'){
+	      otherAttrMap[attr.name] = attr.value;
+	    }
+	  }
+
+	  directives.forEach( function( attr ){
+	    var directive = Component.directive(attr.name);
+	    var param = directive.param;
+	    if(param && param.length){
+	      attr.param = {};
+	      param.forEach(function( name ){
+	        if( name in otherAttrMap ){
+	          attr.param[name] = otherAttrMap[name] === undefined? true: otherAttrMap[name]
+	          _.removeOne(attrs, function(attr){
+	            return attr.name === name
+	          })
+	        }
+	      })
+	    }
+	  });
+
+	  attrs.sort(function(a1, a2){
+	    // fix IE9- input type can't assign after value
+	    if(a2.name === "type") return 1;
+
+	    var p1 = a1.priority;
+	    var p2 = a2.priority;
+
+	    if(p1 == null) p1 = 10000;
+	    if(p2 == null) p2 = 10000;
+
+	    return p2 - p1;
+
+	  })
+
+	  tagAST.touched = true;
+	}
+
+	_.getParamObj = function(component, param){
+	  var paramObj = {};
+	  if(param) {
+	    for(var i in param) if(param.hasOwnProperty(i)){
+	      var value = param[i];
+	      paramObj[i] =  value && value.type==='expression'? component.$get(value): value;
+	    }
+	  }
+	  return paramObj;
+	}
+
 
 
 
@@ -2334,20 +2413,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	    dom.inject( combine.node(group) , element)
 	  }
 
-	  // sort before
-	  if(!ast.touched){
-	    attrs.sort(function(a1, a2){
-	      var d1 = Constructor.directive(a1.name),
-	        d2 = Constructor.directive(a2.name);
-	      if( d1 && d2 ) return (d2.priority || 1) - (d1.priority || 1);
-	      if(d1) return 1;
-	      if(d2) return -1;
-	      if(a2.name === "type") return 1;
-	      return -1;
-	    })
-	    ast.touched = true;
-	  }
-	  // may distinct with if else
+	  // fix tag ast, some infomation only avaliable at runtime (directive etc..)
+	  _.fixTagAST(ast, Constructor)
+
 	  var destroies = walkAttributes.call(this, attrs, element, extra);
 
 	  return {
@@ -2542,7 +2610,21 @@ return /******/ (function(modules) { // webpackBootstrap
 	  if(constant) value = value.get(this);
 
 	  if(directive && directive.link){
-	    var binding = directive.link.call(self, element, value, name, options.attrs);
+	    var extra = {
+	      attrs: options.attrs,
+	      param: _.getParamObj(this, attr.param) 
+	    }
+	    var binding = directive.link.call(self, element, value, name, extra);
+	    // if update has been passed in , we will  automately watch value for user
+	    if( typeof directive.update === 'function'){
+	      if(_.isExpr(value)){
+	        this.$watch(value, function(val, old){
+	          directive.update.call(self, element, val, old, extra); 
+	        })
+	      }else{
+	        directive.update.call(self, element, value, undefined, extra );
+	      }
+	    }
 	    if(typeof binding === 'function') binding = {destroy: binding}; 
 	    return binding;
 	  } else{
@@ -2567,6 +2649,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }
 
 	}
+
 
 
 
@@ -5049,6 +5132,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	var _ = __webpack_require__(5);
 	var dom = __webpack_require__(4);
 	var Regular = __webpack_require__(3);
+	var hasInput;
 
 	var modelHandlers = {
 	  "text": initText,
@@ -5061,35 +5145,51 @@ return /******/ (function(modules) { // webpackBootstrap
 	// @TODO
 
 
+	// autoUpdate directive for select element
+	// to fix r-model issue , when handle dynamic options
+
+
+	/**
+	 * <select r-model={name}> 
+	 *   <r-option value={value} ></r-option>
+	 * </select>
+	 */
+
+
 	// two-way binding with r-model
 	// works on input, textarea, checkbox, radio, select
 
-	Regular.directive("r-model", function(elem, value){
-	  var tag = elem.tagName.toLowerCase();
-	  var sign = tag;
-	  if(sign === "input") sign = elem.type || "text";
-	  else if(sign === "textarea") sign = "text";
-	  if(typeof value === "string") value = this.$expression(value);
 
-	  if( modelHandlers[sign] ) return modelHandlers[sign].call(this, elem, value);
-	  else if(tag === "input"){
-	    return modelHandlers.text.call(this, elem, value);
+	Regular.directive("r-model", {
+	  param: ['throttle', 'lazy'],
+	  link: function( elem, value, name, extra ){
+	    var tag = elem.tagName.toLowerCase();
+	    var sign = tag;
+	    if(sign === "input") sign = elem.type || "text";
+	    else if(sign === "textarea") sign = "text";
+	    if(typeof value === "string") value = this.$expression(value);
+
+	    if( modelHandlers[sign] ) return modelHandlers[sign].call(this, elem, value, extra);
+	    else if(tag === "input"){
+	      return modelHandlers.text.call(this, elem, value, extra);
+	    }
 	  }
-	});
+	})
 
 
 
 	// binding <select>
 
-	function initSelect( elem, parsed){
+	function initSelect( elem, parsed, extra){
 	  var self = this;
-	  var wc =this.$watch(parsed, function(newValue){
-	    var children = _.slice(elem.getElementsByTagName('option'))
-	    children.forEach(function(node, index){
-	      if(node.value == newValue){
-	        elem.selectedIndex = index;
+	  var wc = this.$watch(parsed, function(newValue){
+	    var children = elem.getElementsByTagName('option');
+	    for(var i =0, len = children.length ; i < len; i++){
+	      if(children[i].value == newValue){
+	        elem.selectedIndex = i;
+	        break;
 	      }
-	    })
+	    }
 	  });
 
 	  function handler(){
@@ -5098,19 +5198,31 @@ return /******/ (function(modules) { // webpackBootstrap
 	    self.$update();
 	  }
 
-	  dom.on(elem, "change", handler);
+	  dom.on( elem, "change", handler );
 	  
 	  if(parsed.get(self) === undefined && elem.value){
-	     parsed.set(self, elem.value);
+	    parsed.set(self, elem.value);
 	  }
+
 	  return function destroy(){
 	    dom.off(elem, "change", handler);
 	  }
 	}
 
 	// input,textarea binding
+	function initText(elem, parsed, extra){
+	  var param = extra.param;
+	  var throttle, lazy = param.lazy
 
-	function initText(elem, parsed){
+	  if('throttle' in param){
+	    // <input throttle r-model>
+	    if(param[throttle] === true){
+	      throttle = 400;
+	    }else{
+	      throttle = parseInt(param.throttle , 10)
+	    }
+	  }
+
 	  var self = this;
 	  var wc = this.$watch(parsed, function(newValue){
 	    if(elem.value !== newValue) elem.value = newValue == null? "": "" + newValue;
@@ -5134,25 +5246,33 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	  };
 
-	  if(dom.msie !== 9 && "oninput" in dom.tNode ){
-	    elem.addEventListener("input", handler );
+	  if(throttle && !lazy){
+	    var preHandle = handler, tid;
+	    handler = _.throttle(handler, throttle);
+	  }
+
+	  if(hasInput === undefined){
+	    hasInput = dom.msie !== 9 && "oninput" in dom.tNode;
+	  }
+
+	  if(lazy){
+	    elem.addEventListener("change", handler );
 	  }else{
-	    dom.on(elem, "paste", handler)
-	    dom.on(elem, "keyup", handler)
-	    dom.on(elem, "cut", handler)
-	    dom.on(elem, "change", handler)
+	    if( hasInput){
+	      elem.addEventListener("input", handler );
+	    }else{
+	      dom.on(elem, "paste keyup cut change", handler)
+	    }
 	  }
 	  if(parsed.get(self) === undefined && elem.value){
 	     parsed.set(self, elem.value);
 	  }
 	  return function (){
+	    if(lazy) return elem.removeEventListener("change", handler);
 	    if(dom.msie !== 9 && "oninput" in dom.tNode ){
 	      elem.removeEventListener("input", handler );
 	    }else{
-	      dom.off(elem, "paste", handler)
-	      dom.off(elem, "keyup", handler)
-	      dom.off(elem, "cut", handler)
-	      dom.off(elem, "change", handler)
+	      dom.off(elem, "paste keyup cut change", handler)
 	    }
 	  }
 	}
@@ -5211,6 +5331,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	    if(parsed.set) dom.off(elem, "change", handler)
 	  }
 	}
+
+
+
 
 
 /***/ },

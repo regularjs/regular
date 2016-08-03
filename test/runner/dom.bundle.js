@@ -923,6 +923,10 @@
 	    expect(comp.$refs.nest.data.hello).to.equal(100);
 
 	  })
+
+	  // it('bug :directive return value that not function will throw error', function(){
+	  //   throw Error()
+	  // })
 	})
 
 
@@ -935,7 +939,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var Regular = __webpack_require__(16);
-	var animate = __webpack_require__(19);
+	var animate = __webpack_require__(18);
 	var dom = __webpack_require__(17);
 
 	function destroy(component, container){
@@ -1775,7 +1779,7 @@
 
 	var expect = __webpack_require__(26);
 	var Regular = __webpack_require__(16);
-	var combine = __webpack_require__(20);
+	var combine = __webpack_require__(19);
 	function destroy(component, container){
 	  component.destroy();
 	  expect(container.innerHTML).to.equal('');
@@ -3877,7 +3881,8 @@
 
 	    it('the whole attributes should be get in directive handler', function(done){
 	      var tmpName = "t-" + Regular.util.uid();
-	      Regular.directive(tmpName, function(elem, value, name, attrs){
+	      Regular.directive(tmpName, function(elem, value, name, extra){
+	        var attrs = extra.attrs;
 	        expect(value.type).to.equal('expression')        
 	        expect(value.get).to.be.a('function');
 	        expect(value.set).to.be.a('function');
@@ -3892,30 +3897,37 @@
 	      })
 
 	    })
-	    it('the whole attributes should be get in event handler', function(done){
-	      var tmpName = "on-upload2";
-	      Regular.event("upload2", function(elem, fire, attrs){
-	        expect(attrs.length).to.equal(3);
-	        done()
-	      })
-	      var component = new Regular({
-	        template: "<div class='m-class' on-upload2={content} t-randomAttr={1}></div>",
-	        data: {
-	          content:'hello'
-	        }
-	      })
-
-	    })
+	  
 
 
 	  })
 
-
-
+	  
+	  
 	});
 
 	describe('r-model directive', function(){
 
+	  describe("directive param", function(){
+	    it(" behavior purpose here ", function( done){
+	      var Component = Regular.extend({
+	        template: '<div need-param="hello" param1="value1" param2="value2" ></div>'
+	      }).directive({
+	        'need-param': {
+	          param: ['param1', 'param2'],
+	          link: function( elem, value, attrs, extra ){
+	            var param = extra.param;
+	            expect(param.param1).to.equal('value1');
+	            expect(param.param2).to.equal('value2');
+	            done();
+	          }
+	        }
+	      });
+
+	      new Component({ });
+
+	    })
+	  })
 
 	  var container = document.createElement('form');
 
@@ -3939,6 +3951,31 @@
 
 	      destroy(component, container)
 
+	    })
+	    
+	    it("input[r-model] should have  throttle param", function(){
+	      var container = document.createElement('div')
+	      var Component = Regular.extend({});
+	      var component = new Regular({
+	        data: {test: true, hello: {} } ,
+	        template: "<input ref=input r-model={hello.name} throttle={1000} />"
+	      }).$inject(container)
+
+	      expect(component.$refs.input.getAttribute('throttle')).to.equal(null)
+	    })
+
+
+
+
+	    it("input[r-model] should have lazy param", function(){
+	      var container = document.createElement('div')
+	      var Component = Regular.extend({});
+	      var component = new Regular({
+	        data: {test: true, hello: {} } ,
+	        template: "<input ref=input r-model={hello.name} lazy />"
+	      }).$inject(container)
+
+	      expect(component.$refs.input.getAttribute('lazy')).to.equal(null)
 	    })
 
 	    it("input:password and text with 'r-model' should works", function(){
@@ -4000,15 +4037,12 @@
 	  describe('checkbox binding', function(){
 	    it('input:checkbox"s initial state should be correct', function(){
 	      var template = 
-	        "<input checked  type='checkbox' r-model={nontype} >"+
-	        "<input type='checkbox' r-model={nontype3}>"+
-	        "<input type='checkbox' r-model={nontype2} checked=checked>";
+	        "<input checked class='c1'  type='checkbox' r-model={nontype} >"+
+	        "<input class='c2' type='checkbox' r-model={nontype3}>"+
+	        "<input class='c3'  type='checkbox' r-model={nontype2} checked=checked>";
 	      var component = new Regular({
 	        template: template
 	      }).$inject(container);
-
-
-
 
 	      expect($('input', container).length).to.equal(3)
 	      expect($('input:first-child', container)[0].checked).to.equal(true)
@@ -4218,6 +4252,8 @@
 	      destroy(component, container);
 
 	    });
+
+
 
 	  })
 
@@ -4514,21 +4550,93 @@
 
 	    destroy(component, container);
 	  })
+	  
+
 	})
 
 
+	describe("Directive extra", function(){
 
-	describe('the atrributeValue with the string type is valid in most buildin directive', function(){
-	  // var container = document.createElement('div');
-	  // var template = "da"
-	  // var component = new Regular({
-	  //   template: template,
-	  //   data: {num: 2}
-	  // }).$inject(container);
+	  it("directive param should work", function( done){
 
+	    var container = document.createElement('div');
+	    var Component = Regular.extend({
+	      name: 'nested'
+	    }).directive('param-directive', {
+	      param: ['param0', 'param1' , 'param2'],
+	      link: function(element, value, name, extra){
+	        expect(extra.param.param0).to.equal(1)
+	        expect(extra.param.param1).to.equal("1")
+	        expect(extra.param.param2).to.equal("haha")
+	        expect(extra.param.param3).to.equal(undefined)
+	        done()
+	      }
+	    })
+	    var component = new Component({
+	      template: "<div param0={1} param-directive=1 param1 = 1  param2={name} ></div>",
+	      data: {
+	        name: "haha"
+	      }
+	    }).$inject(container)
+	  })
 
-	  // destroy(component, container);
+	  it("directive update should work", function( done){
+	    
+	    var container = document.createElement('div');
+	    var checked = [], i =0;
+	    var Component = Regular.extend({
+	      name: 'nested'
+	    }).directive('update-directive', {
+	      link: function(element, value, name, extra){
+	        extra.num = i++;
+	      },
+	      update: function(element, value, oldvalue, extra){
+	        element.setAttribute('data-update', value)
+	        checked.push({
+	          old: oldvalue,
+	          value: value,
+	          num: extra.num 
+	        })
+	      }
+	    })
+
+	    var component = new Component({
+	      template: "<div update-directive=1></div><div update-directive={name}></div>",
+	      data: {
+	        name: "haha"
+	      }
+	    }).$inject(container)
+
+	    expect(checked[0].value).to.equal('1')
+	    expect(checked[0].old).to.equal(undefined)
+	    expect(checked[0].num).to.equal(0)
+	    expect(checked[1].value).to.equal('haha')
+	    expect(checked[1].num).to.equal(1)
+
+	    component.$update('name', 'hehe')
+
+	    expect(checked[2].value).to.equal('hehe')
+	    expect(checked[2].old).to.equal('haha')
+	    expect(checked[2].num).to.equal(1)
+
+	    var divs = nes.all('div', container);
+	    expect( divs[0].getAttribute('data-update') ).to.equal('1')
+	    expect( divs[1].getAttribute('data-update') ).to.equal('hehe')
+	    done();
+	  })
 	})
+
+	// describe('the atrributeValue with the string type is valid in most buildin directive', function(){
+	//   // var container = document.createElement('div');
+	//   // var template = "da"
+	//   // var component = new Regular({
+	//   //   template: template,
+	//   //   data: {num: 2}
+	//   // }).$inject(container);
+
+
+	//   // destroy(component, container);
+	// })
 
 
 
@@ -4744,7 +4852,7 @@
 
 	var expect = __webpack_require__(26);
 	var Regular = __webpack_require__(16);
-	var parse = __webpack_require__(21);
+	var parse = __webpack_require__(20);
 
 	var Component = Regular.extend();
 
@@ -5911,7 +6019,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var expect = __webpack_require__(26);
-	var _ = __webpack_require__(18);
+	var _ = __webpack_require__(21);
 	var shim = __webpack_require__(22);
 	var extend = __webpack_require__(23);
 	var diff = __webpack_require__(24)
@@ -6382,7 +6490,7 @@
 	    Regular.dom = __webpack_require__(17);
 	}
 	Regular.env = env;
-	Regular.util = __webpack_require__(18);
+	Regular.util = __webpack_require__(21);
 	Regular.parse = function(str, options){
 	  options = options || {};
 
@@ -6415,7 +6523,7 @@
 
 	var dom = module.exports;
 	var env = __webpack_require__(27);
-	var _ = __webpack_require__(18);
+	var _ = __webpack_require__(21);
 	var consts = __webpack_require__(28);
 	var tNode = document.createElement('div')
 	var addEvent, removeEvent;
@@ -6554,7 +6662,7 @@
 	        node.setAttribute(name, name);
 	        // lt ie7 . the javascript checked setting is in valid
 	        //http://bytes.com/topic/javascript/insights/799167-browser-quirk-dynamically-appended-checked-checkbox-does-not-appear-checked-ie
-	        if(dom.msie && dom.msie <=7 ) node.defaultChecked = true
+	        if(dom.msie && dom.msie <=7 && name === 'checked' ) node.defaultChecked = true
 	      } else {
 	        node[name] = false;
 	        node.removeAttribute(name);
@@ -6589,6 +6697,7 @@
 	    type = fixEventName(node, type);
 	    addEvent(node, type, handler.real);
 	  });
+	  return dom;
 	}
 	dom.off = function(node, type, handler){
 	  var types = type.split(' ');
@@ -6795,451 +6904,7 @@
 /* 18 */
 /***/ function(module, exports, __webpack_require__) {
 
-	/* WEBPACK VAR INJECTION */(function(global) {__webpack_require__(22)();
-
-
-
-	var _  = module.exports;
-	var entities = __webpack_require__(31);
-	var slice = [].slice;
-	var o2str = ({}).toString;
-	var win = typeof window !=='undefined'? window: global;
-
-
-	_.noop = function(){};
-	_.uid = (function(){
-	  var _uid=0;
-	  return function(){
-	    return _uid++;
-	  }
-	})();
-
-	_.extend = function( o1, o2, override ){
-	  // if(_.typeOf(override) === 'array'){
-	  //  for(var i = 0, len = override.length; i < len; i++ ){
-	  //   var key = override[i];
-	  //   o1[key] = o2[key];
-	  //  } 
-	  // }else{
-	  for(var i in o2){
-	    if( typeof o1[i] === "undefined" || override === true ){
-	      o1[i] = o2[i]
-	    }
-	  }
-	  // }
-	  return o1;
-	}
-
-	_.keys = function(obj){
-	  if(Object.keys) return Object.keys(obj);
-	  var res = [];
-	  for(var i in obj) if(obj.hasOwnProperty(i)){
-	    res.push(i);
-	  }
-	  return res;
-	}
-
-	_.varName = 'd';
-	_.setName = 'p_';
-	_.ctxName = 'c';
-	_.extName = 'e';
-
-	_.rWord = /^[\$\w]+$/;
-	_.rSimpleAccessor = /^[\$\w]+(\.[\$\w]+)*$/;
-
-	_.nextTick = typeof setImmediate === 'function'? 
-	  setImmediate.bind(win) : 
-	  function(callback) {
-	    setTimeout(callback, 0) 
-	  }
-
-
-
-	_.prefix = "var " + _.varName + "=" + _.ctxName + ".data;" +  _.extName  + "=" + _.extName + "||'';";
-
-
-	_.slice = function(obj, start, end){
-	  var res = [];
-	  for(var i = start || 0, len = end || obj.length; i < len; i++){
-	    var item = obj[i];
-	    res.push(item)
-	  }
-	  return res;
-	}
-
-	_.typeOf = function (o) {
-	  return o == null ? String(o) :o2str.call(o).slice(8, -1).toLowerCase();
-	}
-
-
-	_.makePredicate = function makePredicate(words, prefix) {
-	    if (typeof words === "string") {
-	        words = words.split(" ");
-	    }
-	    var f = "",
-	    cats = [];
-	    out: for (var i = 0; i < words.length; ++i) {
-	        for (var j = 0; j < cats.length; ++j){
-	          if (cats[j][0].length === words[i].length) {
-	              cats[j].push(words[i]);
-	              continue out;
-	          }
-	        }
-	        cats.push([words[i]]);
-	    }
-	    function compareTo(arr) {
-	        if (arr.length === 1) return f += "return str === '" + arr[0] + "';";
-	        f += "switch(str){";
-	        for (var i = 0; i < arr.length; ++i){
-	           f += "case '" + arr[i] + "':";
-	        }
-	        f += "return true}return false;";
-	    }
-
-	    // When there are more than three length categories, an outer
-	    // switch first dispatches on the lengths, to save on comparisons.
-	    if (cats.length > 3) {
-	        cats.sort(function(a, b) {
-	            return b.length - a.length;
-	        });
-	        f += "switch(str.length){";
-	        for (var i = 0; i < cats.length; ++i) {
-	            var cat = cats[i];
-	            f += "case " + cat[0].length + ":";
-	            compareTo(cat);
-	        }
-	        f += "}";
-
-	        // Otherwise, simply generate a flat `switch` statement.
-	    } else {
-	        compareTo(words);
-	    }
-	    return new Function("str", f);
-	}
-
-
-	_.trackErrorPos = (function (){
-	  // linebreak
-	  var lb = /\r\n|[\n\r\u2028\u2029]/g;
-	  var minRange = 20, maxRange = 20;
-	  function findLine(lines, pos){
-	    var tmpLen = 0;
-	    for(var i = 0,len = lines.length; i < len; i++){
-	      var lineLen = (lines[i] || "").length;
-
-	      if(tmpLen + lineLen > pos) {
-	        return {num: i, line: lines[i], start: pos - i - tmpLen , prev:lines[i-1], next: lines[i+1] };
-	      }
-	      // 1 is for the linebreak
-	      tmpLen = tmpLen + lineLen ;
-	    }
-	  }
-	  function formatLine(str,  start, num, target){
-	    var len = str.length;
-	    var min = start - minRange;
-	    if(min < 0) min = 0;
-	    var max = start + maxRange;
-	    if(max > len) max = len;
-
-	    var remain = str.slice(min, max);
-	    var prefix = "[" +(num+1) + "] " + (min > 0? ".." : "")
-	    var postfix = max < len ? "..": "";
-	    var res = prefix + remain + postfix;
-	    if(target) res += "\n" + new Array(start-min + prefix.length + 1).join(" ") + "^^^";
-	    return res;
-	  }
-	  return function(input, pos){
-	    if(pos > input.length-1) pos = input.length-1;
-	    lb.lastIndex = 0;
-	    var lines = input.split(lb);
-	    var line = findLine(lines,pos);
-	    var start = line.start, num = line.num;
-
-	    return (line.prev? formatLine(line.prev, start, num-1 ) + '\n': '' ) + 
-	      formatLine(line.line, start, num, true) + '\n' + 
-	      (line.next? formatLine(line.next, start, num+1 ) + '\n': '' );
-
-	  }
-	})();
-
-
-	var ignoredRef = /\((\?\!|\?\:|\?\=)/g;
-	_.findSubCapture = function (regStr) {
-	  var left = 0,
-	    right = 0,
-	    len = regStr.length,
-	    ignored = regStr.match(ignoredRef); // ignored uncapture
-	  if(ignored) ignored = ignored.length
-	  else ignored = 0;
-	  for (; len--;) {
-	    var letter = regStr.charAt(len);
-	    if (len === 0 || regStr.charAt(len - 1) !== "\\" ) { 
-	      if (letter === "(") left++;
-	      if (letter === ")") right++;
-	    }
-	  }
-	  if (left !== right) throw "RegExp: "+ regStr + "'s bracket is not marched";
-	  else return left - ignored;
-	};
-
-
-	_.escapeRegExp = function( str){// Credit: XRegExp 0.6.1 (c) 2007-2008 Steven Levithan <http://stevenlevithan.com/regex/xregexp/> MIT License
-	  return str.replace(/[-[\]{}()*+?.\\^$|,#\s]/g, function(match){
-	    return '\\' + match;
-	  });
-	};
-
-
-	var rEntity = new RegExp("&(?:(#x[0-9a-fA-F]+)|(#[0-9]+)|(" + _.keys(entities).join('|') + '));', 'gi');
-
-	_.convertEntity = function(chr){
-
-	  return ("" + chr).replace(rEntity, function(all, hex, dec, capture){
-	    var charCode;
-	    if( dec ) charCode = parseInt( dec.slice(1), 10 );
-	    else if( hex ) charCode = parseInt( hex.slice(2), 16 );
-	    else charCode = entities[capture]
-
-	    return String.fromCharCode( charCode )
-	  });
-
-	}
-
-
-	// simple get accessor
-
-	_.createObject = function(o, props){
-	    function Foo() {}
-	    Foo.prototype = o;
-	    var res = new Foo;
-	    if(props) _.extend(res, props);
-	    return res;
-	}
-
-	_.createProto = function(fn, o){
-	    function Foo() { this.constructor = fn;}
-	    Foo.prototype = o;
-	    return (fn.prototype = new Foo());
-	}
-
-
-
-	/**
-	clone
-	*/
-	_.clone = function clone(obj){
-	    var type = _.typeOf(obj);
-	    if(type === 'array'){
-	      var cloned = [];
-	      for(var i=0,len = obj.length; i< len;i++){
-	        cloned[i] = obj[i]
-	      }
-	      return cloned;
-	    }
-	    if(type === 'object'){
-	      var cloned = {};
-	      for(var i in obj) if(obj.hasOwnProperty(i)){
-	        cloned[i] = obj[i];
-	      }
-	      return cloned;
-	    }
-	    return obj;
-	  }
-
-	_.equals = function(now, old){
-	  var type = typeof now;
-	  if(type === 'number' && typeof old === 'number'&& isNaN(now) && isNaN(old)) return true
-	  return now === old;
-	}
-
-	var dash = /-([a-z])/g;
-	_.camelCase = function(str){
-	  return str.replace(dash, function(all, capture){
-	    return capture.toUpperCase();
-	  })
-	}
-
-
-
-	_.throttle = function throttle(func, wait){
-	  var wait = wait || 100;
-	  var context, args, result;
-	  var timeout = null;
-	  var previous = 0;
-	  var later = function() {
-	    previous = +new Date;
-	    timeout = null;
-	    result = func.apply(context, args);
-	    context = args = null;
-	  };
-	  return function() {
-	    var now = + new Date;
-	    var remaining = wait - (now - previous);
-	    context = this;
-	    args = arguments;
-	    if (remaining <= 0 || remaining > wait) {
-	      clearTimeout(timeout);
-	      timeout = null;
-	      previous = now;
-	      result = func.apply(context, args);
-	      context = args = null;
-	    } else if (!timeout) {
-	      timeout = setTimeout(later, remaining);
-	    }
-	    return result;
-	  };
-	};
-
-	// hogan escape
-	// ==============
-	_.escape = (function(){
-	  var rAmp = /&/g,
-	      rLt = /</g,
-	      rGt = />/g,
-	      rApos = /\'/g,
-	      rQuot = /\"/g,
-	      hChars = /[&<>\"\']/;
-
-	  return function(str) {
-	    return hChars.test(str) ?
-	      str
-	        .replace(rAmp, '&amp;')
-	        .replace(rLt, '&lt;')
-	        .replace(rGt, '&gt;')
-	        .replace(rApos, '&#39;')
-	        .replace(rQuot, '&quot;') :
-	      str;
-	  }
-	})();
-
-	_.cache = function(max){
-	  max = max || 1000;
-	  var keys = [],
-	      cache = {};
-	  return {
-	    set: function(key, value) {
-	      if (keys.length > this.max) {
-	        cache[keys.shift()] = undefined;
-	      }
-	      // 
-	      if(cache[key] === undefined){
-	        keys.push(key);
-	      }
-	      cache[key] = value;
-	      return value;
-	    },
-	    get: function(key) {
-	      if (key === undefined) return cache;
-	      return cache[key];
-	    },
-	    max: max,
-	    len:function(){
-	      return keys.length;
-	    }
-	  };
-	}
-
-	// // setup the raw Expression
-	// _.touchExpression = function(expr){
-	//   if(expr.type === 'expression'){
-	//   }
-	//   return expr;
-	// }
-
-
-	// handle the same logic on component's `on-*` and element's `on-*`
-	// return the fire object
-	_.handleEvent = function(value, type ){
-	  var self = this, evaluate;
-	  if(value.type === 'expression'){ // if is expression, go evaluated way
-	    evaluate = value.get;
-	  }
-	  if(evaluate){
-	    return function fire(obj){
-	      self.$update(function(){
-	        var data = this.data;
-	        data.$event = obj;
-	        var res = evaluate(self);
-	        if(res === false && obj && obj.preventDefault) obj.preventDefault();
-	        data.$event = undefined;
-	      })
-
-	    }
-	  }else{
-	    return function fire(){
-	      var args = slice.call(arguments)      
-	      args.unshift(value);
-	      self.$update(function(){
-	        self.$emit.apply(self, args);
-	      })
-	    }
-	  }
-	}
-
-	// only call once
-	_.once = function(fn){
-	  var time = 0;
-	  return function(){
-	    if( time++ === 0) fn.apply(this, arguments);
-	  }
-	}
-
-	_.fixObjStr = function(str){
-	  if(str.trim().indexOf('{') !== 0){
-	    return '{' + str + '}';
-	  }
-	  return str;
-	}
-
-
-	_.map= function(array, callback){
-	  var res = [];
-	  for (var i = 0, len = array.length; i < len; i++) {
-	    res.push(callback(array[i], i));
-	  }
-	  return res;
-	}
-
-	function log(msg, type){
-	  if(typeof console !== "undefined")  console[type || "log"](msg);
-	}
-
-	_.log = log;
-
-
-
-
-	//http://www.w3.org/html/wg/drafts/html/master/single-page.html#void-elements
-	_.isVoidTag = _.makePredicate("area base br col embed hr img input keygen link menuitem meta param source track wbr r-content");
-	_.isBooleanAttr = _.makePredicate('selected checked disabled readonly required open autofocus controls autoplay compact loop defer multiple');
-
-	_.isFalse - function(){return false}
-	_.isTrue - function(){return true}
-
-	_.isExpr = function(expr){
-	  return expr && expr.type === 'expression';
-	}
-	// @TODO: make it more strict
-	_.isGroup = function(group){
-	  return group.inject || group.$inject;
-	}
-
-	_.getCompileFn = function(source, ctx, options){
-	  return ctx.$compile.bind(ctx,source, options)
-	}
-
-
-
-
-
-	
-	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
-
-/***/ },
-/* 19 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var _ = __webpack_require__(18);
+	var _ = __webpack_require__(21);
 	var dom  = __webpack_require__(17);
 	var animate = {};
 	var env = __webpack_require__(27);
@@ -7490,14 +7155,14 @@
 	module.exports = animate;
 
 /***/ },
-/* 20 */
+/* 19 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// some nested  operation in ast 
 	// --------------------------------
 
 	var dom = __webpack_require__(17);
-	var animate = __webpack_require__(19);
+	var animate = __webpack_require__(18);
 
 	var combine = module.exports = {
 
@@ -7601,11 +7266,11 @@
 
 
 /***/ },
-/* 21 */
+/* 20 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var exprCache = __webpack_require__(27).exprCache;
-	var _ = __webpack_require__(18);
+	var _ = __webpack_require__(21);
 	var Parser = __webpack_require__(35);
 	module.exports = {
 	  expression: function(expr, simple){
@@ -7621,6 +7286,528 @@
 	}
 
 
+
+/***/ },
+/* 21 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/* WEBPACK VAR INJECTION */(function(global) {__webpack_require__(22)();
+
+
+
+	var _  = module.exports;
+	var entities = __webpack_require__(31);
+	var slice = [].slice;
+	var o2str = ({}).toString;
+	var win = typeof window !=='undefined'? window: global;
+
+
+	_.noop = function(){};
+	_.uid = (function(){
+	  var _uid=0;
+	  return function(){
+	    return _uid++;
+	  }
+	})();
+
+	_.extend = function( o1, o2, override ){
+	  for(var i in o2) if (o2.hasOwnProperty(i)){
+	    if( o1[i] === undefined || override === true ){
+	      o1[i] = o2[i]
+	    }
+	  }
+	  return o1;
+	}
+
+	_.keys = function(obj){
+	  if(Object.keys) return Object.keys(obj);
+	  var res = [];
+	  for(var i in obj) if(obj.hasOwnProperty(i)){
+	    res.push(i);
+	  }
+	  return res;
+	}
+
+	_.varName = 'd';
+	_.setName = 'p_';
+	_.ctxName = 'c';
+	_.extName = 'e';
+
+	_.rWord = /^[\$\w]+$/;
+	_.rSimpleAccessor = /^[\$\w]+(\.[\$\w]+)*$/;
+
+	_.nextTick = typeof setImmediate === 'function'? 
+	  setImmediate.bind(win) : 
+	  function(callback) {
+	    setTimeout(callback, 0) 
+	  }
+
+
+
+	_.prefix = "var " + _.varName + "=" + _.ctxName + ".data;" +  _.extName  + "=" + _.extName + "||'';";
+
+
+	_.slice = function(obj, start, end){
+	  var res = [];
+	  for(var i = start || 0, len = end || obj.length; i < len; i++){
+	    var item = obj[i];
+	    res.push(item)
+	  }
+	  return res;
+	}
+
+	_.typeOf = function (o) {
+	  return o == null ? String(o) :o2str.call(o).slice(8, -1).toLowerCase();
+	}
+
+
+	_.makePredicate = function makePredicate(words, prefix) {
+	    if (typeof words === "string") {
+	        words = words.split(" ");
+	    }
+	    var f = "",
+	    cats = [];
+	    out: for (var i = 0; i < words.length; ++i) {
+	        for (var j = 0; j < cats.length; ++j){
+	          if (cats[j][0].length === words[i].length) {
+	              cats[j].push(words[i]);
+	              continue out;
+	          }
+	        }
+	        cats.push([words[i]]);
+	    }
+	    function compareTo(arr) {
+	        if (arr.length === 1) return f += "return str === '" + arr[0] + "';";
+	        f += "switch(str){";
+	        for (var i = 0; i < arr.length; ++i){
+	           f += "case '" + arr[i] + "':";
+	        }
+	        f += "return true}return false;";
+	    }
+
+	    // When there are more than three length categories, an outer
+	    // switch first dispatches on the lengths, to save on comparisons.
+	    if (cats.length > 3) {
+	        cats.sort(function(a, b) {
+	            return b.length - a.length;
+	        });
+	        f += "switch(str.length){";
+	        for (var i = 0; i < cats.length; ++i) {
+	            var cat = cats[i];
+	            f += "case " + cat[0].length + ":";
+	            compareTo(cat);
+	        }
+	        f += "}";
+
+	        // Otherwise, simply generate a flat `switch` statement.
+	    } else {
+	        compareTo(words);
+	    }
+	    return new Function("str", f);
+	}
+
+
+	_.trackErrorPos = (function (){
+	  // linebreak
+	  var lb = /\r\n|[\n\r\u2028\u2029]/g;
+	  var minRange = 20, maxRange = 20;
+	  function findLine(lines, pos){
+	    var tmpLen = 0;
+	    for(var i = 0,len = lines.length; i < len; i++){
+	      var lineLen = (lines[i] || "").length;
+
+	      if(tmpLen + lineLen > pos) {
+	        return {num: i, line: lines[i], start: pos - i - tmpLen , prev:lines[i-1], next: lines[i+1] };
+	      }
+	      // 1 is for the linebreak
+	      tmpLen = tmpLen + lineLen ;
+	    }
+	  }
+	  function formatLine(str,  start, num, target){
+	    var len = str.length;
+	    var min = start - minRange;
+	    if(min < 0) min = 0;
+	    var max = start + maxRange;
+	    if(max > len) max = len;
+
+	    var remain = str.slice(min, max);
+	    var prefix = "[" +(num+1) + "] " + (min > 0? ".." : "")
+	    var postfix = max < len ? "..": "";
+	    var res = prefix + remain + postfix;
+	    if(target) res += "\n" + new Array(start-min + prefix.length + 1).join(" ") + "^^^";
+	    return res;
+	  }
+	  return function(input, pos){
+	    if(pos > input.length-1) pos = input.length-1;
+	    lb.lastIndex = 0;
+	    var lines = input.split(lb);
+	    var line = findLine(lines,pos);
+	    var start = line.start, num = line.num;
+
+	    return (line.prev? formatLine(line.prev, start, num-1 ) + '\n': '' ) + 
+	      formatLine(line.line, start, num, true) + '\n' + 
+	      (line.next? formatLine(line.next, start, num+1 ) + '\n': '' );
+
+	  }
+	})();
+
+
+	var ignoredRef = /\((\?\!|\?\:|\?\=)/g;
+	_.findSubCapture = function (regStr) {
+	  var left = 0,
+	    right = 0,
+	    len = regStr.length,
+	    ignored = regStr.match(ignoredRef); // ignored uncapture
+	  if(ignored) ignored = ignored.length
+	  else ignored = 0;
+	  for (; len--;) {
+	    var letter = regStr.charAt(len);
+	    if (len === 0 || regStr.charAt(len - 1) !== "\\" ) { 
+	      if (letter === "(") left++;
+	      if (letter === ")") right++;
+	    }
+	  }
+	  if (left !== right) throw "RegExp: "+ regStr + "'s bracket is not marched";
+	  else return left - ignored;
+	};
+
+
+	_.escapeRegExp = function( str){// Credit: XRegExp 0.6.1 (c) 2007-2008 Steven Levithan <http://stevenlevithan.com/regex/xregexp/> MIT License
+	  return str.replace(/[-[\]{}()*+?.\\^$|,#\s]/g, function(match){
+	    return '\\' + match;
+	  });
+	};
+
+
+	var rEntity = new RegExp("&(?:(#x[0-9a-fA-F]+)|(#[0-9]+)|(" + _.keys(entities).join('|') + '));', 'gi');
+
+	_.convertEntity = function(chr){
+
+	  return ("" + chr).replace(rEntity, function(all, hex, dec, capture){
+	    var charCode;
+	    if( dec ) charCode = parseInt( dec.slice(1), 10 );
+	    else if( hex ) charCode = parseInt( hex.slice(2), 16 );
+	    else charCode = entities[capture]
+
+	    return String.fromCharCode( charCode )
+	  });
+
+	}
+
+
+	// simple get accessor
+
+	_.createObject = function(o, props){
+	    function Foo() {}
+	    Foo.prototype = o;
+	    var res = new Foo;
+	    if(props) _.extend(res, props);
+	    return res;
+	}
+
+	_.createProto = function(fn, o){
+	    function Foo() { this.constructor = fn;}
+	    Foo.prototype = o;
+	    return (fn.prototype = new Foo());
+	}
+
+
+	_.removeOne = function(list , filter){
+	  var len = list.length;
+	  for(;len--;){
+	    if(filter(list[len])) {
+	      list.splice(len, 1)
+	      return;
+	    }
+	  }
+	}
+
+
+	/**
+	clone
+	*/
+	_.clone = function clone(obj){
+	    var type = _.typeOf(obj);
+	    if(type === 'array'){
+	      var cloned = [];
+	      for(var i=0,len = obj.length; i< len;i++){
+	        cloned[i] = obj[i]
+	      }
+	      return cloned;
+	    }
+	    if(type === 'object'){
+	      var cloned = {};
+	      for(var i in obj) if(obj.hasOwnProperty(i)){
+	        cloned[i] = obj[i];
+	      }
+	      return cloned;
+	    }
+	    return obj;
+	  }
+
+	_.equals = function(now, old){
+	  var type = typeof now;
+	  if(type === 'number' && typeof old === 'number'&& isNaN(now) && isNaN(old)) return true
+	  return now === old;
+	}
+
+	var dash = /-([a-z])/g;
+	_.camelCase = function(str){
+	  return str.replace(dash, function(all, capture){
+	    return capture.toUpperCase();
+	  })
+	}
+
+
+
+	_.throttle = function throttle(func, wait){
+	  var wait = wait || 100;
+	  var context, args, result;
+	  var timeout = null;
+	  var previous = 0;
+	  var later = function() {
+	    previous = +new Date;
+	    timeout = null;
+	    result = func.apply(context, args);
+	    context = args = null;
+	  };
+	  return function() {
+	    var now = + new Date;
+	    var remaining = wait - (now - previous);
+	    context = this;
+	    args = arguments;
+	    if (remaining <= 0 || remaining > wait) {
+	      clearTimeout(timeout);
+	      timeout = null;
+	      previous = now;
+	      result = func.apply(context, args);
+	      context = args = null;
+	    } else if (!timeout) {
+	      timeout = setTimeout(later, remaining);
+	    }
+	    return result;
+	  };
+	};
+
+	// hogan escape
+	// ==============
+	_.escape = (function(){
+	  var rAmp = /&/g,
+	      rLt = /</g,
+	      rGt = />/g,
+	      rApos = /\'/g,
+	      rQuot = /\"/g,
+	      hChars = /[&<>\"\']/;
+
+	  return function(str) {
+	    return hChars.test(str) ?
+	      str
+	        .replace(rAmp, '&amp;')
+	        .replace(rLt, '&lt;')
+	        .replace(rGt, '&gt;')
+	        .replace(rApos, '&#39;')
+	        .replace(rQuot, '&quot;') :
+	      str;
+	  }
+	})();
+
+	_.cache = function(max){
+	  max = max || 1000;
+	  var keys = [],
+	      cache = {};
+	  return {
+	    set: function(key, value) {
+	      if (keys.length > this.max) {
+	        cache[keys.shift()] = undefined;
+	      }
+	      // 
+	      if(cache[key] === undefined){
+	        keys.push(key);
+	      }
+	      cache[key] = value;
+	      return value;
+	    },
+	    get: function(key) {
+	      if (key === undefined) return cache;
+	      return cache[key];
+	    },
+	    max: max,
+	    len:function(){
+	      return keys.length;
+	    }
+	  };
+	}
+
+	// // setup the raw Expression
+	// _.touchExpression = function(expr){
+	//   if(expr.type === 'expression'){
+	//   }
+	//   return expr;
+	// }
+
+
+	// handle the same logic on component's `on-*` and element's `on-*`
+	// return the fire object
+	_.handleEvent = function(value, type ){
+	  var self = this, evaluate;
+	  if(value.type === 'expression'){ // if is expression, go evaluated way
+	    evaluate = value.get;
+	  }
+	  if(evaluate){
+	    return function fire(obj){
+	      self.$update(function(){
+	        var data = this.data;
+	        data.$event = obj;
+	        var res = evaluate(self);
+	        if(res === false && obj && obj.preventDefault) obj.preventDefault();
+	        data.$event = undefined;
+	      })
+
+	    }
+	  }else{
+	    return function fire(){
+	      var args = slice.call(arguments)      
+	      args.unshift(value);
+	      self.$update(function(){
+	        self.$emit.apply(self, args);
+	      })
+	    }
+	  }
+	}
+
+	// only call once
+	_.once = function(fn){
+	  var time = 0;
+	  return function(){
+	    if( time++ === 0) fn.apply(this, arguments);
+	  }
+	}
+
+	_.fixObjStr = function(str){
+	  if(str.trim().indexOf('{') !== 0){
+	    return '{' + str + '}';
+	  }
+	  return str;
+	}
+
+
+	_.map= function(array, callback){
+	  var res = [];
+	  for (var i = 0, len = array.length; i < len; i++) {
+	    res.push(callback(array[i], i));
+	  }
+	  return res;
+	}
+
+	function log(msg, type){
+	  if(typeof console !== "undefined")  console[type || "log"](msg);
+	}
+
+	_.log = log;
+
+
+
+
+	//http://www.w3.org/html/wg/drafts/html/master/single-page.html#void-elements
+	_.isVoidTag = _.makePredicate("area base br col embed hr img input keygen link menuitem meta param source track wbr r-content");
+	_.isBooleanAttr = _.makePredicate('selected checked disabled readonly required open autofocus controls autoplay compact loop defer multiple');
+
+	_.isFalse - function(){return false}
+	_.isTrue - function(){return true}
+
+	_.isExpr = function(expr){
+	  return expr && expr.type === 'expression';
+	}
+	// @TODO: make it more strict
+	_.isGroup = function(group){
+	  return group.inject || group.$inject;
+	}
+
+	_.getCompileFn = function(source, ctx, options){
+	  return ctx.$compile.bind(ctx,source, options)
+	}
+
+	// remove directive param from AST
+	_.fixTagAST = function( tagAST, Component ){
+
+	  if( tagAST.touched ) return;
+
+	  var attrs = tagAST.attrs;
+
+	  if( !attrs ) return;
+
+	  // Maybe multiple directive need same param, 
+	  // We place all param in totalParamMap
+	  var len = attrs.length;
+	  if(!len) return;
+	  var directives=[], otherAttrMap = {};
+	  for(;len--;){
+
+	    var attr = attrs[ len ];
+
+	    var directive = Component.directive( attr.name );
+	    if( directive ) {
+
+	      attr.priority = directive.priority || 1;
+	      attr.directive = true;
+	      directives.push(attr);
+
+	    }else if(attr.type === 'attribute'){
+	      otherAttrMap[attr.name] = attr.value;
+	    }
+	  }
+
+	  directives.forEach( function( attr ){
+	    var directive = Component.directive(attr.name);
+	    var param = directive.param;
+	    if(param && param.length){
+	      attr.param = {};
+	      param.forEach(function( name ){
+	        if( name in otherAttrMap ){
+	          attr.param[name] = otherAttrMap[name] === undefined? true: otherAttrMap[name]
+	          _.removeOne(attrs, function(attr){
+	            return attr.name === name
+	          })
+	        }
+	      })
+	    }
+	  });
+
+	  attrs.sort(function(a1, a2){
+	    // fix IE9- input type can't assign after value
+	    if(a2.name === "type") return 1;
+
+	    var p1 = a1.priority;
+	    var p2 = a2.priority;
+
+	    if(p1 == null) p1 = 10000;
+	    if(p2 == null) p2 = 10000;
+
+	    return p2 - p1;
+
+	  })
+
+	  tagAST.touched = true;
+	}
+
+	_.getParamObj = function(component, param){
+	  var paramObj = {};
+	  if(param) {
+	    for(var i in param) if(param.hasOwnProperty(i)){
+	      var value = param[i];
+	      paramObj[i] =  value && value.type==='expression'? component.$get(value): value;
+	    }
+	  }
+	  return paramObj;
+	}
+
+
+
+
+
+
+	
+	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
 
 /***/ },
 /* 22 */
@@ -7744,7 +7931,7 @@
 	// License MIT (c) Dustin Diaz 2014
 	  
 	// inspired by backbone's extend and klass
-	var _ = __webpack_require__(18),
+	var _ = __webpack_require__(21),
 	  fnTest = /xy/.test(function(){"xy";}) ? /\bsupr\b/:/.*/,
 	  isFn = function(o){return typeof o === "function"};
 
@@ -7820,7 +8007,7 @@
 /* 24 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var _ = __webpack_require__(18);
+	var _ = __webpack_require__(21);
 
 	function simpleDiff(now, old){
 	  var nlen = now.length;
@@ -8012,7 +8199,7 @@
 
 	// simplest event emitter 60 lines
 	// ===============================
-	var slice = [].slice, _ = __webpack_require__(18);
+	var slice = [].slice, _ = __webpack_require__(21);
 	var API = {
 	  $on: function(event, fn) {
 	    if(typeof event === "object"){
@@ -9383,7 +9570,7 @@
 
 	// some fixture test;
 	// ---------------
-	var _ = __webpack_require__(18);
+	var _ = __webpack_require__(21);
 	exports.svg = (function(){
 	  return typeof document !== "undefined" && document.implementation.hasFeature( "http://www.w3.org/TR/SVG11/feature#BasicStructure", "1.1" );
 	})();
@@ -9428,7 +9615,7 @@
 	var Lexer = __webpack_require__(36);
 	var Parser = __webpack_require__(35);
 	var config = __webpack_require__(29);
-	var _ = __webpack_require__(18);
+	var _ = __webpack_require__(21);
 	var extend = __webpack_require__(23);
 	var combine = {};
 	if(env.browser){
@@ -9436,11 +9623,11 @@
 	  var walkers = __webpack_require__(37);
 	  var Group = __webpack_require__(38);
 	  var doc = dom.doc;
-	  combine = __webpack_require__(20);
+	  combine = __webpack_require__(19);
 	}
 	var events = __webpack_require__(25);
 	var Watcher = __webpack_require__(39);
-	var parse = __webpack_require__(21);
+	var parse = __webpack_require__(20);
 	var filter = __webpack_require__(40);
 
 
@@ -9694,10 +9881,10 @@
 	  destroy: function(){
 	    // destroy event wont propgation;
 	    this.$emit("$destroy");
+	    this._watchers = null;
 	    this.group && this.group.destroy(true);
 	    this.group = null;
 	    this.parentNode = null;
-	    this._watchers = null;
 	    this._children = [];
 	    var parent = this.$parent;
 	    if(parent){
@@ -10288,9 +10475,9 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	// Regular
-	var _ = __webpack_require__(18);
+	var _ = __webpack_require__(21);
 	var dom = __webpack_require__(17);
-	var animate = __webpack_require__(19);
+	var animate = __webpack_require__(18);
 	var Regular = __webpack_require__(30);
 	var consts = __webpack_require__(28);
 	var namespaces = consts.NAMESPACE;
@@ -10414,8 +10601,8 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var // packages
-	  _ = __webpack_require__(18),
-	 animate = __webpack_require__(19),
+	  _ = __webpack_require__(21),
+	 animate = __webpack_require__(18),
 	 dom = __webpack_require__(17),
 	 Regular = __webpack_require__(30);
 
@@ -10698,7 +10885,7 @@
 /* 35 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var _ = __webpack_require__(18);
+	var _ = __webpack_require__(21);
 
 	var config = __webpack_require__(29);
 	var node = __webpack_require__(43);
@@ -11429,7 +11616,7 @@
 /* 36 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var _ = __webpack_require__(18);
+	var _ = __webpack_require__(21);
 	var config = __webpack_require__(29);
 
 	// some custom tag  will conflict with the Lexer progress
@@ -11787,12 +11974,12 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var diffArray = __webpack_require__(24).diffArray;
-	var combine = __webpack_require__(20);
-	var animate = __webpack_require__(19);
+	var combine = __webpack_require__(19);
+	var animate = __webpack_require__(18);
 	var node = __webpack_require__(43);
 	var Group = __webpack_require__(38);
 	var dom = __webpack_require__(17);
-	var _ = __webpack_require__(18);
+	var _ = __webpack_require__(21);
 
 
 	var walkers = module.exports = {};
@@ -12152,20 +12339,9 @@
 	    dom.inject( combine.node(group) , element)
 	  }
 
-	  // sort before
-	  if(!ast.touched){
-	    attrs.sort(function(a1, a2){
-	      var d1 = Constructor.directive(a1.name),
-	        d2 = Constructor.directive(a2.name);
-	      if( d1 && d2 ) return (d2.priority || 1) - (d1.priority || 1);
-	      if(d1) return 1;
-	      if(d2) return -1;
-	      if(a2.name === "type") return 1;
-	      return -1;
-	    })
-	    ast.touched = true;
-	  }
-	  // may distinct with if else
+	  // fix tag ast, some infomation only avaliable at runtime (directive etc..)
+	  _.fixTagAST(ast, Constructor)
+
 	  var destroies = walkAttributes.call(this, attrs, element, extra);
 
 	  return {
@@ -12360,7 +12536,21 @@
 	  if(constant) value = value.get(this);
 
 	  if(directive && directive.link){
-	    var binding = directive.link.call(self, element, value, name, options.attrs);
+	    var extra = {
+	      attrs: options.attrs,
+	      param: _.getParamObj(this, attr.param) 
+	    }
+	    var binding = directive.link.call(self, element, value, name, extra);
+	    // if update has been passed in , we will  automately watch value for user
+	    if( typeof directive.update === 'function'){
+	      if(_.isExpr(value)){
+	        this.$watch(value, function(val, old){
+	          directive.update.call(self, element, val, old, extra); 
+	        })
+	      }else{
+	        directive.update.call(self, element, value, undefined, extra );
+	      }
+	    }
 	    if(typeof binding === 'function') binding = {destroy: binding}; 
 	    return binding;
 	  } else{
@@ -12388,12 +12578,13 @@
 
 
 
+
 /***/ },
 /* 38 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var _ = __webpack_require__(18);
-	var combine = __webpack_require__(20)
+	var _ = __webpack_require__(21);
+	var combine = __webpack_require__(19)
 
 	function Group(list){
 	  this.children = list || [];
@@ -12426,8 +12617,8 @@
 /* 39 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var _ = __webpack_require__(18);
-	var parseExpression = __webpack_require__(21).expression;
+	var _ = __webpack_require__(21);
+	var parseExpression = __webpack_require__(20).expression;
 	var diff = __webpack_require__(24);
 	var diffArray = diff.diffArray;
 	var diffObject = diff.diffObject;
@@ -12756,7 +12947,7 @@
 	 * event directive  bundle
 	 *
 	 */
-	var _ = __webpack_require__(18);
+	var _ = __webpack_require__(21);
 	var dom = __webpack_require__(17);
 	var Regular = __webpack_require__(30);
 
@@ -12837,9 +13028,10 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	// Regular
-	var _ = __webpack_require__(18);
+	var _ = __webpack_require__(21);
 	var dom = __webpack_require__(17);
 	var Regular = __webpack_require__(30);
+	var hasInput;
 
 	var modelHandlers = {
 	  "text": initText,
@@ -12852,35 +13044,51 @@
 	// @TODO
 
 
+	// autoUpdate directive for select element
+	// to fix r-model issue , when handle dynamic options
+
+
+	/**
+	 * <select r-model={name}> 
+	 *   <r-option value={value} ></r-option>
+	 * </select>
+	 */
+
+
 	// two-way binding with r-model
 	// works on input, textarea, checkbox, radio, select
 
-	Regular.directive("r-model", function(elem, value){
-	  var tag = elem.tagName.toLowerCase();
-	  var sign = tag;
-	  if(sign === "input") sign = elem.type || "text";
-	  else if(sign === "textarea") sign = "text";
-	  if(typeof value === "string") value = this.$expression(value);
 
-	  if( modelHandlers[sign] ) return modelHandlers[sign].call(this, elem, value);
-	  else if(tag === "input"){
-	    return modelHandlers.text.call(this, elem, value);
+	Regular.directive("r-model", {
+	  param: ['throttle', 'lazy'],
+	  link: function( elem, value, name, extra ){
+	    var tag = elem.tagName.toLowerCase();
+	    var sign = tag;
+	    if(sign === "input") sign = elem.type || "text";
+	    else if(sign === "textarea") sign = "text";
+	    if(typeof value === "string") value = this.$expression(value);
+
+	    if( modelHandlers[sign] ) return modelHandlers[sign].call(this, elem, value, extra);
+	    else if(tag === "input"){
+	      return modelHandlers.text.call(this, elem, value, extra);
+	    }
 	  }
-	});
+	})
 
 
 
 	// binding <select>
 
-	function initSelect( elem, parsed){
+	function initSelect( elem, parsed, extra){
 	  var self = this;
-	  var wc =this.$watch(parsed, function(newValue){
-	    var children = _.slice(elem.getElementsByTagName('option'))
-	    children.forEach(function(node, index){
-	      if(node.value == newValue){
-	        elem.selectedIndex = index;
+	  var wc = this.$watch(parsed, function(newValue){
+	    var children = elem.getElementsByTagName('option');
+	    for(var i =0, len = children.length ; i < len; i++){
+	      if(children[i].value == newValue){
+	        elem.selectedIndex = i;
+	        break;
 	      }
-	    })
+	    }
 	  });
 
 	  function handler(){
@@ -12889,19 +13097,31 @@
 	    self.$update();
 	  }
 
-	  dom.on(elem, "change", handler);
+	  dom.on( elem, "change", handler );
 	  
 	  if(parsed.get(self) === undefined && elem.value){
-	     parsed.set(self, elem.value);
+	    parsed.set(self, elem.value);
 	  }
+
 	  return function destroy(){
 	    dom.off(elem, "change", handler);
 	  }
 	}
 
 	// input,textarea binding
+	function initText(elem, parsed, extra){
+	  var param = extra.param;
+	  var throttle, lazy = param.lazy
 
-	function initText(elem, parsed){
+	  if('throttle' in param){
+	    // <input throttle r-model>
+	    if(param[throttle] === true){
+	      throttle = 400;
+	    }else{
+	      throttle = parseInt(param.throttle , 10)
+	    }
+	  }
+
 	  var self = this;
 	  var wc = this.$watch(parsed, function(newValue){
 	    if(elem.value !== newValue) elem.value = newValue == null? "": "" + newValue;
@@ -12925,25 +13145,33 @@
 	    }
 	  };
 
-	  if(dom.msie !== 9 && "oninput" in dom.tNode ){
-	    elem.addEventListener("input", handler );
+	  if(throttle && !lazy){
+	    var preHandle = handler, tid;
+	    handler = _.throttle(handler, throttle);
+	  }
+
+	  if(hasInput === undefined){
+	    hasInput = dom.msie !== 9 && "oninput" in dom.tNode;
+	  }
+
+	  if(lazy){
+	    elem.addEventListener("change", handler );
 	  }else{
-	    dom.on(elem, "paste", handler)
-	    dom.on(elem, "keyup", handler)
-	    dom.on(elem, "cut", handler)
-	    dom.on(elem, "change", handler)
+	    if( hasInput){
+	      elem.addEventListener("input", handler );
+	    }else{
+	      dom.on(elem, "paste keyup cut change", handler)
+	    }
 	  }
 	  if(parsed.get(self) === undefined && elem.value){
 	     parsed.set(self, elem.value);
 	  }
 	  return function (){
+	    if(lazy) return elem.removeEventListener("change", handler);
 	    if(dom.msie !== 9 && "oninput" in dom.tNode ){
 	      elem.removeEventListener("input", handler );
 	    }else{
-	      dom.off(elem, "paste", handler)
-	      dom.off(elem, "keyup", handler)
-	      dom.off(elem, "cut", handler)
-	      dom.off(elem, "change", handler)
+	      dom.off(elem, "paste keyup cut change", handler)
 	    }
 	  }
 	}
@@ -13002,6 +13230,9 @@
 	    if(parsed.set) dom.off(elem, "change", handler)
 	  }
 	}
+
+
+
 
 
 /***/ },
@@ -13078,8 +13309,8 @@
 	 */
 
 	var base64 = __webpack_require__(48)
-	var ieee754 = __webpack_require__(46)
-	var isArray = __webpack_require__(47)
+	var ieee754 = __webpack_require__(47)
+	var isArray = __webpack_require__(46)
 
 	exports.Buffer = Buffer
 	exports.SlowBuffer = Buffer
@@ -14145,6 +14376,45 @@
 /* 46 */
 /***/ function(module, exports, __webpack_require__) {
 
+	
+	/**
+	 * isArray
+	 */
+
+	var isArray = Array.isArray;
+
+	/**
+	 * toString
+	 */
+
+	var str = Object.prototype.toString;
+
+	/**
+	 * Whether or not the given `val`
+	 * is an array.
+	 *
+	 * example:
+	 *
+	 *        isArray([]);
+	 *        // > true
+	 *        isArray(arguments);
+	 *        // > false
+	 *        isArray('');
+	 *        // > false
+	 *
+	 * @param {mixed} val
+	 * @return {bool}
+	 */
+
+	module.exports = isArray || function (val) {
+	  return !! val && '[object Array]' == str.call(val);
+	};
+
+
+/***/ },
+/* 47 */
+/***/ function(module, exports, __webpack_require__) {
+
 	exports.read = function(buffer, offset, isLE, mLen, nBytes) {
 	  var e, m,
 	      eLen = nBytes * 8 - mLen - 1,
@@ -14228,45 +14498,6 @@
 	  for (; eLen > 0; buffer[offset + i] = e & 0xff, i += d, e /= 256, eLen -= 8);
 
 	  buffer[offset + i - d] |= s * 128;
-	};
-
-
-/***/ },
-/* 47 */
-/***/ function(module, exports, __webpack_require__) {
-
-	
-	/**
-	 * isArray
-	 */
-
-	var isArray = Array.isArray;
-
-	/**
-	 * toString
-	 */
-
-	var str = Object.prototype.toString;
-
-	/**
-	 * Whether or not the given `val`
-	 * is an array.
-	 *
-	 * example:
-	 *
-	 *        isArray([]);
-	 *        // > true
-	 *        isArray(arguments);
-	 *        // > false
-	 *        isArray('');
-	 *        // > false
-	 *
-	 * @param {mixed} val
-	 * @return {bool}
-	 */
-
-	module.exports = isArray || function (val) {
-	  return !! val && '[object Array]' == str.call(val);
 	};
 
 
