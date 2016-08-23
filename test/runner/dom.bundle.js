@@ -65,43 +65,43 @@
 /* 1 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var expect = __webpack_require__(26);
+	var expect = __webpack_require__(29);
 	var Regular = __webpack_require__(16);
-
+	
 	function destroy(component, container){
 	  component.destroy();
 	  expect(container.innerHTML).to.equal('');
 	}
-
+	
 	describe("config", function(){
 	  var container = document.createElement("div");
-
+	
 	  after(function() {
 	    Regular.config({
 	      END: '}',
 	      BEGIN: '{'
 	    })
 	  });
-
+	
 	  it("END and BEGIN can accpet '[' and ']'", function(){
-
-
+	
+	
 	    Regular.config({
 	      END: ']',
 	      BEGIN: '['
 	    })
-
+	
 	    var component = new Regular({
 	      template: "<p>[{a:1}['a']][a]</p>",
 	      data: {a:1}
 	    }).$inject( container );
-
+	
 	    expect(nes.one("p",container).innerHTML).to.equal('11');
 	    destroy(component, container)
 	  })
 	  it("END and BEGIN can accpet '{' and '}'", function(){
-
-
+	
+	
 	    Regular.config({
 	      END: '}',
 	      BEGIN: '{'
@@ -110,15 +110,15 @@
 	      template: '<div><ul><li><a href=\"#/knowledge/add\">åˆ›å»º</a></li></ul><table><tbody>{#list list as x}<tr><td><input type=\"checkbox\" value=\"{x.id}\"></td><td>{x.name}</td><td>{x.creator}</td><td>{x.create_time}</td></tr>{/list}</tbody></table></div>',
 	      data: {list: [{name: 1, creator: 2, create_time: 100, id:100 },{name: 2, creator: 2, create_time: 200, id:100},{name: 3, creator: 2, create_time: 300, id:100}]}
 	    }).$inject(container);
-
-
+	
+	
 	    expect(nes.all("tr",container).length,container).to.equal(3);
 	    destroy(component, container)
 	  })
-
+	
 	  it("custom END and BEGIN should also affect string-interplation", function(){
-
-
+	
+	
 	    Regular.config({
 	      END: '}',
 	      BEGIN: '{'
@@ -130,120 +130,120 @@
 	        this.data.param = option.param;
 	      }
 	    }).$inject(container);
-
+	
 	    var div = nes.one("div",container);
 	    expect(div.title).to.equal("11");
 	    expect(div.innerHTML).to.equal("1");
 	    dispatchMockEvent(div, 'click');
-
+	
 	    expect(div.title).to.equal("21");
 	    expect(div.innerHTML).to.equal("2");
-
+	
 	    destroy(component, container)
 	  })
 	  it("END and BEGIN can accpet '[[' and ']]'", function(){
-
+	
 	    Regular.config({
 	      END: ']]',
 	      BEGIN: '[['
 	    })
-
+	
 	    var component = new Regular({
 	      template: "<p>[[ {a:1}['a'] ]]</p>",
 	      data: {a:1}
 	    }).$inject( container );
-
+	
 	    expect(nes.one("p",container).innerHTML).to.equal('1');
 	    destroy(component, container)
 	  })
 	  it("END and BEGIN can accpet '{{{' and '}}}'", function(){
-
+	
 	    Regular.config({
 	      END: '}}}',
 	      BEGIN: '{{{'
 	    })
-
+	
 	    var component = new Regular({
 	      template: "<p>{{{ {a:1}['a'] }}}</p>"
 	    }).$inject( container );
-
+	
 	    expect(nes.one("p",container).innerHTML).to.equal('1');
 	    destroy(component, container)
 	  })
 	})
-
+	
 	describe("Interplation", function(){
 	  var container = document.createElement("div");
-
-
+	
+	
 	  it("deep undefined shouldn't throw a xx of undefined error", function(){
-
+	
 	    var component = new Regular({
 	      template: "{#if hello.name.title}{hello.name.title}1{/if}{#list hello.is.undefined as item}{item.name}{/list}{#include hello}"
 	    }).$inject(container);
-
+	
 	    destroy(component, container)
 	  })
-
+	
 	  it("nest undefined with multi inteplation should work correct", function(){
 	    var component = new Regular({
 	      template: "<div class='test {hello.title.name} {name} 2' ref=test></div>",
 	      data: {name: 2}
 	    })
-
+	
 	    expect(component.$refs.test.className).to.equal("test  2 2");
 	    destroy(component, container)
 	  })
-
-
+	
+	
 	  it("if function call is undefined, should throw error  ", function(){
 	    var component = new Regular({
 	      template: "<div on-click={this.login()} ref=test></div>",
 	      data: {name: 2}
 	    })
-
+	
 	    expect(function(){
 	      component.$get("hello.login()");
 	    }).to.throwError()
-
+	
 	    expect(function(){
 	      component.$get("hello.login");
 	    }).to.not.throwError()
-
+	
 	    expect(function(){
 	      component.$get("this.login()");
 	    }).to.throwError()
-
+	
 	    expect(function(){
 	      component.$get("this.login.hello");
 	    }).to.not.throwError()
-
-
+	
+	
 	    destroy(component, container)
 	  })
-
+	
 	  it("Invalid Lefthand Expression should throw Error" , function(){
 	    var component = new Regular({
 	      data: {name: 2}
 	    })
-
+	
 	    expect(function(){
 	      component.$get("name + 1 = 3")
 	    }).to.throwError();
-
+	
 	  })
-
+	
 	  it("#44: <div>></div> should not throw error", function(){
-
+	
 	    expect(function(){ 
 	      new Regular({template: '<div>></div>'}) 
 	    }) .to.not.throwError();
 	    expect(function(){ 
 	      new Regular({template: '<div>><</div>'}) 
 	    }) .to.not.throwError();
-
+	
 	  })
-
+	
 	})
 
 
@@ -251,20 +251,20 @@
 /* 2 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var expect = __webpack_require__(26);
-
+	var expect = __webpack_require__(29);
+	
 	var Regular = __webpack_require__(16);
 	var dom = Regular.dom;
-
+	
 	function destroy(component, container){
 	  component.destroy();
 	  expect(container.innerHTML).to.equal('');
 	}
-
+	
 	var  Component = Regular.extend();
 	var svgns = "http://www.w3.org/2000/svg";
-
-
+	
+	
 	var container = document.createElement("div");   
 	  describe("svg namespace", function(){
 	    // need include
@@ -276,9 +276,9 @@
 	    // 6. new Sectionj.
 	    it("bugfix #10, if svg namespace ", function(){
 	      //https://github.com/regularjs/regular/issues/10
-
+	
 	      if(Regular.env.svg){ // if support svg
-
+	
 	        var Bugfix10 = Component.extend({
 	          template: 
 	            '<div></div>\
@@ -296,47 +296,47 @@
 	        var component = new Bugfix10({
 	          data: {test: 1}
 	        }).$inject(container);
-
+	
 	        expect(nes.one("svg", container).namespaceURI).to.equal(svgns);
-
+	
 	        var lines = nes.all("svg line", container);
-
+	
 	        expect(lines.length).to.equal(2);
-
+	
 	        expect(lines[0].namespaceURI).to.equal(svgns)
 	        expect(lines[1].namespaceURI).to.equal(svgns)
 	        expect(lines[1].getAttribute("y1")).to.equal("10");
-
+	
 	        component.data.test = 2;
 	        component.$update();
-
+	
 	        var lines = nes.all("svg line", container);
-
+	
 	        expect(lines.length).to.equal(2);
-
+	
 	        expect(lines[1].getAttribute("y1")).to.equal("20");
 	        expect(lines[1].namespaceURI).to.equal(svgns)
-
-
+	
+	
 	        component.data.test = 3;
 	        component.$update();
-
+	
 	        var lines = nes.all("svg line", container);
-
+	
 	        expect(lines.length).to.equal(2);
-
+	
 	        expect(lines[1].getAttribute("y1")).to.equal("30");
 	        expect(lines[1].namespaceURI).to.equal(svgns)
-
+	
 	        destroy(component, container)
 	      }
 	    })
 	    it("bugfix #10, list svg namespace should correct", function(){
 	      //https://github.com/regularjs/regular/issues/10
-
-
+	
+	
 	      if(Regular.env.svg){ // if support svg
-
+	
 	        var Bugfix10 = Component.extend({
 	          template: 
 	            '<div></div>\
@@ -352,36 +352,36 @@
 	            list: [1]
 	          }
 	        }).$inject(container);
-
+	
 	        expect(nes.one("svg", container).namespaceURI).to.equal(svgns);
-
+	
 	        var lines = nes.all("svg line", container);
-
+	
 	        expect(lines.length).to.equal(2);
-
+	
 	        expect(lines[0].namespaceURI).to.equal(svgns)
 	        expect(lines[1].namespaceURI).to.equal(svgns)
-
+	
 	        component.data.list = [1,2]
 	        component.$update();
-
+	
 	        var lines = nes.all("svg line", container);
-
+	
 	        expect(lines.length).to.equal(3);
-
+	
 	        expect(lines[1].getAttribute("y1")).to.equal("0");
 	        expect(lines[2].getAttribute("y1")).to.equal("1");
 	        expect(lines[1].namespaceURI).to.equal(svgns)
-
+	
 	        destroy(component, container)
 	      }
 	    })
 	    it("bugfix #10, include: svg namespace should correct", function(){
 	      //https://github.com/regularjs/regular/issues/10
-
-
+	
+	
 	      if(Regular.env.svg){ // if support svg
-
+	
 	        var Bugfix10 = Component.extend({
 	          template: 
 	            '<div></div>\
@@ -395,30 +395,30 @@
 	            template: '<line y1="10" y2="100" stroke="#fff"/>'
 	          }
 	        }).$inject(container);
-
+	
 	        expect(nes.one("svg", container).namespaceURI).to.equal(svgns);
-
+	
 	        var lines = nes.all("svg line", container);
-
+	
 	        expect(lines.length).to.equal(2);
-
+	
 	        expect(lines[0].namespaceURI).to.equal(svgns)
 	        expect(lines[1].namespaceURI).to.equal(svgns)
-
+	
 	        component.data.template = '<line y1="20" y2="100" stroke="#fff"/>';
 	        component.$update();
-
+	
 	        var lines = nes.all("svg line", container);
-
+	
 	        expect(lines.length).to.equal(2);
-
+	
 	        expect(lines[1].getAttribute("y1")).to.equal("20");
 	        expect(lines[1].namespaceURI).to.equal(svgns)
-
+	
 	        destroy(component, container)
 	      }
 	    })
-
+	
 	  })
 	describe("bugbush for paopao.163.com", function(){
 	  it("void array literal should works", function(){
@@ -428,10 +428,10 @@
 	        data: {hello: {name: { first: "haha"} } }
 	      })
 	    }).to.not.throwException();
-
+	
 	  })
 	  it("number in element nearto { should not throwException", function(){
-
+	
 	    expect(function(){
 	      var component = new Component({
 	        template: "<div {#if true}x = 1{/if}>1</div>",
@@ -439,29 +439,29 @@
 	      })
 	    }).to.not.throwException();
 	  })
-
+	
 	  it("customer event should also trigger the digest", function(){
 	    Component.event("drag", function(element, fire){
 	      Regular.dom.on(element, "click", function(){
 	        fire({hello:1})
 	      })
 	    })
-
+	
 	    var component = new Component({
 	      template: "{#list 1..1 as i}<div ref=first on-drag={name=2}>{name}</div>{/list}"
 	    }).$inject(container);
-
+	
 	    dispatchMockEvent(component.$refs.first, 'click');
 	    expect(component.$refs.first.innerHTML).to.equal("2");
 	    destroy(component,container);
 	    
 	  })
-
+	
 	})
-
+	
 	describe("Bugfix", function(){
 	  it("bugfix #4", function(){
-
+	
 	    var Demo = Component.extend({name: "demo", template: "<input r-model = 'demo.name' title={demo.name}>"})
 	    var DemoApp = Component.extend({template: "{#list demos as demo}<demo demo={demo}/>{demos.length}{/list}"});
 	    var component = new DemoApp({ 
@@ -472,7 +472,7 @@
 	  })
 	  it("bugfix #6, svg namespace ", function(){
 	    //https://github.com/regularjs/regular/issues/6
-
+	
 	    if(Regular.env.svg){ // if support svg
 	      var Bugfix6 = Component.extend({
 	        template: 
@@ -486,25 +486,25 @@
 	          height: 4
 	        }
 	      }).$inject(container);
-
+	
 	      expect(nes.one("svg", container).namespaceURI).to.equal("http://www.w3.org/2000/svg");
-
+	
 	      var circle = nes.one("svg circle", container);
-
+	
 	      expect( circle.namespaceURI ).to.equal("http://www.w3.org/2000/svg" );
-
+	
 	      expect(circle.getAttribute("cx")).to.equal('2');
 	      expect(circle.getAttribute("cy")).to.equal('4');
-
+	
 	      dispatchMockEvent(circle, 'click'); // dispatch mock event
-
+	
 	      expect(circle.getAttribute("r")).to.equal('8');
 	      expect(circle.getAttribute("cx")).to.equal('4');
-
+	
 	      destroy(component, container)
 	    }
 	  })
-
+	
 	it("should destroy clear when have non parentNode", function(){
 	  var list = "{#list 1..3 as num}{num}{/list}"
 	  var component = new Regular({
@@ -518,7 +518,7 @@
 	      "{#list todos as todo}" + 
 	        "<div class='a-{todo_index}'>{todo.content}</div>" + 
 	      "{/list}";
-
+	
 	    var num =0;
 	    var component = new Regular({
 	      data: {todos: [{content: "hello"}, {content: "hello2"}]},
@@ -529,99 +529,99 @@
 	        }
 	      }
 	    }).$inject(container);
-
+	
 	    component.$emit("haha", 111);
-
+	
 	    component.data.todos[0] = {content: "haha"}
 	    expect(num).to.equal(1);
-
+	
 	    component.$update();
-
+	
 	    component.$emit("haha", 111);
 	    expect(num).to.equal(2);
-
+	
 	    component.$emit("haha", 111);
 	    expect(num).to.equal(3);
-
-
-
+	
+	
+	
 	    destroy(component, container);
 	  })    
-
+	
 	  it("bugfix #13, subComponentUpdate force outerComponent $update when initialize", function(){
 	    // we need force __checkOnece enter digest phase
 	    var Modal = Regular.extend({
 	      template: '{#include this.content}'
 	    });
-
+	
 	    var Input = Regular.extend({
 	      template: "<input type='email' class='form-control'>",
 	      init: function(){
 	        this.$update(); // @bug!! will forece outer Component to update
 	      }
 	    })
-
+	
 	    // 直接调用
 	    var Modal2 = Modal.extend({
 	      content:  '<input2 type="text" />'
 	    }).component("input2", Input)
-
-
+	
+	
 	    var component = new Modal2().$inject(container);
-
+	
 	    expect(nes.all('input' ,container).length).to.equal(1)
-
-
-
+	
+	
+	
 	    destroy(component, container);
 	  })
 	  it("bugfix #11, 换行导致模板无法解析", function(){
 	var template = '<input type="text"  class="form-control" \
 	  id="username" name="username" value="">';
-
+	
 	    var Component = Regular.extend({
 	      template: template
 	    });
-
+	
 	    var component = new Component().$inject(container);
-
+	
 	    expect(nes.all('input' ,container).length).to.equal(1)
-
+	
 	    destroy(component, container);
 	  })
 	  it("bugfix #14, html entity isn't converted", function(){
-
-
+	
+	
 	    // 'lt':60, 
 	    // 'gt':62, 
 	    // 'nbsp':160, 
 	    // 'iexcl':161, 
 	    // 'cent':162, 
-
+	
 	    var template =  "<p>&cent;</p><p>{text}</p>"
 	    var Component = Regular.extend({
 	      template: template
 	    });
-
-
+	
+	
 	    var component = new Component().$inject(container);
-
+	
 	    var ps = nes.all('p' ,container);
-
-
+	
+	
 	    expect(dom.text(ps[0])).to.equal(String.fromCharCode(162));
-
+	
 	    component.$update('text', "&lt;");
-
+	
 	    expect(dom.text(ps[1])).to.equal("&lt;");
-
+	
 	    destroy(component, container);
 	  })
-
-
+	
+	
 	  it('bugfix #39', function(){
 	    // https://github.com/regularjs/regular/issues/39
-
+	
 	    var template = 
 	            '<div>\n\
 	              <!-- 注释 -->\n\
@@ -629,15 +629,15 @@
 	              2. <input type="text">\n\
 	              3. <input type="text">\n\
 	            </div>';
-
+	
 	    expect(function(){
 	      Regular.parse(template);
 	    }).to.not.throwException()
-
+	
 	  })
-
+	
 	  it('bugfix #43', function(){
-
+	
 	    // 必须加入 if 来触发single check
 	    var container = dom.create('div');
 	    var Outer = Regular.extend({
@@ -649,7 +649,7 @@
 	        this.data.list.push({name: 1});
 	      }
 	    })
-
+	
 	    var Inner = Regular.extend({
 	      name: 'inner-43',
 	      template: "<div>{name}</div>",
@@ -657,21 +657,21 @@
 	        this.$update();
 	      }
 	    })
-
+	
 	    var outer = new Outer({
 	      data: {
 	        list: [{name:1}]
 	      }
 	    }).$inject(container);
-
+	
 	    dispatchMockEvent(outer.$refs.a, 'click')
-
-
+	
+	
 	    // @TODO: 
-
+	
 	  })
 	  it('bugfix : #list null->undefined', function(){
-
+	
 	    // 必须加入 if 来触发single check
 	    var Outer = Regular.extend({
 	      template: '<div ref=div>{#list list as item}<div>{item}</div>{/list}</div>',
@@ -679,20 +679,20 @@
 	        data.list = null;
 	      }
 	    })
-
-
+	
+	
 	    var outer = new Outer({}).$inject(container);
-
+	
 	    outer.$update('list', null);
 	    outer.$update('list', undefined);
-
+	
 	    expect(nes.all('div', outer.$refs.div).length).to.equal(0)
-
+	
 	    outer.destroy();
-
+	
 	  })
 	  it('bugfix : #list [1]->null', function(){
-
+	
 	    // 必须加入 if 来触发single check
 	    var Outer = Regular.extend({
 	      template: '<div ref=div>{#list list as item}<div>{item}</div>{/list}</div>',
@@ -700,23 +700,23 @@
 	        data.list = null;
 	      }
 	    })
-
-
+	
+	
 	    var outer = new Outer({}).$inject(container);
-
+	
 	    outer.$update('list', [1]);
 	    expect(nes.all('div', outer.$refs.div).length).to.equal(1)
 	    outer.$update('list', undefined);
-
+	
 	    expect(nes.all('div', outer.$refs.div).length).to.equal(0)
-
+	
 	    outer.destroy();
-
+	
 	  })
-
-
+	
+	
 	})
-
+	
 	describe("Milestones v0.4.*", function(){
 	  it("#53 nested component with delegate-event and [postion:after or before ] bug", function( done ){
 	    var after = document.createElement('div');
@@ -739,56 +739,56 @@
 	      template: "{#list this.list as i } <transclude> <nest2 isolate ></nest2> </transclude> {/list}",
 	      list: ['1']
 	    }).$inject( after, 'before' );
-
+	
 	    document.body.appendChild(container);
 	      
-
+	
 	    dispatchMockEvent(dom.element(component).firstChild, 'click');
 	    dom.remove(after);
 	    expect(i).to.equal(1);
 	    destroy( component, container );
 	    document.body.removeChild(container);
 	    done()
-
-
-
+	
+	
+	
 	  })
-
+	
 	  it("r-hide={true} should not throwException", function(){
-
+	
 	    expect(function(){
 	      var component = new Regular({
 	        template: "<div r-hide={true} ></div>"
 	      })
 	    }).to.not.throwException();
 	  })
-
+	
 	it('bugfix #50', function(){
 	  // https://github.com/regularjs/regular/issues/50
 	  var template =  "<p>&#x02A9D;</p><p>&#10909;</p><p>{text}</p>"
 	  var Component = Regular.extend({
 	    template: template
 	  });
-
-
+	
+	
 	  var component = new Component().$inject(container);
-
+	
 	  var ps = nes.all('p' ,container);
-
-
+	
+	
 	  expect(dom.text(ps[0])).to.equal(String.fromCharCode(10909));
 	  expect(dom.text(ps[1])).to.equal(String.fromCharCode(10909));
-
+	
 	  destroy(component, container)
-
-
+	
+	
 	})
-
-
+	
+	
 	  it('bugfix #67', function(){
 	    // https://github.com/regularjs/regular/issues/50
 	    var template =  "{#include a}";
-
+	
 	    expect(function(){
 	      var component = new Regular({
 	        data: {
@@ -801,51 +801,51 @@
 	        template: "{#inc a}{#inc b}{#inc c}{#inc d}{#inc e}"
 	      })
 	    }).to.not.throwException();
-
+	
 	    
-
+	
 	    var ps = nes.all('p' ,container);
-
+	
 	  })
-
+	
 	  it('bugfix #68, isolate with transclude content', function(){
-
+	
 	      var XSelect = Regular.extend({
 	        name: 'xselect',
 	        template: '<div>{#inc this.$body }</div>'
 	      })
-
-
+	
+	
 	      var component = new Regular({
 	        data: { name: 'leeluolee' },
 	        template: '<xselect isolate ><div ref=a>{name}</div></xselect>'
 	      })
-
+	
 	      expect(component.$refs.a.innerHTML).to.equal('leeluolee');
 	      component.destroy();
-
+	
 	  })
-
-
+	
+	
 	  it("bugfix #72, support pass null and undefined literal in template", function(){
 	    var Checked = Regular.extend({
 	      name: 'checked',
 	      template: "{checked}"
 	    }) 
-
+	
 	    expect(function(){
 	      new Regular({
 	        template: "<checked toggled='' checked={null} /> <checked checked={undefined}/ >"
 	      })
 	    }).to.not.throwException();
-
+	
 	  })
-
+	
 	  it("bugfix #74, r-class should support svg", function(){
-
-
+	
+	
 	    if(!Regular.env.svg) return;
-
+	
 	    var SVG = Regular.extend({
 	      name: 'checked',
 	      template:'<svg> <line ref=line id="base" r-class={{"toggle": toggle, "active": active}}/> </svg>'
@@ -855,17 +855,17 @@
 	        toggle: true
 	      }
 	    })
-
+	
 	    expect(line.$refs.line.getAttribute('class')).to.equal('toggle')
-
+	
 	    line.data.toggle = false;
 	    line.data.active = true;
 	    line.$update()
-
+	
 	    expect(line.$refs.line.getAttribute('class')).to.equal('active')
-
+	
 	  })
-
+	
 	  it('feature #82', function(){
 	    var i = 0;
 	    var mixins =  {
@@ -881,7 +881,7 @@
 	        $init: function(){
 	          i++;
 	          expect(i).to.equal(4)
-
+	
 	        },
 	        $afterInit: function(){
 	          i++;
@@ -889,7 +889,7 @@
 	        }
 	      }
 	    }
-
+	
 	    var Component = Regular.extend({
 	      config: function(){
 	          i++;
@@ -900,12 +900,12 @@
 	          expect(i).to.equal(5)
 	      }
 	    }).implement(mixins)
-
+	
 	    new Component();
-
+	
 	    expect(i).to.equal(6);
 	  })
-
+	
 	  it('bug #78', function(){
 	    var Nest = Regular.extend({
 	      name: 'bug-78',
@@ -918,12 +918,12 @@
 	      data: { hello: 200 },
 	      template: '<bug-78 ref=nest hello={hello}>{hello}</bug-78>'
 	    })
-
+	
 	    expect(comp.data.hello).to.equal(100);
 	    expect(comp.$refs.nest.data.hello).to.equal(100);
-
+	
 	  })
-
+	
 	  // it("bug #96", function(){
 	  //   var Nest = Regular.extend({
 	  //     name: 'bug-96'
@@ -936,7 +936,7 @@
 	  //       params: [{}]
 	  //      }
 	  //   })
-
+	
 	  //   expect(component.data.item).to.equal(undefined);
 	  // })
 	  it("bug #93", function(){
@@ -949,17 +949,17 @@
 	        name: '1' 
 	      }
 	    })
-
+	
 	  })
-
+	
 	  // it('bug :directive return value that not function will throw error', function(){
 	  //   throw Error()
 	  // })
 	})
-
-
-
-
+	
+	
+	
+	
 
 
 /***/ },
@@ -969,24 +969,24 @@
 	var Regular = __webpack_require__(16);
 	var animate = __webpack_require__(19);
 	var dom = __webpack_require__(17);
-
+	
 	function destroy(component, container){
 	  component.destroy();
 	  expect(container.innerHTML).to.equal('');
 	}
-
-
+	
+	
 	// // insert a test css
 	// var sheet = (function() {
 	//   // Create the <style> tag
 	//   var style = document.createElement("style");
-
+	
 	//   style.appendChild(document.createTextNode(""));
 	//   document.head.appendChild(style);
-
+	
 	//   return style.sheet;
 	// })();
-
+	
 	describe("Animation", function(){
 	  var Component = Regular.extend();
 	  describe("helper.animate ", function(){
@@ -998,13 +998,13 @@
 	    after(function(){
 	      document.body.removeChild( container );
 	    });
-
+	
 	    it("animate.inject is async when on:enter is specified", function(done){
 	      var div1 =document.createElement("div");
 	      var div2 =document.createElement("div");
 	      var component = new Component;
 	      processAnimate.link.call(component, div1, "on: enter; class: anim");
-
+	
 	      // to judge async or sync
 	      var a = 1;
 	      animate.inject(div1, div2, 'bottom', function(){
@@ -1013,15 +1013,15 @@
 	        dom.nextReflow(function(){done()})
 	      })
 	      expect(a).to.equal(1)
-
+	
 	    })
 	    it("animate.inject is async without on:enter", function(done){
-
+	
 	      var div1 =document.createElement("div");
 	      var div2 =document.createElement("div");
 	      var component = new Component;
 	      processAnimate.link.call(component, div1, "on: click; class: anim");
-
+	
 	      var a = 1;
 	      animate.inject(div1, div2, 'bottom', function(){
 	        a = 2;
@@ -1029,10 +1029,10 @@
 	        dom.nextReflow(function(){done()})
 	      })
 	      expect(a).to.equal(2)
-
+	
 	    })
 	    it("animate.inject accept [Array]", function(done){
-
+	
 	      var div1 =document.createElement("div");
 	      var div2 =document.createElement("div");
 	      var component = new Component;
@@ -1046,12 +1046,12 @@
 	      })
 	      expect(a).to.equal(2)
 	    })
-
+	
 	    it("animate.remove accept Array", function(done){
 	      var div1 =document.createElement("div");
 	      var div2 =document.createElement("div");
 	      animate.inject([div1, div2], container)
-
+	
 	      var divs = container.getElementsByTagName("div");
 	      expect(divs.length).to.equal(2);
 	      animate.remove([div1, div2], function(){
@@ -1092,7 +1092,7 @@
 	      expect(a).to.equal(1);
 	      
 	    })
-
+	
 	    it("#issue 61: parse value before start animation", function(done){
 	      var div1 =document.createElement("div");
 	      var i = 0;
@@ -1108,8 +1108,8 @@
 	          done();
 	        }
 	      })
-
-
+	
+	
 	      var component = new Component({
 	        data: {
 	          className: "animated"
@@ -1117,9 +1117,9 @@
 	        template: "<div r-anim='on: enter; custom: {className}; custom2: static'></div>"
 	      });
 	      var i =0;
-
+	
 	    })
-
+	
 	    it("animate.inject&animate.remove with callback", function(done){
 	      var div1 =document.createElement("div");
 	      var div2 =document.createElement("div");
@@ -1141,9 +1141,9 @@
 	          done()
 	        })
 	      })
-
+	
 	    })
-
+	
 	    it("animate.startClass with no animation and transition", function(done){
 	      var div1 = document.createElement("div");
 	      animate.startClassAnimate(div1, 'bouceOut', function(){
@@ -1194,11 +1194,11 @@
 	      expect(div1.style.width).to.not.equal("10px")
 	      expect(div1.style.height).to.not.equal("10px")
 	    })
-
+	
 	  })
-
+	
 	  describe("Animator", function(){
-
+	
 	    var container = document.createElement("div");
 	    before(function(){
 	      document.body.appendChild( container );
@@ -1206,7 +1206,7 @@
 	    after(function(){
 	      document.body.removeChild( container );
 	    });
-
+	
 	    it("animator: wait", function(done){
 	      var wait = Regular.animation("wait");
 	      var complete = false;
@@ -1214,7 +1214,7 @@
 	        complete= true;
 	        done();
 	      })
-
+	
 	      expect(complete).to.equal(false);
 	    })
 	    it("animator: class", function(done){
@@ -1226,7 +1226,7 @@
 	        expect(element.className).to.equal("");
 	        done();
 	      })
-
+	
 	      dom.nextReflow(function(){
 	        expect(element.className).to.equal("bouceout animated");
 	      })
@@ -1234,28 +1234,28 @@
 	    it("animator: class,2", function(done){
 	      var element = document.createElement("div");
 	      var klass = Regular.animation("class");
-
+	
 	      klass({
 	        element: element,
 	        param: "bouceout animated,2"})(function(){
 	        expect(element.className).to.equal("");
 	        done();
 	      })
-
+	
 	      expect(element.className).to.equal("bouceout animated");
-
+	
 	      dom.nextReflow(function(){
 	        expect(dom.hasClass(element, "bouceout-active")).to.equal(true);
 	        expect(dom.hasClass(element, "animated-active")).to.equal(true);
 	        expect(dom.hasClass(element, "bouceout")).to.equal(true);
 	        expect(dom.hasClass(element, "animated")).to.equal(true);
 	      })
-
+	
 	    })
 	    it("animator: class, 3", function(done){
 	      var element = document.createElement("div");
 	      var klass = Regular.animation("class");
-
+	
 	      klass({
 	        element: element,
 	        param: "bouceOut animated,3"})(function(){
@@ -1270,9 +1270,9 @@
 	    it("animator: class, 4", function(done){
 	      var element = document.createElement("div");
 	      var klass = Regular.animation("class");
-
+	
 	      element.className = "bouceOut animated hello";
-
+	
 	      klass({
 	        element: element,
 	        param: "bouceOut animated,4"})(function(){
@@ -1309,7 +1309,7 @@
 	    })
 	    it("animator: emit", function(done){
 	      var emit = Regular.animation("emit");
-
+	
 	      var toasted = false;
 	      var component = new Component({
 	        data: {hello: "leeluolee"},
@@ -1326,12 +1326,12 @@
 	        done();
 	      })
 	    })
-
+	
 	  })
-
+	
 	  describe("processAnimate", function(){
 	    var processAnimate = Regular.directive("r-animation");
-
+	
 	    it("'on' should addListener on component but not element", function(done){
 	      var element = document.createElement("div");
 	      var component = new Component({
@@ -1349,7 +1349,7 @@
 	      })
 	      component.destroy
 	    })
-
+	
 	    it("'on: click' add addListener on dom but not component", function(done){
 	      var element = document.createElement("div");
 	      var component = new Component({
@@ -1396,26 +1396,26 @@
 	        done();
 	    })
 	  })
-
+	
 	})
 
 /***/ },
 /* 4 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var expect = __webpack_require__(26);
+	var expect = __webpack_require__(29);
 	// contains basic dom && event specs
 	var dom = __webpack_require__(17);
 	var Regular = __webpack_require__(16);
-
+	
 	function destroy(component, container){
 	  component.destroy();
 	  expect(container.innerHTML).to.equal('');
 	}
-
-
+	
+	
 	describe("Dom", function(){
-
+	
 	  describe("[Regular.dom] api", function(){
 	    var div = dom.create("div");
 	    
@@ -1426,21 +1426,21 @@
 	      expect(dom.hasClass(div, "name")).to.equal(false);
 	      div.className = "";
 	    })
-
+	
 	    it("addClass should work as expect", function(){
 	      dom.addClass(div, "name");
 	      expect(div.className).to.equal("name");
 	    })
-
+	
 	    it("delClass should work as expect", function(){
 	      div.className = "name";
 	      dom.delClass(div, "name");
 	      expect(div.className).to.equal("");
-
+	
 	    })
 	  })
-
-
+	
+	
 	  describe("Event via `on-*`", function(){
 	    it("trigger simple click event", function(){
 	      var container = document.createElement('div');
@@ -1448,20 +1448,20 @@
 	        template: "<div on-click={name=1}>test</div>",
 	        data: {test: 0}
 	      }).$inject(container);
-
+	
 	      var $node = $('div', container);
-
+	
 	      expect(component.data.name).to.equal(undefined);
 	      expect($node.length).to.equal(1);
-
+	
 	      dispatchMockEvent($node[0], 'click');
 	      expect(component.data.name).to.equal(1);
-
+	
 	      destroy(component, container);
 	    })
-
+	
 	    it("custom Event handler's context should be component", function(){
-
+	
 	        var container = document.createElement('div');
 	        var Component = Regular.extend();
 	        var context;
@@ -1472,12 +1472,12 @@
 	          template: "<div on-hello={name=name+1} class='hello' >haha</div>",
 	          data: { test: 0 , name: 'hahah'}
 	        }).$inject(container);
-
+	
 	        expect(context).to.equal(component);
-
+	
 	    })
 	    it("nested binder(>2) should be destroy after destroy", function(){
-
+	
 	        var container = document.createElement('div');
 	        var Component = Regular.extend();
 	        var destroy_directive=1, destroy_upload=1;
@@ -1500,19 +1500,19 @@
 	              </div>\
 	            </div>\
 	        </div>';
-
+	
 	        var component = new Component({
 	          template: template,
 	          data: { test: 0 , name: 'hahah', imgs:['null']}
 	        }).$inject(container);
-
+	
 	        component.destroy();
 	        expect(destroy_upload).to.equal(2)
 	        expect(destroy_directive).to.equal(2)
-
-
+	
+	
 	    })
-
+	
 	    it("event should go proxy way when pass Non-Expreesion as attribute_value", function(){
 	      var container = document.createElement('div');
 	      var i = 0;
@@ -1525,24 +1525,24 @@
 	        hello2: function(){
 	          i = 2; 
 	        }
-
+	
 	      });
-
+	
 	      var component = new Component({
 	        template: "<div on-click=hello2 class='hello' >haha</div>",
 	        data: { test: 0 , name: 'hahah'}
 	      }).$inject(container);
-
+	
 	      dispatchMockEvent(nes.one('div', container), "click");
-
+	
 	      expect(i).to.equal(1);
-
-
+	
+	
 	      destroy(component, container);
-
-
+	
+	
 	    });  
-
+	
 	    it("when go proxy way the fire's context should point to outer component", function(){
 	      var container = document.createElement('div');
 	      var i = 0, j=0;
@@ -1558,10 +1558,10 @@
 	      component.$inject(container);
 	      dispatchMockEvent(nes.one('div', container), "click");
 	      expect(i).to.equal(1);
-
+	
 	      destroy(component, container)
 	    })
-
+	
 	    it("you can binding one event with same eventType on one node", function(){
 	      var container = document.createElement('div');
 	      var i = 0, j = 0;
@@ -1574,24 +1574,24 @@
 	        hello2: function(){
 	          j = 1; 
 	        }
-
+	
 	      });
-
+	
 	      var component = new Component({
 	        template: "<div on-click=hello2 on-click={this.hello2()} >haha</div>",
 	        data: { test: 0 , name: 'hahah'}
 	      }).$inject(container);
-
+	
 	      dispatchMockEvent(nes.one('div', container), "click");
-
+	
 	      expect(i).to.equal(1);
 	      expect(j).to.equal(1);
-
+	
 	      destroy(component, container);
-
-
+	
+	
 	    })
-
+	
 	    it("$event.origin should point to the element that bingding the event", function(done){
 	      var container = document.createElement('div');
 	      document.body.appendChild(container);
@@ -1608,20 +1608,20 @@
 	      }).$inject(container);
 	      dispatchMockEvent(component.$refs.a, "click");
 	    })
-
+	
 	  })
-
+	
 	  describe("delegate Event via `delegate-*`", function(){
 	    var Component = Regular.extend();
 	    var container = document.createElement("div")
 	    before(function(){
 	      document.body.appendChild(container)
 	    })
-
+	
 	    after(function(){
 	      document.body.removeChild(container);
 	    })
-
+	
 	    it("delegate Event should work via", function(){
 	      var i,j;
 	      var component = new Component({
@@ -1630,92 +1630,92 @@
 	        hello2: function(){
 	          i=1;
 	        }
-
+	
 	      }).$inject(container);
-
+	
 	      component.$on("proxy", function(){
 	        j=1;
 	      })
-
+	
 	      dispatchMockEvent(nes.one('div', container), "click");
-
-
+	
+	
 	      expect(i).to.equal(1);
 	      expect(j).to.equal(1);
-
+	
 	      destroy(component, container);
-
+	
 	    })
-
+	
 	    it("delegate Event should destroy via {#if}", function(){
 	      var i = 0, j=0;
 	      var component = new Component({
 	        template: "<div {#if test} delegate-click=proxy {#else} delegate-click=proxy2 {/if} >haha</div>",
 	        data: { test: true , name: 'hahah'}
 	      }).$inject(container);
-
+	
 	      component.$on("proxy", function(){i++})
 	      component.$on("proxy2", function(){j++})
-
+	
 	      expect(j).to.equal(0);
-
+	
 	      dispatchMockEvent(nes.one('div', container), "click");
-
+	
 	      expect(i).to.equal(1);
 	      expect(j).to.equal(0);
-
+	
 	      component.$update("test", false);
-
+	
 	      dispatchMockEvent(nes.one('div', container), "click");
-
+	
 	      expect(i).to.equal(1);
 	      expect(j).to.equal(1);
-
+	
 	      component.$update("test", true);
-
+	
 	      dispatchMockEvent(nes.one('div', container), "click");
-
+	
 	      expect(i).to.equal(2);
 	      expect(j).to.equal(1);
-
+	
 	      destroy(component, container);
-
+	
 	    })
-
+	
 	    it("delegate Event will merge to new container if use $inject", function(){
 	      var container2 = document.createElement("div");
 	      document.body.appendChild(container2);
-
+	
 	      var component = new Component({
 	        template: "<div ref=a delegate-click={i = i+1}  >haha</div>",
 	        data: { i: 1 }
 	      }).$inject( container );
-
+	
 	      component.$inject( container2 );
-
-
+	
+	
 	      dispatchMockEvent(component.$refs.a, "click" );
-
+	
 	      expect( component.data.i ).to.equal(2);
-
+	
 	      component.$inject(false);
 	      dispatchMockEvent(component.$refs.a, "click" );
-
+	
 	      expect( component.data.i ).to.equal(2);
-
+	
 	      component.$inject( container2 );
-
-
+	
+	
 	      dispatchMockEvent(component.$refs.a, "click" );
-
+	
 	      expect( component.data.i ).to.equal(3);
-
+	
 	      document.body.removeChild( container2 );
-
+	
 	      destroy(component, container2)
-
+	
 	    })
-
+	
 	    it("delegate Event only bind on the rootComponent", function(){
 	      var Nested = Regular.extend({
 	        name: "nest",
@@ -1725,42 +1725,42 @@
 	        template: "<nest></nest>",
 	        data: { i: 1 }
 	      }).$inject( container );
-
-
+	
+	
 	      expect( component._delegates["click"].length ).to.equal(1);
-
+	
 	      destroy( component, container );
-
+	
 	      expect( component._delegates["click"] ).to.equal( null );
-
+	
 	    })
-
+	
 	    it('delegate Event should work when the directive is linked after node being injected', function(){
 	      var Nested = Regular.extend({
 	        name: "nest",
 	        template: "{#if show}<div delegate-click='hello'></div>{/if}"
 	      })
-
+	
 	      var component = new Component({
 	        template: "<nest show={show} on-hello={name=1}></nest>",
 	        data: { i: 1 }
 	      }).$inject( container );
-
-
+	
+	
 	      expect( component._delegates ).to.equal(undefined);
-
+	
 	      component.$update('show', true);
-
+	
 	      expect( component._delegates["click"].length ).to.equal(1);
 	      dispatchMockEvent(nes.one( 'div', container ), "click" );
 	      expect(component.data.name).to.equal(1);
-
+	
 	      destroy( component, container );
-
+	
 	      expect( component._delegates["click"] ).to.equal( null );
 	    })
 	  })
-
+	
 	  describe("dom.element should work as expect", function(){
 	    var Nested = Regular.extend({
 	      name: "nest",
@@ -1791,29 +1791,29 @@
 	      expect(all[1].innerHTML).to.equal('list0')
 	      expect(all[2].innerHTML).to.equal('list1')
 	    })
-
+	
 	  })
-
+	
 	  
-
-
+	
+	
 	})
-
+	
 
 
 /***/ },
 /* 5 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var expect = __webpack_require__(26);
+	var expect = __webpack_require__(29);
 	var Regular = __webpack_require__(16);
-	var combine = __webpack_require__(20);
+	var combine = __webpack_require__(18);
 	function destroy(component, container){
 	  component.destroy();
 	  expect(container.innerHTML).to.equal('');
 	}
 	describe("combine api", function(){
-
+	
 	  var  container;
 	  before(function(){
 	    container = document.createElement("div");
@@ -1861,117 +1861,117 @@
 	      template:"{hello}<div>hello</div><p>name</p>"
 	    }).$inject(container);
 	    expect(nes.all("p,div",container).length).to.equal(2);
-
+	
 	    component.$inject(container2);
-
+	
 	    expect(container.innerHTML).to.equal("");
 	    expect(nes("div", container2).length).to.equal(1);
-
+	
 	    destroy(component, container2)
 	  })
-
+	
 	  it("component.$inject works on list when use twice", function(){
 	    var component = new Regular({
 	      template:"{#list items as item}<div>hello</div>{/list}",
 	      data: {items: [1]}
 	    }).$inject(container);
-
+	
 	    component.$inject(container2)
-
+	
 	    component.data.items.push(2);
 	    component.$update()
-
+	
 	    expect(nes.all("div", container2).length).to.equal(2);
 	    expect(nes.all("div", container).length).to.equal(0);
 	    destroy(component, container2)
 	  })
-
+	
 	  it("component.$inject works on if when use twice", function(){
 	    var component = new Regular({
 	      template:"{#if test}<div>hello</div><p>name</p>{/if}",
 	      data: {test: true}
 	    }).$inject(container);
-
+	
 	    expect(nes.all("div", container).length).to.equal(1);
-
+	
 	    component.$inject(container2)
-
+	
 	    expect(container.innerHTML).to.equal("");
 	    expect(nes.all("div", container2).length).to.equal(1);
 	    destroy(component, container2)
 	  })
-
+	
 	  it("component.$inject works on include when use twice", function(){
 	    var component = new Regular({
-
+	
 	      template:"{#include template}",
-
+	
 	      data: { template: "<div></div>" }
-
+	
 	    }).$inject(container);
-
+	
 	    component.$inject(container2)
 	    
 	    expect(nes.all("div", container).length).to.equal(0);
-
+	
 	    expect(nes.all("div", container2).length).to.equal(1);
 	    destroy(component, container2)
 	  })
-
+	
 	  it("component.$inject will repoint the `parentNode` ", function(){
 	    var node = document.createElement("div");
 	    container.appendChild(node);
 	    var component = new Regular({
 	      template:"<div>hello</div><p>name</p>"
 	    }).$inject(node, "after");
-
+	
 	    expect(node.nextSibling.innerHTML).to.equal("hello")
 	    expect(component.parentNode).to.equal(container)
-
+	
 	    component.$inject(node, "before");
-
-
+	
+	
 	    expect(node.previousSibling.innerHTML).to.equal("name")
 	    expect(component.parentNode).to.equal(container)
-
+	
 	    component.$inject(node, "bottom");
-
+	
 	    expect(node.lastChild.innerHTML).to.equal("name")
 	    expect(component.parentNode).to.equal(node)
-
+	
 	    component.$inject(node, "top");
-
+	
 	    expect(node.firstChild.innerHTML).to.equal("hello")
 	    expect(component.parentNode).to.equal(node)
-
+	
 	    component.destroy();
-
+	
 	    expect(nes.all("div", container).length).to.equal(1);
 	    expect(nes.one("div", container)).to.equal(node);
 	    container.innerHTML = "";
-
+	
 	  })
 	  it("component.$inject(false) remove component from document", function(){
-
+	
 	    var component = new Regular({
 	      template:"<div>hello</div><p>name</p>"
 	    }).$inject(container);
-
+	
 	    expect(container.childNodes.length).to.equal(2);
 	    expect(container.childNodes[0].innerHTML).to.equal('hello');
-
+	
 	    component.$inject(false);
 	    expect(container.innerHTML).to.equal('');
 	    destroy(component, container);
 	  })
 	  it("directly inject component to false, won't throw Error", function(){
-
+	
 	    var component = new Regular({
 	      template:"<div>hello</div><p>name</p>"
 	    }).$inject(false);
-
+	
 	  })
-
+	
 	})
 
 
@@ -1979,44 +1979,44 @@
 /* 6 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var expect = __webpack_require__(26);
+	var expect = __webpack_require__(29);
 	  var Regular = __webpack_require__(16);
-
+	
 	function reset(){}
-
+	
 	function destroy(component, container){
 	  component.destroy();
 	  expect(container.innerHTML).to.equal('');
 	}
-
+	
 	describe("test Regular's modular mechanism", function(){
-
+	
 	  describe("Regular definition" , function(){
-
-
+	
+	
 	    it("should accepet [Element] as the template", function(){
 	      var templateNode = document.createElement("div");
 	      
 	      templateNode.innerHTML = "<div>{hello}</div>";
-
+	
 	      var Component = Regular.extend({
 	        template: templateNode
 	      });
-
+	
 	      expect( Component.prototype.template.toLowerCase() ).to.equal( "<div>{hello}</div>");
-
+	
 	      var component = new Regular({
 	        template: templateNode,
 	        data: {
 	          hello: 1
 	        }
 	      })
-
+	
 	      expect(Regular.dom.element(component).innerHTML).to.equal("1");
-
+	
 	    })
 	  })
-
+	
 	  describe('fitler, directive, event isolation ', function(){
 	    var Root = Regular;
 	    var Parent = Regular.extend();
@@ -2029,7 +2029,7 @@
 	      });
 	      expect(Children.animation("a1")).to.an("function")
 	      expect(Children.animation("a2")).to.an("function")
-
+	
 	    })
 	    it("you can extend directives multiply with the[Object] param", function(){
 	      Parent.directive({
@@ -2038,9 +2038,9 @@
 	      });
 	      expect(Children.directive("a1")).to.an("object")
 	      expect(Children.directive("a2")).to.an("object")
-
+	
 	    })
-
+	
 	    it('filter should ioslated to Parent', function(){
 	      Parent.filter('foo', foo);
 	      expect(Children.filter('foo').get).to.equal(foo)
@@ -2050,18 +2050,18 @@
 	      Parent.directive('foo', foo);
 	      expect(Children.directive('foo').link).to.equal(foo)
 	      expect(Root.directive('foo')).to.equal(undefined)
-
+	
 	    });
-
+	
 	    it('event should ioslated to Parent', function(){
 	      Parent.event('foo', foo);
 	      expect(Children.event('foo')).to.equal(foo)
 	      expect(Root.event('foo')).to.equal(undefined)
 	    });
-
+	
 	  })
-
-
+	
+	
 	  describe('Component.use', function(){
 	    reset();
 	    function foo1(){};
@@ -2075,9 +2075,9 @@
 	        .filter('foo2',foo2)
 	        .event('foo3',foo3)
 	    }
-
-
-
+	
+	
+	
 	    it('use should works on Regular', function(){
 	      function root(){}
 	      Root.use(function(Component){
@@ -2086,7 +2086,7 @@
 	      expect(Children.event('root')).to.equal(root)
 	      expect(Parent.event('root')).to.equal(root)
 	    });
-
+	
 	    it('use should works on SubClass', function(){
 	      reset();
 	      var parent = new Parent();
@@ -2095,7 +2095,7 @@
 	      expect(Children.filter('foo2').get).to.equal(foo2)
 	      expect(Root.filter('foo2')).to.equal(undefined)
 	    });
-
+	
 	    it('Regular.plugin can register global plugin', function(){
 	      reset();
 	      var Component = Regular.extend();
@@ -2104,9 +2104,9 @@
 	        Component.implement({'some':hello})
 	      });
 	      Component.use('some');
-
+	
 	      var component = new Component;
-
+	
 	      expect(component.some).to.equal(hello);
 	    })
 	    it('data computed, should merged throw extend and initialize', function(){
@@ -2118,28 +2118,28 @@
 	        data: {a: 2, b:1},
 	        computed: {c: "a-b"}
 	      })
-
+	
 	      var component =  new Component({
 	        data: {a: 3,b:2},
 	        computed: {c: "a*b"}
 	      })
-
+	
 	      expect(component.data.a).to.equal(3);
 	      expect(component.data.b).to.equal(2);
 	      expect(component.$get("c")).to.equal(6);
-
+	
 	    })
 	  })
-
+	
 	});
-
-
-
+	
+	
+	
 	describe("Some buildin plugin", function(){
 	var Component = Regular.extend({
 	  template: "<div>{ this.name}</div>"
 	}).use("timeout");
-
+	
 	it("timeout's $timeout should update when time is out", function(done){
 	  var container = document.createElement("div");
 	  var component = new Component().$inject(container); 
@@ -2152,10 +2152,10 @@
 	      expect(container.innerHTML).to.equal("");
 	      done();
 	    },0)
-
+	
 	  },0)
 	})
-
+	
 	it("timeout's $interval should update after callback is act", function(done){
 	  var container = document.createElement("div");
 	  var component = new Component().$inject(container); 
@@ -2172,14 +2172,14 @@
 	      expect(container.innerHTML).to.equal("");
 	      done();
 	    },0)
-
+	
 	  },100)
-
+	
 	})
-
+	
 	describe("hotfix ", function(){
 	  it("with config.PRECOMPILE === false , wontpreCompile when extend", function( ){
-
+	
 	    Regular.config({
 	      'PRECOMPILE': true
 	    })
@@ -2205,10 +2205,10 @@
 	        "len": "left + right" 
 	      }
 	    });
-
+	
 	    expect(Component.prototype.template).to.an("array");
 	    expect(Component.prototype.computed.len.type).to.equal("expression");
-
+	
 	    Regular.config({
 	      'PRECOMPILE': false
 	    })
@@ -2223,16 +2223,16 @@
 	    });
 	    
 	    expect(Component.prototype.template).to.equal('<h2>haha</h2>');
-
+	
 	    new Component({ });
 	    expect(Component.prototype.template).to.be.an('array');
-
-
+	
+	
 	    Regular.config({
 	      'PRECOMPILE': true
 	    })
 	  })
-
+	
 	})
 	describe("events: extend & implement", function(){
 	  it("extend events with Object", function(  ){
@@ -2247,7 +2247,7 @@
 	        }
 	      }
 	    })
-
+	
 	    Comp1.implement({
 	      events: {
 	        $config: function(){
@@ -2259,9 +2259,9 @@
 	      }
 	    })
 	    new Comp1();
-
+	
 	    expect(processStack).to.eql([ 'config1', 'config2', 'afterConfig1', 'afterConfig2' ])
-
+	
 	  })
 	  it("extend events with Array", function(  ){
 	    var processStack = []
@@ -2282,7 +2282,7 @@
 	      ]
 	      
 	    })
-
+	
 	    Comp1.implement({
 	      events: [
 	        {
@@ -2300,15 +2300,15 @@
 	      ]
 	    })
 	    new Comp1();
-
+	
 	    expect(processStack).to.eql([ 'config1', 'config2', 'afterConfig1', 'afterConfig2' ])
-
+	
 	  })
-
+	
 	  it('events with Array and Object, and At initialize', function(){
 	    var processStack = []
 	    var Comp1 = Regular.extend({
-
+	
 	      events: {
 	        $config: function(){
 	          processStack.push('config1')
@@ -2318,7 +2318,7 @@
 	        }
 	      }
 	    })
-
+	
 	    Comp1.implement({
 	      events: [
 	        {
@@ -2351,40 +2351,40 @@
 	        }
 	      ]
 	    });
-
+	
 	    expect(processStack).to.eql([ 'config1', 'config2', 'config3', 'afterConfig1', 'afterConfig2', 'afterConfig3' ])
 	  })
 	})
-
+	
 	})
-
-
-
+	
+	
+	
 
 
 /***/ },
 /* 7 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var expect = __webpack_require__(26);
+	var expect = __webpack_require__(29);
 	var Regular = __webpack_require__(16);
 	var _ = Regular.util;
-
+	
 	function destroy(component, container){
 	  component.destroy();
 	  expect(container.innerHTML).to.equal('');
 	}
-
+	
 	describe("List", function(){
 	  var container = document.createElement('div');
-
+	
 	  describe("basic", function(){
 	    it("the list based on range should work", function(){
 	      var list = "<div t-test={num} class='m-model'>{#list 1..3 as num}<div class='a-{num}'>{num}</div> {/list}</div>"
 	      var BaseComponent = Regular.extend({
 	        template: list
 	      })
-
+	
 	      var component = new BaseComponent().$inject(container);
 	      expect($("div",container).length).to.equal(4);
 	      expect($(".a-1",container)[0].innerHTML).to.equal("1");
@@ -2392,7 +2392,7 @@
 	      expect($(".a-3",container)[0].innerHTML).to.equal("3");
 	      destroy(component, container);
 	    })
-
+	
 	    it("should destroy clear when have non parentNode", function(){
 	      var list = "{#list 1..3 as num}{num}{/list}"
 	      var component = new Regular({
@@ -2401,7 +2401,7 @@
 	      expect(container.innerHTML.slice(-3)).to.equal("123")
 	      destroy(component, container);
 	    })
-
+	
 	    it("the dom should sync with the 'sequence' value", function(){
 	      var list =
 	        "{#list todos as todo}" + 
@@ -2414,20 +2414,20 @@
 	      // expect($("div",container).length).to.equal(2);
 	      // expect($(".a-0",container)[0].innerHTML).to.equal("hello");
 	      // expect($(".a-1",container)[0].innerHTML).to.equal("hello2");
-
+	
 	      component.$update(function(data){
 	        data.todos.push({content: 'lily'})
 	        data.todos[0].content = 'people'
 	      })
-
-
+	
+	
 	      expect($(".a-0",container)[0].innerHTML).to.equal("people");
 	      // expect($(".a-1",container)[0].innerHTML).to.equal("hello2");
 	      // expect($(".a-2",container)[0].innerHTML).to.equal("lily");
-
+	
 	      destroy(component, container);
 	    })
-
+	
 	    it("list should work with sibling node or text", function(){
 	      var list =
 	        "<a>name</a>{#list todos as todo}" + 
@@ -2437,12 +2437,12 @@
 	        data: {todos: [{content: "hello"}, {content: "hello2"}]},
 	        template: list
 	      }).$inject(container);
-
+	
 	      expect($('a', container).length).to.equal(1);
 	      expect($("div",container).length).to.equal(2);
 	      expect(container.innerHTML.slice(-3)).to.equal('xxx');
 	      destroy(component, container);
-
+	
 	    })
 	    it("delete first element should sync with dom", function(){
 	      var todos = [{content: "hello"}, {content: "hello2"}]
@@ -2454,18 +2454,18 @@
 	        data: {todos: todos},
 	        template: list
 	      }).$inject(container);
-
+	
 	      expect($("div",container).length).to.equal(2);
 	      expect(nes.one("div", container).innerHTML).to.equal("0hello");
-
+	
 	      todos.shift();
 	      component.$update()
 	      expect(nes("div", container).length).to.equal(1);
 	      expect(nes.one("div", container).innerHTML).to.equal("0hello2");
 	      destroy(component, container);
-
+	
 	    })
-
+	
 	    it("the VARIABLE_index should work as expected", function(){
 	      var list =
 	        "{#list 1..4 as num}" + 
@@ -2475,17 +2475,17 @@
 	        data: {todos: [{content: "hello"}, {content: "hello2"}]},
 	        template: list
 	      }).$inject(container);
-
+	
 	      expect($("div",container).length).to.equal(4);
 	      expect($("div",container)[0].innerHTML).to.equal("0");
 	      expect($("div",container)[1].innerHTML).to.equal("1");
 	      expect($("div",container)[2].innerHTML).to.equal("2");
-
-
+	
+	
 	      destroy(component, container);
-
+	
 	    })
-
+	
 	    it("the 'sequence' with expression should work as expect", function(){
 	      var list =
 	        "{#list this.filter() as num}" + 
@@ -2500,15 +2500,15 @@
 	        }
 	      });
 	      var component = new List().$inject(container);
-
+	
 	      expect($("div",container).length).to.equal(1);
-
+	
 	      component.$update('len',5);
 	      expect($("div",container).length).to.equal(5);
 	      expect($("div",container)[4].innerHTML).to.equal("4");
-
+	
 	      destroy(component, container);
-
+	
 	    })
 	    it("on,off's context should point to outer component", function(){
 	      var context, num=0;
@@ -2523,20 +2523,20 @@
 	      })
 	      var component = new Component();
 	      component.$emit("hello");
-
+	
 	      expect(num).to.equal(2);
-
+	
 	    })
 	  })
 	  describe("list with nested", function(){
-
+	
 	    it("list can work with component", function(){
-
+	
 	    var TodoComponent = Regular.extend({
 	      name: 'todo',
 	      template: "<div>{content}</div>"
 	    });
-
+	
 	    var component = new Regular({
 	      data: {todos: [{content: "hello"}, {content: "hello2"}]},
 	      template: 
@@ -2544,18 +2544,18 @@
 	          <todo content={todo.content}/>\
 	         {/list}"
 	    }).$inject(container);
-
+	
 	    expect($("div",container).length).to.equal(2);
 	    expect($("div", container)[0].innerHTML).to.equal("hello");
 	    expect($("div", container)[1].innerHTML).to.equal("hello2");
-
+	
 	    destroy(component, container)
-
+	
 	    })
-
+	
 	    it("nested list should have the outerComponent's context", function(){
 	      var container = document.createElement('div');
-
+	
 	      var list =
 	        "{#list 1..2 as todo}" + 
 	          "<div class='sub' data-value={this.get(todo_index)}>" + 
@@ -2574,21 +2574,21 @@
 	      var component = new List({
 	        data: {todos: [{content: "hello"}, {content: "hello2"}]}
 	      }).$inject(container);
-
+	
 	      expect($("div",container).length).to.equal(6);
 	      expect($(".sub:nth-child(10n+1)",container).attr("data-value")).to.equal("hello");
 	      expect($(".sub:nth-child(10n+2)",container).attr("data-value")).to.equal("hello2");
 	      expect($(".sub2:nth-child(10n+1)",container).html()).to.equal("hello");
 	      expect($(".sub2:nth-child(10n+2)",container).html()).to.equal("hello2");
-
+	
 	      component.$update('todos[0].content', 'changedvalue');
 	      expect($(".sub:nth-child(10n+1)",container).attr("data-value")).to.equal("changedvalue");
 	      expect($(".sub2:nth-child(10n+1)",container).html()).to.equal("changedvalue");
-
+	
 	      destroy(component, container)
-
+	
 	    })
-
+	
 	    it("list with table should work correctly", function(){
 	      var container = document.createElement('table')
 	      var list =
@@ -2608,21 +2608,21 @@
 	      var component = new List({
 	        data: {todos: [{content: "hello"}, {content: "hello2"}]}
 	      }).$inject(container);
-
+	
 	      expect($("td",container).length).to.equal(4);
-
+	
 	      expect($("td:nth-child(10n+1)",container).html()).to.equal("hello");
 	      expect($("td:nth-child(10n+2)",container).html()).to.equal("hello2");
-
+	
 	      component.$update(function(data){
 	        data.todos.push({content: "hello3"})
 	      })
-
+	
 	      expect($("td",container).length).to.equal(6);
 	      destroy(component, container);
-
+	
 	    })
-
+	
 	    it("list should get the parent's directive", function(){
 	      var container = document.createElement('table')
 	      var num = 0;
@@ -2633,9 +2633,9 @@
 	      var component = new Component({
 	        template: "{#list 1..2 as num}<div r-name='name'>haha</div>{/list}"
 	      }).$inject(container)
-
+	
 	      expect(num).to.equal(2);
-
+	
 	      destroy(component, container);
 	    })
 	    it("component in list should works as expect", function(){
@@ -2645,7 +2645,7 @@
 	        .directive('r-name', function(elem, value){
 	          num++;
 	        })
-
+	
 	      var Item = Regular.extend({
 	        template: "<p>{item}</p>",
 	        name: 'item'
@@ -2654,11 +2654,11 @@
 	        data: {items: ["item1", "item2"]} ,
 	        template: "{#list items as item}<item item={item} />{/list}"
 	      }).$inject(container)
-
+	
 	      expect($("p",container).length).to.equal(2);
 	      expect($("p", container)[0].innerHTML).to.equal("item1");
 	      expect($("p", container)[1].innerHTML).to.equal("item2");
-
+	
 	      component.$update(function(data){
 	        data.items.push("item3");
 	        data.items[0] = "item11";
@@ -2666,35 +2666,35 @@
 	      expect($("p",container).length).to.equal(3);
 	      expect($("p", container)[0].innerHTML).to.equal("item11");
 	      expect($("p", container)[2].innerHTML).to.equal("item3");
-
+	
 	      destroy(component, container);
 	    })
-
+	
 	    var container = document.createElement('div')
 	    
 	    it("input:checkbox in list should have correct type", function(){
 	      var List = Regular.extend({
 	        template: "<div>{#list items as item}<input type='checkbox' class='1' >{/list}</div>"
 	      });
-
+	
 	      var component = new List({
 	        data: {
 	          items: [1,2,3,4]
 	        }
 	      }).$inject(container)
-
+	
 	      var inputs = nes.all("input", container);
 	      var types = inputs.map(function(node){
 	        return node.type
 	      })
-
+	
 	      expect(types).to.eql(["checkbox","checkbox","checkbox","checkbox"])
-
+	
 	      destroy(component, container);
-
-
+	
+	
 	    })
-
+	
 	    it("array change from Array back to undefined, should not throw undefined", function(){
 	      var list = new Regular({
 	        template: "<div ref=cnt>{#list items as item}<p>{item}</p>{/list}</div>",
@@ -2703,12 +2703,12 @@
 	      expect(nes.all("p", list.$refs.cnt).length).to.equal(1);
 	      list.$update("items", undefined);
 	      expect(nes.all("p", list.$refs.cnt).length).to.equal(0);
-
-
-
+	
+	
+	
 	    })
-
-
+	
+	
 	      it("item in list should not emit ,init, update or destroy to outerComponent", function(){
 	      var List = Regular.extend({
 	        template: "{#list items as item}<div>{item}</div>{/list}"
@@ -2732,11 +2732,11 @@
 	          }
 	        }
 	      })
-
+	
 	      expect(initTimes).to.equal(1);
 	      expect(destroyTimes).to.equal(0);
 	      // expect(updateTimes).to.equal(1);
-
+	
 	      component.$update(function(data){
 	        data.items.pop();
 	      })
@@ -2744,12 +2744,12 @@
 	      expect(initTimes).to.equal(1);
 	      expect(destroyTimes).to.equal(0);
 	      expect(updateTimes).to.equal(1);
-
+	
 	      component.destroy();
-
+	
 	    })
-
-
+	
+	
 	  it("list in list should not thorw error , when both of them are update", function(){
 	    // beacuse if not record.
 	    var List = Regular.extend({
@@ -2757,87 +2757,87 @@
 	      data: {list1:[1], list2: [2]}
 	    })
 	    var list = new List;
-
+	
 	    list.data.list1 = [];
 	    list.data.list2 = [];
 	    list.$update()
-
+	
 	    expect(nes.all('ul',list.$refs.cnt).length).to.equal(0);
-
+	
 	    list.destroy();
-
+	
 	  })
 	  it("list with else", function(){
-
-
-
+	
+	
+	
 	    var List = Regular.extend({
 	      template: '<div ref=cnt>{#list list as item}<div>{item}</div>{#else}<p>nothing{list.length}</p>{/list}</div>'
 	    })
-
+	
 	    var list1 = new List({data: {list: []}})
 	    var list2 = new List({data: {list: [1]}})
-
+	
 	    expect(nes.all('div',list1.$refs.cnt).length).to.equal(0);
 	    var ps = nes.all('p',list1.$refs.cnt)
 	    expect(ps.length).to.equal(1);
 	    expect(ps[0].innerHTML).to.equal('nothing0')
-
+	
 	    expect(nes.all('div',list2.$refs.cnt).length).to.equal(1);
 	    var ps = nes.all('p',list2.$refs.cnt)
 	    expect(ps.length).to.equal(0);
-
+	
 	    list1.$update('list', [1,2,3])
 	    expect(nes.all('div',list1.$refs.cnt).length).to.equal(3);
 	    var ps = nes.all('p',list1.$refs.cnt)
 	    expect(ps.length).to.equal(0);
-
+	
 	    list1.$update('list', [])
 	    expect(nes.all('div',list1.$refs.cnt).length).to.equal(0);
 	    var ps = nes.all('p',list1.$refs.cnt)
 	    expect(ps.length).to.equal(1);
 	    expect(ps[0].innerHTML).to.equal('nothing0')
-
+	
 	    list1.destroy()
 	    list2.destroy()
-
+	
 	  })
 	it("list with else should also works under track mode", function(){
-
+	
 	  var List = Regular.extend({
 	    template: '<div ref=cnt>{#list list as item by item_index}<div>{item}</div>{#else}<p>nothing{list.length}</p>{/list}</div>'
 	  })
-
+	
 	  var list1 = new List({data: {list: []}})
 	  var list2 = new List({data: {list: [1]}})
-
+	
 	  expect(nes.all('div',list1.$refs.cnt).length).to.equal(0);
 	  var ps = nes.all('p',list1.$refs.cnt)
 	  expect(ps.length).to.equal(1);
 	  expect(ps[0].innerHTML).to.equal('nothing0')
-
+	
 	  expect(nes.all('div',list2.$refs.cnt).length).to.equal(1);
 	  var ps = nes.all('p',list2.$refs.cnt)
 	  expect(ps.length).to.equal(0);
-
+	
 	  list1.$update('list', [1,2,3])
 	  expect(nes.all('div',list1.$refs.cnt).length).to.equal(3);
 	  var ps = nes.all('p',list1.$refs.cnt)
 	  expect(ps.length).to.equal(0);
-
+	
 	  list1.$update('list', [])
 	  expect(nes.all('div',list1.$refs.cnt).length).to.equal(0);
 	  var ps = nes.all('p',list1.$refs.cnt)
 	  expect(ps.length).to.equal(1);
 	  expect(ps[0].innerHTML).to.equal('nothing0')
-
+	
 	  list1.destroy()
 	  list2.destroy()
-
+	
 	})
-
-
-
+	
+	
+	
 	  // 即如果全量更新的话， 外部list的属性也应该可以正确响应
 	  // 
 	  it("ref to outer of list should update correctly", function(){
@@ -2851,11 +2851,11 @@
 	        data.databases = [{ list: [1], name: 'hzzhenghaibo' }];
 	      }
 	    });
-
+	
 	    var list = new ListView();
-
-
-
+	
+	
+	
 	    // init correctly
 	    var h2s = nes.all('h2',list.$refs.cnt);
 	    expect(h2s.length).to.equal(1);
@@ -2863,8 +2863,8 @@
 	    expect(spans.length).to.equal(1);
 	    expect(h2s[0].innerHTML).to.equal('hzzhenghaibo');
 	    expect(spans[0].innerHTML).to.equal('hzzhenghaibo');
-
-
+	
+	
 	    list.data.databases[0].name = 'leeluolee'
 	    list.$update()
 	    // changed partial
@@ -2872,47 +2872,47 @@
 	    expect(spans.length).to.equal(1);
 	    expect(spans[0].innerHTML).to.equal('leeluolee');
 	    // whote changed
-
+	
 	    list.data.databases = [{list:[1], name: 'luobo'}]
 	    list.$update()
 	    var spans = nes.all('span',list.$refs.cnt);
 	    expect(spans.length).to.equal(1);
 	    expect(spans[0].innerHTML).to.equal('luobo');
-
+	
 	    list.destroy()
 	  })
-
-
+	
+	
 	  })
-
+	
 	  describe("List track", function(){
-
-
+	
+	
 	    it("list with track item_index should work as expected", function(){
 	      var List = Regular.extend({
 	        template: '<div ref=cnt>{#list list as item by item_index}\
 	          <div>{item.a}</div>{/list}</div>'
 	      })
-
+	
 	      var list = new List({
 	        data: {
 	          list: [{a: 1},{a: 2} , {a: 3}]
 	        }
 	      })
 	      var divs = nes.all('div', list.$refs.cnt);
-
+	
 	      list.data.list = [{a: 4},{a: 5} , {a: 6}]
 	      list.$update();
-
+	
 	      var divs2 = nes.all('div', list.$refs.cnt);
-
+	
 	      expect(divs[0]).to.equal(divs2[0]);
 	      expect(divs[0].innerHTML).to.equal('4');
 	      expect(divs[1]).to.equal(divs2[1]);
 	      expect(divs[1].innerHTML).to.equal('5');
 	      expect(divs[2]).to.equal(divs2[2]);
 	      expect(divs[2].innerHTML).to.equal('6');
-
+	
 	    })
 	    it("list track constant will be consider as same as index", function(){
 	      var List = Regular.extend({
@@ -2924,47 +2924,47 @@
 	          list: [{a: 1},{a: 2} , {a: 3}]
 	        }
 	      })
-
+	
 	      var divs = nes.all('div', list.$refs.cnt);
 	      list.data.list = [{a: 4},{a: 5} , {a: 6}]
 	      list.$update();
-
+	
 	      var divs2 = nes.all('div', list.$refs.cnt);
-
+	
 	      expect(divs[0]).to.equal(divs2[0]);
 	      expect(divs[0].innerHTML).to.equal('4');
 	      expect(divs[1]).to.equal(divs2[1]);
 	      expect(divs[1].innerHTML).to.equal('5');
 	      expect(divs[2]).to.equal(divs2[2]);
 	      expect(divs[2].innerHTML).to.equal('6');
-
-
-
+	
+	
+	
 	    })
-
+	
 	    it("list with no track should rebuild each group when data changes", function(){
 	      var List = Regular.extend({
 	        template: '<div ref=cnt>{#list list as item}\
 	          <div>{item.a}</div>{/list}</div>'
 	      })
-
+	
 	      var list = new List({
 	        data: {
 	          list: [{a: 1},{a: 2} , {a: 3}]
 	        }
 	      })
 	      var divs = nes.all('div', list.$refs.cnt);
-
+	
 	      list.data.list = [{a: 4},{a: 5} , {a: 6}]
 	      list.$update();
-
+	
 	      var divs2 = nes.all('div', list.$refs.cnt);
-
+	
 	      expect(divs[0]).to.not.equal(divs2[0]);
 	      expect(divs[1]).to.not.equal(divs2[1]);
 	      expect(divs[2]).to.not.equal(divs2[2]);
 	    })
-
+	
 	    it("list track non-index expression" , function(){
 	      var List = Regular.extend({
 	        template: '<div ref=cnt>{#list list as item by item.a}\
@@ -2976,16 +2976,16 @@
 	        }
 	      })
 	      var divs = nes.all('div', list.$refs.cnt);
-
+	
 	      list.data.list = [{a: 4},{a: 2} , {a: 6}]
 	      list.$update();
-
+	
 	      var divs2 = nes.all('div', list.$refs.cnt);
-
+	
 	      expect(divs[0]).to.not.equal(divs2[0]);
 	      expect(divs[1]).to.equal(divs2[1]);
 	      expect(divs[2]).to.not.equal(divs2[2]);
-
+	
 	    })
 	    it("list track non-index expression" , function(){
 	      var List = Regular.extend({
@@ -2998,21 +2998,21 @@
 	        }
 	      })
 	      var divs = nes.all('div', list.$refs.cnt);
-
+	
 	      list.data.list = [{a: 4},{a: 2} , {a: 6}]
 	      list.$update();
-
+	
 	      var divs2 = nes.all('div', list.$refs.cnt);
-
+	
 	      expect(divs[0]).to.not.equal(divs2[0]);
 	      expect(divs[1]).to.equal(divs2[1]);
 	      expect(divs[2]).to.not.equal(divs2[2]);
-
+	
 	    })
 	  })
-
+	
 	  describe("List with Object", function(){
-
+	
 	    var obj = {
 	      "xiaomin": {age:11},
 	      "xiaoli": {age:12},
@@ -3023,7 +3023,7 @@
 	      {age:12},
 	      {age:13}
 	    ]
-
+	
 	    var ComplexList = Regular.extend({
 	        template: "<div ref=container>\
 	          {#list json as item}\
@@ -3031,10 +3031,10 @@
 	          {/list}\
 	        </div>"
 	    })
-
-
+	
+	
 	    it("items should list by Object.keys", function( ){
-
+	
 	      var component = new Regular({
 	        template: "<div ref=container>\
 	          {#list json as item by item_key}\
@@ -3049,37 +3049,37 @@
 	          }
 	        }
 	      })
-
+	
 	      // only make sure 
 	      var json = component.data.json;
 	      var keys = _.keys(json);
-
+	
 	      var divs =  nes.all('div', component.$refs.container );
-
+	
 	      expect(divs.length).to.equal(3);
-
+	
 	      divs.forEach(function(div, index){
 	        expect(div.innerHTML).to.equal('' + json[ keys[index] ].age + ':' + keys[index] + ':' + index);
 	      })
-
+	
 	      delete json.xiaomin;
 	      json.xiaoli = {age: 33}
-
+	
 	      component.$update();
-
+	
 	      divs =  nes.all('div', component.$refs.container );
-
+	
 	      expect(divs.length).to.equal(2);
-
+	
 	      expect(divs[0].innerHTML).to.equal('33:xiaoli:0')
-
+	
 	      component.destroy();
-
-
-
+	
+	
+	
 	    })
 	    it("items should works under complex mode: item_index & item_key & item", function( ){
-
+	
 	      var component = new ComplexList({
 	        data: {
 	          json: {
@@ -3089,163 +3089,163 @@
 	          }
 	        }
 	      })
-
+	
 	      // only make sure 
 	      var json = component.data.json;
 	      var keys = _.keys(json);
-
+	
 	      var divs =  nes.all('div', component.$refs.container );
-
+	
 	      expect(divs.length).to.equal(3);
-
+	
 	      divs.forEach(function(div, index){
 	        expect(div.innerHTML).to.equal('' + json[ keys[index] ].age + ':' + keys[index]+ ':' + index);
 	      })
-
+	
 	      delete json.xiaomin;
 	      json.xiaoli = {age: 33}
-
+	
 	      component.$update();
-
+	
 	      divs =  nes.all('div', component.$refs.container );
-
+	
 	      expect(divs.length).to.equal(2);
-
+	
 	      expect(divs[0].innerHTML).to.equal('33:xiaoli:0')
 	      expect(divs[1].innerHTML).to.equal('13:xiaogang:1')
-
+	
 	      component.destroy();
-
-
+	
+	
 	    })
-
+	
 	    it("items converted from Object to Array", function(){
 	      var component = new ComplexList({
 	        data: { json: obj }
 	      })
-
+	
 	      component.$update('json', arr)
-
+	
 	      divs =  nes.all('div', component.$refs.container );
-
+	
 	      expect(divs.length).to.equal(3);
-
+	
 	      divs.forEach(function(div, index){
 	        expect(div.innerHTML).to.equal('' + arr[index].age  + '::' + index);
 	      })
-
+	
 	      component.destroy();
 	      
 	    })
 	    it("items converted from Array to Object", function(){
-
+	
 	      var component = new ComplexList({
 	        data: { json: arr }
 	      })
-
+	
 	      var divs =  nes.all('div', component.$refs.container );
 	      var keys = _.keys(obj);
-
+	
 	      expect(divs.length).to.equal(3);
-
+	
 	      divs.forEach(function(div, index){
 	        expect(div.innerHTML).to.equal('' + arr[index].age  + '::' + index);
 	      })
-
+	
 	      
 	      component.$update('json', obj )
 	      divs =  nes.all('div', component.$refs.container );
 	      divs.forEach(function(div, index){
 	        expect(div.innerHTML).to.equal('' + arr[index].age  + ':'+keys[index]+':' + index);
 	      })
-
+	
 	      component.destroy();
 	    })
 	    it("items converted from null to Object", function(){
-
+	
 	      var component = new ComplexList({
 	        data: { json: null }
 	      })
 	      var divs =  nes.all('div', component.$refs.container );
 	      var keys = _.keys(obj);
 	      expect(divs.length).to.equal(0);
-
+	
 	      component.$update('json', obj )
 	      var divs =  nes.all('div', component.$refs.container );
 	      expect(divs.length).to.equal(3);
 	      component.destroy();
 	    })
 	    it("items converted from Object to null", function(){
-
+	
 	      var component = new ComplexList({
 	        data: { json: obj }
 	      })
 	      var divs =  nes.all('div', component.$refs.container );
 	      expect(divs.length).to.equal(3);
 	      var keys = _.keys(obj);
-
+	
 	      component.$update('json', null )
 	      var divs =  nes.all('div', component.$refs.container );
 	      expect(divs.length).to.equal(0);
-
+	
 	      component.destroy();
-
+	
 	    })
 	    it("items converted from Object to other dataType", function(){
-
+	
 	      var component = new ComplexList({
 	        data: { json: obj }
 	      })
 	      var divs =  nes.all('div', component.$refs.container );
 	      expect(divs.length).to.equal(3);
 	      var keys = _.keys(obj);
-
+	
 	      component.$update('json', 100 )
 	      var divs =  nes.all('div', component.$refs.container );
 	      expect(divs.length).to.equal(0);
-
+	
 	      component.destroy();
 	    })
 	    it("items converted from  other dataType to Object", function(){
-
+	
 	      var component = new ComplexList({
 	        data: { json: true }
 	      })
 	      var divs =  nes.all('div', component.$refs.container );
 	      expect(divs.length).to.equal(0);
 	      var keys = _.keys(obj);
-
+	
 	      component.$update('json', obj )
 	      var divs =  nes.all('div', component.$refs.container );
 	      expect(divs.length).to.equal(3);
-
+	
 	      component.destroy();
 	    })
-
+	
 	    it("items key should update if only value is changed", function(){
-
+	
 	      var raw =  {a: {age: 1}, b:{age: 2}, c:{age:3}};
 	      var component = new ComplexList({
 	        data: { json: raw}
 	      })
-
+	
 	      raw.b = raw.a;
 	      delete raw.a;
 	      component.$update();
-
+	
 	      expect(component.$refs.container)
-
+	
 	      var divs =  nes.all('div', component.$refs.container );
 	      expect(divs.length).to.equal(2);
 	      var keys = _.keys(raw);
-
+	
 	      divs.forEach(function(div, index){
 	        expect(div.innerHTML).to.equal('' + raw[keys[index]].age  + ':'+keys[index]+':' + index);
 	      })
-
-
+	
+	
 	    })
-
+	
 	    it("list Object also accept #else stateman", function(){
 	      var component = new Regular({
 	        template: "<div ref=container>\
@@ -3259,109 +3259,109 @@
 	      var divs =  nes.all('div', component.$refs.container );
 	      expect(divs.length).to.equal(3);
 	      component.$update('json', null);
-
+	
 	      var divs =  nes.all('div', component.$refs.container );
 	      expect(divs.length).to.equal(1);
 	      expect(divs[0].id).to.equal('notfound');
-
+	
 	      component.$update('json', arr);
 	      var divs =  nes.all('div', component.$refs.container );
 	      expect(divs.length).to.equal(3);
-
+	
 	    })
-
+	
 	  })
 	})
-
-
-
-
-
-
-
-
-
-
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 
 
 /***/ },
 /* 8 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var expect = __webpack_require__(26);
-
-
+	var expect = __webpack_require__(29);
+	
+	
 	var dom = __webpack_require__(17);
 	var Regular = __webpack_require__(16);
-
+	
 	var container = document.createElement('div');
 	function destroy(component, container){
 	  component.destroy();
 	  expect(container.innerHTML).to.equal('');
 	}
-
-
+	
+	
 	describe("If", function(){
 	  describe("basic usage", function(){
 	    it("use if standalone should work correctly", function(){
-
+	
 	      var container = document.createElement('div');
 	      var component = new Regular({
 	        template: "{#if test}<div>test</div>{/if}",
 	        data: {test: true}
 	      }).$inject(container);
-
-
+	
+	
 	      expect($("div",container).length).to.equal(1);
-
+	
 	      component.$update("test", false);
 	      expect($("div",container).length).to.equal(0);
-
+	
 	      destroy(component, container)
 	    })
-
+	
 	    it("regular should convert value to boolean", function(){
 	      var container = document.createElement('div');
 	      var component = new Regular({
 	        template: "{#if test}<div>test</div>{/if}",
 	        data: {test: 0}
 	      }).$inject(container);
-
+	
 	      expect($("div",container).length).to.equal(0);
 	      component.$update("test", 1);
-
+	
 	      expect($("div",container).length).to.equal(1);
-
+	
 	      destroy(component, container)
 	    })
-
-
+	
+	
 	    it("use if else should work correctly", function(){
-
+	
 	      var container = document.createElement('div');
 	      var component = new Regular({
 	        template: "{#if test}<div>test</div>{#else}<div>altname</div>{/if}"
 	      }).$inject(container);
-
+	
 	      expect($("div",container).length).to.equal(1);
 	      expect($("div",container).html()).to.equal("altname");
 	      component.$update("test", 1);
 	      expect($("div",container).length).to.equal(1);
 	      expect($("div",container).html()).to.equal("test");
-
+	
 	      destroy(component, container)
-
+	
 	    })
-
+	
 	    it("use if elseif should work", function(){
-
+	
 	      var container = document.createElement('div');
 	      var component = new Regular({
 	        template: "{#if test > 5}<div>test</div>{#elseif test<2}<div>altname</div>{/if}",
 	        data: {test: 1}
 	      }).$inject(container);
-
-
+	
+	
 	      expect($("div",container).length).to.equal(1);
 	      expect($("div",container).html()).to.equal("altname");
 	      component.$update("test", 6);
@@ -3369,17 +3369,17 @@
 	      expect($("div",container).html()).to.equal("test");
 	      component.$update("test", 4);
 	      expect($("div",container).length).to.equal(0);
-
+	
 	      destroy(component, container)
 	    })
-
+	
 	    it("use if elseif else should work correctly", function(){
 	      var container = document.createElement('div');
 	      var component = new Regular({
 	        template: "{#if test > 5}<div>test</div>{#elseif test<2}<div>altname</div>{#else}<div>altname2</div>{/if}",
 	        data: {test: 1}
 	      }).$inject(container);
-
+	
 	      expect($("div",container).length).to.equal(1);
 	      expect($("div",container).html()).to.equal("altname");
 	      component.$update("test", 6);
@@ -3388,68 +3388,68 @@
 	      component.$update("test", 4);
 	      expect($("div",container).length).to.equal(1);
 	      expect($("div",container).html()).to.equal("altname2");
-
+	
 	      destroy(component, container)
-
+	
 	    })
-
+	
 	    it("use if elseif should equal with if else if", function(){
 	      var container = document.createElement('div');
 	      var component = new Regular({
 	        template: "{#if test > 5}<div>test</div>{#else}{#if test<2}<div>altname</div>{#else}<div>altname2</div>{/if}{/if}",
 	        data: {test: 1}
 	      }).$inject(container);
-
+	
 	      expect($("div",container).length).to.equal(1);
 	      expect($("div",container).html()).to.equal("altname");
 	      component.$update("test", 6);
 	      expect($("div",container).length).to.equal(1);
 	      expect($("div",container).html()).to.equal("test");
 	  
-
+	
 	      destroy(component, container)
-
+	
 	    })
-
+	
 	    it("if destroy should remove bind watchers", function(){
 	      var container = document.createElement('div');
 	      var component = new Regular({
 	        template: "{#if test > 5}<div>{test} {hello}</div>{#else}<div>{hello}</div>{/if}",
 	        data: { test: 1 }
 	      }).$inject(container);
-
+	
 	      expect(component._watchers.length).to.equal(2)
-
+	
 	      component.$update('test', 6);
-
+	
 	      expect(component._watchers.length).to.equal(3)
 	      component.$update('test', 0);
-
+	
 	      expect(component._watchers.length).to.equal(2)
 	      destroy(component, container);
 	    })
-
+	
 	    it("nested if destroy should remove bind watchers", function(){
 	      var container = document.createElement('div');
 	      var component = new Regular({
 	        template: "{#if test > 5}{#if test < 8}<div>{test} {hello}</div>{/if}{/if}",
 	        data: { test: 6 }
 	      }).$inject(container);
-
+	
 	      expect(component._watchers.length).to.equal(4);
-
+	
 	      component.$update("test", 10);
 	      expect(component._watchers.length).to.equal(2);
 	      component.$update("test", 6);
 	      expect(component._watchers.length).to.equal(4);
 	      component.$update("test", 10);
 	      expect(component._watchers.length).to.equal(2);
-
+	
 	      destroy(component, container)
 	    })
-
+	
 	  })
-
+	
 	  describe("If combine with attribute", function(){
 	    it("other rule expect if should throw error when pass in tag", function(){
 	      expect(function(){
@@ -3462,7 +3462,7 @@
 	        template: "<div {#if test}class='name' title='noname'{/if} data-haha=name >haha</div>",
 	        data: { test: 0 }
 	      }).$inject(container);
-
+	
 	      var $node = $("div[data-haha]",container)
 	      expect($node.length).to.equal(1);
 	      expect($node[0].className).to.equal("");
@@ -3476,14 +3476,14 @@
 	      expect($node.attr("data-haha")).to.equal("name");
 	      destroy(component, container);
 	    })
-
+	
 	    it("if combine with unassigned attribute should work correctly", function(){
 	      var container = document.createElement('div');
 	      var component = new Regular({
 	        template: "<div {#if test}ng-repeat disabled{/if}  class='hello' >haha</div>",
 	        data: { test: 0 }
 	      }).$inject(container);
-
+	
 	      var $node = $("div.hello",container)
 	      expect($node.length).to.equal(1);
 	      expect($node.attr("ng-repeat")).to.equal(undefined);
@@ -3493,15 +3493,15 @@
 	      expect($node.attr("ng-repeat")).to.equal(undefined);
 	      destroy(component, container);
 	    })
-
-
+	
+	
 	    it("if combine with inteplation attribute should work correctly", function(){
 	      var container = document.createElement('div');
 	      var component = new Regular({
 	        template: "<div {#if test}ng-repeat={name}{/if} class='hello' >haha</div>",
 	        data: { test: 0 , name: 'hahah'}
 	      }).$inject(container);
-
+	
 	      var $node = $("div.hello",container)
 	      expect($node.length).to.equal(1);
 	      expect($node.attr("ng-repeat")).to.equal(undefined);
@@ -3514,7 +3514,7 @@
 	      expect(component._watchers.length).to.equal(1);
 	      destroy(component, container);
 	    })
-
+	
 	    it("if combine with event should work correctly", function(){
 	      var container = document.createElement('div');
 	      var component = new Regular({
@@ -3541,40 +3541,40 @@
 	      var node = nes.one("div", container);
 	      expect(i).to.equal(0);
 	      component.$update("test", 10);
-
+	
 	      expect(i).to.equal(1);
 	      expect(component.data.name).to.equal("hahah");
-
+	
 	      dispatchMockEvent(node, 'click');
 	      expect(component.data.name).to.equal("hahah1");
-
+	
 	      expect(component._watchers.length).to.equal(1)
-
+	
 	      component.$update("test", 0);
 	      expect(i).to.equal(0);
-
+	
 	      destroy(component, container);
 	    })
-
+	
 	    it("if combine with event , the watchers should be automately removed", function(){
 	      var container = document.createElement('div');
 	      var Component = Regular.extend();
 	      Component.event('hello', function(elem, fire){
 	        this.$watch("hello", function(){})
 	      })
-
+	
 	      var component = new Component({
 	        template: "<div {#if test}on-hello={name=name+1}{/if} class='hello' >haha</div>",
 	        data: { test: 0 , name: 'hahah'}
 	      }).$inject(container);
-
+	
 	      expect(component._watchers.length).to.equal(1)
 	      component.$update("test", 10);
 	      expect(component._watchers.length).to.equal(2)
 	      component.$update("test", 0);
 	      expect(component._watchers.length).to.equal(1)
 	    })
-
+	
 	    it("if combine with directive should work correctly", function(){
 	      var container = document.createElement('div');
 	      var Component = Regular.extend();
@@ -3588,7 +3588,7 @@
 	        template: "<div {#if test} t-hello='haha'{/if} class='hello' >haha</div>",
 	        data: { test: 0 , name: 'hahah'}
 	      }).$inject(container);
-
+	
 	      expect(i).to.equal(0);
 	      component.$update("test", 10);
 	      expect(i).to.equal(1);
@@ -3599,7 +3599,7 @@
 	      expect(i).to.equal(2);
 	      destroy(component, container)
 	    })
-
+	
 	    it("when switch if state, the watcher should distroy automately", function(){
 	      var container = document.createElement('div');
 	      var Component = Regular.extend();
@@ -3615,11 +3615,11 @@
 	      expect(component._watchers.length).to.equal(2)
 	      component.$update("test", 0);
 	      expect(component._watchers.length).to.equal(1)
-
+	
 	      destroy(component, container)
-
+	
 	    })
-
+	
 	    it("if else combine with attribute should work as expect", function(){
 	      var container = document.createElement('div');
 	      var component = new Regular({
@@ -3632,7 +3632,7 @@
 	      component.$update("test", 0)
 	      expect($node.attr("title")).to.equal(undefined);
 	      expect($node.attr("title2")).to.equal("haha2");
-
+	
 	      destroy(component, container);
 	    })
 	    it("if elseif combine with attribute should work as expect", function(){
@@ -3641,7 +3641,7 @@
 	        template: "<div {#if test} title='haha' {#elseif name} title2='haha2' {/if} class='hello' >haha</div>",
 	        data: { test: 0 , name: 'hahah'}
 	      }).$inject(container);
-
+	
 	      var $node = $("div.hello",container)
 	      expect($node.attr("title")).to.equal(undefined);
 	      expect($node.attr("title2")).to.equal("haha2");
@@ -3649,13 +3649,13 @@
 	      component.$update("test", true)
 	      expect($node.attr("title2")).to.equal(undefined);
 	      expect($node.attr("title")).to.equal("haha");
-
-
+	
+	
 	      destroy(component, container);
 	    })
 	    it("if/list combine with attribute should work as expect", function(){
 	      var container = document.createElement('div');
-
+	
 	      var component = new Regular({
 	        template: "<div ref=a  class='hello' >{#list list as a }<div {#if a.id} title={a.id} {#else} title=0 {/if}>title</div>{/list}</div>",
 	        data: { test: 1 , list: [{id: 10}, {id:null}, {id:11}]}
@@ -3671,59 +3671,59 @@
 	      // expect($node.attr("title2")).to.equal(undefined);
 	      // component.$update("name", true)
 	      // expect($node.attr("title2")).to.equal("haha2");
-
+	
 	      destroy(component, container);
-
+	
 	    })
 	    it("if elseif else combine with attribute should work as expect", function(){
 	      var container = document.createElement('div');
-
+	
 	      var component = new Regular({
 	        template: "<div {#if test} title='haha' {#elseif name} title2='haha2' {#else} title3='haha3' {/if} class='hello' >haha</div>",
 	        data: { test: 1 , name: ''}
 	      }).$inject(container);
 	      var $node = $("div.hello",container)
-
+	
 	      expect($node.attr("title")).to.equal("haha");
 	      expect($node.attr("title2")).to.equal(undefined);
 	      expect($node.attr("title3")).to.equal(undefined);
-
+	
 	      component.$update("test", false)
 	      component.$update("name", true)
 	      expect($node.attr("title")).to.equal(undefined);
 	      expect($node.attr("title2")).to.equal("haha2");
 	      expect($node.attr("title3")).to.equal(undefined);
-
+	
 	      component.$update("test", false)
 	      component.$update("name", false)
 	      expect($node.attr("title3")).to.equal("haha3");
 	      expect($node.attr("title")).to.equal(undefined);
 	      expect($node.attr("title2")).to.equal(undefined);
-
+	
 	      destroy(component, container);
-
+	
 	    })
-
+	
 	  })
 	})
-
-
-
+	
+	
+	
 
 
 /***/ },
 /* 9 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var expect = __webpack_require__(26);
+	var expect = __webpack_require__(29);
 	var Regular = __webpack_require__(16);
-
+	
 	var container = document.createElement('div');
 	function destroy(component, container){
 	  component.destroy();
 	  expect(container.innerHTML).to.equal('');
 	}
-
+	
 	describe("Dynamic include", function(){
 	  var Component = Regular.extend();
 	  it("#include should compile value at runtime correctly", function(){
@@ -3732,51 +3732,51 @@
 	      template: "<div>{#include content}</div>",
 	      data: {content: "<div>{name}</div>", name: "hello"}
 	    }).$inject(container);
-
+	
 	    var $node = $("div", container);
 	    expect($("div", container).length).to.equal(2);
 	    expect($node[1].innerHTML).to.equal("hello");
-
+	
 	    destroy(component, container)
-
+	
 	  })
-
+	
 	  it("#include should recompile template when changed", function(){
 	    var container = document.createElement('div');
 	    var component = new Regular({
 	      template: "<div>{#include content}</div>",
 	      data: {content: "<div>{name}</div>", name: "hello"}
 	    }).$inject(container);
-
+	
 	    var $node = $("div", container);
 	    expect($("div", container).length).to.equal(2);
-
+	
 	    component.$update("content", "<span>{name + '2'}</span>");
-
+	
 	    expect($("div", container).length).to.equal(1);
 	    expect($("span", container).html()).to.equal("hello2");
-
+	
 	    destroy(component, container)
-
+	
 	  })
-
+	
 	  it("if body has been a ast, there should be not watch binding", function(){
 	    var container = document.createElement('div');
 	    var component = new Regular({
 	      template: "<div>{#include content}</div>",
 	      data: {content: Regular.parse("<div>{name}</div>"), name: "hello"}
 	    }).$inject(container);
-
+	
 	    var $node = $("div", container);
 	    expect($("div", container).length).to.equal(2);
-
+	
 	    component.$update("content", "<span>{name + '2'}</span>");
-
+	
 	    expect($("div", container).length).to.equal(1);
 	    expect($("span", container).html()).to.equal("hello2");
-
+	
 	    destroy(component, container)
-
+	
 	  })
 	  it("nest should be as a special propertie $body", function(){
 	    var Component = Regular.extend({
@@ -3788,13 +3788,13 @@
 	      template: "<test-body list={list}><span>{list.length}:{list[0]}</span></test-body>",
 	      data: {list: ["hello", "name"]}
 	    }).$inject(container);
-
+	
 	    var nodes = nes.all("span", container);
 	    expect(nodes.length).to.equal(2);
 	    expect(nodes[0].innerHTML).to.equal("2:hello");
 	    
 	    destroy(component, container)
-
+	
 	  })
 	  it("include can pass anything that compiled to Group", function(){
 	    var Component = Regular.extend({});
@@ -3811,24 +3811,24 @@
 	      template: '<nested hd.cmpl="<p>{head}</p>>" ft={"<p>{foot}</p>"}><strong>{head + foot}</strong></nested>',
 	      data: {head: 'OuterHead', foot: 'OuterFoot'}
 	    }).$inject(container);
-
-
-
+	
+	
+	
 	    var head = nes.one('.head p', container);
 	    var foot = nes.one('.foot p', container);
 	    var body = nes.one('.body strong', container);
-
+	
 	    expect(head.innerHTML).to.equal('OuterHead');
 	    expect(foot.innerHTML).to.equal('InnerFoot');
 	    expect(body.innerHTML).to.equal('OuterHeadOuterFoot');
-
+	
 	    component.$update('head', 'OuterUpdate');
 	    expect(head.innerHTML).to.equal('OuterUpdate');
-
-
+	
+	
 	    destroy(component, container)
 	  })
-
+	
 	 it("group switch twice works as expect", function(){
 	    var container = Regular.dom.create('div');
 	    var Nested = Component.extend({
@@ -3843,9 +3843,9 @@
 	      template: '<div class="body">{#inc body || this.$refs.nested.$body}</div><nested ref=nested ><strong>InnerBody</strong></nested>',
 	      data: {head: 'OuterHead'}
 	    }).$inject(container);
-
+	
 	    var body = nes.one('.body strong', container);
-
+	
 	    expect(body.innerHTML).to.equal('InnerBody')
 	    component.$update('body', '<strong>OuterBody</strong>')
 	    var body = nes.one('.body strong', container);
@@ -3865,13 +3865,13 @@
 	        data.foot = 'InnerFoot'
 	      }
 	    })
-
+	
 	    var component = new Component({
 	      template: '<div class="body">{#inc this.$refs.nested.$body}</div>{#list [1] as item}<nested ref=nested ><strong>{item}</strong></nested>{/list}'
 	    }).$inject(container);
-
+	
 	    var body = nes.one('.body strong', container);
-
+	
 	    expect(body.innerHTML).to.equal('1')
 	    destroy(component, container)
 	  
@@ -3883,23 +3883,23 @@
 	      // if body is exsits , this.$body will be destroied
 	      template: '<div>{#inc body || this.$body}</div>'
 	    })
-
+	
 	    Modal.body = Regular.extend({
 	      name: 'modal.body',
-
+	
 	      init: function(){
 	        // this.$outer point to modal
 	        this.$outer.data['body'] = this.$body;
 	      }
 	    })
-
+	
 	    var component = new Regular({
 	      template: '<div class="body"><modal><modal.body><p>{name}</p></modal.body></modal></div>{#list [1] as item}<nested ref=nested ><strong>{item}</strong></nested>{/list}',
 	      data: {name: 'hzzhenghaibo'}
 	    }).$inject(container);
-
+	
 	    var body = nes.one('.body p', container);
-
+	
 	    expect(body.innerHTML).to.equal('hzzhenghaibo')
 	    destroy(component, container)
 	  
@@ -3916,40 +3916,40 @@
 	 //        data.foot = 'InnerFoot'
 	 //      }
 	 //    })
-
+	
 	 //    var nested = new Nested()
 	 //    var component = new Component({
 	 //      template: '<div>{#inc component}</div>',
 	 //      data: {component: nested }
 	 //    }).$inject(container);
-
-
-
+	
+	
+	
 	 //    var nested = nes.one('.nested', container);
-
+	
 	 //    expect(nested.innerHTML).to.equal('Nested');
-
+	
 	 //    destroy(component, container)
 	 //  })
 	})
-
-
+	
+	
 
 
 /***/ },
 /* 10 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var expect = __webpack_require__(26);
-
-
+	var expect = __webpack_require__(29);
+	
+	
 	var Regular = __webpack_require__(16);
-
+	
 	function destroy(component, container){
 	  component.destroy();
 	  expect(container.innerHTML).to.equal('');
 	}
-
+	
 	  
 	describe("Directive", function(){
 	  describe('Process', function(){
@@ -3967,17 +3967,17 @@
 	          content:'hello'
 	        }
 	      }).$inject(container)
-
-
+	
+	
 	      expect($('.m-class', container).html()).to.equal(component.data.content)
-
+	
 	      component.$update('content', 30000)
-
+	
 	      expect($('.m-class', container).html()).to.equal('30000')
 	      component.destroy();
 	      expect(container.innerHTML).to.equal('');
 	    })
-
+	
 	    it('unregister attribute should just act attribute-inteplation', function(){
 	      var component = new Regular({
 	        template: "<div class='m-class' t-invalid={content}></div>",
@@ -3985,16 +3985,16 @@
 	          content:'hello'
 	        }
 	      }).$inject(container)
-
-
+	
+	
 	      expect($('.m-class', container).attr('t-invalid')).to.equal(component.data.content)
 	      component.$update('content', 'changed')
 	      expect($('.m-class', container).attr('t-invalid')).to.equal('changed')
 	      component.destroy();
 	      expect(container.innerHTML).to.equal('');
-
+	
 	    })
-
+	
 	    it('const value should not pass Expression to directive', function(done){
 	        var container = document.createElement('div');
 	        var tmp  = (+new Date()).toString(36);
@@ -4009,7 +4009,7 @@
 	        }).$inject(container);
 	        destroy(component, container);
 	    })
-
+	
 	    it('the expression passed in should touched already ', function(){
 	      var tmpName = "t-" + Regular.util.uid();
 	      Regular.directive(tmpName, function(elem, value){
@@ -4024,7 +4024,7 @@
 	        }
 	      }).$inject(container)
 	    })
-
+	
 	    it('the whole attributes should be get in directive handler', function(done){
 	      var tmpName = "t-" + Regular.util.uid();
 	      Regular.directive(tmpName, function(elem, value, name, extra){
@@ -4041,19 +4041,19 @@
 	          content:'hello'
 	        }
 	      })
-
+	
 	    })
 	  
-
-
+	
+	
 	  })
-
+	
 	  
 	  
 	});
-
+	
 	describe('r-model directive', function(){
-
+	
 	  describe("directive param", function(){
 	    it(" behavior purpose here ", function( done){
 	      var Component = Regular.extend({
@@ -4069,34 +4069,34 @@
 	          }
 	        }
 	      });
-
+	
 	      new Component({ });
-
+	
 	    })
 	  })
-
+	
 	  var container = document.createElement('form');
-
+	
 	  describe('text binding', function(){
 	    it("input:email with 'model' directive should works as expect", function(){
 	      var template = '<input type="email" value="87399126@163.com" r-model={email}><div>{email}</div>';
 	      var component = new Regular({
 	        template: template
 	      }).$inject(container)
-
-
+	
+	
 	      expect(nes.all('input', container).length).to.equal(1);
 	      // expect($('div', container).html()).to.equal('87399126@163.com')
-
+	
 	      component.$update('email','hello');
-
-
-
+	
+	
+	
 	      expect(component.data.email).to.equal('hello')
 	      expect(nes.one('input', container).value).to.equal('hello')
-
+	
 	      destroy(component, container)
-
+	
 	    })
 	    
 	    it("input[r-model] should have  throttle param", function(){
@@ -4106,13 +4106,13 @@
 	        data: {test: true, hello: {} } ,
 	        template: "<input ref=input r-model={hello.name} throttle={1000} />"
 	      }).$inject(container)
-
+	
 	      expect(component.$refs.input.getAttribute('throttle')).to.equal(null)
 	    })
-
-
-
-
+	
+	
+	
+	
 	    it("input[r-model] should have lazy param", function(){
 	      var container = document.createElement('div')
 	      var Component = Regular.extend({});
@@ -4120,10 +4120,10 @@
 	        data: {test: true, hello: {} } ,
 	        template: "<input ref=input r-model={hello.name} lazy />"
 	      }).$inject(container)
-
+	
 	      expect(component.$refs.input.getAttribute('lazy')).to.equal(null)
 	    })
-
+	
 	    it("input:password and text with 'r-model' should works", function(){
 	      var template = 
 	        '<input type="password" value="123456" r-model={password}>'+
@@ -4131,13 +4131,13 @@
 	      var component = new Regular({
 	        template: template
 	      }).$inject(container)
-
+	
 	      var inputs = nes.all('input', container);
-
+	
 	      expect(inputs.length).to.equal(2)
 	      expect(inputs[0].value).to.equal("123456");
 	      expect(inputs[1].value).to.equal("");
-
+	
 	      component.$update({
 	        text: '1234',
 	        password: 3456
@@ -4151,18 +4151,18 @@
 	      var component = new Regular({
 	        template: template
 	      }).$inject(container);
-
+	
 	      expect($('input', container).length).to.equal(1)
 	      expect($('input', container).val()).to.equal('')
-
+	
 	      component.$update('nontype', 'hello');
 	      expect($('input', container).val()).to.equal('hello')
-
+	
 	      component.destroy()
 	    })
-
+	
 	    it('textarea binding should also works', function(){
-
+	
 	        var template = 
 	          '<textarea r-model={textarea}></textarea>'+
 	          '<textarea r-model={textarea}></textarea>'
@@ -4170,16 +4170,16 @@
 	          template: template,
 	          data: {textarea: '100'}
 	        }).$inject(container);
-
+	
 	        expect($('textarea', container).length).to.equal(2);
 	        expect($('textarea', container).val()).to.equal("100");
 	        destroy(component, container);
 	    })
-
-
-
+	
+	
+	
 	  })
-
+	
 	  describe('checkbox binding', function(){
 	    it('input:checkbox"s initial state should be correct', function(){
 	      var template = 
@@ -4189,36 +4189,36 @@
 	      var component = new Regular({
 	        template: template
 	      }).$inject(container);
-
+	
 	      expect($('input', container).length).to.equal(3)
 	      expect($('input:first-child', container)[0].checked).to.equal(true)
 	      expect($('input:last-child', container)[0].checked).to.equal(true)
 	      expect($('input:nth-child(10n+2)', container)[0].checked).to.equal(false)
-
+	
 	      expect(component.data.nontype).to.equal(true);
 	      expect(component.data.nontype2).to.equal(true);
 	      expect(component.data.nontype3).to.equal(false);
-
+	
 	      destroy(component, container);
-
+	
 	    })
 	    it('input:checkbox should works correctly', function(){
 	      var template = "<input type='checkbox' r-model={checked}>";
 	      var component = new Regular({
 	        template: template
 	      }).$inject(container);
-
+	
 	      expect($('input', container).length).to.equal(1)
 	      expect(component.data.checked).to.equal(false);
-
+	
 	      component.$update('checked', true)
-
+	
 	      expect($('input', container)[0].checked).to.equal(true)
-
+	
 	      destroy(component, container);
 	    });
 	  })
-
+	
 	  describe('select binding', function(){
 	    it('the initial state of select binding should correct', function(){
 	      var template1 = 
@@ -4239,26 +4239,26 @@
 	          <option value='2'>Hangzhou</option>\
 	          <option value='3'>Beijing</option>\
 	        </select>";
-
+	
 	      var component = new Regular({
-
+	
 	        template: template1 + template2 + template3
-
+	
 	      }).$inject(container);
-
+	
 	      expect($('select', container).length).to.equal(3)
-
+	
 	      expect($('select:first-child', container).val()).to.equal("3")
 	      expect($('select:nth-child(10n+2)', container).val()).to.equal("2")
 	      expect($('select:nth-child(10n+3)', container).val()).to.equal("1")
-
+	
 	      expect(component.data.selected1).to.equal('3');
 	      expect(component.data.selected2).to.equal('2');
 	      expect(component.data.selected3).to.equal('1');
-
+	
 	      destroy(component, container)
 	    })
-
+	
 	    it("select should works as expect", function(){
 	      var template1 = 
 	        "<select  r-model={selected1}>\
@@ -4267,22 +4267,22 @@
 	          <option value='3' selected>Beijing</option>\
 	        </select>";
 	      var component = new Regular({
-
+	
 	        template: template1
-
+	
 	      }).$inject(container);
-
-
+	
+	
 	      expect($('select', container).val()).to.equal("3");
 	      expect(component.data.selected1).to.equal("3");
-
+	
 	      component.$update('selected1', "2");
 	      expect($('select', container).val()).to.equal("2");
-
+	
 	      //destroy
 	      destroy(component, container);
 	    })
-
+	
 	    it('select combine with list should works as expected', function(){
 	      var template = 
 	        "<select  r-model={selected}>\
@@ -4291,30 +4291,30 @@
 	          {/list}\
 	        </select>";
 	      var component = new Regular({
-
+	
 	        template: template,
 	        data: {
 	          values: [
 	            { value:"10", name:"Ningbo" },
 	            { value:"20", name:"Hangzhou" },
 	            { value:"30", name:"Beijing" }
-
+	
 	          ],
 	          selected: "10"
 	        }
-
+	
 	      }).$inject(container);
-
-
+	
+	
 	      // expect($('select option', container).length).to.equal(3)
 	        expect($('select', container).val()).to.equal("10");
 	        component.$update("selected", "20");
 	        expect($('select', container).val()).to.equal("20");
-
+	
 	        destroy(component, container);
-
+	
 	    })
-
+	
 	    it("r-model:select in list should works as expect", function(){
 	      var container = document.createElement('div')
 	      var Component = Regular.extend({});
@@ -4322,20 +4322,20 @@
 	        data: {test: true, hello: {} } ,
 	        template: "{#list 1..2 as hah}<select r-model='hello.name'>{#list [1,2,3,4] as item}<option value={item} selected={item_index==2}>haha</option>{/list}</select>{/list}"
 	      }).$inject(container)
-
-
+	
+	
 	      expect(nes.one("select", container).value).to.equal('3');
 	      expect(component.data.hello.name).to.equal('3');
-
+	
 	      destroy(component, container);
-
+	
 	    })
 	  })
-
-
+	
+	
 	  describe('radio binding', function(){
 	    var container = document.createElement("div");
-
+	
 	    it('input:checkbox"s initial state should be correct', function(){
 	      var template = 
 	        "<input  value='radio1' type='radio' r-model={radio}>" + 
@@ -4343,10 +4343,10 @@
 	      var component = new Regular({
 	        template: template
 	      }).$inject(container);
-
+	
 	      expect(nes.all('input', container).length).to.equal(2);
 	      expect(component.data.radio).to.equal('radio2');
-
+	
 	      destroy(component, container);
 	    })
 	    it('input:checkbox should work as expected', function(){
@@ -4356,18 +4356,18 @@
 	      var component = new Regular({
 	        template: template
 	      }).$inject(container);
-
+	
 	      expect($('input', container).length).to.equal(2);
 	      expect(component.data.radio).to.equal(undefined);
-
+	
 	      component.$update('radio', 'radio2')
-
+	
 	      expect($('input', container)[1].checked).to.equal(true);
-
+	
 	      destroy(component, container);
-
+	
 	    })
-
+	
 	    it("r-model in if should works as expect", function(){
 	      var container = document.createElement('div')
 	      var Component = Regular.extend({});
@@ -4375,14 +4375,14 @@
 	        data: {test: true} ,
 	        template: "{#if !test}<input r-model={item} value='1' />{/if}"
 	      }).$inject(container)
-
+	
 	      component.$update("test", false);
-
+	
 	      expect(nes.one("input", container).value).to.equal('1');
 	      expect(component.data.item).to.equal('1');
-
+	
 	      destroy(component, container);
-
+	
 	    })
 	    it("r-model in list should works as expect", function(){
 	      var container = document.createElement('div')
@@ -4391,87 +4391,87 @@
 	        data: {test: true, hello: {} } ,
 	        template: "{#list [1,2,3,4] as item}<input r-model={hello.name} value='1' />{/list}"
 	      }).$inject(container)
-
+	
 	      expect(nes.one("input", container).value).to.equal('1');
 	      expect(component.data.hello.name).to.equal('1');
-
+	
 	      destroy(component, container);
-
+	
 	    });
-
-
-
+	
+	
+	
 	  })
-
+	
 	})
-
-
-
+	
+	
+	
 	describe('other buildin directive', function(){
 	  var container = document.createElement('div');
-
-
+	
+	
 	  it('r-hide should force element to "display:none" when the expression is evaluated to true', function(){
 	    var template = "<div r-hide={!!user}>Please Login</div>" 
-
+	
 	    var component = new Regular({
 	      template: template,
 	      data: {user: 'hello'}
 	    }).$inject(container);
-
+	
 	    
-
+	
 	    expect($('div', container).css('display')).to.equal('none');
-
+	
 	    component.$update('user','');
-
+	
 	    expect($('div', container).css('display')).not.to.equal('none');
-
+	
 	    destroy(component, container);
-
+	
 	  })
-
+	
 	  it('r-class should add all property as the class whose propertyValue is evaluated to true', function(){
 	    var template = "<div r-class={ {'z-show': num < 6, 'z-active': num > 3} } >Please Login</div>" 
-
+	
 	    var component = new Regular({
 	      template: template,
 	      data: {num: 4}
 	    }).$inject(container);
-
+	
 	    expect($('div', container).hasClass('z-show')).to.equal(true);
 	    expect($('div', container).hasClass('z-active')).to.equal(true);
-
+	
 	    component.$update('num', 2);
 	    expect($('div', container).hasClass('z-show')).to.equal(true);
 	    expect($('div', container).hasClass('z-active')).to.equal(false);
-
+	
 	    component.$update('num', 8);
 	    expect($('div', container).hasClass('z-show')).to.equal(false);
 	    expect($('div', container).hasClass('z-active')).to.equal(true);
-
+	
 	    destroy(component, container);
-
+	
 	  })
-
+	
 	  it("r-class can combine with raw class attribute", function(){
 	    var template = "<div class='rawClass' r-class={ {'z-show': num < 6, 'z-active': num > 3} }>Please Login</div>" 
 	    var component = new Regular({
 	      template: template,
 	      data: {num: 4}
 	    }).$inject(container);
-
+	
 	    expect($('div', container).hasClass('rawClass')).to.equal(true);
 	    expect($('div', container).hasClass('z-active')).to.equal(true);
 	    expect($('div', container).hasClass('z-show')).to.equal(true);
-
+	
 	    component.$update('num', 2);
 	    expect($('div', container).hasClass('rawClass')).to.equal(true);
 	    expect($('div', container).hasClass('z-show')).to.equal(true);
 	    expect($('div', container).hasClass('z-active')).to.equal(false);
-
+	
 	    destroy(component, container)
-
+	
 	  })
 	  it("r-class can not combine with class inteplation", function(){
 	    var template = "<div class='{topClass}' r-class={ {'z-show': num < 6, 'z-active': num > 3} }>Please Login</div>" 
@@ -4479,19 +4479,19 @@
 	      template: template,
 	      data: {num: 4}
 	    }).$inject(container);
-
+	
 	    expect($('div', container).hasClass('z-active')).to.equal(true);
 	    expect($('div', container).hasClass('z-show')).to.equal(true);
-
+	
 	    component.$update('topClass', 'hello')
-
+	
 	    expect($('div', container).hasClass('z-active')).to.equal(false);
 	    expect($('div', container).hasClass('z-show')).to.equal(false);
 	    // override the r-class
 	    expect($('div', container).hasClass('hello')).to.equal(true);
-
+	
 	    destroy(component, container);
-
+	
 	  })
 	  it("r-style, r-class accept unBraced string", function(){
 	    var template = "<div ref=cnt r-class=\"'z-show': num < 6, 'z-active': num > 3 \" r-style=\"left: num+'px'\" >Please Login</div>" 
@@ -4503,9 +4503,9 @@
 	    var div = component.$refs.cnt;
 	    expect(dom.hasClass(div, 'z-show' )).to.equal(true);
 	    expect(dom.hasClass(div, 'z-active' )).to.equal(false);
-
+	
 	    expect(div.style.left).to.equal('2px')
-
+	
 	  })
 	  it("r-style should add all property specify in the passed arguments(type Object)", function(){
 	    var template = "<div class='{topClass}' r-class={ {'z-show': num < 6, 'z-active': num > 3} }>Please Login</div>" 
@@ -4513,31 +4513,31 @@
 	      template: template,
 	      data: {num: 2}
 	    }).$inject(container);
-
+	
 	    // TODO
 	    destroy(component, container)
-
+	
 	  })
-
+	
 	  it("r-html should create unescaped inteplation verus {} ", function(){
 	    var template = "<div r-html='name'>Please Login</div>" 
 	    var component = new Regular({
 	      template: template,
 	      data: {}
 	    }).$inject(container);
-
+	
 	    expect(nes.one('div', container).innerHTML).to.equal("");
-
+	
 	    component.$update("name", "<p>a</p>")
-
+	
 	    expect(nes.all('div p', container).length).to.equal(1);
 	    destroy(component, container)
-
+	
 	  })
-
-
+	
+	
 	})
-
+	
 	describe("refs attribute", function(){
 	  var container = document.createElement("div");
 	  var Component = Regular.extend({
@@ -4550,7 +4550,7 @@
 	        hello: 1
 	      }
 	    }).$inject(container)
-
+	
 	    expect(component.$refs["haha"] === nes.one('div', container)).to.equal(true);
 	    destroy(component, container);
 	  })
@@ -4561,12 +4561,12 @@
 	        haha: "haha"
 	      }
 	    }).$inject(container)
-
+	
 	    expect(component.$refs["haha"] === nes.one('p', container)).to.equal(true);
 	    destroy(component, container);
-
+	
 	  })
-
+	
 	  it("ref on component should work as expect", function(){
 	    var Component1 = Component.extend({
 	      name: "haha",
@@ -4578,11 +4578,11 @@
 	        haha: "haha"
 	      }
 	    }).$inject(container)
-
+	
 	    expect(component.$refs["haha"] instanceof Component1).to.equal(true);
 	    destroy(component, container);
 	  })
-
+	
 	  it("ref on component with should work as expect", function(){
 	    var Component1 = Component.extend({
 	      name: "haha",
@@ -4594,13 +4594,13 @@
 	        haha: "haha"
 	      }
 	    }).$inject(container)
-
-
+	
+	
 	    expect(component.$refs["haha"] instanceof Component1).to.equal(true);
-
+	
 	    destroy(component, container);
 	  })
-
+	
 	  it("ref should works with list", function(){
 	    var component = new Component({
 	      template: "{#list items as item}<div ref={haha + item_index} id={item_index}>haha</div>{/list}",
@@ -4609,17 +4609,17 @@
 	        items: [1,2,3]
 	      }
 	    }).$inject(container)
-
+	
 	    expect(component.$refs["haha0"].id).to.equal("0");
 	    expect(component.$refs["haha1"].id).to.equal("1");
 	    expect(component.$refs["haha2"].id).to.equal("2");
-
+	
 	    component.$update(function(data){
 	      data.items.pop();
 	    })
-
+	
 	    expect(component.$refs["haha2"]).to.equal(null);
-
+	
 	    destroy(component, container);
 	  })
 	  it("ref should destroied as expect", function(){
@@ -4630,11 +4630,11 @@
 	        items: [1,2,3]
 	      }
 	    }).$inject(container)
-
+	
 	    component.$update(function(data){
 	      data.items.pop();
 	    })
-
+	
 	    destroy(component, container);
 	    expect(component.$refs).to.equal(null);
 	  })
@@ -4646,23 +4646,23 @@
 	        items: [1,2,3]
 	      }
 	    })
-
+	
 	    expect(component.$refs.haha.id).to.equal('100')
 	    component.$update('name', 'hehe')
 	    expect(component.$refs.hehe.id).to.equal('100')
 	    expect(component.$refs.haha==null).to.equal(true);
-
+	
 	    expect(component.$refs.hehe1.innerHTML).to.equal('1')
 	    expect(component.$refs.hehe2.innerHTML).to.equal('2')
 	    expect(component.$refs.hehe3.innerHTML).to.equal('3')
-
+	
 	    component.$update('items', [2,3,4, 5])
-
+	
 	    expect(component.$refs.hehe2.innerHTML).to.equal('2')
 	    expect(component.$refs.hehe3.innerHTML).to.equal('3')
 	    expect(component.$refs.hehe4.innerHTML).to.equal('4')
 	    expect(component.$refs.hehe5.innerHTML).to.equal('5')
-
+	
 	    destroy(component, container);
 	  })
 	  it("ref updated when value update:[component]", function(){
@@ -4677,34 +4677,34 @@
 	        items: [1,2,3]
 	      }
 	    })
-
+	
 	    expect(component.$refs.haha.data.id).to.equal('100')
 	    component.$update('name', 'hehe')
 	    expect(component.$refs.hehe.data.id).to.equal('100')
 	    expect(component.$refs.haha==null).to.equal(true);
-
+	
 	    expect(component.$refs.hehe1.data.value).to.equal(1)
 	    expect(component.$refs.hehe2.data.value).to.equal(2)
 	    expect(component.$refs.hehe3.data.value).to.equal(3)
-
+	
 	    component.$update('items', [2,3,4, 5])
-
+	
 	    expect(component.$refs.hehe2.data.value).to.equal(2)
 	    expect(component.$refs.hehe3.data.value).to.equal(3)
 	    expect(component.$refs.hehe4.data.value).to.equal(4)
 	    expect(component.$refs.hehe5.data.value).to.equal(5)
-
+	
 	    destroy(component, container);
 	  })
 	  
-
+	
 	})
-
-
+	
+	
 	describe("Directive extra", function(){
-
+	
 	  it("directive param should work", function( done){
-
+	
 	    var container = document.createElement('div');
 	    var Component = Regular.extend({
 	      name: 'nested'
@@ -4725,7 +4725,7 @@
 	      }
 	    }).$inject(container)
 	  })
-
+	
 	  it("directive update should work", function( done){
 	    
 	    var container = document.createElement('div');
@@ -4745,33 +4745,33 @@
 	        })
 	      }
 	    })
-
+	
 	    var component = new Component({
 	      template: "<div update-directive=1></div><div update-directive={name}></div>",
 	      data: {
 	        name: "haha"
 	      }
 	    }).$inject(container)
-
+	
 	    expect(checked[0].value).to.equal('1')
 	    expect(checked[0].old).to.equal(undefined)
 	    expect(checked[0].num).to.equal(0)
 	    expect(checked[1].value).to.equal('haha')
 	    expect(checked[1].num).to.equal(1)
-
+	
 	    component.$update('name', 'hehe')
-
+	
 	    expect(checked[2].value).to.equal('hehe')
 	    expect(checked[2].old).to.equal('haha')
 	    expect(checked[2].num).to.equal(1)
-
+	
 	    var divs = nes.all('div', container);
 	    expect( divs[0].getAttribute('data-update') ).to.equal('1')
 	    expect( divs[1].getAttribute('data-update') ).to.equal('hehe')
 	    done();
 	  })
 	})
-
+	
 	// describe('the atrributeValue with the string type is valid in most buildin directive', function(){
 	//   // var container = document.createElement('div');
 	//   // var template = "da"
@@ -4779,29 +4779,29 @@
 	//   //   template: template,
 	//   //   data: {num: 2}
 	//   // }).$inject(container);
-
-
+	
+	
 	//   // destroy(component, container);
 	// })
-
-
-
-
-
+	
+	
+	
+	
+	
 
 
 /***/ },
 /* 11 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var expect = __webpack_require__(26);
-
+	var expect = __webpack_require__(29);
+	
 	var Regular = __webpack_require__(16);
-
-
+	
+	
 	describe("Filter", function(){
 	var Component = Regular.extend();
-
+	
 	Component.filter('lowercase', function(value){
 	  return value.toLowerCase();
 	})
@@ -4818,7 +4818,7 @@
 	     'HH': function(date){ return fix(date.getHours()) },
 	     'mm': function(date){ return fix(date.getMinutes())}
 	   }
-
+	
 	   var trunk = new RegExp(Regular.util.keys(maps).join('|'),'g');
 	   
 	   return function(value, format){
@@ -4826,15 +4826,15 @@
 	     format = format || "yyyy-MM-dd HH:mm";
 	     value = new Date(value);
 	     
-
+	
 	     return format.replace(trunk, function(capture){
 	       return maps[capture]? maps[capture](value): "";
 	     });
 	   }
 	 }())
-
-
-
+	
+	
+	
 	function destroy(component, container){
 	  component.destroy();
 	  expect(container.innerHTML).to.equal('');
@@ -4845,13 +4845,13 @@
 	      template: "<div>{test|lowercase}</div>",
 	      data: {test: "ABcD"}
 	    }).$inject(container);
-
-
+	
+	
 	    expect($("div",container).html()).to.equal('abcd');
-
+	
 	    destroy(component, container);
 	  })
-
+	
 	  it("filter should works with param", function(){
 	    var component = new Component({
 	      template: "<div>{test|format: 'yyyy-MM-dd'}</div>",
@@ -4860,11 +4860,11 @@
 	    expect($("div",container).html()).to.equal('2014-08-13');
 	    destroy(component, container);
 	  })
-
-
+	
+	
 	  it("filter's context should point to component self", function(){
 	    var setValue, getValue;
-
+	
 	    Component.filter({
 	      "context":{
 	        set: function(){
@@ -4874,18 +4874,18 @@
 	          getValue = this.b;
 	        }
 	      }
-
+	
 	    })
-
+	
 	    var component = new Component({a:1,b:2});
-
+	
 	    component.$set("name|context");
 	    expect(setValue).to.equal(1);
 	    component.$get("name|context");
 	    expect(getValue).to.equal(2);
-
+	
 	  })
-
+	
 	  it("use two-way filter", function(){
 	    Component.filter({
 	      // accept String
@@ -4915,11 +4915,11 @@
 	            }
 	            return value;
 	          })
-
+	
 	        }
 	      }
 	    })
-
+	
 	    var component = new Component({
 	      template: "<div ref=view>{fullname|split:'_'|prefix:'@'}</div>",
 	      data: {fullname: 'haibo_zheng'}
@@ -4928,10 +4928,10 @@
 	    expect(component.$update("fullname|split:'_'|prefix:'@'", ["@zheng","@haibo"]))
 	    expect(component.$refs.view.innerHTML).to.equal("@zheng,@haibo")
 	    expect(component.data.fullname).to.equal("zheng_haibo")
-
+	
 	  })
-
-
+	
+	
 	  it("builtin json", function(){
 	    var component = new Component({
 	      data: {user: {first: 'zheng', last: 'haibo'}}
@@ -4940,8 +4940,8 @@
 	      expect(component.$get("user|json")).to.equal('{"first":"zheng","last":"haibo"}')
 	    }
 	  })
-
-
+	
+	
 	  it("fitler with computed", function(){
 	    Component.filter({
 	      "split2": {
@@ -4966,21 +4966,21 @@
 	        }
 	      }
 	    })
-
+	
 	    expect(component.$get("tmp|split2")).to.eql(["zheng","haibo"]);
 	    expect(component.tmp2).to.equal("zheng-haibo");
-
+	
 	    component.$set("tmp|split2", ["leeluolee", "regularjs"])
 	    expect(component.tmp2).to.equal("leeluolee-regularjs");
 	    expect(component.$get("tmp|split2")).to.eql(["leeluolee", "regularjs"]);
-
+	
 	  })
-
+	
 	  it(" LeftHandExpression is setable with filter", function(){
 	    var expr = Regular.expression("a+1|format")
 	    expect(expr.setbody).to.equal(false)
 	  })
-
+	
 	  it("undefined filter should throw error", function(){
 	    var component = new Regular();
 	    expect(function(){
@@ -4989,24 +4989,24 @@
 	  })
 	  
 	})
-
+	
 
 
 /***/ },
 /* 12 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var expect = __webpack_require__(26);
+	var expect = __webpack_require__(29);
 	var Regular = __webpack_require__(16);
-	var parse = __webpack_require__(21);
-
+	var parse = __webpack_require__(20);
+	
 	var Component = Regular.extend();
-
+	
 	function destroy(component, container){
 	  component.destroy();
 	  expect(container.innerHTML).to.equal('');
 	}
-
+	
 	describe("Computed Property", function(){
 	  var container = document.createElement("div");
 	  it("only pass string will use Regular.expression to generate get(may have set)", function(){
@@ -5017,15 +5017,15 @@
 	      },
 	      template: "xx"
 	    });
-
-
+	
+	
 	    var component = new Component({data: {items: [1,2]}});
-
+	
 	    expect(component.$get("len")).to.equal(2);
 	    component.$update("len", 1);
 	    expect(component.$get("items").length).to.equal(1);
 	  })
-
+	
 	  it("only pass a function should register a get function", function(){
 	    var Component = Regular.extend({
 	      computed: {
@@ -5040,7 +5040,7 @@
 	    expect(component.$get("len")).to.equal(2);// not affect len computed
 	    expect(component.data.len).to.equal(1) //but affcet the data;
 	  })
-
+	
 	  it("define get/set computed property should works as expect", function(){
 	    var Component = Regular.extend({
 	      template: "<div>{fullname}</div>",
@@ -5057,26 +5057,26 @@
 	        }
 	      }
 	    })
-
+	
 	    var component = new Component({
 	      data: {first: '1', last: '2'}
 	    }).$inject(container);
-
-
-
+	
+	
+	
 	    expect( nes.one("div", container).innerHTML ).to.equal("1-2");
-
+	
 	    component.$update("fullname", "3-4");
 	    expect( component.$get("first")).to.equal("3");
 	    expect( component.$get("last")).to.equal("4");
-
+	
 	    destroy(component, container);
 	  })
-
+	
 	  it("context should point to component", function(){
-
+	
 	  })
-
+	
 	  it("computed property in intialize will merge/override the setting on Component.extend", function(){
 	    var Component = Regular.extend({
 	      template: "<div>{fullname}</div><div>{hello}</div>",
@@ -5093,7 +5093,7 @@
 	        }
 	      }
 	    })
-
+	
 	    var component = new Component({
 	      data: {
 	        first: '1', last: '2'
@@ -5114,12 +5114,12 @@
 	        }
 	      }
 	    }).$inject(container);
-
-
+	
+	
 	    var divs = nes.all("div", container);
 	    expect(divs[0].innerHTML ).to.equal("1=2");
 	    expect(divs[1].innerHTML ).to.equal("hello12");
-
+	
 	    component.$update("fullname", "3=4");
 	    expect(divs[0].innerHTML ).to.equal("3=4");
 	    expect(divs[1].innerHTML ).to.equal("hello34");
@@ -5149,22 +5149,22 @@
 	        return data.a;
 	      }
 	    })
-
+	
 	    describe('Primative Type', function(){
 	      it("object type returns correctly", function(){
 	        run_expr("{a: 1, b: b+1}", context).to.eql({a:1, b: 4});
 	        run_expr("{a: 1, b: b+1,}", context).to.eql({a:1, b: 4});
 	      });
-
+	
 	      it("array type returns correctly", function(){
 	        run_expr("[1,5+a, a+b]", context).to.eql([1,7,5]);
-
+	
 	      });
 	      it("range type returns correctly", function(){
 	        run_expr("a..b", context).to.eql([2,3]);
 	      });
-
-
+	
+	
 	      it("primative type returns correctly", function(){
 	        run_expr("1", context).to.eql(1);
 	        run_expr("null", context).to.eql(null);
@@ -5176,15 +5176,15 @@
 	        run_expr("true", context).to.eql(true);
 	        run_expr("false", context).to.eql(false);
 	      })
-
+	
 	    })
-
+	
 	    describe('Operation', function(){
 	      it("add/sub returns correctly", function(){
 	        run_expr("1+3", context).to.eql(4);
 	        run_expr("b-a", context).to.eql(1);
 	      });
-
+	
 	      it("mult/div returns correctly", function(){
 	        run_expr(" 3 * a ", context).to.eql(6);
 	        run_expr("b/a", context).to.eql(1.5);
@@ -5203,34 +5203,34 @@
 	        run_expr("b > a", context).to.eql(true);
 	        run_expr("b < a", context).to.eql(false);
 	        run_expr("b <= a", context).to.eql(false);
-
+	
 	      });
-
+	
 	      it("condition returns correctly", function(){
 	        run_expr("a? 2: 3", context).to.eql(2);
 	      })
-
+	
 	      it("paren returns correctly", function(){
 	        run_expr("(2+3)*b", context).to.eql(15);
 	      })
-
+	
 	      it("function call returns correctly", function(){
 	        run_expr("ab(a,2)", context).to.eql(4)
 	        run_expr("this.show()", context)
 	        expect(context.data.a).to.eql(3);
 	      })
-
+	
 	      it("assignment should works correctly", function(){
 	        run_expr("a=1", context).to.eql(1)
 	        expect(context.data.a).to.eql(1);
 	      })
-
+	
 	      it("member should works correctly", function(){
 	        expect(context.data.c.c1).to.eql(1);
 	        run_expr("c.c1=10", context).to.eql(10)
 	        expect(context.data.c.c1).to.eql(10);
 	      })
-
+	
 	      it("setable expression should works correctly", function(){
 	        expect(context.data.c.c2).to.eql(2);
 	        context.$update("c.c2", 10);
@@ -5252,28 +5252,28 @@
 	    })
 	  })
 	})
-
+	
 	describe("Watcher-System", function(){
-
-
-
+	
+	
+	
 	  it("the digest progress is works correctly on basic usage", function(){
 	    var component = new Regular();
-
+	
 	    //lazy bind watcher will not trigger in intialize state 
 	    component.$watch("name", function(name){
 	      this.hello = name;
 	    });
-
+	
 	    expect(component.hello).to.equal(undefined);
-
+	
 	    component.$update("name", "leeluolee");
 	    expect(component.hello).to.equal("leeluolee");
-
-
+	
+	
 	    component.destroy();
 	  })
-
+	
 	  it("digest will throw Error when watching dynamic 【Object】 without deep", function(){
 	    var component = new Regular();
 	    // every time call hello,  a new Object will be return
@@ -5283,50 +5283,50 @@
 	      component.$update()
 	    }).to.throwError();
 	  })
-
-
+	
+	
 	  it("$watch should accpect [Expression] param", function(){
 	    var component = new Regular();
 	    var nameExpr = Regular.parse("name");
-
+	
 	    //lazy bind watcher will not trigger in intialize state 
 	    component.$watch("name", function(name){
 	      this.hello = name;
 	    });
-
+	
 	    component.$update("name", "leeluolee");
 	    expect(component.hello).to.equal("leeluolee");
 	    component.destroy();
 	  })
-
+	
 	  it("$watch should accpect [Array] param", function(){
 	    var component = new Regular();
 	    component.$watch(["name", "age"], function(name, age){
 	      expect(name + ":" + age).to.equal("leeluolee:10")
 	    });
-
+	
 	    component.$update({
 	      name: "leeluolee",
 	      age: 10
 	    });
-
+	
 	    component.destroy();
 	  })
-
+	
 	  it("$update should also accpect [Function] param to act apply", function(){
 	    var component = new Regular();
 	    component.$watch(["name", "age"], function(name, age){
 	      expect(name + ":" + age).to.equal("leeluolee:100")
 	    });
-
+	
 	    component.$update(function(data){
 	      data.name = "leeluolee";
 	      data.age = 100;
 	    });
 	    component.destroy();
 	  })
-
-
+	
+	
 	  it("$bind should connect two component", function(){
 	    var container = document.createElement("div");
 	    var component = new Component({
@@ -5340,34 +5340,34 @@
 	      template: "<div class='user-name'>{user.name}</div><div class='user-age'>{user.age}</div>",
 	      data: {user: {}}
 	    }).$inject(container);
-
+	
 	    expect( $('div', container).length ).to.equal(4);
 	    expect( $('div', container).length ).to.equal(4);
-
+	
 	    ["name", "user-name", "age", "user-age"].forEach(function(item){
 	      expect($("."+item, container).length).to.equal(1)
 	    })
-
-
+	
+	
 	    component.$bind(component2, "name", "user.name")
 	    component.$bind(component2, "age", "user.age")
-
+	
 	    
 	    expect(component2.data.user).to.eql({name: "leeluolee", age: 10 });
-
+	
 	    component2.$update(function(data){
 	      data.user = {name: "regularjs", age: 100 };
 	    })
 	    expect(component.data.name).to.equal("regularjs");
 	    expect(component.data.age).to.equal(100);
-
+	
 	    component2.destroy();
 	    component.destroy();
 	    expect(container.innerHTML).to.equal("");
 	    
-
+	
 	  })
-
+	
 	  it("bind once should works on interpolation", function(){
 	    var container = document.createElement("div");
 	    var component = new Component({
@@ -5377,12 +5377,12 @@
 	        age: 10
 	      }
 	    }).$inject(container);
-
+	
 	    component.$update("name", "luobo")
 	    component.$update("age", "100")
 	    expect(nes.one(".name", container).innerHTML).to.equal("leeluolee");
 	    expect(nes.one(".age", container).innerHTML).to.equal("100");
-
+	
 	    destroy(component, container);
 	  })
 	  it("bind once should works on list", function(){
@@ -5393,16 +5393,16 @@
 	        todos: ["name", "name2"]
 	      }
 	    }).$inject(container);
-
+	
 	    expect(nes.all("p", container).length).to.equal(2);
 	    expect(nes.all("p", container)[0].innerHTML).to.equal("name");
-
+	
 	    component.$update(function(data){
 	      data.todos.push("name3");
 	    })
-
+	
 	    expect(nes.all("p", container).length).to.equal(2);
-
+	
 	    destroy(component, container);
 	  })
 	  it("bind once should works on if", function(){
@@ -5411,24 +5411,24 @@
 	      template: "{#if @(test) }<p>haha</p>{#else}<a></a>{/if}",
 	      data: {test: true}
 	    }).$inject(container);
-
+	
 	    expect(nes.all("p", container).length).to.equal(1);
-
+	
 	    component.$update("test", false);
-
+	
 	    expect(nes.all("p", container).length).to.equal(1);
-
-
+	
+	
 	    destroy(component, container);
 	  })
-
-
-
-
+	
+	
+	
+	
 	})
-
-
-
+	
+	
+	
 	describe("component.watcher", function(){
 	  var watcher = new Regular({
 	    data: {
@@ -5437,7 +5437,7 @@
 	      array: []
 	    }
 	  });
-
+	
 	  it('it should watch once when have @(str) ', function(){
 	    var trigger = 0;
 	    var trigger2 =0;
@@ -5453,28 +5453,28 @@
 	    watcher.$digest();
 	    expect(trigger).to.equal(1);
 	    expect(trigger2).to.equal(2);
-
+	
 	  } )
-
+	
 	  it("beacuse of cache passed same expr should return the same expression", function(){
 	    var expr = parse.expression("a+b");
 	    var expr2 = parse.expression("a+b");
 	    expect(expr === expr2).to.equal(true);
 	  })
-
+	
 	  it("watch accept multi binding ", function(done){
 	    watcher.$watch(["str", "array.length"], function(str, len){
 	      expect(str).to.equal("haha")
 	      expect(len).to.equal(2)
 	      done();
 	    })
-
+	
 	    watcher.data.str = "haha";
 	    watcher.data.array = [1,2];
 	    watcher.$digest();
 	  })
-
-
+	
+	
 	  it("watch accept function", function(done){
 	    watcher.$watch( function(){return this.first+":" + this.last}, function(now, old){
 	      expect(old).to.equal(undefined)
@@ -5519,7 +5519,7 @@
 	        done()
 	      }
 	    })
-
+	
 	    watcher.data.list = {};
 	    watcher.$digest();
 	    watcher.data.list = [];
@@ -5527,7 +5527,7 @@
 	    watcher.data.list = {};
 	    watcher.$digest();
 	  })
-
+	
 	  it("watch object deep should checked the key", function(){
 	    var watcher = new Regular({
 	      data: {
@@ -5536,7 +5536,7 @@
 	        array: []
 	      }
 	    })
-
+	
 	    var trigger = 0;
 	    var trigger2 = 0;
 	    watcher.$watch("obj", function(){
@@ -5545,7 +5545,7 @@
 	    watcher.$watch("obj", function(){
 	      trigger2++;
 	    }, true)
-
+	
 	    watcher.$digest();
 	    watcher.data.obj.name = 1;
 	    watcher.$digest();
@@ -5562,7 +5562,7 @@
 	    expect(trigger).to.equal(1);
 	    expect(trigger2).to.equal(5);
 	  })
-
+	
 	  it('$digest in $update should be ignored', function(){
 	    var i = 0;
 	    var Component = Regular.extend({
@@ -5583,18 +5583,18 @@
 	        this.$update();
 	      }
 	    })
-
+	
 	    var comp = new Component();
-
+	
 	    expect(i).to.equal(1);
 	    expect(comp.$refs.div.innerHTML). to.equal('2')
-
+	
 	    dispatchMockEvent(comp.$refs.div, 'click');
-
+	
 	    expect(i).to.equal(3);
-
+	
 	  })
-
+	
 	  it("$watch list should pass the newarray  and old array", function(){
 	     var watcher = new Regular({
 	      data:{
@@ -5602,7 +5602,7 @@
 	      }
 	     });
 	     var i=0;
-
+	
 	     watcher.$watch('list', function(nList, oList, splice){
 	      expect(splice).to.equal(true);
 	      i++;
@@ -5613,12 +5613,12 @@
 	     },{
 	      diff: true
 	     })
-
+	
 	     watcher.$update('list', [1,2,3])
 	     expect(i). to.equal(2);
 	  })
-
-
+	
+	
 	  it("$unwatch should work as expect", function(){
 	     var watcher = new Regular({
 	     });
@@ -5627,42 +5627,42 @@
 	     watcher.$unwatch(wt)
 	     expect(watcher._watchers.length).to.equal(0)
 	  })
-
-
+	
+	
 	})
-
-
-
-
-
+	
+	
+	
+	
+	
 
 
 /***/ },
 /* 13 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var expect = __webpack_require__(26);
-
+	var expect = __webpack_require__(29);
+	
 	  var Regular = __webpack_require__(16);
 	  var Component = Regular.extend();
-
+	
 	  function destroy(component, container){
 	    component.destroy();
 	    expect(container.innerHTML).to.equal('');
 	  }
-
-
+	
+	
 	  describe("Nested Component", function(){
 	    var NameSpace = Regular.extend();
 	    var containerAll = document.createElement("div");
 	    var Test = NameSpace.extend({
 	      template: "<div>{#inc this.$body}</div>"
 	    })
-
+	
 	    NameSpace.component('test', Test);
-
+	
 	    it("the attribute with plain String will pass to sub_component", function(){
-
+	
 	      //lazy bind watcher will not trigger in intialize state 
 	      var container = document.createElement("div");
 	      var Component = NameSpace.extend({
@@ -5672,11 +5672,11 @@
 	      var component = new NameSpace({
 	        template: "<test1 hello='leeluolee' />"
 	      }).$inject(container)
-
+	
 	      expect( nes.one("p", container).innerHTML ).to.equal("leeluolee");
 	      component.destroy();
 	    });
-
+	
 	    it("it should create two-way binding from parent to nested when pass Expression", function(){
 	      var container = document.createElement("div");
 	      var Component = NameSpace.extend({
@@ -5687,12 +5687,12 @@
 	        template: "<test2 hello={name} /><span class='name'>{name}</span>",
 	        data: {name: "leeluolee"}
 	      }).$inject(container)
-
+	
 	      expect( nes.one("p", container).innerHTML ).to.equal("leeluolee");
-
+	
 	      component.$update("name", "luobo")
-
-
+	
+	
 	      expect( nes.one("p", container).innerHTML ).to.equal("luobo");
 	      dispatchMockEvent(nes.one("p", container), "click")
 	      expect( nes.one("p", container).innerHTML ).to.equal("haha");
@@ -5709,24 +5709,24 @@
 	        template: "<test2 hello={name+'1'} /><span class='name'>{name}</span>",
 	        data: {name: "leeluolee"}
 	      }).$inject(container)
-
+	
 	      expect( nes.one("p", container).innerHTML ).to.equal("leeluolee1");
 	      expect( nes.one(".name", container).innerHTML ).to.equal("leeluolee");
-
-
+	
+	
 	      dispatchMockEvent(nes.one("p", container), "click")
 	      expect( nes.one("p", container).innerHTML ).to.equal("haha");
 	      expect( nes.one(".name", container).innerHTML ).to.equal("leeluolee");
 	      destroy(component, container);
 	    })
-
+	
 	    it("context of transclude-html should point to outer component", function(){
 	      var container = document.createElement("div");
 	      var Component = NameSpace.extend({
 	        name: "nested1",
 	        template: "<p><a>haha</a>{#inc this.$body}</p>"
 	      })
-
+	
 	      var i = 0;
 	      var component = new NameSpace({
 	        template: "<nested1 on-hello={this.hello}><span on-click={this.hello()}>{name}</span></nested1>",
@@ -5735,22 +5735,22 @@
 	          i++
 	        }
 	      }).$inject(container);
-
+	
 	      dispatchMockEvent(nes.one("span", container), "click");
-
+	
 	      expect(i).to.equal(1);
-
+	
 	      expect(nes.one("p span", container).innerHTML).to.equal("leeluolee");
-
+	
 	      destroy(component, container);
-
+	
 	    })
-
-
-
+	
+	
+	
 	    it("transclude-html with $body ", function(){
 	                  
-
+	
 	      var test = new Test({
 	        $body: "<p ref=p>{title}</p>",
 	        data: {title: 'leeluolee'}
@@ -5758,14 +5758,14 @@
 	      expect(test.$refs.p.innerHTML).to.equal('leeluolee');
 	      test.destroy();
 	    })
-
-
+	
+	
 	    it("$outer should point to visual outer component", function(){
 	      var TestChild = NameSpace.extend({
 	        template: "<p>{title}</p>"
 	      })
 	      NameSpace.component("test-child", TestChild);
-
+	
 	      var  component = new NameSpace({
 	        template: 
 	          "<test ref=test>\
@@ -5774,14 +5774,14 @@
 	          </test>",
 	        data: {title: 'regularjs'}
 	      })
-
-
+	
+	
 	      expect(component.$refs.child.$outer).to.equal(component.$refs.test);
-
+	
 	      component.destroy();
-
+	
 	    })
-
+	
 	    it("nested intialize step should follow particular sequence", function(){
 	      var step = [];
 	      var Child = NameSpace.extend({
@@ -5808,7 +5808,7 @@
 	      NameSpace.component("child2", Child);
 	      NameSpace.component("child3", Child2);
 	      NameSpace.component("child4", Child2);
-
+	
 	      var  component = new NameSpace({
 	        template: 
 	          "<div ref=container ><child1 step=child1>\
@@ -5823,7 +5823,7 @@
 	          </child1></div>",
 	        data: {title: 'regularjs'}
 	      })
-
+	
 	      expect(step).to.eql( 
 	        ["config child1", 
 	          "config child21", "init child21", 
@@ -5836,32 +5836,32 @@
 	          "init child22", 
 	        "init child1"]
 	        )
-
+	
 	      component.destroy();
-
-
+	
+	
 	    })
-
-
+	
+	
 	    it("nested component should get the outer component's data before create the binding", function(){
-
+	
 	      var container = document.createElement("div");
 	      var Component = NameSpace.extend({
 	        name: "nest2",
 	        template: "<p>{user.name.first}</p>"
 	      })
-
+	
 	      var component = new NameSpace({
 	        template: "<nest2 user={user}></nest2>",
 	        data: {user: {name: {first: "Zheng"} } }
 	      }).$inject(container);
-
+	
 	      expect(nes.one("p", container).innerHTML).to.equal("Zheng");
-
+	
 	      destroy(component, container);
-
+	
 	    })
-
+	
 	    it("r-component can register dynamic component", function(){
 	     
 	      var container = document.createElement("div");
@@ -5869,48 +5869,48 @@
 	        name: "nest2",
 	        template: "<p>{user.name.first}</p>"
 	      })
-
+	
 	      var Component3 = NameSpace.extend({
 	        name: "nest3",
 	        template: "<p>{user.name.first + ':hello'}</p>"
 	      })
-
+	
 	      var component = new NameSpace({
-
+	
 	        template: "<r-component is=nest2 user={user} ref=component />",
 	        data: {user: {name: {first: "Zheng"} } }
 	      }).$inject(container);
-
+	
 	      expect(nes.one("p", container).innerHTML).to.equal("Zheng");
 	      expect(component.$refs.component instanceof Component2).to.equal(true);
-
+	
 	      destroy(component, container);
-
+	
 	      var component = new NameSpace({
-
+	
 	        template: "<r-component is={name} user={user} ref=component />",
 	        data: {user: {name: {first: "Zheng"} } ,name: 'nest3'}
 	      }).$inject(container);
 	 
 	      expect(component.$refs.component instanceof Component3).to.equal(true);
 	      expect(nes.one("p", container).innerHTML).to.equal("Zheng:hello");
-
+	
 	      component.$update('name', 'nest2');
 	      expect(component.$refs.component instanceof Component2).to.equal(true);
 	      expect(nes.one("p", container).innerHTML).to.equal("Zheng");
 	      destroy(component, container);
 	    })
-
-
+	
+	
 	    describe("nested Component with Event", function(){
-
+	
 	      it("on-* should evaluate the Expression when the listener is called", function(){
 	        var container = document.createElement("div");
 	        var Component = NameSpace.extend({
 	          name: "nested3",
 	          template: "<p on-click={this.$emit('hello')}></p>"
 	        })
-
+	
 	        var i =0;
 	        var component = new NameSpace({
 	          template: "<nested3 on-hello={this.hello()} />",
@@ -5918,13 +5918,13 @@
 	            i++
 	          }
 	        }).$inject(container);
-
+	
 	        dispatchMockEvent(nes.one("p", container), "click");
-
+	
 	        expect(i).to.equal(1);
-
+	
 	        destroy(component, container);
-
+	
 	      })
 	      it("on-*='String' should proxy the listener to outer component", function(){
 	        var container = document.createElement("div");
@@ -5932,7 +5932,7 @@
 	          name: "nested4",
 	          template: "<p on-click={this.$emit('hello', $event)}></p><p on-click={this.$emit('nav', 1)} ref=p></p>"
 	        })
-
+	
 	        var i =0;
 	        var type=null;
 	        var page = null;
@@ -5948,24 +5948,24 @@
 	            page = p
 	          }
 	        }).$inject(container);
-
+	
 	        var ps = nes.all("p", container);
 	        dispatchMockEvent( ps[0], "click");
-
+	
 	        expect(i).to.equal(1);
 	        expect(type).to.equal("click");
-
+	
 	        dispatchMockEvent( ps[1], "click");
-
+	
 	        expect(page).to.equal(1);
-
+	
 	        destroy(component, container);
-
+	
 	      }) 
-
-
-
-
+	
+	
+	
+	
 	  })
 	    // stop parent <-> component
 	    it("isolate = 3 should make the component isolate to/from parent", function(){
@@ -5974,35 +5974,35 @@
 	        name: 'nested5',
 	        template: "<p>{title}</p>"
 	      })
-
-
+	
+	
 	      var component = new NameSpace({
 	        template: "<span>{title}</span><nested5 ref=a title={title} isolate></nested5><nested5 ref=b title={title} isolate=3></nested5>",
 	        data: {title: 'leeluolee'}
 	      }).$inject(containerAll);
-
+	
 	      var p1= containerAll.getElementsByTagName("p")[0]
 	      var p2= containerAll.getElementsByTagName("p")[1]
 	      var span= containerAll.getElementsByTagName("span")[0]
 	      expect(p1.innerHTML).to.equal("leeluolee");
 	      expect(p2.innerHTML).to.equal("leeluolee");
 	      expect(span.innerHTML).to.equal("leeluolee");
-
+	
 	      component.$update("title", 'leeluolee2')
 	      expect(p1.innerHTML).to.equal("leeluolee");
 	      expect(p2.innerHTML).to.equal("leeluolee");
 	      expect(span.innerHTML).to.equal("leeluolee2");
-
+	
 	      component.$refs.a.$update("title", "leeluolee3");
 	      expect(p1.innerHTML).to.equal("leeluolee3");
 	      expect(p2.innerHTML).to.equal("leeluolee");
 	      expect(span.innerHTML).to.equal("leeluolee2");
-
+	
 	      component.$refs.b.$update("title", "leeluolee4");
 	      expect(p1.innerHTML).to.equal("leeluolee3");
 	      expect(p2.innerHTML).to.equal("leeluolee4");
 	      expect(span.innerHTML).to.equal("leeluolee2");
-
+	
 	      destroy(component, containerAll);
 	      
 	    })
@@ -6020,12 +6020,12 @@
 	      var span= containerAll.getElementsByTagName("span")[0]
 	      expect(p1.innerHTML).to.equal("leeluolee");
 	      expect(span.innerHTML).to.equal("leeluolee");
-
+	
 	      component.$update("title", 'leeluolee2')
-
+	
 	      expect(p1.innerHTML).to.equal("leeluolee");
 	      expect(span.innerHTML).to.equal("leeluolee2");
-
+	
 	      component.$refs.a.$update("title", "leeluolee3");
 	      expect(p1.innerHTML).to.equal("leeluolee3");
 	      expect(span.innerHTML).to.equal("leeluolee3");
@@ -6044,21 +6044,21 @@
 	      }).$inject(containerAll);
 	      var p1= containerAll.getElementsByTagName("p")[0]
 	      var span= containerAll.getElementsByTagName("span")[0]
-
+	
 	      expect(p1.innerHTML).to.equal("leeluolee");
 	      expect(span.innerHTML).to.equal("leeluolee");
-
+	
 	      component.$update("title", 'leeluolee2')
 	      
 	      expect(p1.innerHTML).to.equal("leeluolee2");
 	      expect(span.innerHTML).to.equal("leeluolee2");
-
+	
 	      component.$refs.a.$update("title", "leeluolee3");
 	      expect(p1.innerHTML).to.equal("leeluolee3");
 	      expect(span.innerHTML).to.equal("leeluolee2");
 	      destroy(component, containerAll);
 	    })
-
+	
 	    //@TODO
 	    it("component with (isolate &2) should stop digest phase from parent", function(){
 	      var Test = NameSpace.extend({
@@ -6071,7 +6071,7 @@
 	          this.num++;
 	          return this.supr();
 	        }
-
+	
 	      })
 	      var component = new NameSpace({
 	        template: "<span>{title}</span>\
@@ -6081,23 +6081,23 @@
 	          <nested7 ref=d title={title} ></nested7>",
 	        data: {title: 'leeluolee'}
 	      });
-
+	
 	      expect(component.$refs.a.num).to.equal(1);
 	      expect(component.$refs.b.num).to.equal(1);
 	      expect(component.$refs.c.num).to.equal(2);
 	      expect(component.$refs.d.num).to.equal(2);
-
+	
 	      component.$update('title', 'hello')
-
+	
 	      expect(component.$refs.a.num).to.equal(1);
 	      expect(component.$refs.b.num).to.equal(1);
 	      expect(component.$refs.c.num).to.equal(4);
 	      expect(component.$refs.d.num).to.equal(4);
-
+	
 	    })
-
-
-
+	
+	
+	
 	    it("ab-cd-ef should convert to abCdEf when passed to nested component", function(){
 	      var Test = NameSpace.extend({
 	        name: 'nested',
@@ -6107,7 +6107,7 @@
 	        template: "<span>{title}</span><nested ref=a my-title={title} myHome={1}></nested>",
 	        data: {title: 'leeluolee'}
 	      }).$inject(containerAll);
-
+	
 	      expect(component.$refs.a.data.myTitle).to.equal('leeluolee')
 	      expect(component.$refs.a.data.myHome).to.equal(1)
 	      destroy(component, containerAll);
@@ -6130,20 +6130,20 @@
 	      expect(data.isNew).to.equal(true)
 	      expect(data.normal).to.equal(true)
 	    })
-
-
+	
+	
 	    it("auto unwatch when component destroy", function(){
-
+	
 	      var Component1 = NameSpace.extend({
 	        name: 'unwatch_c1',
 	        template: "<div></div>"
 	      })
-
+	
 	      var Component2 = NameSpace.extend({
 	        name: 'unwatch_c2',
 	        template: "{#if show}<unwatch_c1 a={a} b={b} ref=c></unwatch_c1>{/if}"
 	      })
-
+	
 	      var component = new Component2({
 	        data: {
 	          show: true
@@ -6156,24 +6156,24 @@
 	      expect(component2._watchers).to.equal(null)
 	    })
 	})
-
-
+	
+	
 
 
 /***/ },
 /* 14 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var expect = __webpack_require__(26);
-	var _ = __webpack_require__(18);
+	var expect = __webpack_require__(29);
+	var _ = __webpack_require__(21);
 	var shim = __webpack_require__(22);
 	var extend = __webpack_require__(23);
 	var diff = __webpack_require__(24)
 	var diffArray = diff.diffArray;
 	var diffObject = diff.diffObject;
-
-
-
+	
+	
+	
 	describe("Regular.util", function(){
 	  it('klass"s extend should works as expect', function(){
 	    function A(){}
@@ -6181,20 +6181,20 @@
 	    A.prototype.hello = function(){
 	      this.b = 1;
 	    }
-
+	
 	    var B = A.extend({
 	      hello: function(){
 	        this.supr();
 	        this.a = 2;
 	      }
 	    })
-
+	
 	    var b = new B()
 	    b.hello();
-
+	
 	    expect(b.b).to.equal(1);
 	    expect(b.a).to.equal(2);
-
+	
 	    var C = B.extend({
 	      hello: function(){
 	        this.supr();
@@ -6202,19 +6202,19 @@
 	      },
 	      say: function(){}
 	    })
-
+	
 	    var c = new C();
 	    c.hello();
-
+	
 	    expect(c.a).to.equal(2);
 	    expect(c.b).to.equal(1);
 	    expect(c.c).to.equal(3);
 	  })
-
+	
 	  it('extend can work on raw function', function(){
 	    function A(){}
 	    extend(A);
-
+	
 	    A.implement({
 	      hello: function(){
 	        this.b = 1;
@@ -6222,29 +6222,29 @@
 	    });
 	    expect(typeof A.implement).to.equal('function')
 	    expect(typeof A.extend).to.equal('function')
-
+	
 	    var B = A.extend({
 	      hello: function(){
 	        this.supr();
 	        this.a = 2;
 	      }
 	    });
-
+	
 	    var b = new B
 	    b.hello();
-
+	
 	    expect(b.a).to.equal(2);
 	    expect(b.b).to.equal(1);
-
+	
 	  })
-
+	
 	  it('klass.implement should works as expected', function(){
 	    function A(){}
 	    A.prototype.hello = function(){
 	      this.b = 1;
 	    }
 	    extend(A);
-
+	
 	    var B = A.extend();
 	    B.implement({
 	      hello: function(){
@@ -6254,28 +6254,28 @@
 	    })
 	    var b = new B;
 	    b.hello();
-
+	
 	    expect(b.a).to.equal(2);
 	    expect(b.b).to.equal(1);
-
+	
 	  })
-
+	
 	  it('_.extend should works as expect', function(){
 	    var a = {a:1};
 	    _.extend(a, {
 	      a:2,
 	      b:3
 	    },true);
-
+	
 	    expect(a).to.eql({a:2,b:3})
-
+	
 	    var c = {a:1};
 	    _.extend(c, {a:2})
 	    expect(c).to.eql({a:1})
-
+	
 	    // expect(_.extend(c, {b:1,c:2},["c"])).to.eql({a:1,c:2})
 	  })
-
+	
 	  it('diffArray should works as expect', function(){
 	    expect(diffArray([], [1,2], true)).to.eql([
 	      {
@@ -6298,73 +6298,73 @@
 	    expect(diffArray(_.slice(a, 1),[], true)).to.eql([
 	      { index: 0, add: 2, removed: []} 
 	    ]);
-
+	
 	    expect(diffArray([{a:1},{a:3}], [{a:2}, {a:3}])).to.equal(true)
 	    expect(diffArray([1,2], [1,2])).to.equal(false)
 	  })
-
+	
 	  it('complex diffObject should work as expect when the values are deep Equal', function(){
-
+	
 	    var obj = {a: 1, b:2, c:3};
 	    var obj2 = {a: 1, b:2, c:3};
-
+	
 	    expect( diffObject(obj, obj2, true) ).to.eql([])
-
+	
 	  })
-
+	
 	  it('complex diffObject should work as expect when the values aren"t deep Equal', function(){
-
+	
 	    var obj = { a: 1, b:2, c:3 };
 	    var obj2 = { a: 1, b:2, c:4 };
-
+	
 	    expect( diffObject(obj, obj2, true) ).to.eql([ { index: 2, add: 1, removed: [ 'c' ] } ] )
-
+	
 	  })
-
+	
 	  it('complex diffObject"s equalitation should judged by value, but not the key ', function(){
-
+	
 	    var obj = { a: 1, b:2, c:3 };
 	    var obj2 = { a: 1, c: 2};
-
+	
 	    expect( diffObject(obj, obj2, true) ).to.eql([ { index: 2, add: 1, removed: [] } ] )
-
+	
 	  })
-
+	
 	  it('complex diffObject should work as expect when the keys"s number aren"t equal', function(){
-
+	
 	    var obj = { a: 1, b:2, c:3 };
 	    var obj2 = { a: 1, b:2};
-
+	
 	    expect( diffObject(obj, obj2, true) ).to.eql([ { index: 2, add: 1, removed: [  ] } ] )
-
+	
 	  })
-
+	
 	  it('simple diffObject should work as expect when the value are deep Equal', function(){
-
+	
 	    var obj = {a: 1, b:2, c:3};
 	    var obj2 = {a: 1, b:2, c:3};
-
+	
 	    expect( diffObject(obj, obj2) ).to.equal(false)
-
+	
 	  })
-
+	
 	  it('simple diffObject should work as expect when the value aren"t deep Equal', function(){
-
+	
 	    var obj = {a: 1, b:2, c:3};
 	    var obj2 = {a: 1, b:2, c:4};
-
+	
 	    expect( diffObject(obj, obj2) ).to.equal(true)
-
+	
 	  })
-
-
+	
+	
 	  it('_.equals should works as expect', function(){
 	    expect(_.equals(1,2)).to.equal(false)
 	    expect(_.equals(1,1)).to.equal(true)
 	    expect(_.equals(NaN,NaN)).to.equal(true)
 	    expect(_.equals(null,undefined)).to.equal(false)
 	  })
-
+	
 	  it('_.throttle should works as expect', function(){
 	    var k=0;
 	    var a =  _.throttle(function (){k++});
@@ -6384,34 +6384,34 @@
 	    expect(_.clone(c)).to.eql([1,2,3]);
 	    expect(_.clone(1)).to.eql(1);
 	  })
-
+	
 	  it('_.cache should works as expect', function(){
 	    var cache = _.cache(2);   
 	    cache.set('name',1)
 	    cache.set('name2',2)
 	    cache.set('name3', 3);
 	    cache.set('name4', 4);
-
+	
 	    expect(cache.get('name')).to.eql(undefined);
 	    expect(cache.len()).to.eql(3);
-
+	
 	  })
 	  it('_.escape should works as expect', function(){
-
+	
 	   expect(_.escape('<div hello>')).to.equal('&lt;div hello&gt;')
 	   expect(_.escape('""')).to.equal('&quot;&quot;')
 	  })
-
-
-
+	
+	
+	
 	  it("_.trackErrorPos should have no '...' prefix if not slice", function(){
 	    expect(_.trackErrorPos("abcdefghi", 1)).to.equal('[1] abcdefghi\n     ^^^\n');
 	    expect(_.trackErrorPos("abcdefghi", 2)).to.equal('[1] abcdefghi\n      ^^^\n');
-
-
+	
+	
 	  })
-
-
+	
+	
 	  describe("shim should work as expect", function(){
 	    var map = {
 	      string: {
@@ -6447,7 +6447,7 @@
 	      //   _.extend(map.pro, map.proCache, true);
 	      // }
 	    })
-
+	
 	    it("string.trim", function(){
 	      expect('  dada  '.trim()).to.equal('dada')
 	    })
@@ -6483,7 +6483,7 @@
 	      }.bind({a:1}, 1, 2)(3)
 	    })
 	  })
-
+	
 	})
 
 
@@ -6491,11 +6491,11 @@
 /* 15 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var expect = __webpack_require__(26);
+	var expect = __webpack_require__(29);
 	var Event = __webpack_require__(25);
-
-
-
+	
+	
+	
 	describe("EventEmitter", function(){
 	  it("Event can 'mixTo' other [Object] and [Function]", function(){
 	    var obj = {};
@@ -6503,7 +6503,7 @@
 	    var obj2 = new Foo();
 	    Event.mixTo(obj2);
 	    Event.mixTo(obj);
-
+	
 	    expect(obj.$on).to.be.an("function");
 	    expect(obj.$off).to.be.an("function");
 	    expect(obj.$emit).to.be.an("function");
@@ -6511,7 +6511,7 @@
 	    expect(obj2.$off).to.be.an("function");
 	    expect(obj2.$emit).to.be.an("function");
 	  })
-
+	
 	  it("$emit|$on should works correctly with basic usage ", function(){
 	    var eo = new Event();
 	    var obj = {};
@@ -6519,7 +6519,7 @@
 	      obj.name = name;
 	    });
 	    eo.$emit("event1", "leeluolee");
-
+	
 	    expect(obj.name).to.equal("leeluolee")
 	  })
 	  it("$on should accepet [Object] to act multi-binding ", function(){
@@ -6538,7 +6538,7 @@
 	    eo.$emit("changename", "leeluolee");
 	    expect(obj.name).to.equal("leeluolee")
 	  })
-
+	
 	  it("$on can bind multi event with same eventName", function(){
 	    var eo = new Event();
 	    var obj = {};
@@ -6555,9 +6555,9 @@
 	    expect(obj.name).to.equal(12)
 	    expect(obj.name2).to.equal(12)
 	    expect(obj.name3).to.equal(12)
-
+	
 	  })
-
+	
 	  it("$off can unbind multi events with same eventName", function(){
 	    var eo = new Event;
 	    var obj = {};
@@ -6574,20 +6574,20 @@
 	    eo.$on("event1", function(name3){
 	      obj.name3 = name3;
 	    });
-
-
+	
+	
 	    eo.$off("event1", nameFn);
 	    eo.$emit("event1", 12);
 	    expect(obj.name).to.equal(undefined)
 	    expect(obj.name2).to.equal(12)
 	    expect(obj.name3).to.equal(12)
-
+	
 	    eo.$off("event1");
 	    eo.$emit("event1", 120);
 	    expect(obj.name).to.equal(undefined)
 	    expect(obj.name2).to.equal(12)
 	    expect(obj.name3).to.equal(12)
-
+	
 	  })
 	  it("$off can unbind all events when have no arguments passed in", function(){
 	    var eo = new Event;
@@ -6605,7 +6605,7 @@
 	    eo.$on("event1", function(name3){
 	      obj.name3 = name3;
 	    });
-
+	
 	    eo.$off();
 	    eo.$emit("age", 120);
 	    eo.$emit("event1", 120);
@@ -6614,8 +6614,8 @@
 	    expect(obj.name1).to.equal(undefined)
 	    expect(obj.name2).to.equal(undefined)
 	  })
-
-
+	
+	
 	})
 
 
@@ -6623,12 +6623,12 @@
 /* 16 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var env =  __webpack_require__(27);
-	var config = __webpack_require__(28); 
-	var Regular = module.exports = __webpack_require__(29);
+	var env =  __webpack_require__(26);
+	var config = __webpack_require__(27); 
+	var Regular = module.exports = __webpack_require__(28);
 	var Parser = Regular.Parser;
 	var Lexer = Regular.Lexer;
-
+	
 	if(env.browser){
 	    __webpack_require__(32);
 	    __webpack_require__(33);
@@ -6636,10 +6636,10 @@
 	    Regular.dom = __webpack_require__(17);
 	}
 	Regular.env = env;
-	Regular.util = __webpack_require__(18);
+	Regular.util = __webpack_require__(21);
 	Regular.parse = function(str, options){
 	  options = options || {};
-
+	
 	  if(options.BEGIN || options.END){
 	    if(options.BEGIN) config.BEGIN = options.BEGIN;
 	    if(options.END) config.END = options.END;
@@ -6648,8 +6648,8 @@
 	  var ast = new Parser(str).parse();
 	  return !options.stringify? ast : JSON.stringify(ast);
 	}
-
-
+	
+	
 
 
 /***/ },
@@ -6659,38 +6659,38 @@
 	
 	// thanks for angular && mootools for some concise&cross-platform  implemention
 	// =====================================
-
+	
 	// The MIT License
 	// Copyright (c) 2010-2014 Google, Inc. http://angularjs.org
-
+	
 	// ---
 	// license: MIT-style license. http://mootools.net
-
-
+	
+	
 	var dom = module.exports;
-	var env = __webpack_require__(27);
-	var _ = __webpack_require__(18);
+	var env = __webpack_require__(26);
+	var _ = __webpack_require__(21);
 	var consts = __webpack_require__(30);
 	var tNode = document.createElement('div')
 	var addEvent, removeEvent;
 	var noop = function(){}
-
+	
 	var namespaces = consts.NAMESPACE;
-
+	
 	dom.body = document.body;
-
+	
 	dom.doc = document;
-
+	
 	// camelCase
 	function camelCase(str){
 	  return ("" + str).replace(/-\D/g, function(match){
 	    return match.charAt(1).toUpperCase();
 	  });
 	}
-
-
+	
+	
 	dom.tNode = tNode;
-
+	
 	if(tNode.addEventListener){
 	  addEvent = function(node, type, fn) {
 	    node.addEventListener(type, fn, false);
@@ -6706,27 +6706,27 @@
 	    node.detachEvent('on' + type, fn); 
 	  }
 	}
-
-
+	
+	
 	dom.msie = parseInt((/msie (\d+)/.exec(navigator.userAgent.toLowerCase()) || [])[1]);
 	if (isNaN(dom.msie)) {
 	  dom.msie = parseInt((/trident\/.*; rv:(\d+)/.exec(navigator.userAgent.toLowerCase()) || [])[1]);
 	}
-
+	
 	dom.find = function(sl){
 	  if(document.querySelector) {
 	    try{
 	      return document.querySelector(sl);
 	    }catch(e){
-
+	
 	    }
 	  }
 	  if(sl.indexOf('#')!==-1) return document.getElementById( sl.slice(1) );
 	}
-
-
+	
+	
 	dom.inject = function(node, refer, position){
-
+	
 	  position = position || 'bottom';
 	  if(!node) return ;
 	  if(Array.isArray(node)){
@@ -6736,7 +6736,7 @@
 	      node.appendChild(tmp[i])
 	    }
 	  }
-
+	
 	  var firstChild, next;
 	  switch(position){
 	    case 'bottom':
@@ -6760,12 +6760,12 @@
 	      refer.parentNode.insertBefore( node, refer );
 	  }
 	}
-
-
+	
+	
 	dom.id = function(id){
 	  return document.getElementById(id);
 	}
-
+	
 	// createElement 
 	dom.create = function(type, ns, attrs){
 	  if(ns === 'svg'){
@@ -6774,14 +6774,14 @@
 	  }
 	  return !ns? document.createElement(type): document.createElementNS(ns, type);
 	}
-
+	
 	// documentFragment
 	dom.fragment = function(){
 	  return document.createDocumentFragment();
 	}
-
-
-
+	
+	
+	
 	var specialAttr = {
 	  'class': function(node, value){
 	     ('className' in node && (!node.namespaceURI || node.namespaceURI === namespaces.html  )) ? 
@@ -6797,8 +6797,8 @@
 	    node.value = (value != null) ? value : '';
 	  }
 	}
-
-
+	
+	
 	// attribute Setter & Getter
 	dom.attr = function(node, name, value){
 	  if (_.isBooleanAttr(name)) {
@@ -6830,8 +6830,8 @@
 	    return ret === null ? undefined : ret;
 	  }
 	}
-
-
+	
+	
 	dom.on = function(node, type, handler){
 	  var types = type.split(' ');
 	  handler.real = function(ev){
@@ -6853,8 +6853,8 @@
 	    removeEvent(node, type, handler);
 	  })
 	}
-
-
+	
+	
 	dom.text = (function (){
 	  var map = {};
 	  if (dom.msie && dom.msie < 9) {
@@ -6872,8 +6872,8 @@
 	    node[textProp] = value;
 	  }
 	})();
-
-
+	
+	
 	dom.html = function( node, html ){
 	  if(typeof html === "undefined"){
 	    return node.innerHTML;
@@ -6881,15 +6881,15 @@
 	    node.innerHTML = html;
 	  }
 	}
-
+	
 	dom.replace = function(node, replaced){
 	  if(replaced.parentNode) replaced.parentNode.replaceChild(node, replaced);
 	}
-
+	
 	dom.remove = function(node){
 	  if(node.parentNode) node.parentNode.removeChild(node);
 	}
-
+	
 	// css Settle & Getter from angular
 	// =================================
 	// it isnt computed style 
@@ -6903,12 +6903,12 @@
 	    return;
 	  }
 	  if ( typeof value !== "undefined" ) {
-
+	
 	    name = camelCase(name);
 	    if(name) node.style[name] = value;
-
+	
 	  } else {
-
+	
 	    var val;
 	    if (dom.msie <= 8) {
 	      // this is some IE specific weirdness that jQuery 1.6.4 does not sure why
@@ -6922,28 +6922,28 @@
 	    return  val;
 	  }
 	}
-
+	
 	dom.addClass = function(node, className){
 	  var current = node.className || "";
 	  if ((" " + current + " ").indexOf(" " + className + " ") === -1) {
 	    node.className = current? ( current + " " + className ) : className;
 	  }
 	}
-
+	
 	dom.delClass = function(node, className){
 	  var current = node.className || "";
 	  node.className = (" " + current + " ").replace(" " + className + " ", " ").trim();
 	}
-
+	
 	dom.hasClass = function(node, className){
 	  var current = node.className || "";
 	  return (" " + current + " ").indexOf(" " + className + " ") !== -1;
 	}
-
-
-
+	
+	
+	
 	// simple Event wrap
-
+	
 	//http://stackoverflow.com/questions/11068196/ie8-ie7-onchange-event-is-emited-only-after-repeated-selection
 	function fixEventName(elem, name){
 	  return (name === 'change'  &&  dom.msie < 9 && 
@@ -6952,7 +6952,7 @@
 	      )
 	    )? 'click': name;
 	}
-
+	
 	var rMouseEvent = /^(?:click|dblclick|contextmenu|DOMMouseScroll|mouse(?:\w+))$/
 	var doc = document;
 	doc = (!doc.compatMode || doc.compatMode === 'CSS1Compat') ? doc.documentElement : doc.body;
@@ -6961,10 +6961,10 @@
 	  if(ev._fixed) return ev;
 	  this.event = ev;
 	  this.target = ev.target || ev.srcElement;
-
+	
 	  var type = this.type = ev.type;
 	  var button = this.button = ev.button;
-
+	
 	  // if is mouse event patch pageX
 	  if(rMouseEvent.test(type)){ //fix pageX
 	    this.pageX = (ev.pageX != null) ? ev.pageX : ev.clientX + doc.scrollLeft;
@@ -6989,7 +6989,7 @@
 	  }
 	  this._fixed = true;
 	}
-
+	
 	_.extend(Event.prototype, {
 	  stop: function(){
 	    this.preventDefault().stopPropagation();
@@ -7008,8 +7008,8 @@
 	    if(this.event.stopImmediatePropagation) this.event.stopImmediatePropagation();
 	  }
 	})
-
-
+	
+	
 	dom.nextFrame = (function(){
 	    var request = window.requestAnimationFrame ||
 	                  window.webkitRequestAnimationFrame ||
@@ -7017,7 +7017,7 @@
 	                  function(callback){
 	                    return setTimeout(callback, 16)
 	                  }
-
+	
 	    var cancel = window.cancelAnimationFrame ||
 	                 window.webkitCancelAnimationFrame ||
 	                 window.mozCancelAnimationFrame ||
@@ -7031,7 +7031,7 @@
 	    return function(){ cancel(id); }
 	  }
 	})();
-
+	
 	// 3ks for angular's raf  service
 	var k
 	dom.nextReflow = dom.msie? function(callback){
@@ -7040,812 +7040,23 @@
 	    callback();
 	  })
 	}: dom.nextFrame;
-
-
-
+	
+	
+	
 
 
 /***/ },
 /* 18 */
 /***/ function(module, exports, __webpack_require__) {
 
-	/* WEBPACK VAR INJECTION */(function(global) {__webpack_require__(22)();
-
-
-
-	var _  = module.exports;
-	var entities = __webpack_require__(31);
-	var slice = [].slice;
-	var o2str = ({}).toString;
-	var win = typeof window !=='undefined'? window: global;
-
-
-	_.noop = function(){};
-	_.uid = (function(){
-	  var _uid=0;
-	  return function(){
-	    return _uid++;
-	  }
-	})();
-
-	_.extend = function( o1, o2, override ){
-	  for(var i in o2) if (o2.hasOwnProperty(i)){
-	    if( o1[i] === undefined || override === true ){
-	      o1[i] = o2[i]
-	    }
-	  }
-	  return o1;
-	}
-
-	_.keys = function(obj){
-	  if(Object.keys) return Object.keys(obj);
-	  var res = [];
-	  for(var i in obj) if(obj.hasOwnProperty(i)){
-	    res.push(i);
-	  }
-	  return res;
-	}
-
-	_.varName = 'd';
-	_.setName = 'p_';
-	_.ctxName = 'c';
-	_.extName = 'e';
-
-	_.rWord = /^[\$\w]+$/;
-	_.rSimpleAccessor = /^[\$\w]+(\.[\$\w]+)*$/;
-
-	_.nextTick = typeof setImmediate === 'function'? 
-	  setImmediate.bind(win) : 
-	  function(callback) {
-	    setTimeout(callback, 0) 
-	  }
-
-
-
-	_.prefix = "var " + _.varName + "=" + _.ctxName + ".data;" +  _.extName  + "=" + _.extName + "||'';";
-
-
-	_.slice = function(obj, start, end){
-	  var res = [];
-	  for(var i = start || 0, len = end || obj.length; i < len; i++){
-	    var item = obj[i];
-	    res.push(item)
-	  }
-	  return res;
-	}
-
-	_.typeOf = function (o) {
-	  return o == null ? String(o) :o2str.call(o).slice(8, -1).toLowerCase();
-	}
-
-
-	_.makePredicate = function makePredicate(words, prefix) {
-	    if (typeof words === "string") {
-	        words = words.split(" ");
-	    }
-	    var f = "",
-	    cats = [];
-	    out: for (var i = 0; i < words.length; ++i) {
-	        for (var j = 0; j < cats.length; ++j){
-	          if (cats[j][0].length === words[i].length) {
-	              cats[j].push(words[i]);
-	              continue out;
-	          }
-	        }
-	        cats.push([words[i]]);
-	    }
-	    function compareTo(arr) {
-	        if (arr.length === 1) return f += "return str === '" + arr[0] + "';";
-	        f += "switch(str){";
-	        for (var i = 0; i < arr.length; ++i){
-	           f += "case '" + arr[i] + "':";
-	        }
-	        f += "return true}return false;";
-	    }
-
-	    // When there are more than three length categories, an outer
-	    // switch first dispatches on the lengths, to save on comparisons.
-	    if (cats.length > 3) {
-	        cats.sort(function(a, b) {
-	            return b.length - a.length;
-	        });
-	        f += "switch(str.length){";
-	        for (var i = 0; i < cats.length; ++i) {
-	            var cat = cats[i];
-	            f += "case " + cat[0].length + ":";
-	            compareTo(cat);
-	        }
-	        f += "}";
-
-	        // Otherwise, simply generate a flat `switch` statement.
-	    } else {
-	        compareTo(words);
-	    }
-	    return new Function("str", f);
-	}
-
-
-	_.trackErrorPos = (function (){
-	  // linebreak
-	  var lb = /\r\n|[\n\r\u2028\u2029]/g;
-	  var minRange = 20, maxRange = 20;
-	  function findLine(lines, pos){
-	    var tmpLen = 0;
-	    for(var i = 0,len = lines.length; i < len; i++){
-	      var lineLen = (lines[i] || "").length;
-
-	      if(tmpLen + lineLen > pos) {
-	        return {num: i, line: lines[i], start: pos - i - tmpLen , prev:lines[i-1], next: lines[i+1] };
-	      }
-	      // 1 is for the linebreak
-	      tmpLen = tmpLen + lineLen ;
-	    }
-	  }
-	  function formatLine(str,  start, num, target){
-	    var len = str.length;
-	    var min = start - minRange;
-	    if(min < 0) min = 0;
-	    var max = start + maxRange;
-	    if(max > len) max = len;
-
-	    var remain = str.slice(min, max);
-	    var prefix = "[" +(num+1) + "] " + (min > 0? ".." : "")
-	    var postfix = max < len ? "..": "";
-	    var res = prefix + remain + postfix;
-	    if(target) res += "\n" + new Array(start-min + prefix.length + 1).join(" ") + "^^^";
-	    return res;
-	  }
-	  return function(input, pos){
-	    if(pos > input.length-1) pos = input.length-1;
-	    lb.lastIndex = 0;
-	    var lines = input.split(lb);
-	    var line = findLine(lines,pos);
-	    var start = line.start, num = line.num;
-
-	    return (line.prev? formatLine(line.prev, start, num-1 ) + '\n': '' ) + 
-	      formatLine(line.line, start, num, true) + '\n' + 
-	      (line.next? formatLine(line.next, start, num+1 ) + '\n': '' );
-
-	  }
-	})();
-
-
-	var ignoredRef = /\((\?\!|\?\:|\?\=)/g;
-	_.findSubCapture = function (regStr) {
-	  var left = 0,
-	    right = 0,
-	    len = regStr.length,
-	    ignored = regStr.match(ignoredRef); // ignored uncapture
-	  if(ignored) ignored = ignored.length
-	  else ignored = 0;
-	  for (; len--;) {
-	    var letter = regStr.charAt(len);
-	    if (len === 0 || regStr.charAt(len - 1) !== "\\" ) { 
-	      if (letter === "(") left++;
-	      if (letter === ")") right++;
-	    }
-	  }
-	  if (left !== right) throw "RegExp: "+ regStr + "'s bracket is not marched";
-	  else return left - ignored;
-	};
-
-
-	_.escapeRegExp = function( str){// Credit: XRegExp 0.6.1 (c) 2007-2008 Steven Levithan <http://stevenlevithan.com/regex/xregexp/> MIT License
-	  return str.replace(/[-[\]{}()*+?.\\^$|,#\s]/g, function(match){
-	    return '\\' + match;
-	  });
-	};
-
-
-	var rEntity = new RegExp("&(?:(#x[0-9a-fA-F]+)|(#[0-9]+)|(" + _.keys(entities).join('|') + '));', 'gi');
-
-	_.convertEntity = function(chr){
-
-	  return ("" + chr).replace(rEntity, function(all, hex, dec, capture){
-	    var charCode;
-	    if( dec ) charCode = parseInt( dec.slice(1), 10 );
-	    else if( hex ) charCode = parseInt( hex.slice(2), 16 );
-	    else charCode = entities[capture]
-
-	    return String.fromCharCode( charCode )
-	  });
-
-	}
-
-
-	// simple get accessor
-
-	_.createObject = function(o, props){
-	    function Foo() {}
-	    Foo.prototype = o;
-	    var res = new Foo;
-	    if(props) _.extend(res, props);
-	    return res;
-	}
-
-	_.createProto = function(fn, o){
-	    function Foo() { this.constructor = fn;}
-	    Foo.prototype = o;
-	    return (fn.prototype = new Foo());
-	}
-
-
-	_.removeOne = function(list , filter){
-	  var len = list.length;
-	  for(;len--;){
-	    if(filter(list[len])) {
-	      list.splice(len, 1)
-	      return;
-	    }
-	  }
-	}
-
-
-	/**
-	clone
-	*/
-	_.clone = function clone(obj){
-	    var type = _.typeOf(obj);
-	    if(type === 'array'){
-	      var cloned = [];
-	      for(var i=0,len = obj.length; i< len;i++){
-	        cloned[i] = obj[i]
-	      }
-	      return cloned;
-	    }
-	    if(type === 'object'){
-	      var cloned = {};
-	      for(var i in obj) if(obj.hasOwnProperty(i)){
-	        cloned[i] = obj[i];
-	      }
-	      return cloned;
-	    }
-	    return obj;
-	  }
-
-	_.equals = function(now, old){
-	  var type = typeof now;
-	  if(type === 'number' && typeof old === 'number'&& isNaN(now) && isNaN(old)) return true
-	  return now === old;
-	}
-
-	var dash = /-([a-z])/g;
-	_.camelCase = function(str){
-	  return str.replace(dash, function(all, capture){
-	    return capture.toUpperCase();
-	  })
-	}
-
-
-
-	_.throttle = function throttle(func, wait){
-	  var wait = wait || 100;
-	  var context, args, result;
-	  var timeout = null;
-	  var previous = 0;
-	  var later = function() {
-	    previous = +new Date;
-	    timeout = null;
-	    result = func.apply(context, args);
-	    context = args = null;
-	  };
-	  return function() {
-	    var now = + new Date;
-	    var remaining = wait - (now - previous);
-	    context = this;
-	    args = arguments;
-	    if (remaining <= 0 || remaining > wait) {
-	      clearTimeout(timeout);
-	      timeout = null;
-	      previous = now;
-	      result = func.apply(context, args);
-	      context = args = null;
-	    } else if (!timeout) {
-	      timeout = setTimeout(later, remaining);
-	    }
-	    return result;
-	  };
-	};
-
-	// hogan escape
-	// ==============
-	_.escape = (function(){
-	  var rAmp = /&/g,
-	      rLt = /</g,
-	      rGt = />/g,
-	      rApos = /\'/g,
-	      rQuot = /\"/g,
-	      hChars = /[&<>\"\']/;
-
-	  return function(str) {
-	    return hChars.test(str) ?
-	      str
-	        .replace(rAmp, '&amp;')
-	        .replace(rLt, '&lt;')
-	        .replace(rGt, '&gt;')
-	        .replace(rApos, '&#39;')
-	        .replace(rQuot, '&quot;') :
-	      str;
-	  }
-	})();
-
-	_.cache = function(max){
-	  max = max || 1000;
-	  var keys = [],
-	      cache = {};
-	  return {
-	    set: function(key, value) {
-	      if (keys.length > this.max) {
-	        cache[keys.shift()] = undefined;
-	      }
-	      // 
-	      if(cache[key] === undefined){
-	        keys.push(key);
-	      }
-	      cache[key] = value;
-	      return value;
-	    },
-	    get: function(key) {
-	      if (key === undefined) return cache;
-	      return cache[key];
-	    },
-	    max: max,
-	    len:function(){
-	      return keys.length;
-	    }
-	  };
-	}
-
-	// // setup the raw Expression
-	// _.touchExpression = function(expr){
-	//   if(expr.type === 'expression'){
-	//   }
-	//   return expr;
-	// }
-
-
-	// handle the same logic on component's `on-*` and element's `on-*`
-	// return the fire object
-	_.handleEvent = function(value, type ){
-	  var self = this, evaluate;
-	  if(value.type === 'expression'){ // if is expression, go evaluated way
-	    evaluate = value.get;
-	  }
-	  if(evaluate){
-	    return function fire(obj){
-	      self.$update(function(){
-	        var data = this.data;
-	        data.$event = obj;
-	        var res = evaluate(self);
-	        if(res === false && obj && obj.preventDefault) obj.preventDefault();
-	        data.$event = undefined;
-	      })
-
-	    }
-	  }else{
-	    return function fire(){
-	      var args = slice.call(arguments)      
-	      args.unshift(value);
-	      self.$update(function(){
-	        self.$emit.apply(self, args);
-	      })
-	    }
-	  }
-	}
-
-	// only call once
-	_.once = function(fn){
-	  var time = 0;
-	  return function(){
-	    if( time++ === 0) fn.apply(this, arguments);
-	  }
-	}
-
-	_.fixObjStr = function(str){
-	  if(str.trim().indexOf('{') !== 0){
-	    return '{' + str + '}';
-	  }
-	  return str;
-	}
-
-
-	_.map= function(array, callback){
-	  var res = [];
-	  for (var i = 0, len = array.length; i < len; i++) {
-	    res.push(callback(array[i], i));
-	  }
-	  return res;
-	}
-
-	function log(msg, type){
-	  if(typeof console !== "undefined")  console[type || "log"](msg);
-	}
-
-	_.log = log;
-
-
-	_.normListener = function( events  ){
-	    var eventListeners = [];
-	    var pType = _.typeOf( events );
-	    if( pType === 'array' ){
-	      return events;
-	    }else if ( pType === 'object' ){
-	      for( var i in events ) if ( events.hasOwnProperty(i) ){
-	        eventListeners.push({
-	          type: i,
-	          listener: events[i]
-	        })
-	      }
-	    }
-	    return eventListeners;
-	}
-
-
-	//http://www.w3.org/html/wg/drafts/html/master/single-page.html#void-elements
-	_.isVoidTag = _.makePredicate("area base br col embed hr img input keygen link menuitem meta param source track wbr r-content");
-	_.isBooleanAttr = _.makePredicate('selected checked disabled readonly required open autofocus controls autoplay compact loop defer multiple');
-
-
-	_.isExpr = function(expr){
-	  return expr && expr.type === 'expression';
-	}
-	// @TODO: make it more strict
-	_.isGroup = function(group){
-	  return group.inject || group.$inject;
-	}
-
-	_.getCompileFn = function(source, ctx, options){
-	  return ctx.$compile.bind(ctx,source, options)
-	}
-
-	// remove directive param from AST
-	_.fixTagAST = function( tagAST, Component ){
-
-	  if( tagAST.touched ) return;
-
-	  var attrs = tagAST.attrs;
-
-	  if( !attrs ) return;
-
-	  // Maybe multiple directive need same param, 
-	  // We place all param in totalParamMap
-	  var len = attrs.length;
-	  if(!len) return;
-	  var directives=[], otherAttrMap = {};
-	  for(;len--;){
-
-	    var attr = attrs[ len ];
-
-	    var directive = Component.directive( attr.name );
-	    if( directive ) {
-
-	      attr.priority = directive.priority || 1;
-	      attr.directive = true;
-	      directives.push(attr);
-
-	    }else if(attr.type === 'attribute'){
-	      otherAttrMap[attr.name] = attr.value;
-	    }
-	  }
-
-	  directives.forEach( function( attr ){
-	    var directive = Component.directive(attr.name);
-	    var param = directive.param;
-	    if(param && param.length){
-	      attr.param = {};
-	      param.forEach(function( name ){
-	        if( name in otherAttrMap ){
-	          attr.param[name] = otherAttrMap[name] === undefined? true: otherAttrMap[name]
-	          _.removeOne(attrs, function(attr){
-	            return attr.name === name
-	          })
-	        }
-	      })
-	    }
-	  });
-
-	  attrs.sort(function(a1, a2){
-	    // fix IE9- input type can't assign after value
-	    if(a2.name === "type") return 1;
-
-	    var p1 = a1.priority;
-	    var p2 = a2.priority;
-
-	    if(p1 == null) p1 = 10000;
-	    if(p2 == null) p2 = 10000;
-
-	    return p2 - p1;
-
-	  })
-
-	  tagAST.touched = true;
-	}
-
-	_.getParamObj = function(component, param){
-	  var paramObj = {};
-	  if(param) {
-	    for(var i in param) if(param.hasOwnProperty(i)){
-	      var value = param[i];
-	      paramObj[i] =  value && value.type==='expression'? component.$get(value): value;
-	    }
-	  }
-	  return paramObj;
-	}
-
-
-
-
-
-
-	
-	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
-
-/***/ },
-/* 19 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var _ = __webpack_require__(18);
-	var dom  = __webpack_require__(17);
-	var animate = {};
-	var env = __webpack_require__(27);
-
-
-	var 
-	  transitionEnd = 'transitionend', 
-	  animationEnd = 'animationend', 
-	  transitionProperty = 'transition', 
-	  animationProperty = 'animation';
-
-	if(!('ontransitionend' in window)){
-	  if('onwebkittransitionend' in window) {
-	    
-	    // Chrome/Saf (+ Mobile Saf)/Android
-	    transitionEnd += ' webkitTransitionEnd';
-	    transitionProperty = 'webkitTransition'
-	  } else if('onotransitionend' in dom.tNode || navigator.appName === 'Opera') {
-
-	    // Opera
-	    transitionEnd += ' oTransitionEnd';
-	    transitionProperty = 'oTransition';
-	  }
-	}
-	if(!('onanimationend' in window)){
-	  if ('onwebkitanimationend' in window){
-	    // Chrome/Saf (+ Mobile Saf)/Android
-	    animationEnd += ' webkitAnimationEnd';
-	    animationProperty = 'webkitAnimation';
-
-	  }else if ('onoanimationend' in dom.tNode){
-	    // Opera
-	    animationEnd += ' oAnimationEnd';
-	    animationProperty = 'oAnimation';
-	  }
-	}
-
-	/**
-	 * inject node with animation
-	 * @param  {[type]} node      [description]
-	 * @param  {[type]} refer     [description]
-	 * @param  {[type]} direction [description]
-	 * @return {[type]}           [description]
-	 */
-	animate.inject = function( node, refer ,direction, callback ){
-	  callback = callback || _.noop;
-	  if( Array.isArray(node) ){
-	    var fragment = dom.fragment();
-	    var count=0;
-
-	    for(var i = 0,len = node.length;i < len; i++ ){
-	      fragment.appendChild(node[i]); 
-	    }
-	    dom.inject(fragment, refer, direction);
-
-	    // if all nodes is done, we call the callback
-	    var enterCallback = function (){
-	      count++;
-	      if( count === len ) callback();
-	    }
-	    if(len === count) callback();
-	    for( i = 0; i < len; i++ ){
-	      if(node[i].onenter){
-	        node[i].onenter(enterCallback);
-	      }else{
-	        enterCallback();
-	      }
-	    }
-	  }else{
-	    dom.inject( node, refer, direction );
-	    if(node.onenter){
-	      node.onenter(callback)
-	    }else{
-	      callback();
-	    }
-	  }
-	}
-
-	/**
-	 * remove node with animation
-	 * @param  {[type]}   node     [description]
-	 * @param  {Function} callback [description]
-	 * @return {[type]}            [description]
-	 */
-	animate.remove = function(node, callback){
-	  if(!node) return;
-	  var count = 0;
-	  function loop(){
-	    count++;
-	    if(count === len) callback && callback()
-	  }
-	  if(Array.isArray(node)){
-	    for(var i = 0, len = node.length; i < len ; i++){
-	      animate.remove(node[i], loop)
-	    }
-	    return node;
-	  }
-	  if(node.onleave){
-	    node.onleave(function(){
-	      removeDone(node, callback)
-	    })
-	  }else{
-	    removeDone(node, callback)
-	  }
-	}
-
-	var removeDone = function (node, callback){
-	    dom.remove(node);
-	    callback && callback();
-	}
-
-
-
-	animate.startClassAnimate = function ( node, className,  callback, mode ){
-	  var activeClassName, timeout, tid, onceAnim;
-	  if( (!animationEnd && !transitionEnd) || env.isRunning ){
-	    return callback();
-	  }
-
-	  if(mode !== 4){
-	    onceAnim = _.once(function onAnimateEnd(){
-	      if(tid) clearTimeout(tid);
-
-	      if(mode === 2) {
-	        dom.delClass(node, activeClassName);
-	      }
-	      if(mode !== 3){ // mode hold the class
-	        dom.delClass(node, className);
-	      }
-	      dom.off(node, animationEnd, onceAnim)
-	      dom.off(node, transitionEnd, onceAnim)
-
-	      callback();
-
-	    });
-	  }else{
-	    onceAnim = _.once(function onAnimateEnd(){
-	      if(tid) clearTimeout(tid);
-	      callback();
-	    });
-	  }
-	  if(mode === 2){ // auto removed
-	    dom.addClass( node, className );
-
-	    activeClassName = _.map(className.split(/\s+/), function(name){
-	       return name + '-active';
-	    }).join(" ");
-
-	    dom.nextReflow(function(){
-	      dom.addClass( node, activeClassName );
-	      timeout = getMaxTimeout( node );
-	      tid = setTimeout( onceAnim, timeout );
-	    });
-
-	  }else if(mode===4){
-	    dom.nextReflow(function(){
-	      dom.delClass( node, className );
-	      timeout = getMaxTimeout( node );
-	      tid = setTimeout( onceAnim, timeout );
-	    });
-
-	  }else{
-	    dom.nextReflow(function(){
-	      dom.addClass( node, className );
-	      timeout = getMaxTimeout( node );
-	      tid = setTimeout( onceAnim, timeout );
-	    });
-	  }
-
-
-
-	  dom.on( node, animationEnd, onceAnim )
-	  dom.on( node, transitionEnd, onceAnim )
-	  return onceAnim;
-	}
-
-
-	animate.startStyleAnimate = function(node, styles, callback){
-	  var timeout, onceAnim, tid;
-
-	  dom.nextReflow(function(){
-	    dom.css( node, styles );
-	    timeout = getMaxTimeout( node );
-	    tid = setTimeout( onceAnim, timeout );
-	  });
-
-
-	  onceAnim = _.once(function onAnimateEnd(){
-	    if(tid) clearTimeout(tid);
-
-	    dom.off(node, animationEnd, onceAnim)
-	    dom.off(node, transitionEnd, onceAnim)
-
-	    callback();
-
-	  });
-
-	  dom.on( node, animationEnd, onceAnim )
-	  dom.on( node, transitionEnd, onceAnim )
-
-	  return onceAnim;
-	}
-
-
-	/**
-	 * get maxtimeout
-	 * @param  {Node} node 
-	 * @return {[type]}   [description]
-	 */
-	function getMaxTimeout(node){
-	  var timeout = 0,
-	    tDuration = 0,
-	    tDelay = 0,
-	    aDuration = 0,
-	    aDelay = 0,
-	    ratio = 5 / 3,
-	    styles ;
-
-	  if(window.getComputedStyle){
-
-	    styles = window.getComputedStyle(node),
-	    tDuration = getMaxTime( styles[transitionProperty + 'Duration']) || tDuration;
-	    tDelay = getMaxTime( styles[transitionProperty + 'Delay']) || tDelay;
-	    aDuration = getMaxTime( styles[animationProperty + 'Duration']) || aDuration;
-	    aDelay = getMaxTime( styles[animationProperty + 'Delay']) || aDelay;
-	    timeout = Math.max( tDuration+tDelay, aDuration + aDelay );
-
-	  }
-	  return timeout * 1000 * ratio;
-	}
-
-	function getMaxTime(str){
-
-	  var maxTimeout = 0, time;
-
-	  if(!str) return 0;
-
-	  str.split(",").forEach(function(str){
-
-	    time = parseFloat(str);
-	    if( time > maxTimeout ) maxTimeout = time;
-
-	  });
-
-	  return maxTimeout;
-	}
-
-	module.exports = animate;
-
-/***/ },
-/* 20 */
-/***/ function(module, exports, __webpack_require__) {
-
 	// some nested  operation in ast 
 	// --------------------------------
-
+	
 	var dom = __webpack_require__(17);
 	var animate = __webpack_require__(19);
-
+	
 	var combine = module.exports = {
-
+	
 	  // get the initial dom in object
 	  node: function(item){
 	    var children,node, nodes;
@@ -7893,19 +7104,19 @@
 	    }
 	    return group;
 	  },
-
+	
 	  // get the last dom in object(for insertion operation)
 	  last: function(item){
 	    var children = item.children;
-
+	
 	    if(typeof item.last === "function") return item.last();
 	    if(typeof item.nodeType === "number") return item;
-
+	
 	    if(children && children.length) return combine.last(children[children.length - 1]);
 	    if(item.group) return combine.last(item.group);
-
+	
 	  },
-
+	
 	  destroy: function(item, first){
 	    if(!item) return;
 	    if(Array.isArray(item)){
@@ -7921,10 +7132,10 @@
 	      item.children = null;
 	    }
 	  }
-
+	
 	}
-
-
+	
+	
 	// @TODO: need move to dom.js
 	dom.element = function( component, all ){
 	  if(!component) return !all? null: [];
@@ -7940,17 +7151,271 @@
 	  }
 	  return !all? elements[0]: elements;
 	}
-
-
-
+	
+	
+	
 
 
 /***/ },
-/* 21 */
+/* 19 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var exprCache = __webpack_require__(27).exprCache;
-	var _ = __webpack_require__(18);
+	var _ = __webpack_require__(21);
+	var dom  = __webpack_require__(17);
+	var animate = {};
+	var env = __webpack_require__(26);
+	
+	
+	var 
+	  transitionEnd = 'transitionend', 
+	  animationEnd = 'animationend', 
+	  transitionProperty = 'transition', 
+	  animationProperty = 'animation';
+	
+	if(!('ontransitionend' in window)){
+	  if('onwebkittransitionend' in window) {
+	    
+	    // Chrome/Saf (+ Mobile Saf)/Android
+	    transitionEnd += ' webkitTransitionEnd';
+	    transitionProperty = 'webkitTransition'
+	  } else if('onotransitionend' in dom.tNode || navigator.appName === 'Opera') {
+	
+	    // Opera
+	    transitionEnd += ' oTransitionEnd';
+	    transitionProperty = 'oTransition';
+	  }
+	}
+	if(!('onanimationend' in window)){
+	  if ('onwebkitanimationend' in window){
+	    // Chrome/Saf (+ Mobile Saf)/Android
+	    animationEnd += ' webkitAnimationEnd';
+	    animationProperty = 'webkitAnimation';
+	
+	  }else if ('onoanimationend' in dom.tNode){
+	    // Opera
+	    animationEnd += ' oAnimationEnd';
+	    animationProperty = 'oAnimation';
+	  }
+	}
+	
+	/**
+	 * inject node with animation
+	 * @param  {[type]} node      [description]
+	 * @param  {[type]} refer     [description]
+	 * @param  {[type]} direction [description]
+	 * @return {[type]}           [description]
+	 */
+	animate.inject = function( node, refer ,direction, callback ){
+	  callback = callback || _.noop;
+	  if( Array.isArray(node) ){
+	    var fragment = dom.fragment();
+	    var count=0;
+	
+	    for(var i = 0,len = node.length;i < len; i++ ){
+	      fragment.appendChild(node[i]); 
+	    }
+	    dom.inject(fragment, refer, direction);
+	
+	    // if all nodes is done, we call the callback
+	    var enterCallback = function (){
+	      count++;
+	      if( count === len ) callback();
+	    }
+	    if(len === count) callback();
+	    for( i = 0; i < len; i++ ){
+	      if(node[i].onenter){
+	        node[i].onenter(enterCallback);
+	      }else{
+	        enterCallback();
+	      }
+	    }
+	  }else{
+	    dom.inject( node, refer, direction );
+	    if(node.onenter){
+	      node.onenter(callback)
+	    }else{
+	      callback();
+	    }
+	  }
+	}
+	
+	/**
+	 * remove node with animation
+	 * @param  {[type]}   node     [description]
+	 * @param  {Function} callback [description]
+	 * @return {[type]}            [description]
+	 */
+	animate.remove = function(node, callback){
+	  if(!node) return;
+	  var count = 0;
+	  function loop(){
+	    count++;
+	    if(count === len) callback && callback()
+	  }
+	  if(Array.isArray(node)){
+	    for(var i = 0, len = node.length; i < len ; i++){
+	      animate.remove(node[i], loop)
+	    }
+	    return node;
+	  }
+	  if(node.onleave){
+	    node.onleave(function(){
+	      removeDone(node, callback)
+	    })
+	  }else{
+	    removeDone(node, callback)
+	  }
+	}
+	
+	var removeDone = function (node, callback){
+	    dom.remove(node);
+	    callback && callback();
+	}
+	
+	
+	
+	animate.startClassAnimate = function ( node, className,  callback, mode ){
+	  var activeClassName, timeout, tid, onceAnim;
+	  if( (!animationEnd && !transitionEnd) || env.isRunning ){
+	    return callback();
+	  }
+	
+	  if(mode !== 4){
+	    onceAnim = _.once(function onAnimateEnd(){
+	      if(tid) clearTimeout(tid);
+	
+	      if(mode === 2) {
+	        dom.delClass(node, activeClassName);
+	      }
+	      if(mode !== 3){ // mode hold the class
+	        dom.delClass(node, className);
+	      }
+	      dom.off(node, animationEnd, onceAnim)
+	      dom.off(node, transitionEnd, onceAnim)
+	
+	      callback();
+	
+	    });
+	  }else{
+	    onceAnim = _.once(function onAnimateEnd(){
+	      if(tid) clearTimeout(tid);
+	      callback();
+	    });
+	  }
+	  if(mode === 2){ // auto removed
+	    dom.addClass( node, className );
+	
+	    activeClassName = _.map(className.split(/\s+/), function(name){
+	       return name + '-active';
+	    }).join(" ");
+	
+	    dom.nextReflow(function(){
+	      dom.addClass( node, activeClassName );
+	      timeout = getMaxTimeout( node );
+	      tid = setTimeout( onceAnim, timeout );
+	    });
+	
+	  }else if(mode===4){
+	    dom.nextReflow(function(){
+	      dom.delClass( node, className );
+	      timeout = getMaxTimeout( node );
+	      tid = setTimeout( onceAnim, timeout );
+	    });
+	
+	  }else{
+	    dom.nextReflow(function(){
+	      dom.addClass( node, className );
+	      timeout = getMaxTimeout( node );
+	      tid = setTimeout( onceAnim, timeout );
+	    });
+	  }
+	
+	
+	
+	  dom.on( node, animationEnd, onceAnim )
+	  dom.on( node, transitionEnd, onceAnim )
+	  return onceAnim;
+	}
+	
+	
+	animate.startStyleAnimate = function(node, styles, callback){
+	  var timeout, onceAnim, tid;
+	
+	  dom.nextReflow(function(){
+	    dom.css( node, styles );
+	    timeout = getMaxTimeout( node );
+	    tid = setTimeout( onceAnim, timeout );
+	  });
+	
+	
+	  onceAnim = _.once(function onAnimateEnd(){
+	    if(tid) clearTimeout(tid);
+	
+	    dom.off(node, animationEnd, onceAnim)
+	    dom.off(node, transitionEnd, onceAnim)
+	
+	    callback();
+	
+	  });
+	
+	  dom.on( node, animationEnd, onceAnim )
+	  dom.on( node, transitionEnd, onceAnim )
+	
+	  return onceAnim;
+	}
+	
+	
+	/**
+	 * get maxtimeout
+	 * @param  {Node} node 
+	 * @return {[type]}   [description]
+	 */
+	function getMaxTimeout(node){
+	  var timeout = 0,
+	    tDuration = 0,
+	    tDelay = 0,
+	    aDuration = 0,
+	    aDelay = 0,
+	    ratio = 5 / 3,
+	    styles ;
+	
+	  if(window.getComputedStyle){
+	
+	    styles = window.getComputedStyle(node),
+	    tDuration = getMaxTime( styles[transitionProperty + 'Duration']) || tDuration;
+	    tDelay = getMaxTime( styles[transitionProperty + 'Delay']) || tDelay;
+	    aDuration = getMaxTime( styles[animationProperty + 'Duration']) || aDuration;
+	    aDelay = getMaxTime( styles[animationProperty + 'Delay']) || aDelay;
+	    timeout = Math.max( tDuration+tDelay, aDuration + aDelay );
+	
+	  }
+	  return timeout * 1000 * ratio;
+	}
+	
+	function getMaxTime(str){
+	
+	  var maxTimeout = 0, time;
+	
+	  if(!str) return 0;
+	
+	  str.split(",").forEach(function(str){
+	
+	    time = parseFloat(str);
+	    if( time > maxTimeout ) maxTimeout = time;
+	
+	  });
+	
+	  return maxTimeout;
+	}
+	
+	module.exports = animate;
+
+/***/ },
+/* 20 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var exprCache = __webpack_require__(26).exprCache;
+	var _ = __webpack_require__(21);
 	var Parser = __webpack_require__(35);
 	module.exports = {
 	  expression: function(expr, simple){
@@ -7964,8 +7429,543 @@
 	    return new Parser(template).parse();
 	  }
 	}
+	
 
 
+/***/ },
+/* 21 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/* WEBPACK VAR INJECTION */(function(global) {__webpack_require__(22)();
+	
+	
+	
+	var _  = module.exports;
+	var entities = __webpack_require__(31);
+	var slice = [].slice;
+	var o2str = ({}).toString;
+	var win = typeof window !=='undefined'? window: global;
+	
+	
+	_.noop = function(){};
+	_.uid = (function(){
+	  var _uid=0;
+	  return function(){
+	    return _uid++;
+	  }
+	})();
+	
+	_.extend = function( o1, o2, override ){
+	  for(var i in o2) if (o2.hasOwnProperty(i)){
+	    if( o1[i] === undefined || override === true ){
+	      o1[i] = o2[i]
+	    }
+	  }
+	  return o1;
+	}
+	
+	_.keys = function(obj){
+	  if(Object.keys) return Object.keys(obj);
+	  var res = [];
+	  for(var i in obj) if(obj.hasOwnProperty(i)){
+	    res.push(i);
+	  }
+	  return res;
+	}
+	
+	_.varName = 'd';
+	_.setName = 'p_';
+	_.ctxName = 'c';
+	_.extName = 'e';
+	
+	_.rWord = /^[\$\w]+$/;
+	_.rSimpleAccessor = /^[\$\w]+(\.[\$\w]+)*$/;
+	
+	_.nextTick = typeof setImmediate === 'function'? 
+	  setImmediate.bind(win) : 
+	  function(callback) {
+	    setTimeout(callback, 0) 
+	  }
+	
+	
+	
+	_.prefix = "var " + _.varName + "=" + _.ctxName + ".data;" +  _.extName  + "=" + _.extName + "||'';";
+	
+	
+	_.slice = function(obj, start, end){
+	  var res = [];
+	  for(var i = start || 0, len = end || obj.length; i < len; i++){
+	    var item = obj[i];
+	    res.push(item)
+	  }
+	  return res;
+	}
+	
+	_.typeOf = function (o) {
+	  return o == null ? String(o) :o2str.call(o).slice(8, -1).toLowerCase();
+	}
+	
+	
+	_.makePredicate = function makePredicate(words, prefix) {
+	    if (typeof words === "string") {
+	        words = words.split(" ");
+	    }
+	    var f = "",
+	    cats = [];
+	    out: for (var i = 0; i < words.length; ++i) {
+	        for (var j = 0; j < cats.length; ++j){
+	          if (cats[j][0].length === words[i].length) {
+	              cats[j].push(words[i]);
+	              continue out;
+	          }
+	        }
+	        cats.push([words[i]]);
+	    }
+	    function compareTo(arr) {
+	        if (arr.length === 1) return f += "return str === '" + arr[0] + "';";
+	        f += "switch(str){";
+	        for (var i = 0; i < arr.length; ++i){
+	           f += "case '" + arr[i] + "':";
+	        }
+	        f += "return true}return false;";
+	    }
+	
+	    // When there are more than three length categories, an outer
+	    // switch first dispatches on the lengths, to save on comparisons.
+	    if (cats.length > 3) {
+	        cats.sort(function(a, b) {
+	            return b.length - a.length;
+	        });
+	        f += "switch(str.length){";
+	        for (var i = 0; i < cats.length; ++i) {
+	            var cat = cats[i];
+	            f += "case " + cat[0].length + ":";
+	            compareTo(cat);
+	        }
+	        f += "}";
+	
+	        // Otherwise, simply generate a flat `switch` statement.
+	    } else {
+	        compareTo(words);
+	    }
+	    return new Function("str", f);
+	}
+	
+	
+	_.trackErrorPos = (function (){
+	  // linebreak
+	  var lb = /\r\n|[\n\r\u2028\u2029]/g;
+	  var minRange = 20, maxRange = 20;
+	  function findLine(lines, pos){
+	    var tmpLen = 0;
+	    for(var i = 0,len = lines.length; i < len; i++){
+	      var lineLen = (lines[i] || "").length;
+	
+	      if(tmpLen + lineLen > pos) {
+	        return {num: i, line: lines[i], start: pos - i - tmpLen , prev:lines[i-1], next: lines[i+1] };
+	      }
+	      // 1 is for the linebreak
+	      tmpLen = tmpLen + lineLen ;
+	    }
+	  }
+	  function formatLine(str,  start, num, target){
+	    var len = str.length;
+	    var min = start - minRange;
+	    if(min < 0) min = 0;
+	    var max = start + maxRange;
+	    if(max > len) max = len;
+	
+	    var remain = str.slice(min, max);
+	    var prefix = "[" +(num+1) + "] " + (min > 0? ".." : "")
+	    var postfix = max < len ? "..": "";
+	    var res = prefix + remain + postfix;
+	    if(target) res += "\n" + new Array(start-min + prefix.length + 1).join(" ") + "^^^";
+	    return res;
+	  }
+	  return function(input, pos){
+	    if(pos > input.length-1) pos = input.length-1;
+	    lb.lastIndex = 0;
+	    var lines = input.split(lb);
+	    var line = findLine(lines,pos);
+	    var start = line.start, num = line.num;
+	
+	    return (line.prev? formatLine(line.prev, start, num-1 ) + '\n': '' ) + 
+	      formatLine(line.line, start, num, true) + '\n' + 
+	      (line.next? formatLine(line.next, start, num+1 ) + '\n': '' );
+	
+	  }
+	})();
+	
+	
+	var ignoredRef = /\((\?\!|\?\:|\?\=)/g;
+	_.findSubCapture = function (regStr) {
+	  var left = 0,
+	    right = 0,
+	    len = regStr.length,
+	    ignored = regStr.match(ignoredRef); // ignored uncapture
+	  if(ignored) ignored = ignored.length
+	  else ignored = 0;
+	  for (; len--;) {
+	    var letter = regStr.charAt(len);
+	    if (len === 0 || regStr.charAt(len - 1) !== "\\" ) { 
+	      if (letter === "(") left++;
+	      if (letter === ")") right++;
+	    }
+	  }
+	  if (left !== right) throw "RegExp: "+ regStr + "'s bracket is not marched";
+	  else return left - ignored;
+	};
+	
+	
+	_.escapeRegExp = function( str){// Credit: XRegExp 0.6.1 (c) 2007-2008 Steven Levithan <http://stevenlevithan.com/regex/xregexp/> MIT License
+	  return str.replace(/[-[\]{}()*+?.\\^$|,#\s]/g, function(match){
+	    return '\\' + match;
+	  });
+	};
+	
+	
+	var rEntity = new RegExp("&(?:(#x[0-9a-fA-F]+)|(#[0-9]+)|(" + _.keys(entities).join('|') + '));', 'gi');
+	
+	_.convertEntity = function(chr){
+	
+	  return ("" + chr).replace(rEntity, function(all, hex, dec, capture){
+	    var charCode;
+	    if( dec ) charCode = parseInt( dec.slice(1), 10 );
+	    else if( hex ) charCode = parseInt( hex.slice(2), 16 );
+	    else charCode = entities[capture]
+	
+	    return String.fromCharCode( charCode )
+	  });
+	
+	}
+	
+	
+	// simple get accessor
+	
+	_.createObject = function(o, props){
+	    function Foo() {}
+	    Foo.prototype = o;
+	    var res = new Foo;
+	    if(props) _.extend(res, props);
+	    return res;
+	}
+	
+	_.createProto = function(fn, o){
+	    function Foo() { this.constructor = fn;}
+	    Foo.prototype = o;
+	    return (fn.prototype = new Foo());
+	}
+	
+	
+	_.removeOne = function(list , filter){
+	  var len = list.length;
+	  for(;len--;){
+	    if(filter(list[len])) {
+	      list.splice(len, 1)
+	      return;
+	    }
+	  }
+	}
+	
+	
+	/**
+	clone
+	*/
+	_.clone = function clone(obj){
+	    var type = _.typeOf(obj);
+	    if(type === 'array'){
+	      var cloned = [];
+	      for(var i=0,len = obj.length; i< len;i++){
+	        cloned[i] = obj[i]
+	      }
+	      return cloned;
+	    }
+	    if(type === 'object'){
+	      var cloned = {};
+	      for(var i in obj) if(obj.hasOwnProperty(i)){
+	        cloned[i] = obj[i];
+	      }
+	      return cloned;
+	    }
+	    return obj;
+	  }
+	
+	_.equals = function(now, old){
+	  var type = typeof now;
+	  if(type === 'number' && typeof old === 'number'&& isNaN(now) && isNaN(old)) return true
+	  return now === old;
+	}
+	
+	var dash = /-([a-z])/g;
+	_.camelCase = function(str){
+	  return str.replace(dash, function(all, capture){
+	    return capture.toUpperCase();
+	  })
+	}
+	
+	
+	
+	_.throttle = function throttle(func, wait){
+	  var wait = wait || 100;
+	  var context, args, result;
+	  var timeout = null;
+	  var previous = 0;
+	  var later = function() {
+	    previous = +new Date;
+	    timeout = null;
+	    result = func.apply(context, args);
+	    context = args = null;
+	  };
+	  return function() {
+	    var now = + new Date;
+	    var remaining = wait - (now - previous);
+	    context = this;
+	    args = arguments;
+	    if (remaining <= 0 || remaining > wait) {
+	      clearTimeout(timeout);
+	      timeout = null;
+	      previous = now;
+	      result = func.apply(context, args);
+	      context = args = null;
+	    } else if (!timeout) {
+	      timeout = setTimeout(later, remaining);
+	    }
+	    return result;
+	  };
+	};
+	
+	// hogan escape
+	// ==============
+	_.escape = (function(){
+	  var rAmp = /&/g,
+	      rLt = /</g,
+	      rGt = />/g,
+	      rApos = /\'/g,
+	      rQuot = /\"/g,
+	      hChars = /[&<>\"\']/;
+	
+	  return function(str) {
+	    return hChars.test(str) ?
+	      str
+	        .replace(rAmp, '&amp;')
+	        .replace(rLt, '&lt;')
+	        .replace(rGt, '&gt;')
+	        .replace(rApos, '&#39;')
+	        .replace(rQuot, '&quot;') :
+	      str;
+	  }
+	})();
+	
+	_.cache = function(max){
+	  max = max || 1000;
+	  var keys = [],
+	      cache = {};
+	  return {
+	    set: function(key, value) {
+	      if (keys.length > this.max) {
+	        cache[keys.shift()] = undefined;
+	      }
+	      // 
+	      if(cache[key] === undefined){
+	        keys.push(key);
+	      }
+	      cache[key] = value;
+	      return value;
+	    },
+	    get: function(key) {
+	      if (key === undefined) return cache;
+	      return cache[key];
+	    },
+	    max: max,
+	    len:function(){
+	      return keys.length;
+	    }
+	  };
+	}
+	
+	// // setup the raw Expression
+	// _.touchExpression = function(expr){
+	//   if(expr.type === 'expression'){
+	//   }
+	//   return expr;
+	// }
+	
+	
+	// handle the same logic on component's `on-*` and element's `on-*`
+	// return the fire object
+	_.handleEvent = function(value, type ){
+	  var self = this, evaluate;
+	  if(value.type === 'expression'){ // if is expression, go evaluated way
+	    evaluate = value.get;
+	  }
+	  if(evaluate){
+	    return function fire(obj){
+	      self.$update(function(){
+	        var data = this.data;
+	        data.$event = obj;
+	        var res = evaluate(self);
+	        if(res === false && obj && obj.preventDefault) obj.preventDefault();
+	        data.$event = undefined;
+	      })
+	
+	    }
+	  }else{
+	    return function fire(){
+	      var args = slice.call(arguments)      
+	      args.unshift(value);
+	      self.$update(function(){
+	        self.$emit.apply(self, args);
+	      })
+	    }
+	  }
+	}
+	
+	// only call once
+	_.once = function(fn){
+	  var time = 0;
+	  return function(){
+	    if( time++ === 0) fn.apply(this, arguments);
+	  }
+	}
+	
+	_.fixObjStr = function(str){
+	  if(str.trim().indexOf('{') !== 0){
+	    return '{' + str + '}';
+	  }
+	  return str;
+	}
+	
+	
+	_.map= function(array, callback){
+	  var res = [];
+	  for (var i = 0, len = array.length; i < len; i++) {
+	    res.push(callback(array[i], i));
+	  }
+	  return res;
+	}
+	
+	function log(msg, type){
+	  if(typeof console !== "undefined")  console[type || "log"](msg);
+	}
+	
+	_.log = log;
+	
+	
+	_.normListener = function( events  ){
+	    var eventListeners = [];
+	    var pType = _.typeOf( events );
+	    if( pType === 'array' ){
+	      return events;
+	    }else if ( pType === 'object' ){
+	      for( var i in events ) if ( events.hasOwnProperty(i) ){
+	        eventListeners.push({
+	          type: i,
+	          listener: events[i]
+	        })
+	      }
+	    }
+	    return eventListeners;
+	}
+	
+	
+	//http://www.w3.org/html/wg/drafts/html/master/single-page.html#void-elements
+	_.isVoidTag = _.makePredicate("area base br col embed hr img input keygen link menuitem meta param source track wbr r-content");
+	_.isBooleanAttr = _.makePredicate('selected checked disabled readonly required open autofocus controls autoplay compact loop defer multiple');
+	
+	
+	_.isExpr = function(expr){
+	  return expr && expr.type === 'expression';
+	}
+	// @TODO: make it more strict
+	_.isGroup = function(group){
+	  return group.inject || group.$inject;
+	}
+	
+	_.getCompileFn = function(source, ctx, options){
+	  return ctx.$compile.bind(ctx,source, options)
+	}
+	
+	// remove directive param from AST
+	_.fixTagAST = function( tagAST, Component ){
+	
+	  if( tagAST.touched ) return;
+	
+	  var attrs = tagAST.attrs;
+	
+	  if( !attrs ) return;
+	
+	  // Maybe multiple directive need same param, 
+	  // We place all param in totalParamMap
+	  var len = attrs.length;
+	  if(!len) return;
+	  var directives=[], otherAttrMap = {};
+	  for(;len--;){
+	
+	    var attr = attrs[ len ];
+	
+	    var directive = Component.directive( attr.name );
+	    if( directive ) {
+	
+	      attr.priority = directive.priority || 1;
+	      attr.directive = true;
+	      directives.push(attr);
+	
+	    }else if(attr.type === 'attribute'){
+	      otherAttrMap[attr.name] = attr.value;
+	    }
+	  }
+	
+	  directives.forEach( function( attr ){
+	    var directive = Component.directive(attr.name);
+	    var param = directive.param;
+	    if(param && param.length){
+	      attr.param = {};
+	      param.forEach(function( name ){
+	        if( name in otherAttrMap ){
+	          attr.param[name] = otherAttrMap[name] === undefined? true: otherAttrMap[name]
+	          _.removeOne(attrs, function(attr){
+	            return attr.name === name
+	          })
+	        }
+	      })
+	    }
+	  });
+	
+	  attrs.sort(function(a1, a2){
+	    // fix IE9- input type can't assign after value
+	    if(a2.name === "type") return 1;
+	
+	    var p1 = a1.priority;
+	    var p2 = a2.priority;
+	
+	    if(p1 == null) p1 = 10000;
+	    if(p2 == null) p2 = 10000;
+	
+	    return p2 - p1;
+	
+	  })
+	
+	  tagAST.touched = true;
+	}
+	
+	_.getParamObj = function(component, param){
+	  var paramObj = {};
+	  if(param) {
+	    for(var i in param) if(param.hasOwnProperty(i)){
+	      var value = param[i];
+	      paramObj[i] =  value && value.type==='expression'? component.$get(value): value;
+	    }
+	  }
+	  return paramObj;
+	}
+	
+	
+	
+	
+	
+	
+	
+	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
 
 /***/ },
 /* 22 */
@@ -7974,15 +7974,15 @@
 	// shim for es5
 	var slice = [].slice;
 	var tstr = ({}).toString;
-
+	
 	function extend(o1, o2 ){
 	  for(var i in o2) if( o1[i] === undefined){
 	    o1[i] = o2[i]
 	  }
 	  return o2;
 	}
-
-
+	
+	
 	module.exports = function(){
 	  // String proto ;
 	  extend(String.prototype, {
@@ -7990,8 +7990,8 @@
 	      return this.replace(/^\s+|\s+$/g, '');
 	    }
 	  });
-
-
+	
+	
 	  // Array proto;
 	  extend(Array.prototype, {
 	    indexOf: function(obj, from){
@@ -8005,25 +8005,25 @@
 	    // https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Array/forEach
 	    forEach: function(callback, ctx){
 	      var k = 0;
-
+	
 	      // 1. Let O be the result of calling ToObject passing the |this| value as the argument.
 	      var O = Object(this);
-
+	
 	      var len = O.length >>> 0; 
-
+	
 	      if ( typeof callback !== "function" ) {
 	        throw new TypeError( callback + " is not a function" );
 	      }
-
+	
 	      // 7. Repeat, while k < len
 	      while( k < len ) {
-
+	
 	        var kValue;
-
+	
 	        if ( k in O ) {
-
+	
 	          kValue = O[ k ];
-
+	
 	          callback.call( ctx, kValue, k, O );
 	        }
 	        k++;
@@ -8032,12 +8032,12 @@
 	    // @deprecated
 	    //  will be removed at 0.5.0
 	    filter: function(fun, context){
-
+	
 	      var t = Object(this);
 	      var len = t.length >>> 0;
 	      if (typeof fun !== "function")
 	        throw new TypeError();
-
+	
 	      var res = [];
 	      for (var i = 0; i < len; i++)
 	      {
@@ -8048,11 +8048,11 @@
 	            res.push(val);
 	        }
 	      }
-
+	
 	      return res;
 	    }
 	  });
-
+	
 	  // Function proto;
 	  extend(Function.prototype, {
 	    bind: function(context){
@@ -8072,7 +8072,7 @@
 	    }
 	  })
 	}
-
+	
 
 
 /***/ },
@@ -8083,29 +8083,29 @@
 	// Backbone may be freely distributed under the MIT license.
 	// For all details and documentation:
 	// http://backbonejs.org
-
+	
 	// klass: a classical JS OOP façade
 	// https://github.com/ded/klass
 	// License MIT (c) Dustin Diaz 2014
 	  
 	// inspired by backbone's extend and klass
-	var _ = __webpack_require__(18),
+	var _ = __webpack_require__(21),
 	  fnTest = /xy/.test(function(){"xy";}) ? /\bsupr\b/:/.*/,
 	  isFn = function(o){return typeof o === "function"};
-
+	
 	var hooks = {
 	  events: function( propertyValue, proto, supro ){
 	    var eventListeners = proto._eventListeners || [];
 	    var normedEvents = _.normListener(propertyValue);
-
+	
 	    if(normedEvents.length) {
 	      proto._eventListeners = eventListeners.concat( normedEvents );
 	    }
 	    delete proto.events ;
 	  }
 	}
-
-
+	
+	
 	function wrap( k, fn, supro ) {
 	  return function () {
 	    var tmp = this.supr;
@@ -8115,7 +8115,7 @@
 	    return ret;
 	  }
 	}
-
+	
 	function process( what, o, supro ) {
 	  for ( var k in o ) {
 	    if (o.hasOwnProperty(k)) {
@@ -8128,14 +8128,14 @@
 	    }
 	  }
 	}
-
+	
 	// if the property is ["events", "data", "computed"] , we should merge them
 	var merged = ["data", "computed"], mlen = merged.length;
 	module.exports = function extend(o){
 	  o = o || {};
 	  var supr = this, proto,
 	    supro = supr && supr.prototype || {};
-
+	
 	  if(typeof o === 'function'){
 	    proto = o.prototype;
 	    o.implement = implement;
@@ -8146,9 +8146,9 @@
 	  function fn() {
 	    supr.apply(this, arguments);
 	  }
-
+	
 	  proto = _.createProto(fn, supro);
-
+	
 	  function implement(o){
 	    // we need merge the merged property
 	    var len = mlen;
@@ -8159,29 +8159,29 @@
 	        delete o[prop];
 	      }
 	    }
-
-
+	
+	
 	    process(proto, o, supro); 
 	    return this;
 	  }
-
-
-
+	
+	
+	
 	  fn.implement = implement
 	  fn.implement(o)
 	  if(supr.__after__) supr.__after__.call(fn, supr, o);
 	  fn.extend = extend;
 	  return fn;
 	}
-
+	
 
 
 /***/ },
 /* 24 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var _ = __webpack_require__(18);
-
+	var _ = __webpack_require__(21);
+	
 	function simpleDiff(now, old){
 	  var nlen = now.length;
 	  var olen = old.length;
@@ -8192,13 +8192,13 @@
 	    if(now[i] !== old[i]) return  true;
 	  }
 	  return false
-
+	
 	}
-
+	
 	function equals(a,b){
 	  return a === b;
 	}
-
+	
 	// array1 - old array
 	// array2 - new array
 	function ld(array1, array2, equalFn){
@@ -8253,9 +8253,9 @@
 	    var northWest = matrix[i - 1][j - 1];
 	    var west = matrix[i - 1][j];
 	    var north = matrix[i][j - 1];
-
+	
 	    var min = Math.min(north, west, northWest);
-
+	
 	    if (min === west) {
 	      edits.unshift(2); //delete
 	      i--;
@@ -8282,7 +8282,7 @@
 	  var n = 0;m=0;
 	  var steps = [];
 	  var step = {index: null, add:0, removed:[]};
-
+	
 	  for(var i=0;i<edits.length;i++){
 	    if(edits[i] > 0 ){ // NOT LEAVE
 	      if(step.index === null){
@@ -8320,30 +8320,30 @@
 	  }
 	  return steps
 	}
-
-
-
+	
+	
+	
 	// diffObject
 	// ----
 	// test if obj1 deepEqual obj2
 	function diffObject( now, last, diff ){
-
-
+	
+	
 	  if(!diff){
-
+	
 	    for( var j in now ){
 	      if( last[j] !== now[j] ) return true
 	    }
-
+	
 	    for( var n in last ){
 	      if(last[n] !== now[n]) return true;
 	    }
-
+	
 	  }else{
-
+	
 	    var nKeys = _.keys(now);
 	    var lKeys = _.keys(last);
-
+	
 	    /**
 	     * [description]
 	     * @param  {[type]} a    [description]
@@ -8353,14 +8353,14 @@
 	    return diffArray(nKeys, lKeys, diff, function(a, b){
 	      return now[b] === last[a];
 	    });
-
+	
 	  }
-
+	
 	  return false;
-
-
+	
+	
 	}
-
+	
 	module.exports = {
 	  diffArray: diffArray,
 	  diffObject: diffObject
@@ -8372,7 +8372,7 @@
 
 	// simplest event emitter 60 lines
 	// ===============================
-	var slice = [].slice, _ = __webpack_require__(18);
+	var slice = [].slice, _ = __webpack_require__(21);
 	var API = {
 	  $on: function(event, fn) {
 	    if(typeof event === "object"){
@@ -8394,7 +8394,7 @@
 	    if(!event) this._handles = {};
 	    var handles = context._handles,
 	      calls;
-
+	
 	    if (calls = handles[event]) {
 	      if (!fn) {
 	        handles[event] = [];
@@ -8417,7 +8417,7 @@
 	    if(!event) return;
 	    var args = slice.call(arguments, 1);
 	    var type = event;
-
+	
 	    if(!handles) return context;
 	    if(calls = handles[type.slice(1)]){
 	      for (var j = 0, len = calls.length; j < len; j++) {
@@ -8439,7 +8439,7 @@
 	// container class
 	function Event() {}
 	_.extend(Event.prototype, API)
-
+	
 	Event.mixTo = function(obj){
 	  obj = typeof obj === "function" ? obj.prototype : obj;
 	  _.extend(obj, API)
@@ -8450,1305 +8450,14 @@
 /* 26 */
 /***/ function(module, exports, __webpack_require__) {
 
-	/* WEBPACK VAR INJECTION */(function(module, Buffer) {(function (global, module) {
-
-	  var exports = module.exports;
-
-	  /**
-	   * Exports.
-	   */
-
-	  module.exports = expect;
-	  expect.Assertion = Assertion;
-
-	  /**
-	   * Exports version.
-	   */
-
-	  expect.version = '0.3.1';
-
-	  /**
-	   * Possible assertion flags.
-	   */
-
-	  var flags = {
-	      not: ['to', 'be', 'have', 'include', 'only']
-	    , to: ['be', 'have', 'include', 'only', 'not']
-	    , only: ['have']
-	    , have: ['own']
-	    , be: ['an']
-	  };
-
-	  function expect (obj) {
-	    return new Assertion(obj);
-	  }
-
-	  /**
-	   * Constructor
-	   *
-	   * @api private
-	   */
-
-	  function Assertion (obj, flag, parent) {
-	    this.obj = obj;
-	    this.flags = {};
-
-	    if (undefined != parent) {
-	      this.flags[flag] = true;
-
-	      for (var i in parent.flags) {
-	        if (parent.flags.hasOwnProperty(i)) {
-	          this.flags[i] = true;
-	        }
-	      }
-	    }
-
-	    var $flags = flag ? flags[flag] : keys(flags)
-	      , self = this;
-
-	    if ($flags) {
-	      for (var i = 0, l = $flags.length; i < l; i++) {
-	        // avoid recursion
-	        if (this.flags[$flags[i]]) continue;
-
-	        var name = $flags[i]
-	          , assertion = new Assertion(this.obj, name, this)
-
-	        if ('function' == typeof Assertion.prototype[name]) {
-	          // clone the function, make sure we dont touch the prot reference
-	          var old = this[name];
-	          this[name] = function () {
-	            return old.apply(self, arguments);
-	          };
-
-	          for (var fn in Assertion.prototype) {
-	            if (Assertion.prototype.hasOwnProperty(fn) && fn != name) {
-	              this[name][fn] = bind(assertion[fn], assertion);
-	            }
-	          }
-	        } else {
-	          this[name] = assertion;
-	        }
-	      }
-	    }
-	  }
-
-	  /**
-	   * Performs an assertion
-	   *
-	   * @api private
-	   */
-
-	  Assertion.prototype.assert = function (truth, msg, error, expected) {
-	    var msg = this.flags.not ? error : msg
-	      , ok = this.flags.not ? !truth : truth
-	      , err;
-
-	    if (!ok) {
-	      err = new Error(msg.call(this));
-	      if (arguments.length > 3) {
-	        err.actual = this.obj;
-	        err.expected = expected;
-	        err.showDiff = true;
-	      }
-	      throw err;
-	    }
-
-	    this.and = new Assertion(this.obj);
-	  };
-
-	  /**
-	   * Check if the value is truthy
-	   *
-	   * @api public
-	   */
-
-	  Assertion.prototype.ok = function () {
-	    this.assert(
-	        !!this.obj
-	      , function(){ return 'expected ' + i(this.obj) + ' to be truthy' }
-	      , function(){ return 'expected ' + i(this.obj) + ' to be falsy' });
-	  };
-
-	  /**
-	   * Creates an anonymous function which calls fn with arguments.
-	   *
-	   * @api public
-	   */
-
-	  Assertion.prototype.withArgs = function() {
-	    expect(this.obj).to.be.a('function');
-	    var fn = this.obj;
-	    var args = Array.prototype.slice.call(arguments);
-	    return expect(function() { fn.apply(null, args); });
-	  };
-
-	  /**
-	   * Assert that the function throws.
-	   *
-	   * @param {Function|RegExp} callback, or regexp to match error string against
-	   * @api public
-	   */
-
-	  Assertion.prototype.throwError =
-	  Assertion.prototype.throwException = function (fn) {
-	    expect(this.obj).to.be.a('function');
-
-	    var thrown = false
-	      , not = this.flags.not;
-
-	    try {
-	      this.obj();
-	    } catch (e) {
-	      if (isRegExp(fn)) {
-	        var subject = 'string' == typeof e ? e : e.message;
-	        if (not) {
-	          expect(subject).to.not.match(fn);
-	        } else {
-	          expect(subject).to.match(fn);
-	        }
-	      } else if ('function' == typeof fn) {
-	        fn(e);
-	      }
-	      thrown = true;
-	    }
-
-	    if (isRegExp(fn) && not) {
-	      // in the presence of a matcher, ensure the `not` only applies to
-	      // the matching.
-	      this.flags.not = false;
-	    }
-
-	    var name = this.obj.name || 'fn';
-	    this.assert(
-	        thrown
-	      , function(){ return 'expected ' + name + ' to throw an exception' }
-	      , function(){ return 'expected ' + name + ' not to throw an exception' });
-	  };
-
-	  /**
-	   * Checks if the array is empty.
-	   *
-	   * @api public
-	   */
-
-	  Assertion.prototype.empty = function () {
-	    var expectation;
-
-	    if ('object' == typeof this.obj && null !== this.obj && !isArray(this.obj)) {
-	      if ('number' == typeof this.obj.length) {
-	        expectation = !this.obj.length;
-	      } else {
-	        expectation = !keys(this.obj).length;
-	      }
-	    } else {
-	      if ('string' != typeof this.obj) {
-	        expect(this.obj).to.be.an('object');
-	      }
-
-	      expect(this.obj).to.have.property('length');
-	      expectation = !this.obj.length;
-	    }
-
-	    this.assert(
-	        expectation
-	      , function(){ return 'expected ' + i(this.obj) + ' to be empty' }
-	      , function(){ return 'expected ' + i(this.obj) + ' to not be empty' });
-	    return this;
-	  };
-
-	  /**
-	   * Checks if the obj exactly equals another.
-	   *
-	   * @api public
-	   */
-
-	  Assertion.prototype.be =
-	  Assertion.prototype.equal = function (obj) {
-	    this.assert(
-	        obj === this.obj
-	      , function(){ return 'expected ' + i(this.obj) + ' to equal ' + i(obj) }
-	      , function(){ return 'expected ' + i(this.obj) + ' to not equal ' + i(obj) });
-	    return this;
-	  };
-
-	  /**
-	   * Checks if the obj sortof equals another.
-	   *
-	   * @api public
-	   */
-
-	  Assertion.prototype.eql = function (obj) {
-	    this.assert(
-	        expect.eql(this.obj, obj)
-	      , function(){ return 'expected ' + i(this.obj) + ' to sort of equal ' + i(obj) }
-	      , function(){ return 'expected ' + i(this.obj) + ' to sort of not equal ' + i(obj) }
-	      , obj);
-	    return this;
-	  };
-
-	  /**
-	   * Assert within start to finish (inclusive).
-	   *
-	   * @param {Number} start
-	   * @param {Number} finish
-	   * @api public
-	   */
-
-	  Assertion.prototype.within = function (start, finish) {
-	    var range = start + '..' + finish;
-	    this.assert(
-	        this.obj >= start && this.obj <= finish
-	      , function(){ return 'expected ' + i(this.obj) + ' to be within ' + range }
-	      , function(){ return 'expected ' + i(this.obj) + ' to not be within ' + range });
-	    return this;
-	  };
-
-	  /**
-	   * Assert typeof / instance of
-	   *
-	   * @api public
-	   */
-
-	  Assertion.prototype.a =
-	  Assertion.prototype.an = function (type) {
-	    if ('string' == typeof type) {
-	      // proper english in error msg
-	      var n = /^[aeiou]/.test(type) ? 'n' : '';
-
-	      // typeof with support for 'array'
-	      this.assert(
-	          'array' == type ? isArray(this.obj) :
-	            'regexp' == type ? isRegExp(this.obj) :
-	              'object' == type
-	                ? 'object' == typeof this.obj && null !== this.obj
-	                : type == typeof this.obj
-	        , function(){ return 'expected ' + i(this.obj) + ' to be a' + n + ' ' + type }
-	        , function(){ return 'expected ' + i(this.obj) + ' not to be a' + n + ' ' + type });
-	    } else {
-	      // instanceof
-	      var name = type.name || 'supplied constructor';
-	      this.assert(
-	          this.obj instanceof type
-	        , function(){ return 'expected ' + i(this.obj) + ' to be an instance of ' + name }
-	        , function(){ return 'expected ' + i(this.obj) + ' not to be an instance of ' + name });
-	    }
-
-	    return this;
-	  };
-
-	  /**
-	   * Assert numeric value above _n_.
-	   *
-	   * @param {Number} n
-	   * @api public
-	   */
-
-	  Assertion.prototype.greaterThan =
-	  Assertion.prototype.above = function (n) {
-	    this.assert(
-	        this.obj > n
-	      , function(){ return 'expected ' + i(this.obj) + ' to be above ' + n }
-	      , function(){ return 'expected ' + i(this.obj) + ' to be below ' + n });
-	    return this;
-	  };
-
-	  /**
-	   * Assert numeric value below _n_.
-	   *
-	   * @param {Number} n
-	   * @api public
-	   */
-
-	  Assertion.prototype.lessThan =
-	  Assertion.prototype.below = function (n) {
-	    this.assert(
-	        this.obj < n
-	      , function(){ return 'expected ' + i(this.obj) + ' to be below ' + n }
-	      , function(){ return 'expected ' + i(this.obj) + ' to be above ' + n });
-	    return this;
-	  };
-
-	  /**
-	   * Assert string value matches _regexp_.
-	   *
-	   * @param {RegExp} regexp
-	   * @api public
-	   */
-
-	  Assertion.prototype.match = function (regexp) {
-	    this.assert(
-	        regexp.exec(this.obj)
-	      , function(){ return 'expected ' + i(this.obj) + ' to match ' + regexp }
-	      , function(){ return 'expected ' + i(this.obj) + ' not to match ' + regexp });
-	    return this;
-	  };
-
-	  /**
-	   * Assert property "length" exists and has value of _n_.
-	   *
-	   * @param {Number} n
-	   * @api public
-	   */
-
-	  Assertion.prototype.length = function (n) {
-	    expect(this.obj).to.have.property('length');
-	    var len = this.obj.length;
-	    this.assert(
-	        n == len
-	      , function(){ return 'expected ' + i(this.obj) + ' to have a length of ' + n + ' but got ' + len }
-	      , function(){ return 'expected ' + i(this.obj) + ' to not have a length of ' + len });
-	    return this;
-	  };
-
-	  /**
-	   * Assert property _name_ exists, with optional _val_.
-	   *
-	   * @param {String} name
-	   * @param {Mixed} val
-	   * @api public
-	   */
-
-	  Assertion.prototype.property = function (name, val) {
-	    if (this.flags.own) {
-	      this.assert(
-	          Object.prototype.hasOwnProperty.call(this.obj, name)
-	        , function(){ return 'expected ' + i(this.obj) + ' to have own property ' + i(name) }
-	        , function(){ return 'expected ' + i(this.obj) + ' to not have own property ' + i(name) });
-	      return this;
-	    }
-
-	    if (this.flags.not && undefined !== val) {
-	      if (undefined === this.obj[name]) {
-	        throw new Error(i(this.obj) + ' has no property ' + i(name));
-	      }
-	    } else {
-	      var hasProp;
-	      try {
-	        hasProp = name in this.obj
-	      } catch (e) {
-	        hasProp = undefined !== this.obj[name]
-	      }
-
-	      this.assert(
-	          hasProp
-	        , function(){ return 'expected ' + i(this.obj) + ' to have a property ' + i(name) }
-	        , function(){ return 'expected ' + i(this.obj) + ' to not have a property ' + i(name) });
-	    }
-
-	    if (undefined !== val) {
-	      this.assert(
-	          val === this.obj[name]
-	        , function(){ return 'expected ' + i(this.obj) + ' to have a property ' + i(name)
-	          + ' of ' + i(val) + ', but got ' + i(this.obj[name]) }
-	        , function(){ return 'expected ' + i(this.obj) + ' to not have a property ' + i(name)
-	          + ' of ' + i(val) });
-	    }
-
-	    this.obj = this.obj[name];
-	    return this;
-	  };
-
-	  /**
-	   * Assert that the array contains _obj_ or string contains _obj_.
-	   *
-	   * @param {Mixed} obj|string
-	   * @api public
-	   */
-
-	  Assertion.prototype.string =
-	  Assertion.prototype.contain = function (obj) {
-	    if ('string' == typeof this.obj) {
-	      this.assert(
-	          ~this.obj.indexOf(obj)
-	        , function(){ return 'expected ' + i(this.obj) + ' to contain ' + i(obj) }
-	        , function(){ return 'expected ' + i(this.obj) + ' to not contain ' + i(obj) });
-	    } else {
-	      this.assert(
-	          ~indexOf(this.obj, obj)
-	        , function(){ return 'expected ' + i(this.obj) + ' to contain ' + i(obj) }
-	        , function(){ return 'expected ' + i(this.obj) + ' to not contain ' + i(obj) });
-	    }
-	    return this;
-	  };
-
-	  /**
-	   * Assert exact keys or inclusion of keys by using
-	   * the `.own` modifier.
-	   *
-	   * @param {Array|String ...} keys
-	   * @api public
-	   */
-
-	  Assertion.prototype.key =
-	  Assertion.prototype.keys = function ($keys) {
-	    var str
-	      , ok = true;
-
-	    $keys = isArray($keys)
-	      ? $keys
-	      : Array.prototype.slice.call(arguments);
-
-	    if (!$keys.length) throw new Error('keys required');
-
-	    var actual = keys(this.obj)
-	      , len = $keys.length;
-
-	    // Inclusion
-	    ok = every($keys, function (key) {
-	      return ~indexOf(actual, key);
-	    });
-
-	    // Strict
-	    if (!this.flags.not && this.flags.only) {
-	      ok = ok && $keys.length == actual.length;
-	    }
-
-	    // Key string
-	    if (len > 1) {
-	      $keys = map($keys, function (key) {
-	        return i(key);
-	      });
-	      var last = $keys.pop();
-	      str = $keys.join(', ') + ', and ' + last;
-	    } else {
-	      str = i($keys[0]);
-	    }
-
-	    // Form
-	    str = (len > 1 ? 'keys ' : 'key ') + str;
-
-	    // Have / include
-	    str = (!this.flags.only ? 'include ' : 'only have ') + str;
-
-	    // Assertion
-	    this.assert(
-	        ok
-	      , function(){ return 'expected ' + i(this.obj) + ' to ' + str }
-	      , function(){ return 'expected ' + i(this.obj) + ' to not ' + str });
-
-	    return this;
-	  };
-
-	  /**
-	   * Assert a failure.
-	   *
-	   * @param {String ...} custom message
-	   * @api public
-	   */
-	  Assertion.prototype.fail = function (msg) {
-	    var error = function() { return msg || "explicit failure"; }
-	    this.assert(false, error, error);
-	    return this;
-	  };
-
-	  /**
-	   * Function bind implementation.
-	   */
-
-	  function bind (fn, scope) {
-	    return function () {
-	      return fn.apply(scope, arguments);
-	    }
-	  }
-
-	  /**
-	   * Array every compatibility
-	   *
-	   * @see bit.ly/5Fq1N2
-	   * @api public
-	   */
-
-	  function every (arr, fn, thisObj) {
-	    var scope = thisObj || global;
-	    for (var i = 0, j = arr.length; i < j; ++i) {
-	      if (!fn.call(scope, arr[i], i, arr)) {
-	        return false;
-	      }
-	    }
-	    return true;
-	  }
-
-	  /**
-	   * Array indexOf compatibility.
-	   *
-	   * @see bit.ly/a5Dxa2
-	   * @api public
-	   */
-
-	  function indexOf (arr, o, i) {
-	    if (Array.prototype.indexOf) {
-	      return Array.prototype.indexOf.call(arr, o, i);
-	    }
-
-	    if (arr.length === undefined) {
-	      return -1;
-	    }
-
-	    for (var j = arr.length, i = i < 0 ? i + j < 0 ? 0 : i + j : i || 0
-	        ; i < j && arr[i] !== o; i++);
-
-	    return j <= i ? -1 : i;
-	  }
-
-	  // https://gist.github.com/1044128/
-	  var getOuterHTML = function(element) {
-	    if ('outerHTML' in element) return element.outerHTML;
-	    var ns = "http://www.w3.org/1999/xhtml";
-	    var container = document.createElementNS(ns, '_');
-	    var xmlSerializer = new XMLSerializer();
-	    var html;
-	    if (document.xmlVersion) {
-	      return xmlSerializer.serializeToString(element);
-	    } else {
-	      container.appendChild(element.cloneNode(false));
-	      html = container.innerHTML.replace('><', '>' + element.innerHTML + '<');
-	      container.innerHTML = '';
-	      return html;
-	    }
-	  };
-
-	  // Returns true if object is a DOM element.
-	  var isDOMElement = function (object) {
-	    if (typeof HTMLElement === 'object') {
-	      return object instanceof HTMLElement;
-	    } else {
-	      return object &&
-	        typeof object === 'object' &&
-	        object.nodeType === 1 &&
-	        typeof object.nodeName === 'string';
-	    }
-	  };
-
-	  /**
-	   * Inspects an object.
-	   *
-	   * @see taken from node.js `util` module (copyright Joyent, MIT license)
-	   * @api private
-	   */
-
-	  function i (obj, showHidden, depth) {
-	    var seen = [];
-
-	    function stylize (str) {
-	      return str;
-	    }
-
-	    function format (value, recurseTimes) {
-	      // Provide a hook for user-specified inspect functions.
-	      // Check that value is an object with an inspect function on it
-	      if (value && typeof value.inspect === 'function' &&
-	          // Filter out the util module, it's inspect function is special
-	          value !== exports &&
-	          // Also filter out any prototype objects using the circular check.
-	          !(value.constructor && value.constructor.prototype === value)) {
-	        return value.inspect(recurseTimes);
-	      }
-
-	      // Primitive types cannot have properties
-	      switch (typeof value) {
-	        case 'undefined':
-	          return stylize('undefined', 'undefined');
-
-	        case 'string':
-	          var simple = '\'' + json.stringify(value).replace(/^"|"$/g, '')
-	                                                   .replace(/'/g, "\\'")
-	                                                   .replace(/\\"/g, '"') + '\'';
-	          return stylize(simple, 'string');
-
-	        case 'number':
-	          return stylize('' + value, 'number');
-
-	        case 'boolean':
-	          return stylize('' + value, 'boolean');
-	      }
-	      // For some reason typeof null is "object", so special case here.
-	      if (value === null) {
-	        return stylize('null', 'null');
-	      }
-
-	      if (isDOMElement(value)) {
-	        return getOuterHTML(value);
-	      }
-
-	      // Look up the keys of the object.
-	      var visible_keys = keys(value);
-	      var $keys = showHidden ? Object.getOwnPropertyNames(value) : visible_keys;
-
-	      // Functions without properties can be shortcutted.
-	      if (typeof value === 'function' && $keys.length === 0) {
-	        if (isRegExp(value)) {
-	          return stylize('' + value, 'regexp');
-	        } else {
-	          var name = value.name ? ': ' + value.name : '';
-	          return stylize('[Function' + name + ']', 'special');
-	        }
-	      }
-
-	      // Dates without properties can be shortcutted
-	      if (isDate(value) && $keys.length === 0) {
-	        return stylize(value.toUTCString(), 'date');
-	      }
-	      
-	      // Error objects can be shortcutted
-	      if (value instanceof Error) {
-	        return stylize("["+value.toString()+"]", 'Error');
-	      }
-
-	      var base, type, braces;
-	      // Determine the object type
-	      if (isArray(value)) {
-	        type = 'Array';
-	        braces = ['[', ']'];
-	      } else {
-	        type = 'Object';
-	        braces = ['{', '}'];
-	      }
-
-	      // Make functions say that they are functions
-	      if (typeof value === 'function') {
-	        var n = value.name ? ': ' + value.name : '';
-	        base = (isRegExp(value)) ? ' ' + value : ' [Function' + n + ']';
-	      } else {
-	        base = '';
-	      }
-
-	      // Make dates with properties first say the date
-	      if (isDate(value)) {
-	        base = ' ' + value.toUTCString();
-	      }
-
-	      if ($keys.length === 0) {
-	        return braces[0] + base + braces[1];
-	      }
-
-	      if (recurseTimes < 0) {
-	        if (isRegExp(value)) {
-	          return stylize('' + value, 'regexp');
-	        } else {
-	          return stylize('[Object]', 'special');
-	        }
-	      }
-
-	      seen.push(value);
-
-	      var output = map($keys, function (key) {
-	        var name, str;
-	        if (value.__lookupGetter__) {
-	          if (value.__lookupGetter__(key)) {
-	            if (value.__lookupSetter__(key)) {
-	              str = stylize('[Getter/Setter]', 'special');
-	            } else {
-	              str = stylize('[Getter]', 'special');
-	            }
-	          } else {
-	            if (value.__lookupSetter__(key)) {
-	              str = stylize('[Setter]', 'special');
-	            }
-	          }
-	        }
-	        if (indexOf(visible_keys, key) < 0) {
-	          name = '[' + key + ']';
-	        }
-	        if (!str) {
-	          if (indexOf(seen, value[key]) < 0) {
-	            if (recurseTimes === null) {
-	              str = format(value[key]);
-	            } else {
-	              str = format(value[key], recurseTimes - 1);
-	            }
-	            if (str.indexOf('\n') > -1) {
-	              if (isArray(value)) {
-	                str = map(str.split('\n'), function (line) {
-	                  return '  ' + line;
-	                }).join('\n').substr(2);
-	              } else {
-	                str = '\n' + map(str.split('\n'), function (line) {
-	                  return '   ' + line;
-	                }).join('\n');
-	              }
-	            }
-	          } else {
-	            str = stylize('[Circular]', 'special');
-	          }
-	        }
-	        if (typeof name === 'undefined') {
-	          if (type === 'Array' && key.match(/^\d+$/)) {
-	            return str;
-	          }
-	          name = json.stringify('' + key);
-	          if (name.match(/^"([a-zA-Z_][a-zA-Z_0-9]*)"$/)) {
-	            name = name.substr(1, name.length - 2);
-	            name = stylize(name, 'name');
-	          } else {
-	            name = name.replace(/'/g, "\\'")
-	                       .replace(/\\"/g, '"')
-	                       .replace(/(^"|"$)/g, "'");
-	            name = stylize(name, 'string');
-	          }
-	        }
-
-	        return name + ': ' + str;
-	      });
-
-	      seen.pop();
-
-	      var numLinesEst = 0;
-	      var length = reduce(output, function (prev, cur) {
-	        numLinesEst++;
-	        if (indexOf(cur, '\n') >= 0) numLinesEst++;
-	        return prev + cur.length + 1;
-	      }, 0);
-
-	      if (length > 50) {
-	        output = braces[0] +
-	                 (base === '' ? '' : base + '\n ') +
-	                 ' ' +
-	                 output.join(',\n  ') +
-	                 ' ' +
-	                 braces[1];
-
-	      } else {
-	        output = braces[0] + base + ' ' + output.join(', ') + ' ' + braces[1];
-	      }
-
-	      return output;
-	    }
-	    return format(obj, (typeof depth === 'undefined' ? 2 : depth));
-	  }
-
-	  expect.stringify = i;
-
-	  function isArray (ar) {
-	    return Object.prototype.toString.call(ar) === '[object Array]';
-	  }
-
-	  function isRegExp(re) {
-	    var s;
-	    try {
-	      s = '' + re;
-	    } catch (e) {
-	      return false;
-	    }
-
-	    return re instanceof RegExp || // easy case
-	           // duck-type for context-switching evalcx case
-	           typeof(re) === 'function' &&
-	           re.constructor.name === 'RegExp' &&
-	           re.compile &&
-	           re.test &&
-	           re.exec &&
-	           s.match(/^\/.*\/[gim]{0,3}$/);
-	  }
-
-	  function isDate(d) {
-	    return d instanceof Date;
-	  }
-
-	  function keys (obj) {
-	    if (Object.keys) {
-	      return Object.keys(obj);
-	    }
-
-	    var keys = [];
-
-	    for (var i in obj) {
-	      if (Object.prototype.hasOwnProperty.call(obj, i)) {
-	        keys.push(i);
-	      }
-	    }
-
-	    return keys;
-	  }
-
-	  function map (arr, mapper, that) {
-	    if (Array.prototype.map) {
-	      return Array.prototype.map.call(arr, mapper, that);
-	    }
-
-	    var other= new Array(arr.length);
-
-	    for (var i= 0, n = arr.length; i<n; i++)
-	      if (i in arr)
-	        other[i] = mapper.call(that, arr[i], i, arr);
-
-	    return other;
-	  }
-
-	  function reduce (arr, fun) {
-	    if (Array.prototype.reduce) {
-	      return Array.prototype.reduce.apply(
-	          arr
-	        , Array.prototype.slice.call(arguments, 1)
-	      );
-	    }
-
-	    var len = +this.length;
-
-	    if (typeof fun !== "function")
-	      throw new TypeError();
-
-	    // no value to return if no initial value and an empty array
-	    if (len === 0 && arguments.length === 1)
-	      throw new TypeError();
-
-	    var i = 0;
-	    if (arguments.length >= 2) {
-	      var rv = arguments[1];
-	    } else {
-	      do {
-	        if (i in this) {
-	          rv = this[i++];
-	          break;
-	        }
-
-	        // if array contains no values, no initial value to return
-	        if (++i >= len)
-	          throw new TypeError();
-	      } while (true);
-	    }
-
-	    for (; i < len; i++) {
-	      if (i in this)
-	        rv = fun.call(null, rv, this[i], i, this);
-	    }
-
-	    return rv;
-	  }
-
-	  /**
-	   * Asserts deep equality
-	   *
-	   * @see taken from node.js `assert` module (copyright Joyent, MIT license)
-	   * @api private
-	   */
-
-	  expect.eql = function eql(actual, expected) {
-	    // 7.1. All identical values are equivalent, as determined by ===.
-	    if (actual === expected) {
-	      return true;
-	    } else if ('undefined' != typeof Buffer
-	      && Buffer.isBuffer(actual) && Buffer.isBuffer(expected)) {
-	      if (actual.length != expected.length) return false;
-
-	      for (var i = 0; i < actual.length; i++) {
-	        if (actual[i] !== expected[i]) return false;
-	      }
-
-	      return true;
-
-	      // 7.2. If the expected value is a Date object, the actual value is
-	      // equivalent if it is also a Date object that refers to the same time.
-	    } else if (actual instanceof Date && expected instanceof Date) {
-	      return actual.getTime() === expected.getTime();
-
-	      // 7.3. Other pairs that do not both pass typeof value == "object",
-	      // equivalence is determined by ==.
-	    } else if (typeof actual != 'object' && typeof expected != 'object') {
-	      return actual == expected;
-	    // If both are regular expression use the special `regExpEquiv` method
-	    // to determine equivalence.
-	    } else if (isRegExp(actual) && isRegExp(expected)) {
-	      return regExpEquiv(actual, expected);
-	    // 7.4. For all other Object pairs, including Array objects, equivalence is
-	    // determined by having the same number of owned properties (as verified
-	    // with Object.prototype.hasOwnProperty.call), the same set of keys
-	    // (although not necessarily the same order), equivalent values for every
-	    // corresponding key, and an identical "prototype" property. Note: this
-	    // accounts for both named and indexed properties on Arrays.
-	    } else {
-	      return objEquiv(actual, expected);
-	    }
-	  };
-
-	  function isUndefinedOrNull (value) {
-	    return value === null || value === undefined;
-	  }
-
-	  function isArguments (object) {
-	    return Object.prototype.toString.call(object) == '[object Arguments]';
-	  }
-
-	  function regExpEquiv (a, b) {
-	    return a.source === b.source && a.global === b.global &&
-	           a.ignoreCase === b.ignoreCase && a.multiline === b.multiline;
-	  }
-
-	  function objEquiv (a, b) {
-	    if (isUndefinedOrNull(a) || isUndefinedOrNull(b))
-	      return false;
-	    // an identical "prototype" property.
-	    if (a.prototype !== b.prototype) return false;
-	    //~~~I've managed to break Object.keys through screwy arguments passing.
-	    //   Converting to array solves the problem.
-	    if (isArguments(a)) {
-	      if (!isArguments(b)) {
-	        return false;
-	      }
-	      a = pSlice.call(a);
-	      b = pSlice.call(b);
-	      return expect.eql(a, b);
-	    }
-	    try{
-	      var ka = keys(a),
-	        kb = keys(b),
-	        key, i;
-	    } catch (e) {//happens when one is a string literal and the other isn't
-	      return false;
-	    }
-	    // having the same number of owned properties (keys incorporates hasOwnProperty)
-	    if (ka.length != kb.length)
-	      return false;
-	    //the same set of keys (although not necessarily the same order),
-	    ka.sort();
-	    kb.sort();
-	    //~~~cheap key test
-	    for (i = ka.length - 1; i >= 0; i--) {
-	      if (ka[i] != kb[i])
-	        return false;
-	    }
-	    //equivalent values for every corresponding key, and
-	    //~~~possibly expensive deep test
-	    for (i = ka.length - 1; i >= 0; i--) {
-	      key = ka[i];
-	      if (!expect.eql(a[key], b[key]))
-	         return false;
-	    }
-	    return true;
-	  }
-
-	  var json = (function () {
-	    "use strict";
-
-	    if ('object' == typeof JSON && JSON.parse && JSON.stringify) {
-	      return {
-	          parse: nativeJSON.parse
-	        , stringify: nativeJSON.stringify
-	      }
-	    }
-
-	    var JSON = {};
-
-	    function f(n) {
-	        // Format integers to have at least two digits.
-	        return n < 10 ? '0' + n : n;
-	    }
-
-	    function date(d, key) {
-	      return isFinite(d.valueOf()) ?
-	          d.getUTCFullYear()     + '-' +
-	          f(d.getUTCMonth() + 1) + '-' +
-	          f(d.getUTCDate())      + 'T' +
-	          f(d.getUTCHours())     + ':' +
-	          f(d.getUTCMinutes())   + ':' +
-	          f(d.getUTCSeconds())   + 'Z' : null;
-	    }
-
-	    var cx = /[\u0000\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/g,
-	        escapable = /[\\\"\x00-\x1f\x7f-\x9f\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/g,
-	        gap,
-	        indent,
-	        meta = {    // table of character substitutions
-	            '\b': '\\b',
-	            '\t': '\\t',
-	            '\n': '\\n',
-	            '\f': '\\f',
-	            '\r': '\\r',
-	            '"' : '\\"',
-	            '\\': '\\\\'
-	        },
-	        rep;
-
-
-	    function quote(string) {
-
-	  // If the string contains no control characters, no quote characters, and no
-	  // backslash characters, then we can safely slap some quotes around it.
-	  // Otherwise we must also replace the offending characters with safe escape
-	  // sequences.
-
-	        escapable.lastIndex = 0;
-	        return escapable.test(string) ? '"' + string.replace(escapable, function (a) {
-	            var c = meta[a];
-	            return typeof c === 'string' ? c :
-	                '\\u' + ('0000' + a.charCodeAt(0).toString(16)).slice(-4);
-	        }) + '"' : '"' + string + '"';
-	    }
-
-
-	    function str(key, holder) {
-
-	  // Produce a string from holder[key].
-
-	        var i,          // The loop counter.
-	            k,          // The member key.
-	            v,          // The member value.
-	            length,
-	            mind = gap,
-	            partial,
-	            value = holder[key];
-
-	  // If the value has a toJSON method, call it to obtain a replacement value.
-
-	        if (value instanceof Date) {
-	            value = date(key);
-	        }
-
-	  // If we were called with a replacer function, then call the replacer to
-	  // obtain a replacement value.
-
-	        if (typeof rep === 'function') {
-	            value = rep.call(holder, key, value);
-	        }
-
-	  // What happens next depends on the value's type.
-
-	        switch (typeof value) {
-	        case 'string':
-	            return quote(value);
-
-	        case 'number':
-
-	  // JSON numbers must be finite. Encode non-finite numbers as null.
-
-	            return isFinite(value) ? String(value) : 'null';
-
-	        case 'boolean':
-	        case 'null':
-
-	  // If the value is a boolean or null, convert it to a string. Note:
-	  // typeof null does not produce 'null'. The case is included here in
-	  // the remote chance that this gets fixed someday.
-
-	            return String(value);
-
-	  // If the type is 'object', we might be dealing with an object or an array or
-	  // null.
-
-	        case 'object':
-
-	  // Due to a specification blunder in ECMAScript, typeof null is 'object',
-	  // so watch out for that case.
-
-	            if (!value) {
-	                return 'null';
-	            }
-
-	  // Make an array to hold the partial results of stringifying this object value.
-
-	            gap += indent;
-	            partial = [];
-
-	  // Is the value an array?
-
-	            if (Object.prototype.toString.apply(value) === '[object Array]') {
-
-	  // The value is an array. Stringify every element. Use null as a placeholder
-	  // for non-JSON values.
-
-	                length = value.length;
-	                for (i = 0; i < length; i += 1) {
-	                    partial[i] = str(i, value) || 'null';
-	                }
-
-	  // Join all of the elements together, separated with commas, and wrap them in
-	  // brackets.
-
-	                v = partial.length === 0 ? '[]' : gap ?
-	                    '[\n' + gap + partial.join(',\n' + gap) + '\n' + mind + ']' :
-	                    '[' + partial.join(',') + ']';
-	                gap = mind;
-	                return v;
-	            }
-
-	  // If the replacer is an array, use it to select the members to be stringified.
-
-	            if (rep && typeof rep === 'object') {
-	                length = rep.length;
-	                for (i = 0; i < length; i += 1) {
-	                    if (typeof rep[i] === 'string') {
-	                        k = rep[i];
-	                        v = str(k, value);
-	                        if (v) {
-	                            partial.push(quote(k) + (gap ? ': ' : ':') + v);
-	                        }
-	                    }
-	                }
-	            } else {
-
-	  // Otherwise, iterate through all of the keys in the object.
-
-	                for (k in value) {
-	                    if (Object.prototype.hasOwnProperty.call(value, k)) {
-	                        v = str(k, value);
-	                        if (v) {
-	                            partial.push(quote(k) + (gap ? ': ' : ':') + v);
-	                        }
-	                    }
-	                }
-	            }
-
-	  // Join all of the member texts together, separated with commas,
-	  // and wrap them in braces.
-
-	            v = partial.length === 0 ? '{}' : gap ?
-	                '{\n' + gap + partial.join(',\n' + gap) + '\n' + mind + '}' :
-	                '{' + partial.join(',') + '}';
-	            gap = mind;
-	            return v;
-	        }
-	    }
-
-	  // If the JSON object does not yet have a stringify method, give it one.
-
-	    JSON.stringify = function (value, replacer, space) {
-
-	  // The stringify method takes a value and an optional replacer, and an optional
-	  // space parameter, and returns a JSON text. The replacer can be a function
-	  // that can replace values, or an array of strings that will select the keys.
-	  // A default replacer method can be provided. Use of the space parameter can
-	  // produce text that is more easily readable.
-
-	        var i;
-	        gap = '';
-	        indent = '';
-
-	  // If the space parameter is a number, make an indent string containing that
-	  // many spaces.
-
-	        if (typeof space === 'number') {
-	            for (i = 0; i < space; i += 1) {
-	                indent += ' ';
-	            }
-
-	  // If the space parameter is a string, it will be used as the indent string.
-
-	        } else if (typeof space === 'string') {
-	            indent = space;
-	        }
-
-	  // If there is a replacer, it must be a function or an array.
-	  // Otherwise, throw an error.
-
-	        rep = replacer;
-	        if (replacer && typeof replacer !== 'function' &&
-	                (typeof replacer !== 'object' ||
-	                typeof replacer.length !== 'number')) {
-	            throw new Error('JSON.stringify');
-	        }
-
-	  // Make a fake root object containing our value under the key of ''.
-	  // Return the result of stringifying the value.
-
-	        return str('', {'': value});
-	    };
-
-	  // If the JSON object does not yet have a parse method, give it one.
-
-	    JSON.parse = function (text, reviver) {
-	    // The parse method takes a text and an optional reviver function, and returns
-	    // a JavaScript value if the text is a valid JSON text.
-
-	        var j;
-
-	        function walk(holder, key) {
-
-	    // The walk method is used to recursively walk the resulting structure so
-	    // that modifications can be made.
-
-	            var k, v, value = holder[key];
-	            if (value && typeof value === 'object') {
-	                for (k in value) {
-	                    if (Object.prototype.hasOwnProperty.call(value, k)) {
-	                        v = walk(value, k);
-	                        if (v !== undefined) {
-	                            value[k] = v;
-	                        } else {
-	                            delete value[k];
-	                        }
-	                    }
-	                }
-	            }
-	            return reviver.call(holder, key, value);
-	        }
-
-
-	    // Parsing happens in four stages. In the first stage, we replace certain
-	    // Unicode characters with escape sequences. JavaScript handles many characters
-	    // incorrectly, either silently deleting them, or treating them as line endings.
-
-	        text = String(text);
-	        cx.lastIndex = 0;
-	        if (cx.test(text)) {
-	            text = text.replace(cx, function (a) {
-	                return '\\u' +
-	                    ('0000' + a.charCodeAt(0).toString(16)).slice(-4);
-	            });
-	        }
-
-	    // In the second stage, we run the text against regular expressions that look
-	    // for non-JSON patterns. We are especially concerned with '()' and 'new'
-	    // because they can cause invocation, and '=' because it can cause mutation.
-	    // But just to be safe, we want to reject all unexpected forms.
-
-	    // We split the second stage into 4 regexp operations in order to work around
-	    // crippling inefficiencies in IE's and Safari's regexp engines. First we
-	    // replace the JSON backslash pairs with '@' (a non-JSON character). Second, we
-	    // replace all simple value tokens with ']' characters. Third, we delete all
-	    // open brackets that follow a colon or comma or that begin the text. Finally,
-	    // we look to see that the remaining characters are only whitespace or ']' or
-	    // ',' or ':' or '{' or '}'. If that is so, then the text is safe for eval.
-
-	        if (/^[\],:{}\s]*$/
-	                .test(text.replace(/\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4})/g, '@')
-	                    .replace(/"[^"\\\n\r]*"|true|false|null|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?/g, ']')
-	                    .replace(/(?:^|:|,)(?:\s*\[)+/g, ''))) {
-
-	    // In the third stage we use the eval function to compile the text into a
-	    // JavaScript structure. The '{' operator is subject to a syntactic ambiguity
-	    // in JavaScript: it can begin a block or an object literal. We wrap the text
-	    // in parens to eliminate the ambiguity.
-
-	            j = eval('(' + text + ')');
-
-	    // In the optional fourth stage, we recursively walk the new structure, passing
-	    // each name/value pair to a reviver function for possible transformation.
-
-	            return typeof reviver === 'function' ?
-	                walk({'': j}, '') : j;
-	        }
-
-	    // If the text is not JSON parseable, then a SyntaxError is thrown.
-
-	        throw new SyntaxError('JSON.parse');
-	    };
-
-	    return JSON;
-	  })();
-
-	  if ('undefined' != typeof window) {
-	    window.expect = module.exports;
-	  }
-
-	})(
-	    this
-	  , true ? module : {exports: {}}
-	);
-	
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(45)(module), __webpack_require__(44).Buffer))
-
-/***/ },
-/* 27 */
-/***/ function(module, exports, __webpack_require__) {
-
 	// some fixture test;
 	// ---------------
-	var _ = __webpack_require__(18);
+	var _ = __webpack_require__(21);
 	exports.svg = (function(){
 	  return typeof document !== "undefined" && document.implementation.hasFeature( "http://www.w3.org/TR/SVG11/feature#BasicStructure", "1.1" );
 	})();
-
-
+	
+	
 	exports.browser = typeof document !== "undefined" && document.nodeType;
 	// whether have component in initializing
 	exports.exprCache = _.cache(1000);
@@ -9756,7 +8465,7 @@
 
 
 /***/ },
-/* 28 */
+/* 27 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
@@ -9767,15 +8476,15 @@
 	}
 
 /***/ },
-/* 29 */
+/* 28 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
-	var env = __webpack_require__(27);
+	var env = __webpack_require__(26);
 	var Lexer = __webpack_require__(36);
 	var Parser = __webpack_require__(35);
-	var config = __webpack_require__(28);
-	var _ = __webpack_require__(18);
+	var config = __webpack_require__(27);
+	var _ = __webpack_require__(21);
 	var extend = __webpack_require__(23);
 	var combine = {};
 	if(env.browser){
@@ -9783,14 +8492,14 @@
 	  var walkers = __webpack_require__(37);
 	  var Group = __webpack_require__(38);
 	  var doc = dom.doc;
-	  combine = __webpack_require__(20);
+	  combine = __webpack_require__(18);
 	}
 	var events = __webpack_require__(25);
 	var Watcher = __webpack_require__(39);
-	var parse = __webpack_require__(21);
+	var parse = __webpack_require__(20);
 	var filter = __webpack_require__(40);
-
-
+	
+	
 	/**
 	* `Regular` is regularjs's NameSpace and BaseClass. Every Component is inherited from it
 	* 
@@ -9803,16 +8512,16 @@
 	  var prevRunning = env.isRunning;
 	  env.isRunning = true;
 	  var node, template;
-
+	
 	  definition = definition || {};
 	  var usePrototyeString = typeof this.template === 'string' && !definition.template;
 	  options = options || {};
-
+	
 	  definition.data = definition.data || {};
 	  definition.computed = definition.computed || {};
 	  if( this.data ) _.extend( definition.data, this.data );
 	  if( this.computed ) _.extend( definition.computed, this.computed );
-
+	
 	  var listeners = this._eventListeners || [];
 	  var normListener;
 	  // hanle initialized event binding
@@ -9823,17 +8532,17 @@
 	    }
 	    delete definition.events;
 	  }
-
+	
 	  _.extend(this, definition, true);
-
+	
 	  if(this.$parent){
 	     this.$parent._append(this);
 	  }
 	  this._children = [];
 	  this.$refs = {};
-
+	
 	  template = this.template;
-
+	
 	  // template is a string (len < 16). we will find it container first
 	  if((typeof template === 'string' && template.length < 16) && (node = dom.find(template))) {
 	    template = node.innerHTML;
@@ -9849,11 +8558,11 @@
 	      delete this.template;
 	    }
 	  }
-
+	
 	  this.computed = handleComputed(this.computed);
 	  this.$root = this.$root || this;
 	  // if have events
-
+	
 	  if(listeners && listeners.length){
 	    listeners.forEach(function( item ){
 	      this.$on(item.type, item.listener)
@@ -9862,10 +8571,10 @@
 	  this.$emit("$config");
 	  this.config && this.config(this.data);
 	  this.$emit("$afterConfig");
-
+	
 	  var body = this._body;
 	  this._body = null;
-
+	
 	  if(body && body.ast && body.ast.length){
 	    this.$body = _.getCompileFn(body.ast, body.ctx , {
 	      outer: this,
@@ -9879,25 +8588,25 @@
 	    this.group = this.$compile(template, {namespace: options.namespace});
 	    combine.node(this);
 	  }
-
-
+	
+	
 	  if(!this.$parent) this.$update();
 	  this.$ready = true;
 	  this.$emit("$init");
 	  if( this.init ) this.init(this.data);
 	  this.$emit("$afterInit");
-
+	
 	  // @TODO: remove, maybe , there is no need to update after init; 
 	  // if(this.$root === this) this.$update();
 	  env.isRunning = prevRunning;
-
+	
 	  // children is not required;
 	}
-
-
+	
+	
 	walkers && (walkers.Regular = Regular);
-
-
+	
+	
 	// description
 	// -------------------------
 	// 1. Regular and derived Class use same filter
@@ -9907,10 +8616,10 @@
 	  _plugins: {},
 	  _protoInheritCache: [ 'directive', 'use'] ,
 	  __after__: function(supr, o) {
-
+	
 	    var template;
 	    this.__after__ = supr.__after__;
-
+	
 	    // use name make the component global.
 	    if(o.name) Regular.component(o.name, this);
 	    // this.prototype.template = dom.initTemplate(o)
@@ -9919,21 +8628,21 @@
 	      if( typeof template === 'string' && template.length < 16 && ( node = dom.find( template )) ){
 	        template = node ;
 	      }
-
+	
 	      if(template && template.nodeType){
 	        if(name = dom.attr(template, 'name')) Regular.component(name, this);
 	        template = template.innerHTML;
 	      } 
-
+	
 	      if(typeof template === 'string' ){
 	        this.prototype.template = config.PRECOMPILE? new Parser(template).parse(): template;
 	      }
 	    }
-
+	
 	    if(o.computed) this.prototype.computed = handleComputed(o.computed);
 	    // inherit directive and other config from supr
 	    Regular._inheritConfig(this, supr);
-
+	
 	  },
 	  /**
 	   * Define a directive
@@ -9942,7 +8651,7 @@
 	   * @return {Object} Copy of ...
 	   */  
 	  directive: function(name, cfg){
-
+	
 	    if(_.typeOf(name) === "object"){
 	      for(var k in name){
 	        if(name.hasOwnProperty(k)) this.directive(k, name[k]);
@@ -10008,7 +8717,7 @@
 	    if(Regular[name]) return;
 	    Regular[name] = function(key, cfg){
 	      var cache = this[cacheKey];
-
+	
 	      if(typeof key === "object"){
 	        for(var i in key){
 	          if(key.hasOwnProperty(i)) this[name](i, key[i]);
@@ -10021,7 +8730,7 @@
 	    }
 	  },
 	  _inheritConfig: function(self, supr){
-
+	
 	    // prototype inherit some Regular property
 	    // so every Component will have own container to serve directive, filter etc..
 	    var defs = Regular._protoInheritCache;
@@ -10033,21 +8742,21 @@
 	    })
 	    return self;
 	  }
-
+	
 	});
-
+	
 	extend(Regular);
-
+	
 	Regular._addProtoInheritCache("component")
-
+	
 	Regular._addProtoInheritCache("filter", function(cfg){
 	  return typeof cfg === "function"? {get: cfg}: cfg;
 	})
-
-
+	
+	
 	events.mixTo(Regular);
 	Watcher.mixTo(Regular);
-
+	
 	Regular.implement({
 	  init: function(){},
 	  config: function(){},
@@ -10069,7 +8778,7 @@
 	    this._handles = null;
 	    this.$refs = null;
 	  },
-
+	
 	  /**
 	   * compile a block ast ; return a group;
 	   * @param  {Array} parsed ast
@@ -10084,9 +8793,9 @@
 	    var preExt = this.__ext__,
 	      record = options.record, 
 	      records;
-
+	
 	    if(options.extra) this.__ext__ = options.extra;
-
+	
 	    if(record) this._record();
 	    var group = this._walk(ast, options);
 	    if(record){
@@ -10100,8 +8809,8 @@
 	    if(options.extra) this.__ext__ = preExt;
 	    return group;
 	  },
-
-
+	
+	
 	  /**
 	   * create two-way binding with another component;
 	   * *warn*: 
@@ -10157,30 +8866,30 @@
 	  },
 	  $inject: combine.inject,
 	  $mute: function(isMute){
-
+	
 	    isMute = !!isMute;
-
+	
 	    var needupdate = isMute === false && this._mute;
-
+	
 	    this._mute = !!isMute;
-
+	
 	    if(needupdate) this.$update();
 	    return this;
 	  },
 	  // private bind logic
 	  _bind: function(component, expr1, expr2){
-
+	
 	    var self = this;
 	    // basic binding
-
+	
 	    if(!component || !(component instanceof Regular)) throw "$bind() should pass Regular component as first argument";
 	    if(!expr1) throw "$bind() should  pass as least one expression to bind";
-
+	
 	    if(!expr2) expr2 = expr1;
-
+	
 	    expr1 = parse.expression( expr1 );
 	    expr2 = parse.expression( expr2 );
-
+	
 	    // set is need to operate setting ;
 	    if(expr2.set){
 	      var wid1 = this.$watch( expr1, function(value){
@@ -10203,11 +8912,11 @@
 	  _walk: function(ast, arg1){
 	    if( _.typeOf(ast) === 'array' ){
 	      var res = [];
-
+	
 	      for(var i = 0, len = ast.length; i < len; i++){
 	        res.push( this._walk(ast[i], arg1) );
 	      }
-
+	
 	      return new Group(res);
 	    }
 	    if(typeof ast === 'string') return doc.createTextNode(ast)
@@ -10221,7 +8930,7 @@
 	    var Component = this.constructor,
 	      fire = typeof value !== "function"? _.handleEvent.call( this, value, type ) : value,
 	      handler = Component.event(type), destroy;
-
+	
 	    if ( handler ) {
 	      destroy = handler.call(this, elem, fire, attrs);
 	    } else {
@@ -10240,7 +8949,7 @@
 	    touched.get = !ext? rawget: function(context){
 	      return rawget(context, ext)
 	    }
-
+	
 	    if(expr.setbody && !expr.set){
 	      var setbody = expr.setbody;
 	      expr.set = function(ctx, value, ext){
@@ -10284,14 +8993,14 @@
 	      return undefined;
 	    }
 	    return (ext && typeof ext[path] !== 'undefined')? ext[path]: defaults[path];
-
+	
 	  },
 	  // simple accessor set
 	  _ss_:function(path, value, data , op, computed){
 	    var computed = this.computed,
 	      op = op || "=", prev, 
 	      computedProperty = computed? computed[path]:null;
-
+	
 	    if(op !== '='){
 	      prev = computedProperty? computedProperty.get(this): data[path];
 	      switch(op){
@@ -10320,21 +9029,21 @@
 	    return value;
 	  }
 	});
-
+	
 	Regular.prototype.inject = function(){
 	  _.log("use $inject instead of inject", "error");
 	  return this.$inject.apply(this, arguments);
 	}
-
-
+	
+	
 	// only one builtin filter
-
+	
 	Regular.filter(filter);
-
+	
 	module.exports = Regular;
-
-
-
+	
+	
+	
 	var handleComputed = (function(){
 	  // wrap the computed getter;
 	  function wrapGet(get){
@@ -10349,14 +9058,14 @@
 	      return value;
 	    }
 	  }
-
+	
 	  return function(computed){
 	    if(!computed) return;
 	    var parsedComputed = {}, handle, pair, type;
 	    for(var i in computed){
 	      handle = computed[i]
 	      type = typeof handle;
-
+	
 	      if(handle.type === 'expression'){
 	        parsedComputed[i] = handle;
 	        continue;
@@ -10377,6 +9086,1297 @@
 	  }
 	})();
 
+
+/***/ },
+/* 29 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/* WEBPACK VAR INJECTION */(function(module, Buffer) {(function (global, module) {
+	
+	  var exports = module.exports;
+	
+	  /**
+	   * Exports.
+	   */
+	
+	  module.exports = expect;
+	  expect.Assertion = Assertion;
+	
+	  /**
+	   * Exports version.
+	   */
+	
+	  expect.version = '0.3.1';
+	
+	  /**
+	   * Possible assertion flags.
+	   */
+	
+	  var flags = {
+	      not: ['to', 'be', 'have', 'include', 'only']
+	    , to: ['be', 'have', 'include', 'only', 'not']
+	    , only: ['have']
+	    , have: ['own']
+	    , be: ['an']
+	  };
+	
+	  function expect (obj) {
+	    return new Assertion(obj);
+	  }
+	
+	  /**
+	   * Constructor
+	   *
+	   * @api private
+	   */
+	
+	  function Assertion (obj, flag, parent) {
+	    this.obj = obj;
+	    this.flags = {};
+	
+	    if (undefined != parent) {
+	      this.flags[flag] = true;
+	
+	      for (var i in parent.flags) {
+	        if (parent.flags.hasOwnProperty(i)) {
+	          this.flags[i] = true;
+	        }
+	      }
+	    }
+	
+	    var $flags = flag ? flags[flag] : keys(flags)
+	      , self = this;
+	
+	    if ($flags) {
+	      for (var i = 0, l = $flags.length; i < l; i++) {
+	        // avoid recursion
+	        if (this.flags[$flags[i]]) continue;
+	
+	        var name = $flags[i]
+	          , assertion = new Assertion(this.obj, name, this)
+	
+	        if ('function' == typeof Assertion.prototype[name]) {
+	          // clone the function, make sure we dont touch the prot reference
+	          var old = this[name];
+	          this[name] = function () {
+	            return old.apply(self, arguments);
+	          };
+	
+	          for (var fn in Assertion.prototype) {
+	            if (Assertion.prototype.hasOwnProperty(fn) && fn != name) {
+	              this[name][fn] = bind(assertion[fn], assertion);
+	            }
+	          }
+	        } else {
+	          this[name] = assertion;
+	        }
+	      }
+	    }
+	  }
+	
+	  /**
+	   * Performs an assertion
+	   *
+	   * @api private
+	   */
+	
+	  Assertion.prototype.assert = function (truth, msg, error, expected) {
+	    var msg = this.flags.not ? error : msg
+	      , ok = this.flags.not ? !truth : truth
+	      , err;
+	
+	    if (!ok) {
+	      err = new Error(msg.call(this));
+	      if (arguments.length > 3) {
+	        err.actual = this.obj;
+	        err.expected = expected;
+	        err.showDiff = true;
+	      }
+	      throw err;
+	    }
+	
+	    this.and = new Assertion(this.obj);
+	  };
+	
+	  /**
+	   * Check if the value is truthy
+	   *
+	   * @api public
+	   */
+	
+	  Assertion.prototype.ok = function () {
+	    this.assert(
+	        !!this.obj
+	      , function(){ return 'expected ' + i(this.obj) + ' to be truthy' }
+	      , function(){ return 'expected ' + i(this.obj) + ' to be falsy' });
+	  };
+	
+	  /**
+	   * Creates an anonymous function which calls fn with arguments.
+	   *
+	   * @api public
+	   */
+	
+	  Assertion.prototype.withArgs = function() {
+	    expect(this.obj).to.be.a('function');
+	    var fn = this.obj;
+	    var args = Array.prototype.slice.call(arguments);
+	    return expect(function() { fn.apply(null, args); });
+	  };
+	
+	  /**
+	   * Assert that the function throws.
+	   *
+	   * @param {Function|RegExp} callback, or regexp to match error string against
+	   * @api public
+	   */
+	
+	  Assertion.prototype.throwError =
+	  Assertion.prototype.throwException = function (fn) {
+	    expect(this.obj).to.be.a('function');
+	
+	    var thrown = false
+	      , not = this.flags.not;
+	
+	    try {
+	      this.obj();
+	    } catch (e) {
+	      if (isRegExp(fn)) {
+	        var subject = 'string' == typeof e ? e : e.message;
+	        if (not) {
+	          expect(subject).to.not.match(fn);
+	        } else {
+	          expect(subject).to.match(fn);
+	        }
+	      } else if ('function' == typeof fn) {
+	        fn(e);
+	      }
+	      thrown = true;
+	    }
+	
+	    if (isRegExp(fn) && not) {
+	      // in the presence of a matcher, ensure the `not` only applies to
+	      // the matching.
+	      this.flags.not = false;
+	    }
+	
+	    var name = this.obj.name || 'fn';
+	    this.assert(
+	        thrown
+	      , function(){ return 'expected ' + name + ' to throw an exception' }
+	      , function(){ return 'expected ' + name + ' not to throw an exception' });
+	  };
+	
+	  /**
+	   * Checks if the array is empty.
+	   *
+	   * @api public
+	   */
+	
+	  Assertion.prototype.empty = function () {
+	    var expectation;
+	
+	    if ('object' == typeof this.obj && null !== this.obj && !isArray(this.obj)) {
+	      if ('number' == typeof this.obj.length) {
+	        expectation = !this.obj.length;
+	      } else {
+	        expectation = !keys(this.obj).length;
+	      }
+	    } else {
+	      if ('string' != typeof this.obj) {
+	        expect(this.obj).to.be.an('object');
+	      }
+	
+	      expect(this.obj).to.have.property('length');
+	      expectation = !this.obj.length;
+	    }
+	
+	    this.assert(
+	        expectation
+	      , function(){ return 'expected ' + i(this.obj) + ' to be empty' }
+	      , function(){ return 'expected ' + i(this.obj) + ' to not be empty' });
+	    return this;
+	  };
+	
+	  /**
+	   * Checks if the obj exactly equals another.
+	   *
+	   * @api public
+	   */
+	
+	  Assertion.prototype.be =
+	  Assertion.prototype.equal = function (obj) {
+	    this.assert(
+	        obj === this.obj
+	      , function(){ return 'expected ' + i(this.obj) + ' to equal ' + i(obj) }
+	      , function(){ return 'expected ' + i(this.obj) + ' to not equal ' + i(obj) });
+	    return this;
+	  };
+	
+	  /**
+	   * Checks if the obj sortof equals another.
+	   *
+	   * @api public
+	   */
+	
+	  Assertion.prototype.eql = function (obj) {
+	    this.assert(
+	        expect.eql(this.obj, obj)
+	      , function(){ return 'expected ' + i(this.obj) + ' to sort of equal ' + i(obj) }
+	      , function(){ return 'expected ' + i(this.obj) + ' to sort of not equal ' + i(obj) }
+	      , obj);
+	    return this;
+	  };
+	
+	  /**
+	   * Assert within start to finish (inclusive).
+	   *
+	   * @param {Number} start
+	   * @param {Number} finish
+	   * @api public
+	   */
+	
+	  Assertion.prototype.within = function (start, finish) {
+	    var range = start + '..' + finish;
+	    this.assert(
+	        this.obj >= start && this.obj <= finish
+	      , function(){ return 'expected ' + i(this.obj) + ' to be within ' + range }
+	      , function(){ return 'expected ' + i(this.obj) + ' to not be within ' + range });
+	    return this;
+	  };
+	
+	  /**
+	   * Assert typeof / instance of
+	   *
+	   * @api public
+	   */
+	
+	  Assertion.prototype.a =
+	  Assertion.prototype.an = function (type) {
+	    if ('string' == typeof type) {
+	      // proper english in error msg
+	      var n = /^[aeiou]/.test(type) ? 'n' : '';
+	
+	      // typeof with support for 'array'
+	      this.assert(
+	          'array' == type ? isArray(this.obj) :
+	            'regexp' == type ? isRegExp(this.obj) :
+	              'object' == type
+	                ? 'object' == typeof this.obj && null !== this.obj
+	                : type == typeof this.obj
+	        , function(){ return 'expected ' + i(this.obj) + ' to be a' + n + ' ' + type }
+	        , function(){ return 'expected ' + i(this.obj) + ' not to be a' + n + ' ' + type });
+	    } else {
+	      // instanceof
+	      var name = type.name || 'supplied constructor';
+	      this.assert(
+	          this.obj instanceof type
+	        , function(){ return 'expected ' + i(this.obj) + ' to be an instance of ' + name }
+	        , function(){ return 'expected ' + i(this.obj) + ' not to be an instance of ' + name });
+	    }
+	
+	    return this;
+	  };
+	
+	  /**
+	   * Assert numeric value above _n_.
+	   *
+	   * @param {Number} n
+	   * @api public
+	   */
+	
+	  Assertion.prototype.greaterThan =
+	  Assertion.prototype.above = function (n) {
+	    this.assert(
+	        this.obj > n
+	      , function(){ return 'expected ' + i(this.obj) + ' to be above ' + n }
+	      , function(){ return 'expected ' + i(this.obj) + ' to be below ' + n });
+	    return this;
+	  };
+	
+	  /**
+	   * Assert numeric value below _n_.
+	   *
+	   * @param {Number} n
+	   * @api public
+	   */
+	
+	  Assertion.prototype.lessThan =
+	  Assertion.prototype.below = function (n) {
+	    this.assert(
+	        this.obj < n
+	      , function(){ return 'expected ' + i(this.obj) + ' to be below ' + n }
+	      , function(){ return 'expected ' + i(this.obj) + ' to be above ' + n });
+	    return this;
+	  };
+	
+	  /**
+	   * Assert string value matches _regexp_.
+	   *
+	   * @param {RegExp} regexp
+	   * @api public
+	   */
+	
+	  Assertion.prototype.match = function (regexp) {
+	    this.assert(
+	        regexp.exec(this.obj)
+	      , function(){ return 'expected ' + i(this.obj) + ' to match ' + regexp }
+	      , function(){ return 'expected ' + i(this.obj) + ' not to match ' + regexp });
+	    return this;
+	  };
+	
+	  /**
+	   * Assert property "length" exists and has value of _n_.
+	   *
+	   * @param {Number} n
+	   * @api public
+	   */
+	
+	  Assertion.prototype.length = function (n) {
+	    expect(this.obj).to.have.property('length');
+	    var len = this.obj.length;
+	    this.assert(
+	        n == len
+	      , function(){ return 'expected ' + i(this.obj) + ' to have a length of ' + n + ' but got ' + len }
+	      , function(){ return 'expected ' + i(this.obj) + ' to not have a length of ' + len });
+	    return this;
+	  };
+	
+	  /**
+	   * Assert property _name_ exists, with optional _val_.
+	   *
+	   * @param {String} name
+	   * @param {Mixed} val
+	   * @api public
+	   */
+	
+	  Assertion.prototype.property = function (name, val) {
+	    if (this.flags.own) {
+	      this.assert(
+	          Object.prototype.hasOwnProperty.call(this.obj, name)
+	        , function(){ return 'expected ' + i(this.obj) + ' to have own property ' + i(name) }
+	        , function(){ return 'expected ' + i(this.obj) + ' to not have own property ' + i(name) });
+	      return this;
+	    }
+	
+	    if (this.flags.not && undefined !== val) {
+	      if (undefined === this.obj[name]) {
+	        throw new Error(i(this.obj) + ' has no property ' + i(name));
+	      }
+	    } else {
+	      var hasProp;
+	      try {
+	        hasProp = name in this.obj
+	      } catch (e) {
+	        hasProp = undefined !== this.obj[name]
+	      }
+	
+	      this.assert(
+	          hasProp
+	        , function(){ return 'expected ' + i(this.obj) + ' to have a property ' + i(name) }
+	        , function(){ return 'expected ' + i(this.obj) + ' to not have a property ' + i(name) });
+	    }
+	
+	    if (undefined !== val) {
+	      this.assert(
+	          val === this.obj[name]
+	        , function(){ return 'expected ' + i(this.obj) + ' to have a property ' + i(name)
+	          + ' of ' + i(val) + ', but got ' + i(this.obj[name]) }
+	        , function(){ return 'expected ' + i(this.obj) + ' to not have a property ' + i(name)
+	          + ' of ' + i(val) });
+	    }
+	
+	    this.obj = this.obj[name];
+	    return this;
+	  };
+	
+	  /**
+	   * Assert that the array contains _obj_ or string contains _obj_.
+	   *
+	   * @param {Mixed} obj|string
+	   * @api public
+	   */
+	
+	  Assertion.prototype.string =
+	  Assertion.prototype.contain = function (obj) {
+	    if ('string' == typeof this.obj) {
+	      this.assert(
+	          ~this.obj.indexOf(obj)
+	        , function(){ return 'expected ' + i(this.obj) + ' to contain ' + i(obj) }
+	        , function(){ return 'expected ' + i(this.obj) + ' to not contain ' + i(obj) });
+	    } else {
+	      this.assert(
+	          ~indexOf(this.obj, obj)
+	        , function(){ return 'expected ' + i(this.obj) + ' to contain ' + i(obj) }
+	        , function(){ return 'expected ' + i(this.obj) + ' to not contain ' + i(obj) });
+	    }
+	    return this;
+	  };
+	
+	  /**
+	   * Assert exact keys or inclusion of keys by using
+	   * the `.own` modifier.
+	   *
+	   * @param {Array|String ...} keys
+	   * @api public
+	   */
+	
+	  Assertion.prototype.key =
+	  Assertion.prototype.keys = function ($keys) {
+	    var str
+	      , ok = true;
+	
+	    $keys = isArray($keys)
+	      ? $keys
+	      : Array.prototype.slice.call(arguments);
+	
+	    if (!$keys.length) throw new Error('keys required');
+	
+	    var actual = keys(this.obj)
+	      , len = $keys.length;
+	
+	    // Inclusion
+	    ok = every($keys, function (key) {
+	      return ~indexOf(actual, key);
+	    });
+	
+	    // Strict
+	    if (!this.flags.not && this.flags.only) {
+	      ok = ok && $keys.length == actual.length;
+	    }
+	
+	    // Key string
+	    if (len > 1) {
+	      $keys = map($keys, function (key) {
+	        return i(key);
+	      });
+	      var last = $keys.pop();
+	      str = $keys.join(', ') + ', and ' + last;
+	    } else {
+	      str = i($keys[0]);
+	    }
+	
+	    // Form
+	    str = (len > 1 ? 'keys ' : 'key ') + str;
+	
+	    // Have / include
+	    str = (!this.flags.only ? 'include ' : 'only have ') + str;
+	
+	    // Assertion
+	    this.assert(
+	        ok
+	      , function(){ return 'expected ' + i(this.obj) + ' to ' + str }
+	      , function(){ return 'expected ' + i(this.obj) + ' to not ' + str });
+	
+	    return this;
+	  };
+	
+	  /**
+	   * Assert a failure.
+	   *
+	   * @param {String ...} custom message
+	   * @api public
+	   */
+	  Assertion.prototype.fail = function (msg) {
+	    var error = function() { return msg || "explicit failure"; }
+	    this.assert(false, error, error);
+	    return this;
+	  };
+	
+	  /**
+	   * Function bind implementation.
+	   */
+	
+	  function bind (fn, scope) {
+	    return function () {
+	      return fn.apply(scope, arguments);
+	    }
+	  }
+	
+	  /**
+	   * Array every compatibility
+	   *
+	   * @see bit.ly/5Fq1N2
+	   * @api public
+	   */
+	
+	  function every (arr, fn, thisObj) {
+	    var scope = thisObj || global;
+	    for (var i = 0, j = arr.length; i < j; ++i) {
+	      if (!fn.call(scope, arr[i], i, arr)) {
+	        return false;
+	      }
+	    }
+	    return true;
+	  }
+	
+	  /**
+	   * Array indexOf compatibility.
+	   *
+	   * @see bit.ly/a5Dxa2
+	   * @api public
+	   */
+	
+	  function indexOf (arr, o, i) {
+	    if (Array.prototype.indexOf) {
+	      return Array.prototype.indexOf.call(arr, o, i);
+	    }
+	
+	    if (arr.length === undefined) {
+	      return -1;
+	    }
+	
+	    for (var j = arr.length, i = i < 0 ? i + j < 0 ? 0 : i + j : i || 0
+	        ; i < j && arr[i] !== o; i++);
+	
+	    return j <= i ? -1 : i;
+	  }
+	
+	  // https://gist.github.com/1044128/
+	  var getOuterHTML = function(element) {
+	    if ('outerHTML' in element) return element.outerHTML;
+	    var ns = "http://www.w3.org/1999/xhtml";
+	    var container = document.createElementNS(ns, '_');
+	    var xmlSerializer = new XMLSerializer();
+	    var html;
+	    if (document.xmlVersion) {
+	      return xmlSerializer.serializeToString(element);
+	    } else {
+	      container.appendChild(element.cloneNode(false));
+	      html = container.innerHTML.replace('><', '>' + element.innerHTML + '<');
+	      container.innerHTML = '';
+	      return html;
+	    }
+	  };
+	
+	  // Returns true if object is a DOM element.
+	  var isDOMElement = function (object) {
+	    if (typeof HTMLElement === 'object') {
+	      return object instanceof HTMLElement;
+	    } else {
+	      return object &&
+	        typeof object === 'object' &&
+	        object.nodeType === 1 &&
+	        typeof object.nodeName === 'string';
+	    }
+	  };
+	
+	  /**
+	   * Inspects an object.
+	   *
+	   * @see taken from node.js `util` module (copyright Joyent, MIT license)
+	   * @api private
+	   */
+	
+	  function i (obj, showHidden, depth) {
+	    var seen = [];
+	
+	    function stylize (str) {
+	      return str;
+	    }
+	
+	    function format (value, recurseTimes) {
+	      // Provide a hook for user-specified inspect functions.
+	      // Check that value is an object with an inspect function on it
+	      if (value && typeof value.inspect === 'function' &&
+	          // Filter out the util module, it's inspect function is special
+	          value !== exports &&
+	          // Also filter out any prototype objects using the circular check.
+	          !(value.constructor && value.constructor.prototype === value)) {
+	        return value.inspect(recurseTimes);
+	      }
+	
+	      // Primitive types cannot have properties
+	      switch (typeof value) {
+	        case 'undefined':
+	          return stylize('undefined', 'undefined');
+	
+	        case 'string':
+	          var simple = '\'' + json.stringify(value).replace(/^"|"$/g, '')
+	                                                   .replace(/'/g, "\\'")
+	                                                   .replace(/\\"/g, '"') + '\'';
+	          return stylize(simple, 'string');
+	
+	        case 'number':
+	          return stylize('' + value, 'number');
+	
+	        case 'boolean':
+	          return stylize('' + value, 'boolean');
+	      }
+	      // For some reason typeof null is "object", so special case here.
+	      if (value === null) {
+	        return stylize('null', 'null');
+	      }
+	
+	      if (isDOMElement(value)) {
+	        return getOuterHTML(value);
+	      }
+	
+	      // Look up the keys of the object.
+	      var visible_keys = keys(value);
+	      var $keys = showHidden ? Object.getOwnPropertyNames(value) : visible_keys;
+	
+	      // Functions without properties can be shortcutted.
+	      if (typeof value === 'function' && $keys.length === 0) {
+	        if (isRegExp(value)) {
+	          return stylize('' + value, 'regexp');
+	        } else {
+	          var name = value.name ? ': ' + value.name : '';
+	          return stylize('[Function' + name + ']', 'special');
+	        }
+	      }
+	
+	      // Dates without properties can be shortcutted
+	      if (isDate(value) && $keys.length === 0) {
+	        return stylize(value.toUTCString(), 'date');
+	      }
+	      
+	      // Error objects can be shortcutted
+	      if (value instanceof Error) {
+	        return stylize("["+value.toString()+"]", 'Error');
+	      }
+	
+	      var base, type, braces;
+	      // Determine the object type
+	      if (isArray(value)) {
+	        type = 'Array';
+	        braces = ['[', ']'];
+	      } else {
+	        type = 'Object';
+	        braces = ['{', '}'];
+	      }
+	
+	      // Make functions say that they are functions
+	      if (typeof value === 'function') {
+	        var n = value.name ? ': ' + value.name : '';
+	        base = (isRegExp(value)) ? ' ' + value : ' [Function' + n + ']';
+	      } else {
+	        base = '';
+	      }
+	
+	      // Make dates with properties first say the date
+	      if (isDate(value)) {
+	        base = ' ' + value.toUTCString();
+	      }
+	
+	      if ($keys.length === 0) {
+	        return braces[0] + base + braces[1];
+	      }
+	
+	      if (recurseTimes < 0) {
+	        if (isRegExp(value)) {
+	          return stylize('' + value, 'regexp');
+	        } else {
+	          return stylize('[Object]', 'special');
+	        }
+	      }
+	
+	      seen.push(value);
+	
+	      var output = map($keys, function (key) {
+	        var name, str;
+	        if (value.__lookupGetter__) {
+	          if (value.__lookupGetter__(key)) {
+	            if (value.__lookupSetter__(key)) {
+	              str = stylize('[Getter/Setter]', 'special');
+	            } else {
+	              str = stylize('[Getter]', 'special');
+	            }
+	          } else {
+	            if (value.__lookupSetter__(key)) {
+	              str = stylize('[Setter]', 'special');
+	            }
+	          }
+	        }
+	        if (indexOf(visible_keys, key) < 0) {
+	          name = '[' + key + ']';
+	        }
+	        if (!str) {
+	          if (indexOf(seen, value[key]) < 0) {
+	            if (recurseTimes === null) {
+	              str = format(value[key]);
+	            } else {
+	              str = format(value[key], recurseTimes - 1);
+	            }
+	            if (str.indexOf('\n') > -1) {
+	              if (isArray(value)) {
+	                str = map(str.split('\n'), function (line) {
+	                  return '  ' + line;
+	                }).join('\n').substr(2);
+	              } else {
+	                str = '\n' + map(str.split('\n'), function (line) {
+	                  return '   ' + line;
+	                }).join('\n');
+	              }
+	            }
+	          } else {
+	            str = stylize('[Circular]', 'special');
+	          }
+	        }
+	        if (typeof name === 'undefined') {
+	          if (type === 'Array' && key.match(/^\d+$/)) {
+	            return str;
+	          }
+	          name = json.stringify('' + key);
+	          if (name.match(/^"([a-zA-Z_][a-zA-Z_0-9]*)"$/)) {
+	            name = name.substr(1, name.length - 2);
+	            name = stylize(name, 'name');
+	          } else {
+	            name = name.replace(/'/g, "\\'")
+	                       .replace(/\\"/g, '"')
+	                       .replace(/(^"|"$)/g, "'");
+	            name = stylize(name, 'string');
+	          }
+	        }
+	
+	        return name + ': ' + str;
+	      });
+	
+	      seen.pop();
+	
+	      var numLinesEst = 0;
+	      var length = reduce(output, function (prev, cur) {
+	        numLinesEst++;
+	        if (indexOf(cur, '\n') >= 0) numLinesEst++;
+	        return prev + cur.length + 1;
+	      }, 0);
+	
+	      if (length > 50) {
+	        output = braces[0] +
+	                 (base === '' ? '' : base + '\n ') +
+	                 ' ' +
+	                 output.join(',\n  ') +
+	                 ' ' +
+	                 braces[1];
+	
+	      } else {
+	        output = braces[0] + base + ' ' + output.join(', ') + ' ' + braces[1];
+	      }
+	
+	      return output;
+	    }
+	    return format(obj, (typeof depth === 'undefined' ? 2 : depth));
+	  }
+	
+	  expect.stringify = i;
+	
+	  function isArray (ar) {
+	    return Object.prototype.toString.call(ar) === '[object Array]';
+	  }
+	
+	  function isRegExp(re) {
+	    var s;
+	    try {
+	      s = '' + re;
+	    } catch (e) {
+	      return false;
+	    }
+	
+	    return re instanceof RegExp || // easy case
+	           // duck-type for context-switching evalcx case
+	           typeof(re) === 'function' &&
+	           re.constructor.name === 'RegExp' &&
+	           re.compile &&
+	           re.test &&
+	           re.exec &&
+	           s.match(/^\/.*\/[gim]{0,3}$/);
+	  }
+	
+	  function isDate(d) {
+	    return d instanceof Date;
+	  }
+	
+	  function keys (obj) {
+	    if (Object.keys) {
+	      return Object.keys(obj);
+	    }
+	
+	    var keys = [];
+	
+	    for (var i in obj) {
+	      if (Object.prototype.hasOwnProperty.call(obj, i)) {
+	        keys.push(i);
+	      }
+	    }
+	
+	    return keys;
+	  }
+	
+	  function map (arr, mapper, that) {
+	    if (Array.prototype.map) {
+	      return Array.prototype.map.call(arr, mapper, that);
+	    }
+	
+	    var other= new Array(arr.length);
+	
+	    for (var i= 0, n = arr.length; i<n; i++)
+	      if (i in arr)
+	        other[i] = mapper.call(that, arr[i], i, arr);
+	
+	    return other;
+	  }
+	
+	  function reduce (arr, fun) {
+	    if (Array.prototype.reduce) {
+	      return Array.prototype.reduce.apply(
+	          arr
+	        , Array.prototype.slice.call(arguments, 1)
+	      );
+	    }
+	
+	    var len = +this.length;
+	
+	    if (typeof fun !== "function")
+	      throw new TypeError();
+	
+	    // no value to return if no initial value and an empty array
+	    if (len === 0 && arguments.length === 1)
+	      throw new TypeError();
+	
+	    var i = 0;
+	    if (arguments.length >= 2) {
+	      var rv = arguments[1];
+	    } else {
+	      do {
+	        if (i in this) {
+	          rv = this[i++];
+	          break;
+	        }
+	
+	        // if array contains no values, no initial value to return
+	        if (++i >= len)
+	          throw new TypeError();
+	      } while (true);
+	    }
+	
+	    for (; i < len; i++) {
+	      if (i in this)
+	        rv = fun.call(null, rv, this[i], i, this);
+	    }
+	
+	    return rv;
+	  }
+	
+	  /**
+	   * Asserts deep equality
+	   *
+	   * @see taken from node.js `assert` module (copyright Joyent, MIT license)
+	   * @api private
+	   */
+	
+	  expect.eql = function eql(actual, expected) {
+	    // 7.1. All identical values are equivalent, as determined by ===.
+	    if (actual === expected) {
+	      return true;
+	    } else if ('undefined' != typeof Buffer
+	      && Buffer.isBuffer(actual) && Buffer.isBuffer(expected)) {
+	      if (actual.length != expected.length) return false;
+	
+	      for (var i = 0; i < actual.length; i++) {
+	        if (actual[i] !== expected[i]) return false;
+	      }
+	
+	      return true;
+	
+	      // 7.2. If the expected value is a Date object, the actual value is
+	      // equivalent if it is also a Date object that refers to the same time.
+	    } else if (actual instanceof Date && expected instanceof Date) {
+	      return actual.getTime() === expected.getTime();
+	
+	      // 7.3. Other pairs that do not both pass typeof value == "object",
+	      // equivalence is determined by ==.
+	    } else if (typeof actual != 'object' && typeof expected != 'object') {
+	      return actual == expected;
+	    // If both are regular expression use the special `regExpEquiv` method
+	    // to determine equivalence.
+	    } else if (isRegExp(actual) && isRegExp(expected)) {
+	      return regExpEquiv(actual, expected);
+	    // 7.4. For all other Object pairs, including Array objects, equivalence is
+	    // determined by having the same number of owned properties (as verified
+	    // with Object.prototype.hasOwnProperty.call), the same set of keys
+	    // (although not necessarily the same order), equivalent values for every
+	    // corresponding key, and an identical "prototype" property. Note: this
+	    // accounts for both named and indexed properties on Arrays.
+	    } else {
+	      return objEquiv(actual, expected);
+	    }
+	  };
+	
+	  function isUndefinedOrNull (value) {
+	    return value === null || value === undefined;
+	  }
+	
+	  function isArguments (object) {
+	    return Object.prototype.toString.call(object) == '[object Arguments]';
+	  }
+	
+	  function regExpEquiv (a, b) {
+	    return a.source === b.source && a.global === b.global &&
+	           a.ignoreCase === b.ignoreCase && a.multiline === b.multiline;
+	  }
+	
+	  function objEquiv (a, b) {
+	    if (isUndefinedOrNull(a) || isUndefinedOrNull(b))
+	      return false;
+	    // an identical "prototype" property.
+	    if (a.prototype !== b.prototype) return false;
+	    //~~~I've managed to break Object.keys through screwy arguments passing.
+	    //   Converting to array solves the problem.
+	    if (isArguments(a)) {
+	      if (!isArguments(b)) {
+	        return false;
+	      }
+	      a = pSlice.call(a);
+	      b = pSlice.call(b);
+	      return expect.eql(a, b);
+	    }
+	    try{
+	      var ka = keys(a),
+	        kb = keys(b),
+	        key, i;
+	    } catch (e) {//happens when one is a string literal and the other isn't
+	      return false;
+	    }
+	    // having the same number of owned properties (keys incorporates hasOwnProperty)
+	    if (ka.length != kb.length)
+	      return false;
+	    //the same set of keys (although not necessarily the same order),
+	    ka.sort();
+	    kb.sort();
+	    //~~~cheap key test
+	    for (i = ka.length - 1; i >= 0; i--) {
+	      if (ka[i] != kb[i])
+	        return false;
+	    }
+	    //equivalent values for every corresponding key, and
+	    //~~~possibly expensive deep test
+	    for (i = ka.length - 1; i >= 0; i--) {
+	      key = ka[i];
+	      if (!expect.eql(a[key], b[key]))
+	         return false;
+	    }
+	    return true;
+	  }
+	
+	  var json = (function () {
+	    "use strict";
+	
+	    if ('object' == typeof JSON && JSON.parse && JSON.stringify) {
+	      return {
+	          parse: nativeJSON.parse
+	        , stringify: nativeJSON.stringify
+	      }
+	    }
+	
+	    var JSON = {};
+	
+	    function f(n) {
+	        // Format integers to have at least two digits.
+	        return n < 10 ? '0' + n : n;
+	    }
+	
+	    function date(d, key) {
+	      return isFinite(d.valueOf()) ?
+	          d.getUTCFullYear()     + '-' +
+	          f(d.getUTCMonth() + 1) + '-' +
+	          f(d.getUTCDate())      + 'T' +
+	          f(d.getUTCHours())     + ':' +
+	          f(d.getUTCMinutes())   + ':' +
+	          f(d.getUTCSeconds())   + 'Z' : null;
+	    }
+	
+	    var cx = /[\u0000\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/g,
+	        escapable = /[\\\"\x00-\x1f\x7f-\x9f\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/g,
+	        gap,
+	        indent,
+	        meta = {    // table of character substitutions
+	            '\b': '\\b',
+	            '\t': '\\t',
+	            '\n': '\\n',
+	            '\f': '\\f',
+	            '\r': '\\r',
+	            '"' : '\\"',
+	            '\\': '\\\\'
+	        },
+	        rep;
+	
+	
+	    function quote(string) {
+	
+	  // If the string contains no control characters, no quote characters, and no
+	  // backslash characters, then we can safely slap some quotes around it.
+	  // Otherwise we must also replace the offending characters with safe escape
+	  // sequences.
+	
+	        escapable.lastIndex = 0;
+	        return escapable.test(string) ? '"' + string.replace(escapable, function (a) {
+	            var c = meta[a];
+	            return typeof c === 'string' ? c :
+	                '\\u' + ('0000' + a.charCodeAt(0).toString(16)).slice(-4);
+	        }) + '"' : '"' + string + '"';
+	    }
+	
+	
+	    function str(key, holder) {
+	
+	  // Produce a string from holder[key].
+	
+	        var i,          // The loop counter.
+	            k,          // The member key.
+	            v,          // The member value.
+	            length,
+	            mind = gap,
+	            partial,
+	            value = holder[key];
+	
+	  // If the value has a toJSON method, call it to obtain a replacement value.
+	
+	        if (value instanceof Date) {
+	            value = date(key);
+	        }
+	
+	  // If we were called with a replacer function, then call the replacer to
+	  // obtain a replacement value.
+	
+	        if (typeof rep === 'function') {
+	            value = rep.call(holder, key, value);
+	        }
+	
+	  // What happens next depends on the value's type.
+	
+	        switch (typeof value) {
+	        case 'string':
+	            return quote(value);
+	
+	        case 'number':
+	
+	  // JSON numbers must be finite. Encode non-finite numbers as null.
+	
+	            return isFinite(value) ? String(value) : 'null';
+	
+	        case 'boolean':
+	        case 'null':
+	
+	  // If the value is a boolean or null, convert it to a string. Note:
+	  // typeof null does not produce 'null'. The case is included here in
+	  // the remote chance that this gets fixed someday.
+	
+	            return String(value);
+	
+	  // If the type is 'object', we might be dealing with an object or an array or
+	  // null.
+	
+	        case 'object':
+	
+	  // Due to a specification blunder in ECMAScript, typeof null is 'object',
+	  // so watch out for that case.
+	
+	            if (!value) {
+	                return 'null';
+	            }
+	
+	  // Make an array to hold the partial results of stringifying this object value.
+	
+	            gap += indent;
+	            partial = [];
+	
+	  // Is the value an array?
+	
+	            if (Object.prototype.toString.apply(value) === '[object Array]') {
+	
+	  // The value is an array. Stringify every element. Use null as a placeholder
+	  // for non-JSON values.
+	
+	                length = value.length;
+	                for (i = 0; i < length; i += 1) {
+	                    partial[i] = str(i, value) || 'null';
+	                }
+	
+	  // Join all of the elements together, separated with commas, and wrap them in
+	  // brackets.
+	
+	                v = partial.length === 0 ? '[]' : gap ?
+	                    '[\n' + gap + partial.join(',\n' + gap) + '\n' + mind + ']' :
+	                    '[' + partial.join(',') + ']';
+	                gap = mind;
+	                return v;
+	            }
+	
+	  // If the replacer is an array, use it to select the members to be stringified.
+	
+	            if (rep && typeof rep === 'object') {
+	                length = rep.length;
+	                for (i = 0; i < length; i += 1) {
+	                    if (typeof rep[i] === 'string') {
+	                        k = rep[i];
+	                        v = str(k, value);
+	                        if (v) {
+	                            partial.push(quote(k) + (gap ? ': ' : ':') + v);
+	                        }
+	                    }
+	                }
+	            } else {
+	
+	  // Otherwise, iterate through all of the keys in the object.
+	
+	                for (k in value) {
+	                    if (Object.prototype.hasOwnProperty.call(value, k)) {
+	                        v = str(k, value);
+	                        if (v) {
+	                            partial.push(quote(k) + (gap ? ': ' : ':') + v);
+	                        }
+	                    }
+	                }
+	            }
+	
+	  // Join all of the member texts together, separated with commas,
+	  // and wrap them in braces.
+	
+	            v = partial.length === 0 ? '{}' : gap ?
+	                '{\n' + gap + partial.join(',\n' + gap) + '\n' + mind + '}' :
+	                '{' + partial.join(',') + '}';
+	            gap = mind;
+	            return v;
+	        }
+	    }
+	
+	  // If the JSON object does not yet have a stringify method, give it one.
+	
+	    JSON.stringify = function (value, replacer, space) {
+	
+	  // The stringify method takes a value and an optional replacer, and an optional
+	  // space parameter, and returns a JSON text. The replacer can be a function
+	  // that can replace values, or an array of strings that will select the keys.
+	  // A default replacer method can be provided. Use of the space parameter can
+	  // produce text that is more easily readable.
+	
+	        var i;
+	        gap = '';
+	        indent = '';
+	
+	  // If the space parameter is a number, make an indent string containing that
+	  // many spaces.
+	
+	        if (typeof space === 'number') {
+	            for (i = 0; i < space; i += 1) {
+	                indent += ' ';
+	            }
+	
+	  // If the space parameter is a string, it will be used as the indent string.
+	
+	        } else if (typeof space === 'string') {
+	            indent = space;
+	        }
+	
+	  // If there is a replacer, it must be a function or an array.
+	  // Otherwise, throw an error.
+	
+	        rep = replacer;
+	        if (replacer && typeof replacer !== 'function' &&
+	                (typeof replacer !== 'object' ||
+	                typeof replacer.length !== 'number')) {
+	            throw new Error('JSON.stringify');
+	        }
+	
+	  // Make a fake root object containing our value under the key of ''.
+	  // Return the result of stringifying the value.
+	
+	        return str('', {'': value});
+	    };
+	
+	  // If the JSON object does not yet have a parse method, give it one.
+	
+	    JSON.parse = function (text, reviver) {
+	    // The parse method takes a text and an optional reviver function, and returns
+	    // a JavaScript value if the text is a valid JSON text.
+	
+	        var j;
+	
+	        function walk(holder, key) {
+	
+	    // The walk method is used to recursively walk the resulting structure so
+	    // that modifications can be made.
+	
+	            var k, v, value = holder[key];
+	            if (value && typeof value === 'object') {
+	                for (k in value) {
+	                    if (Object.prototype.hasOwnProperty.call(value, k)) {
+	                        v = walk(value, k);
+	                        if (v !== undefined) {
+	                            value[k] = v;
+	                        } else {
+	                            delete value[k];
+	                        }
+	                    }
+	                }
+	            }
+	            return reviver.call(holder, key, value);
+	        }
+	
+	
+	    // Parsing happens in four stages. In the first stage, we replace certain
+	    // Unicode characters with escape sequences. JavaScript handles many characters
+	    // incorrectly, either silently deleting them, or treating them as line endings.
+	
+	        text = String(text);
+	        cx.lastIndex = 0;
+	        if (cx.test(text)) {
+	            text = text.replace(cx, function (a) {
+	                return '\\u' +
+	                    ('0000' + a.charCodeAt(0).toString(16)).slice(-4);
+	            });
+	        }
+	
+	    // In the second stage, we run the text against regular expressions that look
+	    // for non-JSON patterns. We are especially concerned with '()' and 'new'
+	    // because they can cause invocation, and '=' because it can cause mutation.
+	    // But just to be safe, we want to reject all unexpected forms.
+	
+	    // We split the second stage into 4 regexp operations in order to work around
+	    // crippling inefficiencies in IE's and Safari's regexp engines. First we
+	    // replace the JSON backslash pairs with '@' (a non-JSON character). Second, we
+	    // replace all simple value tokens with ']' characters. Third, we delete all
+	    // open brackets that follow a colon or comma or that begin the text. Finally,
+	    // we look to see that the remaining characters are only whitespace or ']' or
+	    // ',' or ':' or '{' or '}'. If that is so, then the text is safe for eval.
+	
+	        if (/^[\],:{}\s]*$/
+	                .test(text.replace(/\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4})/g, '@')
+	                    .replace(/"[^"\\\n\r]*"|true|false|null|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?/g, ']')
+	                    .replace(/(?:^|:|,)(?:\s*\[)+/g, ''))) {
+	
+	    // In the third stage we use the eval function to compile the text into a
+	    // JavaScript structure. The '{' operator is subject to a syntactic ambiguity
+	    // in JavaScript: it can begin a block or an object literal. We wrap the text
+	    // in parens to eliminate the ambiguity.
+	
+	            j = eval('(' + text + ')');
+	
+	    // In the optional fourth stage, we recursively walk the new structure, passing
+	    // each name/value pair to a reviver function for possible transformation.
+	
+	            return typeof reviver === 'function' ?
+	                walk({'': j}, '') : j;
+	        }
+	
+	    // If the text is not JSON parseable, then a SyntaxError is thrown.
+	
+	        throw new SyntaxError('JSON.parse');
+	    };
+	
+	    return JSON;
+	  })();
+	
+	  if ('undefined' != typeof window) {
+	    window.expect = module.exports;
+	  }
+	
+	})(
+	    this
+	  , true ? module : {exports: {}}
+	);
+	
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(45)(module), __webpack_require__(44).Buffer))
 
 /***/ },
 /* 30 */
@@ -10651,9 +10651,9 @@
 	  'rsaquo':8250, 
 	  'euro':8364
 	}
-
-
-
+	
+	
+	
 	module.exports  = entities;
 
 /***/ },
@@ -10661,24 +10661,24 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	// Regular
-	var _ = __webpack_require__(18);
+	var _ = __webpack_require__(21);
 	var dom = __webpack_require__(17);
 	var animate = __webpack_require__(19);
-	var Regular = __webpack_require__(29);
+	var Regular = __webpack_require__(28);
 	var consts = __webpack_require__(30);
 	var namespaces = consts.NAMESPACE;
-
-
-
-
+	
+	
+	
+	
 	__webpack_require__(41);
 	__webpack_require__(42);
-
-
+	
+	
 	module.exports = {
 	// **warn**: class inteplation will override this directive 
 	  'r-class': function(elem, value){
-
+	
 	    if(typeof value=== 'string'){
 	      value = _.fixObjStr(value)
 	    }
@@ -10768,18 +10768,18 @@
 	    }
 	  }
 	}
-
+	
 	Regular.directive(module.exports);
-
-
-
-
-
-
-
-
-
-
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 
 
 /***/ },
@@ -10787,12 +10787,12 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var // packages
-	  _ = __webpack_require__(18),
+	  _ = __webpack_require__(21),
 	 animate = __webpack_require__(19),
 	 dom = __webpack_require__(17),
-	 Regular = __webpack_require__(29);
-
-
+	 Regular = __webpack_require__(28);
+	
+	
 	var // variables
 	  rClassName = /^[-\w]+(\s[-\w]+)*$/,
 	  rCommaSep = /[\r\n\f ]*,[\r\n\f ]*(?=\w+\:)/, //  dont split comma in  Expression
@@ -10801,18 +10801,18 @@
 	  WHEN_COMMAND = "when",
 	  EVENT_COMMAND = "on",
 	  THEN_COMMAND = "then";
-
+	
 	/**
 	 * Animation Plugin
 	 * @param {Component} Component 
 	 */
-
-
+	
+	
 	function createSeed(type){
-
+	
 	  var steps = [], current = 0, callback = _.noop;
 	  var key;
-
+	
 	  var out = {
 	    type: type,
 	    start: function(cb){
@@ -10847,13 +10847,13 @@
 	      steps.push(step)
 	    }
 	  }
-
+	
 	  return out;
 	}
-
+	
 	Regular._addProtoInheritCache("animation")
-
-
+	
+	
 	// builtin animation
 	Regular.animation({
 	  "wait": function( step ){
@@ -10867,7 +10867,7 @@
 	    var tmp = step.param.split(","),
 	      className = tmp[0] || "",
 	      mode = parseInt(tmp[1]) || 1;
-
+	
 	    return function(done){
 	      // _.log(className)
 	      animate.startClassAnimate( step.element, className , done, mode );
@@ -10887,9 +10887,9 @@
 	    var tmp = param.split(","),
 	      evt = tmp[0] || "",
 	      args = tmp[1]? this.$expression(tmp[1]).get: null;
-
+	
 	    if(!evt) throw Error("you shoud specified a eventname in emit command");
-
+	
 	    var self = this;
 	    return function(done){
 	      self.$emit(evt, args? args(self) : undefined);
@@ -10907,13 +10907,13 @@
 	        var tmp = pair.split( rSpace ),
 	          name = tmp.shift(),
 	          value = tmp.join(" ");
-
+	
 	        if( !name || !value ) throw Error("invalid style in command: style");
 	        styles[name] = value;
 	        valid = true;
 	      }
 	    })
-
+	
 	    return function(done){
 	      if(valid){
 	        animate.startStyleAnimate(step.element, styles, done);
@@ -10923,56 +10923,56 @@
 	    }
 	  }
 	})
-
-
-
+	
+	
+	
 	// hancdle the r-animation directive
 	// el : the element to process
 	// value: the directive value
 	function processAnimate( element, value ){
 	  var Component = this.constructor;
-
+	
 	  if(_.isExpr(value)){
 	    value = value.get(this);
 	  }
-
+	
 	  value = value.trim();
-
+	
 	  var composites = value.split(";"), 
 	    composite, context = this, seeds = [], seed, destroies = [], destroy,
 	    command, param , current = 0, tmp, animator, self = this;
-
+	
 	  function reset( type ){
 	    seed && seeds.push( seed )
 	    seed = createSeed( type );
 	  }
-
+	
 	  function whenCallback(start, value){
 	    if( !!value ) start()
 	  }
-
+	
 	  function animationDestroy(element){
 	    return function(){
 	      element.onenter = null;
 	      element.onleave = null;
 	    } 
 	  }
-
+	
 	  for( var i = 0, len = composites.length; i < len; i++ ){
-
+	
 	    composite = composites[i];
 	    tmp = composite.split(":");
 	    command = tmp[0] && tmp[0].trim();
 	    param = tmp[1] && tmp[1].trim();
-
+	
 	    if( !command ) continue;
-
+	
 	    if( command === WHEN_COMMAND ){
 	      reset("when");
 	      this.$watch(param, whenCallback.bind( this, seed.start ) );
 	      continue;
 	    }
-
+	
 	    if( command === EVENT_COMMAND){
 	      reset(param);
 	      if( param === "leave" ){
@@ -10991,7 +10991,7 @@
 	      }
 	      continue;
 	    }
-
+	
 	    var animator =  Component.animation(command) 
 	    if( animator && seed ){
 	      seed.push(
@@ -11005,7 +11005,7 @@
 	      throw Error( animator? "you should start with `on` or `event` in animation" : ("undefined animator 【" + command +"】" ));
 	    }
 	  }
-
+	
 	  if(destroies.length){
 	    return function(){
 	      destroies.forEach(function(destroy){
@@ -11014,25 +11014,25 @@
 	    }
 	  }
 	}
-
-
+	
+	
 	Regular.directive( "r-animation", processAnimate)
 	Regular.directive( "r-anim", processAnimate)
-
+	
 
 
 /***/ },
 /* 34 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var Regular = __webpack_require__(29);
-
+	var Regular = __webpack_require__(28);
+	
 	/**
 	 * Timeout Module
 	 * @param {Component} Component 
 	 */
 	function TimeoutModule(Component){
-
+	
 	  Component.implement({
 	    /**
 	     * just like setTimeout, but will enter digest automately
@@ -11062,8 +11062,8 @@
 	    }
 	  });
 	}
-
-
+	
+	
 	Regular.plugin('timeout', TimeoutModule);
 	Regular.plugin('$timeout', TimeoutModule);
 
@@ -11071,9 +11071,9 @@
 /* 35 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var _ = __webpack_require__(18);
-
-	var config = __webpack_require__(28);
+	var _ = __webpack_require__(21);
+	
+	var config = __webpack_require__(27);
 	var node = __webpack_require__(43);
 	var Lexer = __webpack_require__(36);
 	var varName = _.varName;
@@ -11081,23 +11081,23 @@
 	var extName = _.extName;
 	var isPath = _.makePredicate("STRING IDENT NUMBER");
 	var isKeyWord = _.makePredicate("true false undefined null this Array Date JSON Math NaN RegExp decodeURI decodeURIComponent encodeURI encodeURIComponent parseFloat parseInt Object");
-
-
-
-
+	
+	
+	
+	
 	function Parser(input, opts){
 	  opts = opts || {};
-
+	
 	  this.input = input;
 	  this.tokens = new Lexer(input, opts).lex();
 	  this.pos = 0;
 	  this.length = this.tokens.length;
 	}
-
-
+	
+	
 	var op = Parser.prototype;
-
-
+	
+	
 	op.parse = function(){
 	  this.pos = 0;
 	  var res= this.program();
@@ -11106,7 +11106,7 @@
 	  }
 	  return res;
 	}
-
+	
 	op.ll =  function(k){
 	  k = k || 1;
 	  if(k < 0) k = k + 1;
@@ -11120,7 +11120,7 @@
 	op.la = function(k){
 	  return (this.ll(k) || '').type;
 	}
-
+	
 	op.match = function(type, value){
 	  var ll;
 	  if(!(ll = this.eat(type, value))){
@@ -11130,12 +11130,12 @@
 	    return ll;
 	  }
 	}
-
+	
 	op.error = function(msg, pos){
 	  msg =  "\n【 parse failed 】 " + msg +  ':\n\n' + _.trackErrorPos(this.input, typeof pos === 'number'? pos: this.ll().pos||0);
 	  throw new Error(msg);
 	}
-
+	
 	op.next = function(k){
 	  k = k || 1;
 	  this.pos += k;
@@ -11157,21 +11157,21 @@
 	  }
 	  return false;
 	}
-
+	
 	// program
 	//  :EOF
 	//  | (statement)* EOF
 	op.program = function(){
 	  var statements = [],  ll = this.ll();
 	  while(ll.type !== 'EOF' && ll.type !=='TAG_CLOSE'){
-
+	
 	    statements.push(this.statement());
 	    ll = this.ll();
 	  }
 	  // if(ll.type === 'TAG_CLOSE') this.error("You may have unmatched Tag")
 	  return statements;
 	}
-
+	
 	// statement
 	//  : xml
 	//  | jst
@@ -11197,7 +11197,7 @@
 	      this.error('Unexpected token: '+ this.la())
 	  }
 	}
-
+	
 	// xml 
 	// stag statement* TAG_CLOSE?(if self-closed tag)
 	op.xml = function(){
@@ -11212,7 +11212,7 @@
 	  }
 	  return node.element(name, attrs, children);
 	}
-
+	
 	// xentity
 	//  -rule(wrap attribute)
 	//  -attribute
@@ -11222,7 +11222,7 @@
 	//  ng-hide |
 	//  on-click={{}} | 
 	//  {{#if name}}on-click={{xx}}{{#else}}on-tap={{}}{{/if}}
-
+	
 	op.xentity = function(ll){
 	  var name = ll.value, value, modifier;
 	  if(ll.type === 'NAME'){
@@ -11231,7 +11231,7 @@
 	      var tmp = name.split('.');
 	      name = tmp[0];
 	      modifier = tmp[1]
-
+	
 	    }
 	    if( this.eat("=") ) value = this.attvalue(modifier);
 	    return node.attribute( name, value, modifier );
@@ -11239,9 +11239,9 @@
 	    if( name !== 'if') this.error("current version. ONLY RULE #if #else #elseif is valid in tag, the rule #" + name + ' is invalid');
 	    return this['if'](true);
 	  }
-
+	
 	}
-
+	
 	// stag     ::=    '<' Name (S attr)* S? '>'  
 	// attr    ::=     Name Eq attvalue
 	op.attrs = function(isAttribute){
@@ -11251,14 +11251,14 @@
 	  }else{
 	    eat = ["NAME"]
 	  }
-
+	
 	  var attrs = [], ll;
 	  while (ll = this.eat(eat)){
 	    attrs.push(this.xentity( ll ))
 	  }
 	  return attrs;
 	}
-
+	
 	// attvalue
 	//  : STRING  
 	//  | NAME
@@ -11298,8 +11298,8 @@
 	      this.error('Unexpected token: '+ this.la())
 	  }
 	}
-
-
+	
+	
 	// {{#}}
 	op.directive = function(){
 	  var name = this.ll().value;
@@ -11310,8 +11310,8 @@
 	    this.error('Undefined directive['+ name +']');
 	  }
 	}
-
-
+	
+	
 	// {{}}
 	op.interplation = function(){
 	  this.match('EXPR_OPEN');
@@ -11319,24 +11319,24 @@
 	  this.match('END');
 	  return res;
 	}
-
+	
 	// {{~}}
 	op.inc = op.include = function(){
 	  var content = this.expression();
 	  this.match('END');
 	  return node.template(content);
 	}
-
+	
 	// {{#if}}
 	op["if"] = function(tag){
 	  var test = this.expression();
 	  var consequent = [], alternate=[];
-
+	
 	  var container = consequent;
 	  var statement = !tag? "statement" : "attrs";
-
+	
 	  this.match('END');
-
+	
 	  var ll, close;
 	  while( ! (close = this.eat('CLOSE')) ){
 	    ll = this.ll();
@@ -11362,8 +11362,8 @@
 	  if(close.value !== "if") this.error('Unmatched if directive')
 	  return node["if"](test, consequent, alternate);
 	}
-
-
+	
+	
 	// @mark   mustache syntax have natrure dis, canot with expression
 	// {{#list}}
 	op.list = function(){
@@ -11371,11 +11371,11 @@
 	  var sequence = this.expression(), variable, ll, track;
 	  var consequent = [], alternate=[];
 	  var container = consequent;
-
+	
 	  this.match('IDENT', 'as');
-
+	
 	  variable = this.match('IDENT').value;
-
+	
 	  if(this.eat('IDENT', 'by')){
 	    if(this.eat('IDENT',variable + '_index')){
 	      track = true;
@@ -11387,9 +11387,9 @@
 	      }
 	    }
 	  }
-
+	
 	  this.match('END');
-
+	
 	  while( !(ll = this.eat('CLOSE')) ){
 	    if(this.eat('OPEN', 'else')){
 	      container =  alternate;
@@ -11402,8 +11402,8 @@
 	  if(ll.value !== 'list') this.error('expect ' + 'list got ' + '/' + ll.value + ' ', ll.pos );
 	  return node.list(sequence, variable, consequent, alternate, track);
 	}
-
-
+	
+	
 	op.expression = function(){
 	  var expression;
 	  if(this.eat('@(')){ //once bind
@@ -11415,18 +11415,18 @@
 	  }
 	  return expression;
 	}
-
+	
 	op.expr = function(){
 	  this.depend = [];
-
+	
 	  var buffer = this.filter()
-
+	
 	  var body = buffer.get || buffer;
 	  var setbody = buffer.set;
 	  return node.expression(body, setbody, !this.depend.length);
 	}
-
-
+	
+	
 	// filter
 	// assign ('|' filtername[':' args]) * 
 	op.filter = function(){
@@ -11436,12 +11436,12 @@
 	    attr = "t", 
 	    set = left.set, get, 
 	    tmp = "";
-
+	
 	  if(ll){
 	    if(set) setBuffer = [];
-
+	
 	    prefix = "(function(" + attr + "){";
-
+	
 	    do{
 	      tmp = attr + " = " + ctxName + "._f_('" + this.match('IDENT').value+ "' ).get.call( "+_.ctxName +"," + attr ;
 	      if(this.eat(':')){
@@ -11451,25 +11451,25 @@
 	      }
 	      buffer.push(tmp);
 	      setBuffer && setBuffer.unshift( tmp.replace(" ).get.call", " ).set.call") );
-
+	
 	    }while(ll = this.eat('|'));
 	    buffer.push("return " + attr );
 	    setBuffer && setBuffer.push("return " + attr);
-
+	
 	    get =  prefix + buffer.join("") + "})("+left.get+")";
 	    // we call back to value.
 	    if(setBuffer){
 	      // change _ss__(name, _p_) to _s__(name, filterFn(_p_));
 	      set = set.replace(_.setName, 
 	        prefix + setBuffer.join("") + "})("+　_.setName　+")" );
-
+	
 	    }
 	    // the set function is depend on the filter definition. if it have set method, the set will work
 	    return this.getset(get, set);
 	  }
 	  return left;
 	}
-
+	
 	// assign
 	// left-hand-expr = condition
 	op.assign = function(){
@@ -11481,11 +11481,11 @@
 	  }
 	  return left;
 	}
-
+	
 	// or
 	// or ? assign : assign
 	op.condition = function(){
-
+	
 	  var test = this.or();
 	  if(this.eat('?')){
 	    return this.getset([test.get + "?", 
@@ -11493,28 +11493,28 @@
 	      this.match(":").type, 
 	      this.assign().get].join(""));
 	  }
-
+	
 	  return test;
 	}
-
+	
 	// and
 	// and && or
 	op.or = function(){
-
+	
 	  var left = this.and();
-
+	
 	  if(this.eat('||')){
 	    return this.getset(left.get + '||' + this.or().get);
 	  }
-
+	
 	  return left;
 	}
 	// equal
 	// equal && and
 	op.and = function(){
-
+	
 	  var left = this.equal();
-
+	
 	  if(this.eat('&&')){
 	    return this.getset(left.get + '&&' + this.and().get);
 	  }
@@ -11570,22 +11570,22 @@
 	  }
 	  return left;
 	}
-
+	
 	op.range = function(){
 	  var left = this.unary(), ll, right;
-
+	
 	  if(ll = this.eat('..')){
 	    right = this.unary();
 	    var body = 
 	      "(function(start,end){var res = [],step=end>start?1:-1; for(var i = start; end>start?i <= end: i>=end; i=i+step){res.push(i); } return res })("+left.get+","+right.get+")"
 	    return this.getset(body);
 	  }
-
+	
 	  return left;
 	}
-
-
-
+	
+	
+	
 	// lefthand
 	// + unary
 	// - unary
@@ -11599,16 +11599,16 @@
 	    return this.member()
 	  }
 	}
-
+	
 	// call[lefthand] :
 	// member args
 	// member [ expression ]
 	// member . ident  
-
+	
 	op.member = function(base, last, pathes, prevBase){
 	  var ll, path, extValue;
-
-
+	
+	
 	  var onlySimpleAccessor = false;
 	  if(!base){ //first
 	    path = this.primary();
@@ -11682,7 +11682,7 @@
 	  }
 	  return res;
 	}
-
+	
 	/**
 	 * 
 	 */
@@ -11696,8 +11696,8 @@
 	  }while( this.eat(','));
 	  return args
 	}
-
-
+	
+	
 	// primary :
 	// this 
 	// ident
@@ -11705,7 +11705,7 @@
 	// array
 	// object
 	// ( expression )
-
+	
 	op.primary = function(){
 	  var ll = this.ll();
 	  switch(ll.type){
@@ -11723,7 +11723,7 @@
 	      return this.getset(quota + value + quota);
 	    case 'NUMBER':
 	      this.next();
-	      return this.getset( "" + value );
+	      return this.getset( "" + ll.value );
 	    case "IDENT":
 	      this.next();
 	      if(isKeyWord(ll.value)){
@@ -11734,21 +11734,21 @@
 	      this.error('Unexpected Token: ' + ll.type);
 	  }
 	}
-
+	
 	// object
 	//  {propAssign [, propAssign] * [,]}
-
+	
 	// propAssign
 	//  prop : assign
-
+	
 	// prop
 	//  STRING
 	//  IDENT
 	//  NUMBER
-
+	
 	op.object = function(){
 	  var code = [this.match('{').type];
-
+	
 	  var ll = this.eat( ['STRING', 'IDENT', 'NUMBER'] );
 	  while(ll){
 	    code.push("'" + ll.value + "'" + this.match(':').type);
@@ -11760,13 +11760,13 @@
 	  code.push(this.match('}').type);
 	  return {get: code.join("")}
 	}
-
+	
 	// array
 	// [ assign[,assign]*]
 	op.array = function(){
 	  var code = [this.match('[').type], item;
 	  if( this.eat("]") ){
-
+	
 	     code.push("]");
 	  } else {
 	    while(item = this.assign()){
@@ -11778,7 +11778,7 @@
 	  }
 	  return {get: code.join("")};
 	}
-
+	
 	// '(' expression ')'
 	op.paren = function(){
 	  this.match('(');
@@ -11787,16 +11787,16 @@
 	  this.match(')');
 	  return res;
 	}
-
+	
 	op.getset = function(get, set){
 	  return {
 	    get: get,
 	    set: set
 	  }
 	}
-
-
-
+	
+	
+	
 	module.exports = Parser;
 
 
@@ -11804,9 +11804,9 @@
 /* 36 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var _ = __webpack_require__(18);
-	var config = __webpack_require__(28);
-
+	var _ = __webpack_require__(21);
+	var config = __webpack_require__(27);
+	
 	// some custom tag  will conflict with the Lexer progress
 	var conflictTag = {"}": "{", "]": "["}, map1, map2;
 	// some macro for lexer
@@ -11815,25 +11815,25 @@
 	  'IDENT': /[\$_A-Za-z][_0-9A-Za-z\$]*/,
 	  'SPACE': /[\r\n\t\f ]/
 	}
-
-
+	
+	
 	var test = /a|(b)/.exec("a");
 	var testSubCapure = test && test[1] === undefined? 
 	  function(str){ return str !== undefined }
 	  :function(str){return !!str};
-
+	
 	function wrapHander(handler){
 	  return function(all){
 	    return {type: handler, value: all }
 	  }
 	}
-
+	
 	function Lexer(input, opts){
 	  if(conflictTag[config.END]){
 	    this.markStart = conflictTag[config.END];
 	    this.markEnd = config.END;
 	  }
-
+	
 	  this.input = (input||"").trim();
 	  this.opts = opts || {};
 	  this.map = this.opts.mode !== 2?  map1: map2;
@@ -11843,10 +11843,10 @@
 	     this.expression = true;
 	  }
 	}
-
+	
 	var lo = Lexer.prototype
-
-
+	
+	
 	lo.lex = function(str){
 	  str = (str || this.input).trim();
 	  var tokens = [], split, test,mlen, token, state;
@@ -11870,20 +11870,20 @@
 	    this.index += mlen;
 	    // if(state == 'TAG' || state == 'JST') str = this.skipspace(str);
 	  }
-
+	
 	  tokens.push({type: 'EOF'});
-
+	
 	  return tokens;
 	}
-
+	
 	lo.error = function(msg){
 	  throw  Error("Parse Error: " + msg +  ':\n' + _.trackErrorPos(this.input, this.index));
 	}
-
+	
 	lo._process = function(args, split,str){
 	  // console.log(args.join(","), this.state())
 	  var links = split.links, marched = false, token;
-
+	
 	  for(var len = links.length, i=0;i<len ;i++){
 	    var link = links[i],
 	      handler = link[2],
@@ -11914,18 +11914,18 @@
 	  this.states.push(state)
 	  return this;
 	}
-
+	
 	lo.state = function(){
 	  var states = this.states;
 	  return states[states.length-1];
 	}
-
+	
 	lo.leave = function(state){
 	  var states = this.states;
 	  if(!state || states[states.length-1] === state) states.pop()
 	}
-
-
+	
+	
 	Lexer.setup = function(){
 	  macro.END = config.END;
 	  macro.BEGIN = config.BEGIN;
@@ -11935,7 +11935,7 @@
 	    rules.ENTER_JST,
 	    rules.ENTER_TAG,
 	    rules.TEXT,
-
+	
 	    //TAG
 	    rules.TAG_NAME,
 	    rules.TAG_OPEN,
@@ -11946,7 +11946,7 @@
 	    rules.TAG_STRING,
 	    rules.TAG_SPACE,
 	    rules.TAG_COMMENT,
-
+	
 	    // JST
 	    rules.JST_OPEN,
 	    rules.JST_CLOSE,
@@ -11960,7 +11960,7 @@
 	    rules.JST_STRING,
 	    rules.JST_COMMENT
 	    ])
-
+	
 	  // ignored the tag-relative token
 	  map2 = genMap([
 	    // INIT no < restrict
@@ -11980,8 +11980,8 @@
 	    rules.JST_COMMENT
 	    ])
 	}
-
-
+	
+	
 	function genMap(rules){
 	  var rule, map = {}, sign;
 	  for(var i = 0, len = rules.length; i < len ; i++){
@@ -11991,7 +11991,7 @@
 	  }
 	  return setup(map);
 	}
-
+	
 	function setup(map){
 	  var split, rules, trunks, handler, reg, retain, rule;
 	  function replaceFn(all, one){
@@ -11999,24 +11999,24 @@
 	      _.escapeRegExp(macro[one]) 
 	      : String(macro[one]).slice(1,-1);
 	  }
-
+	
 	  for(var i in map){
-
+	
 	    split = map[i];
 	    split.curIndex = 1;
 	    rules = split.rules;
 	    trunks = [];
-
+	
 	    for(var j = 0,len = rules.length; j<len; j++){
 	      rule = rules[j]; 
 	      reg = rule[0];
 	      handler = rule[1];
-
+	
 	      if(typeof handler === 'string'){
 	        handler = wrapHander(handler);
 	      }
 	      if(_.typeOf(reg) === 'regexp') reg = reg.toString().slice(1, -1);
-
+	
 	      reg = reg.replace(/\{(\w+)\}/g, replaceFn)
 	      retain = _.findSubCapture(reg) + 1; 
 	      split.links.push([split.curIndex, retain, handler]); 
@@ -12027,36 +12027,36 @@
 	  }
 	  return map;
 	}
-
+	
 	var rules = {
-
+	
 	  // 1. INIT
 	  // ---------------
-
+	
 	  // mode1's JST ENTER RULE
 	  ENTER_JST: [/[^\x00<]*?(?={BEGIN})/, function(all){
 	    this.enter('JST');
 	    if(all) return {type: 'TEXT', value: all}
 	  }],
-
+	
 	  // mode2's JST ENTER RULE
 	  ENTER_JST2: [/[^\x00]*?(?={BEGIN})/, function(all){
 	    this.enter('JST');
 	    if(all) return {type: 'TEXT', value: all}
 	  }],
-
+	
 	  ENTER_TAG: [/[^\x00]*?(?=<[\w\/\!])/, function(all){ 
 	    this.enter('TAG');
 	    if(all) return {type: 'TEXT', value: all}
 	  }],
-
+	
 	  TEXT: [/[^\x00]+/, 'TEXT' ],
-
+	
 	  // 2. TAG
 	  // --------------------
 	  TAG_NAME: [/{NAME}/, 'NAME', 'TAG'],
 	  TAG_UNQ_VALUE: [/[^\{}&"'=><`\r\n\f\t ]+/, 'UNQ', 'TAG'],
-
+	
 	  TAG_OPEN: [/<({NAME})\s*/, function(all, one){ //"
 	    return {type: 'TAG_OPEN', value: one}
 	  }, 'TAG'],
@@ -12064,32 +12064,32 @@
 	    this.leave();
 	    return {type: 'TAG_CLOSE', value: one }
 	  }, 'TAG'],
-
+	
 	    // mode2's JST ENTER RULE
 	  TAG_ENTER_JST: [/(?={BEGIN})/, function(){
 	    this.enter('JST');
 	  }, 'TAG'],
-
-
+	
+	
 	  TAG_PUNCHOR: [/[\>\/=&]/, function(all){
 	    if(all === '>') this.leave();
 	    return {type: all, value: all }
 	  }, 'TAG'],
 	  TAG_STRING:  [ /'([^']*)'|"([^"]*)\"/, /*'*/  function(all, one, two){ 
 	    var value = one || two || "";
-
+	
 	    return {type: 'STRING', value: value}
 	  }, 'TAG'],
-
+	
 	  TAG_SPACE: [/{SPACE}+/, null, 'TAG'],
 	  TAG_COMMENT: [/<\!--([^\x00]*?)--\>/, function(all){
 	    this.leave()
 	    // this.leave('TAG')
 	  } ,'TAG'],
-
+	
 	  // 3. JST
 	  // -------------------
-
+	
 	  JST_OPEN: ['{BEGIN}#{SPACE}*({IDENT})', function(all, name){
 	    return {
 	      type: 'OPEN',
@@ -12132,14 +12132,14 @@
 	      type: 'EXPR_OPEN',
 	      escape: false
 	    }
-
+	
 	  }, 'JST'],
 	  JST_IDENT: ['{IDENT}', 'IDENT', 'JST'],
 	  JST_SPACE: [/[ \r\n\f]+/, null, 'JST'],
 	  JST_PUNCHOR: [/[=!]?==|[-=><+*\/%\!]?\=|\|\||&&|\@\(|\.\.|[<\>\[\]\(\)\-\|\{}\+\*\/%?:\.!,]/, function(all){
 	    return { type: all, value: all }
 	  },'JST'],
-
+	
 	  JST_STRING:  [ /'([^']*)'|"([^"]*)"/, function(all, one, two){ //"'
 	    return {type: 'STRING', value: one || two || ""}
 	  }, 'JST'],
@@ -12147,13 +12147,13 @@
 	    return {type: 'NUMBER', value: parseFloat(all, 10)};
 	  }, 'JST']
 	}
-
-
+	
+	
 	// setup when first config
 	Lexer.setup();
-
-
-
+	
+	
+	
 	module.exports = Lexer;
 
 
@@ -12162,18 +12162,18 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var diffArray = __webpack_require__(24).diffArray;
-	var combine = __webpack_require__(20);
+	var combine = __webpack_require__(18);
 	var animate = __webpack_require__(19);
 	var node = __webpack_require__(43);
 	var Group = __webpack_require__(38);
 	var dom = __webpack_require__(17);
-	var _ = __webpack_require__(18);
-
-
+	var _ = __webpack_require__(21);
+	
+	
 	var walkers = module.exports = {};
-
+	
 	walkers.list = function(ast, options){
-
+	
 	  var Regular = walkers.Regular;  
 	  var placeholder = document.createComment("Regular list"),
 	    namespace = options.namespace,
@@ -12185,7 +12185,7 @@
 	  var variable = ast.variable;
 	  var alternate = ast.alternate;
 	  var track = ast.track, keyOf, extraObj;
-
+	
 	  if( track && track !== true ){
 	    track = this._touchExpr(track);
 	    extraObj = _.createObject(extra);
@@ -12196,21 +12196,21 @@
 	      return track.get( self, extraObj );
 	    }
 	  }
-
+	
 	  function removeRange(index, rlen){
 	    for(var j = 0; j< rlen; j++){ //removed
 	      var removed = group.children.splice( index + 1, 1)[0];
 	      if(removed) removed.destroy(true);
 	    }
 	  }
-
+	
 	  function addRange(index, end, newList, rawNewValue){
 	    for(var o = index; o < end; o++){ //add
 	      // prototype inherit
 	      var item = newList[o];
 	      var data = {};
 	      updateTarget(data, o, item, rawNewValue);
-
+	
 	      data = _.createObject(extra, data);
 	      var section = self.$compile(ast.body, {
 	        extra: data,
@@ -12228,9 +12228,9 @@
 	      group.children.splice( o + 1 , 0, section);
 	    }
 	  }
-
+	
 	  function updateTarget(target, index, item, rawNewValue){
-
+	
 	      target[ indexName ] = index;
 	      if( rawNewValue ){
 	        target[ keyName ] = item;
@@ -12240,24 +12240,24 @@
 	        target[keyName] = null
 	      }
 	  }
-
-
+	
+	
 	  function updateRange(start, end, newList, rawNewValue){
 	    for(var k = start; k < end; k++){ // no change
 	      var sect = group.get( k + 1 ), item = newList[ k ];
 	      updateTarget(sect.data, k, item, rawNewValue);
 	    }
 	  }
-
+	
 	  function updateLD(newList, oldList, splices , rawNewValue ){
-
+	
 	    var cur = placeholder;
 	    var m = 0, len = newList.length;
-
+	
 	    if(!splices && (len !==0 || oldList.length !==0)  ){
 	      splices = diffArray(newList, oldList, true);
 	    }
-
+	
 	    if(!splices || !splices.length) return;
 	      
 	    for(var i = 0; i < splices.length; i++){ //init
@@ -12284,14 +12284,14 @@
 	      }
 	      // update
 	      updateRange(m, index, newList, rawNewValue);
-
+	
 	      removeRange( index ,rlen)
-
+	
 	      addRange(index, index+add, newList, rawNewValue)
-
+	
 	      m = index + add - rlen;
 	      m  = m < 0? 0 : m;
-
+	
 	    }
 	    if(m < len){
 	      for(var i = m; i < len; i++){
@@ -12301,14 +12301,14 @@
 	      }
 	    }
 	  }
-
+	
 	  // if the track is constant test.
 	  function updateSimple(newList, oldList, rawNewValue ){
-
+	
 	    var nlen = newList.length;
 	    var olen = oldList.length;
 	    var mlen = Math.min(nlen, olen);
-
+	
 	    updateRange(0, mlen, newList, rawNewValue)
 	    if(nlen < olen){ //need add
 	      removeRange(nlen, olen-nlen);
@@ -12316,35 +12316,35 @@
 	      addRange(olen, nlen, newList, rawNewValue);
 	    }
 	  }
-
+	
 	  function update(newValue, oldValue, splices){
-
+	
 	    var nType = _.typeOf( newValue );
 	    var oType = _.typeOf( oldValue );
-
+	
 	    var newList = getListFromValue( newValue, nType );
 	    var oldList = getListFromValue( oldValue, oType );
-
+	
 	    var rawNewValue;
-
-
+	
+	
 	    var nlen = newList && newList.length;
 	    var olen = oldList && oldList.length;
-
+	
 	    // if previous list has , we need to remove the altnated section.
 	    if( !olen && nlen && group.get(1) ){
 	      var altGroup = group.children.pop();
 	      if(altGroup.destroy)  altGroup.destroy(true);
 	    }
-
+	
 	    if( nType === 'object' ) rawNewValue = newValue;
-
+	
 	    if(track === true){
 	      updateSimple( newList, oldList,  rawNewValue );
 	    }else{
 	      updateLD( newList, oldList, splices, rawNewValue );
 	    }
-
+	
 	    // @ {#list} {#else}
 	    if( !nlen && alternate && alternate.length){
 	      var section = self.$compile(alternate, {
@@ -12359,7 +12359,7 @@
 	      }
 	    }
 	  }
-
+	
 	  this.$watch(ast.sequence, update, { 
 	    init: true, 
 	    diff: track !== true ,
@@ -12367,13 +12367,13 @@
 	  });
 	  return group;
 	}
-
-
+	
+	
 	function updateItem(){
 	  
 	}
-
-
+	
+	
 	// {#include } or {#inc template}
 	walkers.template = function(ast, options){
 	  var content = ast.content, compiled;
@@ -12389,7 +12389,7 @@
 	        group.children.pop();
 	      }
 	      if(!value) return;
-
+	
 	      group.push( compiled = type === 'function' ? value(): self.$compile( type !== 'object'? String(value): value, {
 	        record: true, 
 	        outer: options.outer,
@@ -12404,14 +12404,14 @@
 	  }
 	  return group;
 	};
-
+	
 	function getListFromValue(value, type){
 	  return type === 'object'? _.keys(value): (
 	      type === 'array'? value: []
 	    )
 	}
-
-
+	
+	
 	// how to resolve this problem
 	var ii = 0;
 	walkers['if'] = function(ast, options){
@@ -12434,14 +12434,14 @@
 	      }
 	    }
 	  }
-
+	
 	  var test, consequent, alternate, node;
 	  var placeholder = document.createComment("Regular if" + ii++);
 	  var group = new Group();
 	  group.push(placeholder);
 	  var preValue = null, namespace= options.namespace;
-
-
+	
+	
 	  var update = function (nvalue, old){
 	    var value = !!nvalue;
 	    if(value === preValue) return;
@@ -12470,11 +12470,11 @@
 	    }
 	  }
 	  this.$watch(ast.test, update, {force: true, init: true});
-
+	
 	  return group;
 	}
-
-
+	
+	
 	walkers.expression = function(ast, options){
 	  var node = document.createTextNode("");
 	  this.$watch(ast, function(newval){
@@ -12486,11 +12486,11 @@
 	  var node = document.createTextNode(_.convertEntity(ast.text));
 	  return node;
 	}
-
-
-
+	
+	
+	
 	var eventReg = /^on-(.+)$/
-
+	
 	/**
 	 * walkers element (contains component)
 	 */
@@ -12503,35 +12503,35 @@
 	    tag = ast.tag,
 	    Component = Constructor.component(tag),
 	    ref, group, element;
-
+	
 	  if( tag === 'r-content' ){
 	    _.log('r-content is deprecated, use {#inc this.$body} instead (`{#include}` as same)', 'warn');
 	    return this.$body && this.$body();
 	  } 
-
+	
 	  if(Component || tag === 'r-component'){
 	    options.Component = Component;
 	    return walkers.component.call(this, ast, options)
 	  }
-
+	
 	  if(tag === 'svg') namespace = "svg";
 	  // @Deprecated: may be removed in next version, use {#inc } instead
 	  
 	  if( children && children.length ){
 	    group = this.$compile(children, {outer: options.outer,namespace: namespace, extra: extra });
 	  }
-
+	
 	  element = dom.create(tag, namespace, attrs);
-
+	
 	  if(group && !_.isVoidTag(tag)){
 	    dom.inject( combine.node(group) , element)
 	  }
-
+	
 	  // fix tag ast, some infomation only avaliable at runtime (directive etc..)
 	  _.fixTagAST(ast, Constructor)
-
+	
 	  var destroies = walkAttributes.call(this, attrs, element, extra);
-
+	
 	  return {
 	    type: "element",
 	    group: group,
@@ -12562,7 +12562,7 @@
 	    }
 	  }
 	}
-
+	
 	walkers.component = function(ast, options){
 	  var attrs = ast.attrs, 
 	    Component = options.Component,
@@ -12571,9 +12571,9 @@
 	    extra = options.extra,
 	    namespace = options.namespace,
 	    ref, self = this, is;
-
+	
 	  var data = {}, events;
-
+	
 	  for(var i = 0, len = attrs.length; i < len; i++){
 	    var attr = attrs[i];
 	    // consider disabled   equlasto  disabled={true}
@@ -12588,7 +12588,7 @@
 	      // event: 'nav'
 	      if(etest) attr.event = etest[1];
 	    }
-
+	
 	    // @compile modifier
 	    if(attr.mdf === 'cmpl'){
 	      value = _.getCompileFn(value, this, {
@@ -12615,7 +12615,7 @@
 	    }else {
 	      name = attr.name = _.camelCase(name);
 	    }
-
+	
 	    if(!value || value.type !== 'expression'){
 	      data[name] = value;
 	    }else{
@@ -12633,7 +12633,7 @@
 	      data.isolate = isolate;
 	    }
 	  }
-
+	
 	  var definition = { 
 	    data: data, 
 	    events: events, 
@@ -12649,11 +12649,11 @@
 	    namespace: namespace, 
 	    extra: options.extra
 	  }
-
-
+	
+	
 	  var component = new Component(definition, options), reflink;
-
-
+	
+	
 	  if(ref && this.$refs){
 	    reflink = Component.directive('ref').link
 	    this.$on('$destroy', reflink.call(this, component, ref) )
@@ -12697,7 +12697,7 @@
 	  }
 	  return component;
 	}
-
+	
 	function walkAttributes(attrs, element, extra){
 	  var bindings = []
 	  for(var i = 0, len = attrs.length; i < len; i++){
@@ -12706,9 +12706,9 @@
 	  }
 	  return bindings;
 	}
-
+	
 	walkers.attribute = function(ast ,options){
-
+	
 	  var attr = ast;
 	  var name = attr.name;
 	  var value = attr.value || "";
@@ -12717,12 +12717,12 @@
 	  var directive = Component.directive(name);
 	  var element = options.element;
 	  var self = this;
-
-
+	
+	
 	  value = this._touchExpr(value);
-
+	
 	  if(constant) value = value.get(this);
-
+	
 	  if(directive && directive.link){
 	    var extra = {
 	      attrs: options.attrs,
@@ -12761,24 +12761,24 @@
 	      }
 	    }
 	  }
-
+	
 	}
-
-
+	
+	
 
 
 /***/ },
 /* 38 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var _ = __webpack_require__(18);
-	var combine = __webpack_require__(20)
-
+	var _ = __webpack_require__(21);
+	var combine = __webpack_require__(18)
+	
 	function Group(list){
 	  this.children = list || [];
 	}
-
-
+	
+	
 	var o = _.extend(Group.prototype, {
 	  destroy: function(first){
 	    combine.destroy(this.children, first);
@@ -12793,31 +12793,31 @@
 	  }
 	})
 	o.inject = o.$inject = combine.inject
-
-
-
+	
+	
+	
 	module.exports = Group;
-
-
+	
+	
 
 
 /***/ },
 /* 39 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var _ = __webpack_require__(18);
-	var parseExpression = __webpack_require__(21).expression;
+	var _ = __webpack_require__(21);
+	var parseExpression = __webpack_require__(20).expression;
 	var diff = __webpack_require__(24);
 	var diffArray = diff.diffArray;
 	var diffObject = diff.diffObject;
-
+	
 	function Watcher(){}
-
+	
 	var methods = {
 	  $watch: function(expr, fn, options){
 	    var get, once, test, rlen, extra = this.__ext__; //records length
 	    if(!this._watchers) this._watchers = [];
-
+	
 	    options = options || {};
 	    if(options === true){
 	       options = { deep: true }
@@ -12849,7 +12849,7 @@
 	        once = expr.once;
 	      }
 	    }
-
+	
 	    var watcher = {
 	      id: uid, 
 	      get: get, 
@@ -12864,7 +12864,7 @@
 	    }
 	    
 	    this._watchers.push( watcher );
-
+	
 	    rlen = this._records && this._records.length;
 	    if(rlen) this._records[rlen-1].push(uid)
 	    // init state.
@@ -12903,13 +12903,13 @@
 	   *                  Regular's parser extract the dependencies, in future maybe it will change to dirty-check combine with path-aware update;
 	   * @return {Void}   
 	   */
-
+	
 	  $digest: function(){
 	    if(this.$phase === 'digest' || this._mute) return;
 	    this.$phase = 'digest';
 	    var dirty = false, n =0;
 	    while(dirty = this._digest()){
-
+	
 	      if((++n) > 20){ // max loop
 	        throw Error('there may a circular dependencies reaches')
 	      }
@@ -12919,7 +12919,7 @@
 	  },
 	  // private digest logic
 	  _digest: function(){
-
+	
 	    var watchers = this._watchers;
 	    var dirty = false, children, watcher, watcherDirty;
 	    if(watchers && watchers.length){
@@ -12944,17 +12944,17 @@
 	  _checkSingleWatch: function(watcher, i){
 	    var dirty = false;
 	    if(!watcher) return;
-
+	
 	    var now, last, tlast, tnow,  eq, diff;
-
+	
 	    if(!watcher.test){
-
+	
 	      now = watcher.get(this);
 	      last = watcher.last;
 	      tlast = _.typeOf(last);
 	      tnow = _.typeOf(now);
 	      eq = true, diff;
-
+	
 	      // !Object
 	      if( !(tnow === 'object' && tlast==='object' && watcher.deep) ){
 	        // Array
@@ -12989,10 +12989,10 @@
 	      watcher.fn.call(this, now, last, diff)
 	      if(watcher.once) this._watchers.splice(i, 1);
 	    }
-
+	
 	    return dirty;
 	  },
-
+	
 	  /**
 	   * **tips**: whatever param you passed in $update, after the function called, dirty-check(digest) phase will enter;
 	   * 
@@ -13027,14 +13027,14 @@
 	      if(rootParent.data.isolate || !rootParent.$parent) break;
 	      rootParent = rootParent.$parent;
 	    } while(rootParent)
-
+	
 	    var prephase =rootParent.$phase;
 	    rootParent.$phase = 'digest'
-
+	
 	    this.$set.apply(this, arguments);
-
+	
 	    rootParent.$phase = prephase
-
+	
 	    rootParent.$digest();
 	    return this;
 	  },
@@ -13047,16 +13047,16 @@
 	    return this._records.pop();
 	  }
 	}
-
-
+	
+	
 	_.extend(Watcher.prototype, methods)
-
-
+	
+	
 	Watcher.mixTo = function(obj){
 	  obj = typeof obj === "function" ? obj.prototype : obj;
 	  return _.extend(obj, methods)
 	}
-
+	
 	module.exports = Watcher;
 
 /***/ },
@@ -13065,7 +13065,7 @@
 
 	
 	var f = module.exports = {};
-
+	
 	// json:  two way 
 	//  - get: JSON.stringify
 	//  - set: JSON.parse
@@ -13078,14 +13078,14 @@
 	    return typeof JSON !== 'undefined'? JSON.parse(value) : value;
 	  }
 	}
-
+	
 	// last: one-way
 	//  - get: return the last item in list
 	//  - example: `{ list|last }`
 	f.last = function(arr){
 	  return arr && arr[arr.length - 1];
 	}
-
+	
 	// average: one-way
 	//  - get: copute the average of the list
 	//  - example: `{ list| average: "score" }`
@@ -13093,8 +13093,8 @@
 	  array = array || [];
 	  return array.length? f.total(array, key)/ array.length : 0;
 	}
-
-
+	
+	
 	// total: one-way
 	//  - get: copute the total of the list
 	//  - example: `{ list| total: "score" }`
@@ -13106,9 +13106,9 @@
 	  })
 	  return total;
 	}
-
+	
 	// var basicSortFn = function(a, b){return b - a}
-
+	
 	// f.sort = function(array, key, reverse){
 	//   var type = typeof key, sortFn; 
 	//   switch(type){
@@ -13123,8 +13123,8 @@
 	//   })
 	//   return array
 	// }
-
-
+	
+	
 
 
 /***/ },
@@ -13135,12 +13135,12 @@
 	 * event directive  bundle
 	 *
 	 */
-	var _ = __webpack_require__(18);
+	var _ = __webpack_require__(21);
 	var dom = __webpack_require__(17);
-	var Regular = __webpack_require__(29);
-
+	var Regular = __webpack_require__(28);
+	
 	Regular._addProtoInheritCache("event");
-
+	
 	Regular.directive( /^on-\w+$/, function( elem, value, name , attrs) {
 	  if ( !name || !value ) return;
 	  var type = name.split("-")[1];
@@ -13156,14 +13156,14 @@
 	  if ( !name || !value ) return;
 	  var type = name.split("-")[1];
 	  var fire = _.handleEvent.call(this, value, type);
-
+	
 	  function delegateEvent(ev){
 	    matchParent(ev, _delegates[type], root.parentNode);
 	  }
-
+	
 	  if( !_delegates[type] ){
 	    _delegates[type] = [];
-
+	
 	    if(root.parentNode){
 	      dom.on(root.parentNode, type, delegateEvent);
 	    }else{
@@ -13185,7 +13185,7 @@
 	    fire: fire
 	  }
 	  _delegates[type].push( delegate );
-
+	
 	  return function(){
 	    var delegates = _delegates[type];
 	    if(!delegates || !delegates.length) return;
@@ -13193,10 +13193,10 @@
 	      if( delegates[i] === delegate ) delegates.splice(i, 1);
 	    }
 	  }
-
+	
 	});
-
-
+	
+	
 	function matchParent(ev , delegates, stop){
 	  if(!stop) return;
 	  var target = ev.target, pair;
@@ -13216,37 +13216,37 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	// Regular
-	var _ = __webpack_require__(18);
+	var _ = __webpack_require__(21);
 	var dom = __webpack_require__(17);
-	var Regular = __webpack_require__(29);
+	var Regular = __webpack_require__(28);
 	var hasInput;
-
+	
 	var modelHandlers = {
 	  "text": initText,
 	  "select": initSelect,
 	  "checkbox": initCheckBox,
 	  "radio": initRadio
 	}
-
-
+	
+	
 	// @TODO
-
-
+	
+	
 	// autoUpdate directive for select element
 	// to fix r-model issue , when handle dynamic options
-
-
+	
+	
 	/**
 	 * <select r-model={name}> 
 	 *   <r-option value={value} ></r-option>
 	 * </select>
 	 */
-
-
+	
+	
 	// two-way binding with r-model
 	// works on input, textarea, checkbox, radio, select
-
-
+	
+	
 	Regular.directive("r-model", {
 	  param: ['throttle', 'lazy'],
 	  link: function( elem, value, name, extra ){
@@ -13255,18 +13255,18 @@
 	    if(sign === "input") sign = elem.type || "text";
 	    else if(sign === "textarea") sign = "text";
 	    if(typeof value === "string") value = this.$expression(value);
-
+	
 	    if( modelHandlers[sign] ) return modelHandlers[sign].call(this, elem, value, extra);
 	    else if(tag === "input"){
 	      return modelHandlers.text.call(this, elem, value, extra);
 	    }
 	  }
 	})
-
-
-
+	
+	
+	
 	// binding <select>
-
+	
 	function initSelect( elem, parsed, extra){
 	  var self = this;
 	  var wc = this.$watch(parsed, function(newValue){
@@ -13278,29 +13278,29 @@
 	      }
 	    }
 	  });
-
+	
 	  function handler(){
 	    parsed.set(self, this.value);
 	    wc.last = this.value;
 	    self.$update();
 	  }
-
+	
 	  dom.on( elem, "change", handler );
 	  
 	  if(parsed.get(self) === undefined && elem.value){
 	    parsed.set(self, elem.value);
 	  }
-
+	
 	  return function destroy(){
 	    dom.off(elem, "change", handler);
 	  }
 	}
-
+	
 	// input,textarea binding
 	function initText(elem, parsed, extra){
 	  var param = extra.param;
 	  var throttle, lazy = param.lazy
-
+	
 	  if('throttle' in param){
 	    // <input throttle r-model>
 	    if(param[throttle] === true){
@@ -13309,12 +13309,12 @@
 	      throttle = parseInt(param.throttle , 10)
 	    }
 	  }
-
+	
 	  var self = this;
 	  var wc = this.$watch(parsed, function(newValue){
 	    if(elem.value !== newValue) elem.value = newValue == null? "": "" + newValue;
 	  });
-
+	
 	  // @TODO to fixed event
 	  var handler = function (ev){
 	    var that = this;
@@ -13332,16 +13332,16 @@
 	        self.$update();
 	    }
 	  };
-
+	
 	  if(throttle && !lazy){
 	    var preHandle = handler, tid;
 	    handler = _.throttle(handler, throttle);
 	  }
-
+	
 	  if(hasInput === undefined){
 	    hasInput = dom.msie !== 9 && "oninput" in dom.tNode;
 	  }
-
+	
 	  if(lazy){
 	    elem.addEventListener("change", handler );
 	  }else{
@@ -13363,16 +13363,16 @@
 	    }
 	  }
 	}
-
-
+	
+	
 	// input:checkbox  binding
-
+	
 	function initCheckBox(elem, parsed){
 	  var self = this;
 	  var watcher = this.$watch(parsed, function(newValue){
 	    dom.attr(elem, 'checked', !!newValue);
 	  });
-
+	
 	  var handler = function handler(){
 	    var value = this.checked;
 	    parsed.set(self, value);
@@ -13380,27 +13380,27 @@
 	    self.$update();
 	  }
 	  if(parsed.set) dom.on(elem, "change", handler)
-
+	
 	  if(parsed.get(self) === undefined){
 	    parsed.set(self, !!elem.checked);
 	  }
-
+	
 	  return function destroy(){
 	    if(parsed.set) dom.off(elem, "change", handler)
 	  }
 	}
-
-
+	
+	
 	// input:radio binding
-
+	
 	function initRadio(elem, parsed){
 	  var self = this;
 	  var wc = this.$watch(parsed, function( newValue ){
 	    if(newValue == elem.value) elem.checked = true;
 	    else elem.checked = false;
 	  });
-
-
+	
+	
 	  var handler = function handler(){
 	    var value = this.value;
 	    parsed.set(self, value);
@@ -13413,14 +13413,14 @@
 	      parsed.set(self, elem.value);
 	    }
 	  }
-
+	
 	  return function destroy(){
 	    if(parsed.set) dom.off(elem, "change", handler)
 	  }
 	}
-
-
-
+	
+	
+	
 
 
 /***/ },
@@ -13495,18 +13495,18 @@
 	 * @author   Feross Aboukhadijeh <feross@feross.org> <http://feross.org>
 	 * @license  MIT
 	 */
-
+	
 	var base64 = __webpack_require__(48)
-	var ieee754 = __webpack_require__(46)
-	var isArray = __webpack_require__(47)
-
+	var ieee754 = __webpack_require__(47)
+	var isArray = __webpack_require__(46)
+	
 	exports.Buffer = Buffer
 	exports.SlowBuffer = Buffer
 	exports.INSPECT_MAX_BYTES = 50
 	Buffer.poolSize = 8192 // not used by this implementation
-
+	
 	var kMaxLength = 0x3fffffff
-
+	
 	/**
 	 * If `Buffer.TYPED_ARRAY_SUPPORT`:
 	 *   === true    Use Uint8Array implementation (fastest)
@@ -13541,7 +13541,7 @@
 	    return false
 	  }
 	})()
-
+	
 	/**
 	 * Class: Buffer
 	 * =============
@@ -13557,9 +13557,9 @@
 	function Buffer (subject, encoding, noZero) {
 	  if (!(this instanceof Buffer))
 	    return new Buffer(subject, encoding, noZero)
-
+	
 	  var type = typeof subject
-
+	
 	  // Find the length
 	  var length
 	  if (type === 'number')
@@ -13574,11 +13574,11 @@
 	    length = +subject.length > 0 ? Math.floor(+subject.length) : 0
 	  } else
 	    throw new TypeError('must start with number, buffer, array or string')
-
+	
 	  if (this.length > kMaxLength)
 	    throw new RangeError('Attempt to allocate Buffer larger than maximum ' +
 	      'size: 0x' + kMaxLength.toString(16) + ' bytes')
-
+	
 	  var buf
 	  if (Buffer.TYPED_ARRAY_SUPPORT) {
 	    // Preferred: Return an augmented `Uint8Array` instance for best performance
@@ -13589,7 +13589,7 @@
 	    buf.length = length
 	    buf._isBuffer = true
 	  }
-
+	
 	  var i
 	  if (Buffer.TYPED_ARRAY_SUPPORT && typeof subject.byteLength === 'number') {
 	    // Speed optimization -- use set if we're copying from a typed array
@@ -13610,18 +13610,18 @@
 	      buf[i] = 0
 	    }
 	  }
-
+	
 	  return buf
 	}
-
+	
 	Buffer.isBuffer = function (b) {
 	  return !!(b != null && b._isBuffer)
 	}
-
+	
 	Buffer.compare = function (a, b) {
 	  if (!Buffer.isBuffer(a) || !Buffer.isBuffer(b))
 	    throw new TypeError('Arguments must be Buffers')
-
+	
 	  var x = a.length
 	  var y = b.length
 	  for (var i = 0, len = Math.min(x, y); i < len && a[i] === b[i]; i++) {}
@@ -13633,7 +13633,7 @@
 	  if (y < x) return 1
 	  return 0
 	}
-
+	
 	Buffer.isEncoding = function (encoding) {
 	  switch (String(encoding).toLowerCase()) {
 	    case 'hex':
@@ -13652,16 +13652,16 @@
 	      return false
 	  }
 	}
-
+	
 	Buffer.concat = function (list, totalLength) {
 	  if (!isArray(list)) throw new TypeError('Usage: Buffer.concat(list[, length])')
-
+	
 	  if (list.length === 0) {
 	    return new Buffer(0)
 	  } else if (list.length === 1) {
 	    return list[0]
 	  }
-
+	
 	  var i
 	  if (totalLength === undefined) {
 	    totalLength = 0
@@ -13669,7 +13669,7 @@
 	      totalLength += list[i].length
 	    }
 	  }
-
+	
 	  var buf = new Buffer(totalLength)
 	  var pos = 0
 	  for (i = 0; i < list.length; i++) {
@@ -13679,7 +13679,7 @@
 	  }
 	  return buf
 	}
-
+	
 	Buffer.byteLength = function (str, encoding) {
 	  var ret
 	  str = str + ''
@@ -13710,47 +13710,47 @@
 	  }
 	  return ret
 	}
-
+	
 	// pre-set for values that may exist in the future
 	Buffer.prototype.length = undefined
 	Buffer.prototype.parent = undefined
-
+	
 	// toString(encoding, start=0, end=buffer.length)
 	Buffer.prototype.toString = function (encoding, start, end) {
 	  var loweredCase = false
-
+	
 	  start = start >>> 0
 	  end = end === undefined || end === Infinity ? this.length : end >>> 0
-
+	
 	  if (!encoding) encoding = 'utf8'
 	  if (start < 0) start = 0
 	  if (end > this.length) end = this.length
 	  if (end <= start) return ''
-
+	
 	  while (true) {
 	    switch (encoding) {
 	      case 'hex':
 	        return hexSlice(this, start, end)
-
+	
 	      case 'utf8':
 	      case 'utf-8':
 	        return utf8Slice(this, start, end)
-
+	
 	      case 'ascii':
 	        return asciiSlice(this, start, end)
-
+	
 	      case 'binary':
 	        return binarySlice(this, start, end)
-
+	
 	      case 'base64':
 	        return base64Slice(this, start, end)
-
+	
 	      case 'ucs2':
 	      case 'ucs-2':
 	      case 'utf16le':
 	      case 'utf-16le':
 	        return utf16leSlice(this, start, end)
-
+	
 	      default:
 	        if (loweredCase)
 	          throw new TypeError('Unknown encoding: ' + encoding)
@@ -13759,12 +13759,12 @@
 	    }
 	  }
 	}
-
+	
 	Buffer.prototype.equals = function (b) {
 	  if(!Buffer.isBuffer(b)) throw new TypeError('Argument must be a Buffer')
 	  return Buffer.compare(this, b) === 0
 	}
-
+	
 	Buffer.prototype.inspect = function () {
 	  var str = ''
 	  var max = exports.INSPECT_MAX_BYTES
@@ -13775,24 +13775,24 @@
 	  }
 	  return '<Buffer ' + str + '>'
 	}
-
+	
 	Buffer.prototype.compare = function (b) {
 	  if (!Buffer.isBuffer(b)) throw new TypeError('Argument must be a Buffer')
 	  return Buffer.compare(this, b)
 	}
-
+	
 	// `get` will be removed in Node 0.13+
 	Buffer.prototype.get = function (offset) {
 	  console.log('.get() is deprecated. Access using array indexes instead.')
 	  return this.readUInt8(offset)
 	}
-
+	
 	// `set` will be removed in Node 0.13+
 	Buffer.prototype.set = function (v, offset) {
 	  console.log('.set() is deprecated. Access using array indexes instead.')
 	  return this.writeUInt8(v, offset)
 	}
-
+	
 	function hexWrite (buf, string, offset, length) {
 	  offset = Number(offset) || 0
 	  var remaining = buf.length - offset
@@ -13804,11 +13804,11 @@
 	      length = remaining
 	    }
 	  }
-
+	
 	  // must be an even number of digits
 	  var strLen = string.length
 	  if (strLen % 2 !== 0) throw new Error('Invalid hex string')
-
+	
 	  if (length > strLen / 2) {
 	    length = strLen / 2
 	  }
@@ -13819,31 +13819,31 @@
 	  }
 	  return i
 	}
-
+	
 	function utf8Write (buf, string, offset, length) {
 	  var charsWritten = blitBuffer(utf8ToBytes(string), buf, offset, length)
 	  return charsWritten
 	}
-
+	
 	function asciiWrite (buf, string, offset, length) {
 	  var charsWritten = blitBuffer(asciiToBytes(string), buf, offset, length)
 	  return charsWritten
 	}
-
+	
 	function binaryWrite (buf, string, offset, length) {
 	  return asciiWrite(buf, string, offset, length)
 	}
-
+	
 	function base64Write (buf, string, offset, length) {
 	  var charsWritten = blitBuffer(base64ToBytes(string), buf, offset, length)
 	  return charsWritten
 	}
-
+	
 	function utf16leWrite (buf, string, offset, length) {
 	  var charsWritten = blitBuffer(utf16leToBytes(string), buf, offset, length, 2)
 	  return charsWritten
 	}
-
+	
 	Buffer.prototype.write = function (string, offset, length, encoding) {
 	  // Support both (string, offset, length, encoding)
 	  // and the legacy (string, encoding, offset, length)
@@ -13858,7 +13858,7 @@
 	    offset = length
 	    length = swap
 	  }
-
+	
 	  offset = Number(offset) || 0
 	  var remaining = this.length - offset
 	  if (!length) {
@@ -13870,7 +13870,7 @@
 	    }
 	  }
 	  encoding = String(encoding || 'utf8').toLowerCase()
-
+	
 	  var ret
 	  switch (encoding) {
 	    case 'hex':
@@ -13900,14 +13900,14 @@
 	  }
 	  return ret
 	}
-
+	
 	Buffer.prototype.toJSON = function () {
 	  return {
 	    type: 'Buffer',
 	    data: Array.prototype.slice.call(this._arr || this, 0)
 	  }
 	}
-
+	
 	function base64Slice (buf, start, end) {
 	  if (start === 0 && end === buf.length) {
 	    return base64.fromByteArray(buf)
@@ -13915,12 +13915,12 @@
 	    return base64.fromByteArray(buf.slice(start, end))
 	  }
 	}
-
+	
 	function utf8Slice (buf, start, end) {
 	  var res = ''
 	  var tmp = ''
 	  end = Math.min(buf.length, end)
-
+	
 	  for (var i = start; i < end; i++) {
 	    if (buf[i] <= 0x7F) {
 	      res += decodeUtf8Char(tmp) + String.fromCharCode(buf[i])
@@ -13929,37 +13929,37 @@
 	      tmp += '%' + buf[i].toString(16)
 	    }
 	  }
-
+	
 	  return res + decodeUtf8Char(tmp)
 	}
-
+	
 	function asciiSlice (buf, start, end) {
 	  var ret = ''
 	  end = Math.min(buf.length, end)
-
+	
 	  for (var i = start; i < end; i++) {
 	    ret += String.fromCharCode(buf[i])
 	  }
 	  return ret
 	}
-
+	
 	function binarySlice (buf, start, end) {
 	  return asciiSlice(buf, start, end)
 	}
-
+	
 	function hexSlice (buf, start, end) {
 	  var len = buf.length
-
+	
 	  if (!start || start < 0) start = 0
 	  if (!end || end < 0 || end > len) end = len
-
+	
 	  var out = ''
 	  for (var i = start; i < end; i++) {
 	    out += toHex(buf[i])
 	  }
 	  return out
 	}
-
+	
 	function utf16leSlice (buf, start, end) {
 	  var bytes = buf.slice(start, end)
 	  var res = ''
@@ -13968,12 +13968,12 @@
 	  }
 	  return res
 	}
-
+	
 	Buffer.prototype.slice = function (start, end) {
 	  var len = this.length
 	  start = ~~start
 	  end = end === undefined ? len : ~~end
-
+	
 	  if (start < 0) {
 	    start += len;
 	    if (start < 0)
@@ -13981,7 +13981,7 @@
 	  } else if (start > len) {
 	    start = len
 	  }
-
+	
 	  if (end < 0) {
 	    end += len
 	    if (end < 0)
@@ -13989,10 +13989,10 @@
 	  } else if (end > len) {
 	    end = len
 	  }
-
+	
 	  if (end < start)
 	    end = start
-
+	
 	  if (Buffer.TYPED_ARRAY_SUPPORT) {
 	    return Buffer._augment(this.subarray(start, end))
 	  } else {
@@ -14004,7 +14004,7 @@
 	    return newBuf
 	  }
 	}
-
+	
 	/*
 	 * Need to make sure that buffer isn't trying to write out of bounds.
 	 */
@@ -14014,45 +14014,45 @@
 	  if (offset + ext > length)
 	    throw new RangeError('Trying to access beyond buffer length')
 	}
-
+	
 	Buffer.prototype.readUInt8 = function (offset, noAssert) {
 	  if (!noAssert)
 	    checkOffset(offset, 1, this.length)
 	  return this[offset]
 	}
-
+	
 	Buffer.prototype.readUInt16LE = function (offset, noAssert) {
 	  if (!noAssert)
 	    checkOffset(offset, 2, this.length)
 	  return this[offset] | (this[offset + 1] << 8)
 	}
-
+	
 	Buffer.prototype.readUInt16BE = function (offset, noAssert) {
 	  if (!noAssert)
 	    checkOffset(offset, 2, this.length)
 	  return (this[offset] << 8) | this[offset + 1]
 	}
-
+	
 	Buffer.prototype.readUInt32LE = function (offset, noAssert) {
 	  if (!noAssert)
 	    checkOffset(offset, 4, this.length)
-
+	
 	  return ((this[offset]) |
 	      (this[offset + 1] << 8) |
 	      (this[offset + 2] << 16)) +
 	      (this[offset + 3] * 0x1000000)
 	}
-
+	
 	Buffer.prototype.readUInt32BE = function (offset, noAssert) {
 	  if (!noAssert)
 	    checkOffset(offset, 4, this.length)
-
+	
 	  return (this[offset] * 0x1000000) +
 	      ((this[offset + 1] << 16) |
 	      (this[offset + 2] << 8) |
 	      this[offset + 3])
 	}
-
+	
 	Buffer.prototype.readInt8 = function (offset, noAssert) {
 	  if (!noAssert)
 	    checkOffset(offset, 1, this.length)
@@ -14060,71 +14060,71 @@
 	    return (this[offset])
 	  return ((0xff - this[offset] + 1) * -1)
 	}
-
+	
 	Buffer.prototype.readInt16LE = function (offset, noAssert) {
 	  if (!noAssert)
 	    checkOffset(offset, 2, this.length)
 	  var val = this[offset] | (this[offset + 1] << 8)
 	  return (val & 0x8000) ? val | 0xFFFF0000 : val
 	}
-
+	
 	Buffer.prototype.readInt16BE = function (offset, noAssert) {
 	  if (!noAssert)
 	    checkOffset(offset, 2, this.length)
 	  var val = this[offset + 1] | (this[offset] << 8)
 	  return (val & 0x8000) ? val | 0xFFFF0000 : val
 	}
-
+	
 	Buffer.prototype.readInt32LE = function (offset, noAssert) {
 	  if (!noAssert)
 	    checkOffset(offset, 4, this.length)
-
+	
 	  return (this[offset]) |
 	      (this[offset + 1] << 8) |
 	      (this[offset + 2] << 16) |
 	      (this[offset + 3] << 24)
 	}
-
+	
 	Buffer.prototype.readInt32BE = function (offset, noAssert) {
 	  if (!noAssert)
 	    checkOffset(offset, 4, this.length)
-
+	
 	  return (this[offset] << 24) |
 	      (this[offset + 1] << 16) |
 	      (this[offset + 2] << 8) |
 	      (this[offset + 3])
 	}
-
+	
 	Buffer.prototype.readFloatLE = function (offset, noAssert) {
 	  if (!noAssert)
 	    checkOffset(offset, 4, this.length)
 	  return ieee754.read(this, offset, true, 23, 4)
 	}
-
+	
 	Buffer.prototype.readFloatBE = function (offset, noAssert) {
 	  if (!noAssert)
 	    checkOffset(offset, 4, this.length)
 	  return ieee754.read(this, offset, false, 23, 4)
 	}
-
+	
 	Buffer.prototype.readDoubleLE = function (offset, noAssert) {
 	  if (!noAssert)
 	    checkOffset(offset, 8, this.length)
 	  return ieee754.read(this, offset, true, 52, 8)
 	}
-
+	
 	Buffer.prototype.readDoubleBE = function (offset, noAssert) {
 	  if (!noAssert)
 	    checkOffset(offset, 8, this.length)
 	  return ieee754.read(this, offset, false, 52, 8)
 	}
-
+	
 	function checkInt (buf, value, offset, ext, max, min) {
 	  if (!Buffer.isBuffer(buf)) throw new TypeError('buffer must be a Buffer instance')
 	  if (value > max || value < min) throw new TypeError('value is out of bounds')
 	  if (offset + ext > buf.length) throw new TypeError('index out of range')
 	}
-
+	
 	Buffer.prototype.writeUInt8 = function (value, offset, noAssert) {
 	  value = +value
 	  offset = offset >>> 0
@@ -14134,7 +14134,7 @@
 	  this[offset] = value
 	  return offset + 1
 	}
-
+	
 	function objectWriteUInt16 (buf, value, offset, littleEndian) {
 	  if (value < 0) value = 0xffff + value + 1
 	  for (var i = 0, j = Math.min(buf.length - offset, 2); i < j; i++) {
@@ -14142,7 +14142,7 @@
 	      (littleEndian ? i : 1 - i) * 8
 	  }
 	}
-
+	
 	Buffer.prototype.writeUInt16LE = function (value, offset, noAssert) {
 	  value = +value
 	  offset = offset >>> 0
@@ -14154,7 +14154,7 @@
 	  } else objectWriteUInt16(this, value, offset, true)
 	  return offset + 2
 	}
-
+	
 	Buffer.prototype.writeUInt16BE = function (value, offset, noAssert) {
 	  value = +value
 	  offset = offset >>> 0
@@ -14166,14 +14166,14 @@
 	  } else objectWriteUInt16(this, value, offset, false)
 	  return offset + 2
 	}
-
+	
 	function objectWriteUInt32 (buf, value, offset, littleEndian) {
 	  if (value < 0) value = 0xffffffff + value + 1
 	  for (var i = 0, j = Math.min(buf.length - offset, 4); i < j; i++) {
 	    buf[offset + i] = (value >>> (littleEndian ? i : 3 - i) * 8) & 0xff
 	  }
 	}
-
+	
 	Buffer.prototype.writeUInt32LE = function (value, offset, noAssert) {
 	  value = +value
 	  offset = offset >>> 0
@@ -14187,7 +14187,7 @@
 	  } else objectWriteUInt32(this, value, offset, true)
 	  return offset + 4
 	}
-
+	
 	Buffer.prototype.writeUInt32BE = function (value, offset, noAssert) {
 	  value = +value
 	  offset = offset >>> 0
@@ -14201,7 +14201,7 @@
 	  } else objectWriteUInt32(this, value, offset, false)
 	  return offset + 4
 	}
-
+	
 	Buffer.prototype.writeInt8 = function (value, offset, noAssert) {
 	  value = +value
 	  offset = offset >>> 0
@@ -14212,7 +14212,7 @@
 	  this[offset] = value
 	  return offset + 1
 	}
-
+	
 	Buffer.prototype.writeInt16LE = function (value, offset, noAssert) {
 	  value = +value
 	  offset = offset >>> 0
@@ -14224,7 +14224,7 @@
 	  } else objectWriteUInt16(this, value, offset, true)
 	  return offset + 2
 	}
-
+	
 	Buffer.prototype.writeInt16BE = function (value, offset, noAssert) {
 	  value = +value
 	  offset = offset >>> 0
@@ -14236,7 +14236,7 @@
 	  } else objectWriteUInt16(this, value, offset, false)
 	  return offset + 2
 	}
-
+	
 	Buffer.prototype.writeInt32LE = function (value, offset, noAssert) {
 	  value = +value
 	  offset = offset >>> 0
@@ -14250,7 +14250,7 @@
 	  } else objectWriteUInt32(this, value, offset, true)
 	  return offset + 4
 	}
-
+	
 	Buffer.prototype.writeInt32BE = function (value, offset, noAssert) {
 	  value = +value
 	  offset = offset >>> 0
@@ -14265,69 +14265,69 @@
 	  } else objectWriteUInt32(this, value, offset, false)
 	  return offset + 4
 	}
-
+	
 	function checkIEEE754 (buf, value, offset, ext, max, min) {
 	  if (value > max || value < min) throw new TypeError('value is out of bounds')
 	  if (offset + ext > buf.length) throw new TypeError('index out of range')
 	}
-
+	
 	function writeFloat (buf, value, offset, littleEndian, noAssert) {
 	  if (!noAssert)
 	    checkIEEE754(buf, value, offset, 4, 3.4028234663852886e+38, -3.4028234663852886e+38)
 	  ieee754.write(buf, value, offset, littleEndian, 23, 4)
 	  return offset + 4
 	}
-
+	
 	Buffer.prototype.writeFloatLE = function (value, offset, noAssert) {
 	  return writeFloat(this, value, offset, true, noAssert)
 	}
-
+	
 	Buffer.prototype.writeFloatBE = function (value, offset, noAssert) {
 	  return writeFloat(this, value, offset, false, noAssert)
 	}
-
+	
 	function writeDouble (buf, value, offset, littleEndian, noAssert) {
 	  if (!noAssert)
 	    checkIEEE754(buf, value, offset, 8, 1.7976931348623157E+308, -1.7976931348623157E+308)
 	  ieee754.write(buf, value, offset, littleEndian, 52, 8)
 	  return offset + 8
 	}
-
+	
 	Buffer.prototype.writeDoubleLE = function (value, offset, noAssert) {
 	  return writeDouble(this, value, offset, true, noAssert)
 	}
-
+	
 	Buffer.prototype.writeDoubleBE = function (value, offset, noAssert) {
 	  return writeDouble(this, value, offset, false, noAssert)
 	}
-
+	
 	// copy(targetBuffer, targetStart=0, sourceStart=0, sourceEnd=buffer.length)
 	Buffer.prototype.copy = function (target, target_start, start, end) {
 	  var source = this
-
+	
 	  if (!start) start = 0
 	  if (!end && end !== 0) end = this.length
 	  if (!target_start) target_start = 0
-
+	
 	  // Copy 0 bytes; we're done
 	  if (end === start) return
 	  if (target.length === 0 || source.length === 0) return
-
+	
 	  // Fatal error conditions
 	  if (end < start) throw new TypeError('sourceEnd < sourceStart')
 	  if (target_start < 0 || target_start >= target.length)
 	    throw new TypeError('targetStart out of bounds')
 	  if (start < 0 || start >= source.length) throw new TypeError('sourceStart out of bounds')
 	  if (end < 0 || end > source.length) throw new TypeError('sourceEnd out of bounds')
-
+	
 	  // Are we oob?
 	  if (end > this.length)
 	    end = this.length
 	  if (target.length - target_start < end - start)
 	    end = target.length - target_start + start
-
+	
 	  var len = end - start
-
+	
 	  if (len < 1000 || !Buffer.TYPED_ARRAY_SUPPORT) {
 	    for (var i = 0; i < len; i++) {
 	      target[i + target_start] = this[i + start]
@@ -14336,22 +14336,22 @@
 	    target._set(this.subarray(start, start + len), target_start)
 	  }
 	}
-
+	
 	// fill(value, start=0, end=buffer.length)
 	Buffer.prototype.fill = function (value, start, end) {
 	  if (!value) value = 0
 	  if (!start) start = 0
 	  if (!end) end = this.length
-
+	
 	  if (end < start) throw new TypeError('end < start')
-
+	
 	  // Fill 0 bytes; we're done
 	  if (end === start) return
 	  if (this.length === 0) return
-
+	
 	  if (start < 0 || start >= this.length) throw new TypeError('start out of bounds')
 	  if (end < 0 || end > this.length) throw new TypeError('end out of bounds')
-
+	
 	  var i
 	  if (typeof value === 'number') {
 	    for (i = start; i < end; i++) {
@@ -14364,10 +14364,10 @@
 	      this[i] = bytes[i % len]
 	    }
 	  }
-
+	
 	  return this
 	}
-
+	
 	/**
 	 * Creates a new `ArrayBuffer` with the *copied* memory of the buffer instance.
 	 * Added in Node 0.12. Only available in browsers that support ArrayBuffer.
@@ -14387,27 +14387,27 @@
 	    throw new TypeError('Buffer.toArrayBuffer not supported in this browser')
 	  }
 	}
-
+	
 	// HELPER FUNCTIONS
 	// ================
-
+	
 	var BP = Buffer.prototype
-
+	
 	/**
 	 * Augment a Uint8Array *instance* (not the Uint8Array class!) with Buffer methods
 	 */
 	Buffer._augment = function (arr) {
 	  arr.constructor = Buffer
 	  arr._isBuffer = true
-
+	
 	  // save reference to original Uint8Array get/set methods before overwriting
 	  arr._get = arr.get
 	  arr._set = arr.set
-
+	
 	  // deprecated, will be removed in node 0.13+
 	  arr.get = BP.get
 	  arr.set = BP.set
-
+	
 	  arr.write = BP.write
 	  arr.toString = BP.toString
 	  arr.toLocaleString = BP.toString
@@ -14447,12 +14447,12 @@
 	  arr.fill = BP.fill
 	  arr.inspect = BP.inspect
 	  arr.toArrayBuffer = BP.toArrayBuffer
-
+	
 	  return arr
 	}
-
+	
 	var INVALID_BASE64_RE = /[^+\/0-9A-z]/g
-
+	
 	function base64clean (str) {
 	  // Node strips out invalid characters like \n and \t from the string, base64-js does not
 	  str = stringtrim(str).replace(INVALID_BASE64_RE, '')
@@ -14462,23 +14462,23 @@
 	  }
 	  return str
 	}
-
+	
 	function stringtrim (str) {
 	  if (str.trim) return str.trim()
 	  return str.replace(/^\s+|\s+$/g, '')
 	}
-
+	
 	function isArrayish (subject) {
 	  return isArray(subject) || Buffer.isBuffer(subject) ||
 	      subject && typeof subject === 'object' &&
 	      typeof subject.length === 'number'
 	}
-
+	
 	function toHex (n) {
 	  if (n < 16) return '0' + n.toString(16)
 	  return n.toString(16)
 	}
-
+	
 	function utf8ToBytes (str) {
 	  var byteArray = []
 	  for (var i = 0; i < str.length; i++) {
@@ -14496,7 +14496,7 @@
 	  }
 	  return byteArray
 	}
-
+	
 	function asciiToBytes (str) {
 	  var byteArray = []
 	  for (var i = 0; i < str.length; i++) {
@@ -14505,7 +14505,7 @@
 	  }
 	  return byteArray
 	}
-
+	
 	function utf16leToBytes (str) {
 	  var c, hi, lo
 	  var byteArray = []
@@ -14516,14 +14516,14 @@
 	    byteArray.push(lo)
 	    byteArray.push(hi)
 	  }
-
+	
 	  return byteArray
 	}
-
+	
 	function base64ToBytes (str) {
 	  return base64.toByteArray(str)
 	}
-
+	
 	function blitBuffer (src, dst, offset, length, unitSize) {
 	  if (unitSize) length -= length % unitSize;
 	  for (var i = 0; i < length; i++) {
@@ -14533,7 +14533,7 @@
 	  }
 	  return i
 	}
-
+	
 	function decodeUtf8Char (str) {
 	  try {
 	    return decodeURIComponent(str)
@@ -14564,6 +14564,45 @@
 /* 46 */
 /***/ function(module, exports, __webpack_require__) {
 
+	
+	/**
+	 * isArray
+	 */
+	
+	var isArray = Array.isArray;
+	
+	/**
+	 * toString
+	 */
+	
+	var str = Object.prototype.toString;
+	
+	/**
+	 * Whether or not the given `val`
+	 * is an array.
+	 *
+	 * example:
+	 *
+	 *        isArray([]);
+	 *        // > true
+	 *        isArray(arguments);
+	 *        // > false
+	 *        isArray('');
+	 *        // > false
+	 *
+	 * @param {mixed} val
+	 * @return {bool}
+	 */
+	
+	module.exports = isArray || function (val) {
+	  return !! val && '[object Array]' == str.call(val);
+	};
+
+
+/***/ },
+/* 47 */
+/***/ function(module, exports, __webpack_require__) {
+
 	exports.read = function(buffer, offset, isLE, mLen, nBytes) {
 	  var e, m,
 	      eLen = nBytes * 8 - mLen - 1,
@@ -14573,19 +14612,19 @@
 	      i = isLE ? (nBytes - 1) : 0,
 	      d = isLE ? -1 : 1,
 	      s = buffer[offset + i];
-
+	
 	  i += d;
-
+	
 	  e = s & ((1 << (-nBits)) - 1);
 	  s >>= (-nBits);
 	  nBits += eLen;
 	  for (; nBits > 0; e = e * 256 + buffer[offset + i], i += d, nBits -= 8);
-
+	
 	  m = e & ((1 << (-nBits)) - 1);
 	  e >>= (-nBits);
 	  nBits += mLen;
 	  for (; nBits > 0; m = m * 256 + buffer[offset + i], i += d, nBits -= 8);
-
+	
 	  if (e === 0) {
 	    e = 1 - eBias;
 	  } else if (e === eMax) {
@@ -14596,7 +14635,7 @@
 	  }
 	  return (s ? -1 : 1) * m * Math.pow(2, e - mLen);
 	};
-
+	
 	exports.write = function(buffer, value, offset, isLE, mLen, nBytes) {
 	  var e, m, c,
 	      eLen = nBytes * 8 - mLen - 1,
@@ -14606,9 +14645,9 @@
 	      i = isLE ? 0 : (nBytes - 1),
 	      d = isLE ? 1 : -1,
 	      s = value < 0 || (value === 0 && 1 / value < 0) ? 1 : 0;
-
+	
 	  value = Math.abs(value);
-
+	
 	  if (isNaN(value) || value === Infinity) {
 	    m = isNaN(value) ? 1 : 0;
 	    e = eMax;
@@ -14627,7 +14666,7 @@
 	      e++;
 	      c /= 2;
 	    }
-
+	
 	    if (e + eBias >= eMax) {
 	      m = 0;
 	      e = eMax;
@@ -14639,53 +14678,14 @@
 	      e = 0;
 	    }
 	  }
-
+	
 	  for (; mLen >= 8; buffer[offset + i] = m & 0xff, i += d, m /= 256, mLen -= 8);
-
+	
 	  e = (e << mLen) | m;
 	  eLen += mLen;
 	  for (; eLen > 0; buffer[offset + i] = e & 0xff, i += d, e /= 256, eLen -= 8);
-
-	  buffer[offset + i - d] |= s * 128;
-	};
-
-
-/***/ },
-/* 47 */
-/***/ function(module, exports, __webpack_require__) {
-
 	
-	/**
-	 * isArray
-	 */
-
-	var isArray = Array.isArray;
-
-	/**
-	 * toString
-	 */
-
-	var str = Object.prototype.toString;
-
-	/**
-	 * Whether or not the given `val`
-	 * is an array.
-	 *
-	 * example:
-	 *
-	 *        isArray([]);
-	 *        // > true
-	 *        isArray(arguments);
-	 *        // > false
-	 *        isArray('');
-	 *        // > false
-	 *
-	 * @param {mixed} val
-	 * @return {bool}
-	 */
-
-	module.exports = isArray || function (val) {
-	  return !! val && '[object Array]' == str.call(val);
+	  buffer[offset + i - d] |= s * 128;
 	};
 
 
@@ -14694,20 +14694,20 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var lookup = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
-
+	
 	;(function (exports) {
 		'use strict';
-
+	
 	  var Arr = (typeof Uint8Array !== 'undefined')
 	    ? Uint8Array
 	    : Array
-
+	
 		var PLUS   = '+'.charCodeAt(0)
 		var SLASH  = '/'.charCodeAt(0)
 		var NUMBER = '0'.charCodeAt(0)
 		var LOWER  = 'a'.charCodeAt(0)
 		var UPPER  = 'A'.charCodeAt(0)
-
+	
 		function decode (elt) {
 			var code = elt.charCodeAt(0)
 			if (code === PLUS)
@@ -14723,14 +14723,14 @@
 			if (code < LOWER + 26)
 				return code - LOWER + 26
 		}
-
+	
 		function b64ToByteArray (b64) {
 			var i, j, l, tmp, placeHolders, arr
-
+	
 			if (b64.length % 4 > 0) {
 				throw new Error('Invalid string. Length must be a multiple of 4')
 			}
-
+	
 			// the number of equal signs (place holders)
 			// if there are two placeholders, than the two characters before it
 			// represent one byte
@@ -14738,26 +14738,26 @@
 			// this is just a cheap hack to not do indexOf twice
 			var len = b64.length
 			placeHolders = '=' === b64.charAt(len - 2) ? 2 : '=' === b64.charAt(len - 1) ? 1 : 0
-
+	
 			// base64 is 4/3 + up to two characters of the original data
 			arr = new Arr(b64.length * 3 / 4 - placeHolders)
-
+	
 			// if there are placeholders, only get up to the last complete 4 chars
 			l = placeHolders > 0 ? b64.length - 4 : b64.length
-
+	
 			var L = 0
-
+	
 			function push (v) {
 				arr[L++] = v
 			}
-
+	
 			for (i = 0, j = 0; i < l; i += 4, j += 3) {
 				tmp = (decode(b64.charAt(i)) << 18) | (decode(b64.charAt(i + 1)) << 12) | (decode(b64.charAt(i + 2)) << 6) | decode(b64.charAt(i + 3))
 				push((tmp & 0xFF0000) >> 16)
 				push((tmp & 0xFF00) >> 8)
 				push(tmp & 0xFF)
 			}
-
+	
 			if (placeHolders === 2) {
 				tmp = (decode(b64.charAt(i)) << 2) | (decode(b64.charAt(i + 1)) >> 4)
 				push(tmp & 0xFF)
@@ -14766,30 +14766,30 @@
 				push((tmp >> 8) & 0xFF)
 				push(tmp & 0xFF)
 			}
-
+	
 			return arr
 		}
-
+	
 		function uint8ToBase64 (uint8) {
 			var i,
 				extraBytes = uint8.length % 3, // if we have 1 byte left, pad 2 bytes
 				output = "",
 				temp, length
-
+	
 			function encode (num) {
 				return lookup.charAt(num)
 			}
-
+	
 			function tripletToBase64 (num) {
 				return encode(num >> 18 & 0x3F) + encode(num >> 12 & 0x3F) + encode(num >> 6 & 0x3F) + encode(num & 0x3F)
 			}
-
+	
 			// go through the array every three bytes, we'll deal with trailing stuff later
 			for (i = 0, length = uint8.length - extraBytes; i < length; i += 3) {
 				temp = (uint8[i] << 16) + (uint8[i + 1] << 8) + (uint8[i + 2])
 				output += tripletToBase64(temp)
 			}
-
+	
 			// pad the end with zeros, but make sure to not forget the extra bytes
 			switch (extraBytes) {
 				case 1:
@@ -14806,10 +14806,10 @@
 					output += '='
 					break
 			}
-
+	
 			return output
 		}
-
+	
 		exports.toByteArray = b64ToByteArray
 		exports.fromByteArray = uint8ToBase64
 	}(false ? (this.base64js = {}) : exports))
@@ -14817,3 +14817,4 @@
 
 /***/ }
 /******/ ])
+//# sourceMappingURL=dom.bundle.js.map

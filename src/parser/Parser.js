@@ -650,7 +650,7 @@ op.primary = function(){
       return this.getset(quota + value + quota);
     case 'NUMBER':
       this.next();
-      return this.getset( "" + value );
+      return this.getset( "" + ll.value );
     case "IDENT":
       this.next();
       if(isKeyWord(ll.value)){
