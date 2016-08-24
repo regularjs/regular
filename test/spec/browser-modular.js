@@ -253,7 +253,47 @@ describe("hotfix ", function(){
   })
 
 })
+
+
 describe("events: extend & implement", function(){
+
+  it("multiply mixin with different Component", function(){
+    var processStack = []
+    var mixin = {
+      events:{
+        $afterConfig: function(){
+          processStack.push('afterConfig')
+        }
+      }
+    } 
+    var Component = Regular.extend({ }).implement(mixin)
+    var Component2 = Regular.extend({ }).implement(mixin)
+
+    new Component(); new Component2();
+
+    expect(processStack).to.eql([  'afterConfig', 'afterConfig' ])
+  })
+  it("simple implement with declaration ", function( done){
+    var processStack = []
+    var Comp1 = Regular.extend({
+      name: 'events-hello',
+      init: function(){
+        processStack.push('init')
+      }
+    }).implement({
+      events:{
+        $afterConfig: function(){
+          processStack.push('afterConfig')
+        }
+      }
+    });
+    new Regular({
+      template: '<events-hello on-hello={this.handle} />'
+
+    })
+    expect(processStack).to.eql([  'afterConfig', 'init' ])
+    done();
+  })
   it("extend events with Object", function(  ){
     var processStack = []
     var Comp1 = Regular.extend({
@@ -264,6 +304,9 @@ describe("events: extend & implement", function(){
         $afterConfig: function(){
           processStack.push('afterConfig1')
         }
+      },
+      init: function(){
+        processStack.push('init')
       }
     })
 
@@ -279,7 +322,7 @@ describe("events: extend & implement", function(){
     })
     new Comp1();
 
-    expect(processStack).to.eql([ 'config1', 'config2', 'afterConfig1', 'afterConfig2' ])
+    expect(processStack).to.eql([ 'config1', 'config2', 'afterConfig1', 'afterConfig2', 'init' ])
 
   })
   it("extend events with Array", function(  ){

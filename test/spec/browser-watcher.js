@@ -621,14 +621,35 @@ describe("component.watcher", function(){
   })
 
 
-  it("$unwatch should work as expect", function(){
+
+  it('$unwatch wont remove watcher directly, but markit as removed', function(){
      var watcher = new Regular({
      });
      var wt = watcher.$watch('auto', function(){ })
      expect(watcher._watchers.length).to.equal(1)
      watcher.$unwatch(wt)
+     expect(watcher._watchers.length).to.equal(1)
+     watcher.$update();
      expect(watcher._watchers.length).to.equal(0)
   })
+  it('$unwatch accept null', function(){
+     var watcher = new Regular({ });
+     var wt = watcher.$watch('auto', function(){ })
+     expect(watcher._watchers.length).to.equal(1)
+     watcher.$unwatch(null)
+     expect(watcher._watchers.length).to.equal(1)
+  })
+  it('$unwatch accept Array and Number', function(){
+     var watcher = new Regular({ });
+     var wt = watcher.$watch('auto', function(){ })
+     var wt2 = watcher.$watch('auto2', function(){ })
+     expect(watcher._watchers.length).to.equal(2)
+     watcher.$unwatch([wt, wt2.id]);
+     expect(watcher._watchers.length).to.equal(2)
+     watcher.$update();
+     expect(watcher._watchers.length).to.equal(0)
+  })
+
 
 
 })

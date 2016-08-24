@@ -510,6 +510,14 @@ _.fixTagAST = function( tagAST, Component ){
   tagAST.touched = true;
 }
 
+_.findItem = function(list, filter){
+  if(!list || !list.length) return;
+  var len = list.length;
+  while(len--){
+    if(filter(list[len])) return list[len]
+  }
+}
+
 _.getParamObj = function(component, param){
   var paramObj = {};
   if(param) {

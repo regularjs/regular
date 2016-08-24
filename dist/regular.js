@@ -1,6 +1,6 @@
 /**
 @author	leeluolee
-@version	0.4.4
+@version	0.4.5
 @homepage	http://regularjs.github.io
 */
 (function webpackUniversalModuleDefinition(root, factory) {
@@ -1636,6 +1636,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	  })
 
 	  tagAST.touched = true;
+	}
+
+	_.findItem = function(list, filter){
+	  if(!list || !list.length) return;
+	  var len = list.length;
+	  while(len--){
+	    if(filter(list[len])) return list[len]
+	  }
 	}
 
 	_.getParamObj = function(component, param){
@@ -3738,7 +3746,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      return this.getset(quota + value + quota);
 	    case 'NUMBER':
 	      this.next();
-	      return this.getset( "" + value );
+	      return this.getset( "" + ll.value );
 	    case "IDENT":
 	      this.next();
 	      if(isKeyWord(ll.value)){
@@ -4182,22 +4190,24 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	    return watcher;
 	  },
-	  $unwatch: function(uid){
-	    uid = uid.id || uid;
-	    if(!this._watchers) this._watchers = [];
-	    if(Array.isArray(uid)){
-	      for(var i =0, len = uid.length; i < len; i++){
-	        this.$unwatch(uid[i]);
+	  $unwatch: function( watcher ){
+	    if(!this._watchers || !watcher) return;
+	    var watchers = this._watchers;
+	    if(typeof watcher === 'number'){
+	      var id = watcher;
+	      watcher = _.findItem( watchers, function(item){
+	        return item.id === id;
+	      } );
+	      return this.$unwatch(watcher);
+	    }
+	    var len = watcher.length;
+	    if( len ){
+	      while( (len--) >= 0 ){
+	        this.$unwatch(watcher[len])
 	      }
+	      return;
 	    }else{
-	      var watchers = this._watchers, watcher, wlen;
-	      if(!uid || !watchers || !(wlen = watchers.length)) return;
-	      for(;wlen--;){
-	        watcher = watchers[wlen];
-	        if(watcher && watcher.id === uid ){
-	          watchers.splice(wlen, 1);
-	        }
-	      }
+	      watcher.removed = true
 	    }
 	  },
 	  $expression: function(value){
@@ -4228,11 +4238,16 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    var watchers = this._watchers;
 	    var dirty = false, children, watcher, watcherDirty;
-	    if(watchers && watchers.length){
-	      for(var i = 0, len = watchers.length;i < len; i++){
-	        watcher = watchers[i];
-	        watcherDirty = this._checkSingleWatch(watcher, i);
-	        if(watcherDirty) dirty = true;
+	    var len = watchers && watchers.length;
+	    if(len){
+	      for(;len--;){
+	        watcher = watchers[len];
+	        if( watcher.removed ){
+	          watchers.splice( len, 1 );
+	        }else{
+	          watcherDirty = this._checkSingleWatch(watcher, len);
+	          if(watcherDirty) dirty = true;
+	        }
 	      }
 	    }
 	    // check children's dirty.
@@ -4240,7 +4255,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	    if(children && children.length){
 	      for(var m = 0, mlen = children.length; m < mlen; m++){
 	        var child = children[m];
-	        
 	        if(child && child._digest()) dirty = true;
 	      }
 	    }

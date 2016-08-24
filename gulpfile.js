@@ -3,6 +3,7 @@ var path = require('path');
 var karma = require('karma').server;
 var _ = require('./src/util.js');
 var gulp = require('gulp');
+var git = require('gulp-git');
 var spawn = require('child_process').spawn;
 var shell = require('gulp-shell');
 var istanbul = require('gulp-istanbul');
@@ -11,8 +12,29 @@ var webpack = require('gulp-webpack');
 var mocha = require('gulp-mocha');
 var uglify = require('gulp-uglify');
 var gutil = require('gulp-util');
+var bump = require('gulp-bump');
+var tag_version = require('gulp-tag-version');
 var through = require('through2');
+var rollup = require('rollup');
 var pkg;
+
+
+function inc(importance) {
+  // get all the files to bump version in
+  return gulp.src(['./package.json', './bower.json'])
+    // bump the version number in those files
+    .pipe(bump({type: importance}))
+    // save it back to filesystem
+    .pipe(gulp.dest('./'))
+    // commit the changed version number
+    .pipe(git.commit('bumps package version'))
+    // **tag it in the repository**
+    .pipe(tag_version());
+}
+
+gulp.task('patch', function() { return inc('patch'); })
+gulp.task('feature', function() { return inc('minor'); })
+gulp.task('release', function() { return inc('major'); })
 
 
 

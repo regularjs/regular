@@ -69,22 +69,24 @@ var methods = {
     }
     return watcher;
   },
-  $unwatch: function(uid){
-    uid = uid.id || uid;
-    if(!this._watchers) this._watchers = [];
-    if(Array.isArray(uid)){
-      for(var i =0, len = uid.length; i < len; i++){
-        this.$unwatch(uid[i]);
+  $unwatch: function( watcher ){
+    if(!this._watchers || !watcher) return;
+    var watchers = this._watchers;
+    if(typeof watcher === 'number'){
+      var id = watcher;
+      watcher = _.findItem( watchers, function(item){
+        return item.id === id;
+      } );
+      return this.$unwatch(watcher);
+    }
+    var len = watcher.length;
+    if( len ){
+      while( (len--) >= 0 ){
+        this.$unwatch(watcher[len])
       }
+      return;
     }else{
-      var watchers = this._watchers, watcher, wlen;
-      if(!uid || !watchers || !(wlen = watchers.length)) return;
-      for(;wlen--;){
-        watcher = watchers[wlen];
-        if(watcher && watcher.id === uid ){
-          watchers.splice(wlen, 1);
-        }
-      }
+      watcher.removed = true
     }
   },
   $expression: function(value){
@@ -115,11 +117,16 @@ var methods = {
 
     var watchers = this._watchers;
     var dirty = false, children, watcher, watcherDirty;
-    if(watchers && watchers.length){
-      for(var i = 0, len = watchers.length;i < len; i++){
-        watcher = watchers[i];
-        watcherDirty = this._checkSingleWatch(watcher, i);
-        if(watcherDirty) dirty = true;
+    var len = watchers && watchers.length;
+    if(len){
+      for(;len--;){
+        watcher = watchers[len];
+        if( watcher.removed ){
+          watchers.splice( len, 1 );
+        }else{
+          watcherDirty = this._checkSingleWatch(watcher, len);
+          if(watcherDirty) dirty = true;
+        }
       }
     }
     // check children's dirty.
@@ -127,7 +134,6 @@ var methods = {
     if(children && children.length){
       for(var m = 0, mlen = children.length; m < mlen; m++){
         var child = children[m];
-        
         if(child && child._digest()) dirty = true;
       }
     }

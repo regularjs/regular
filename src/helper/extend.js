@@ -13,7 +13,7 @@ var _ = require("../util.js"),
   isFn = function(o){return typeof o === "function"};
 
 var hooks = {
-  events: function( propertyValue, proto, supro ){
+  events: function( propertyValue, proto ){
     var eventListeners = proto._eventListeners || [];
     var normedEvents = _.normListener(propertyValue);
 
@@ -40,7 +40,6 @@ function process( what, o, supro ) {
     if (o.hasOwnProperty(k)) {
       if(hooks[k]) {
         hooks[k](o[k], what, supro)
-        delete o[k];
       }
       what[k] = isFn( o[k] ) && isFn( supro[k] ) && 
         fnTest.test( o[k] ) ? wrap(k, o[k], supro) : o[k];
