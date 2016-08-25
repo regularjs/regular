@@ -416,6 +416,48 @@ describe("events: extend & implement", function(){
 
     expect(processStack).to.eql([ 'config1', 'config2', 'config3', 'afterConfig1', 'afterConfig2', 'afterConfig3' ])
   })
+
+  it("once event", function(){
+    var component = new Regular();
+    var num = 0;
+
+    component.$once('hello', function(){
+      num++;
+    })
+
+    component.$emit('hello')
+    expect(num).to.equal(1);
+    component.$emit('hello')
+    expect(num).to.equal(1);
+
+    var num1 = 0;
+    var num2 = 0;
+    component.$once({
+      'mult1': function(){
+        num1++;
+      },
+      'mult2': function(){
+        num2++;
+      }
+    })
+
+    component.$emit('mult1');
+    component.$emit('mult2');
+    component.$emit('mult1');
+    component.$emit('mult2');
+    expect(num1).to.equal(1);
+    expect(num2).to.equal(1);
+
+    var num3 = 0;
+    component.$once('off1', function(){
+      num3++;
+    })
+    component.$off('off1');
+    component.$emit('off1');
+    expect(num3).to.equal(0);
+
+
+  })
 })
 
 })

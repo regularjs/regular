@@ -2,17 +2,26 @@
 // ===============================
 var slice = [].slice, _ = require("../util.js");
 var API = {
-  $on: function(event, fn) {
-    if(typeof event === "object"){
+  $on: function(event, fn, desc) {
+    if(typeof event === "object" && event){
       for (var i in event) {
-        this.$on(i, event[i]);
+        this.$on(i, event[i], fn);
       }
     }else{
+      desc = desc || {};
       // @patch: for list
       var context = this;
       var handles = context._handles || (context._handles = {}),
         calls = handles[event] || (handles[event] = []);
-      calls.push(fn);
+      var realFn;
+      if(desc.once){
+        realFn = function(){
+          fn.apply( this, arguments )
+          this.$off(event, fn);
+        }
+        fn.real = realFn;
+      }
+      calls.push(realFn || fn);
     }
     return this;
   },
@@ -28,6 +37,7 @@ var API = {
         handles[event] = [];
         return context;
       }
+      fn = fn.real || fn;
       for (var i = 0, len = calls.length; i < len; i++) {
         if (fn === calls[i]) {
           calls.splice(i, 1);
@@ -60,9 +70,11 @@ var API = {
     return context;
   },
   // capture  event
-  $one: function(){
-    
-}
+  $once: function(event, fn){
+    var args = _.slice(arguments);
+    args.push({once: true})
+    return this.$on.apply(this, args);
+  }
 }
 // container class
 function Event() {}

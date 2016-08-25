@@ -3842,7 +3842,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  isFn = function(o){return typeof o === "function"};
 
 	var hooks = {
-	  events: function( propertyValue, proto, supro ){
+	  events: function( propertyValue, proto ){
 	    var eventListeners = proto._eventListeners || [];
 	    var normedEvents = _.normListener(propertyValue);
 
@@ -3869,7 +3869,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	    if (o.hasOwnProperty(k)) {
 	      if(hooks[k]) {
 	        hooks[k](o[k], what, supro)
-	        delete o[k];
 	      }
 	      what[k] = isFn( o[k] ) && isFn( supro[k] ) && 
 	        fnTest.test( o[k] ) ? wrap(k, o[k], supro) : o[k];
@@ -4043,17 +4042,25 @@ return /******/ (function(modules) { // webpackBootstrap
 	// ===============================
 	var slice = [].slice, _ = __webpack_require__(5);
 	var API = {
-	  $on: function(event, fn) {
-	    if(typeof event === "object"){
+	  $on: function(event, fn, desc) {
+	    if(typeof event === "object" && event){
 	      for (var i in event) {
-	        this.$on(i, event[i]);
+	        this.$on(i, event[i], fn);
 	      }
 	    }else{
+	      desc = desc || {};
 	      // @patch: for list
 	      var context = this;
 	      var handles = context._handles || (context._handles = {}),
 	        calls = handles[event] || (handles[event] = []);
-	      calls.push(fn);
+	      if(desc.once){
+	        var realFn = function(){
+	          fn.apply( this, arguments )
+	          this.$off(event, fn);
+	        }
+	        fn.real = realFn;
+	      }
+	      calls.push(realFn || fn);
 	    }
 	    return this;
 	  },
@@ -4069,6 +4076,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        handles[event] = [];
 	        return context;
 	      }
+	      fn = fn.real || fn;
 	      for (var i = 0, len = calls.length; i < len; i++) {
 	        if (fn === calls[i]) {
 	          calls.splice(i, 1);
@@ -4101,9 +4109,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return context;
 	  },
 	  // capture  event
-	  $one: function(){
-	    
-	}
+	  $once: function(event, fn){
+	    var args = _.slice(arguments);
+	    args.push({once: true})
+	    return this.$on.apply(this, args);
+	  }
 	}
 	// container class
 	function Event() {}
