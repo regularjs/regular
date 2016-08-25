@@ -7,6 +7,7 @@ var entities = require('./helper/entities.js');
 var slice = [].slice;
 var o2str = ({}).toString;
 var win = typeof window !=='undefined'? window: global;
+var MAX_PRIORITY = 9999;
 
 
 _.noop = function(){};
@@ -465,6 +466,10 @@ _.fixTagAST = function( tagAST, Component ){
 
     var attr = attrs[ len ];
 
+
+    // @IE fix IE9- input type can't assign after value
+    if(attr.name === 'type') attr.priority = MAX_PRIORITY+1;
+
     var directive = Component.directive( attr.name );
     if( directive ) {
 
@@ -494,14 +499,12 @@ _.fixTagAST = function( tagAST, Component ){
   });
 
   attrs.sort(function(a1, a2){
-    // fix IE9- input type can't assign after value
-    if(a2.name === "type") return 1;
-
+    
     var p1 = a1.priority;
     var p2 = a2.priority;
 
-    if(p1 == null) p1 = 10000;
-    if(p2 == null) p2 = 10000;
+    if( p1 == null ) p1 = MAX_PRIORITY;
+    if( p2 == null ) p2 = MAX_PRIORITY;
 
     return p2 - p1;
 

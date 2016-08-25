@@ -4053,8 +4053,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	      var context = this;
 	      var handles = context._handles || (context._handles = {}),
 	        calls = handles[event] || (handles[event] = []);
+	      var realFn;
 	      if(desc.once){
-	        var realFn = function(){
+	        realFn = function(){
 	          fn.apply( this, arguments )
 	          this.$off(event, fn);
 	        }
@@ -5322,7 +5323,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }
 
 	  if(lazy){
-	    elem.addEventListener("change", handler );
+	    dom.on(elem, 'change', handler)
 	  }else{
 	    if( hasInput){
 	      elem.addEventListener("input", handler );

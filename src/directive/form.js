@@ -122,11 +122,11 @@ function initText(elem, parsed, extra){
   }
 
   if(hasInput === undefined){
-    hasInput = dom.msie !== 9 && "oninput" in dom.tNode;
+    hasInput = dom.msie !== 9 && "oninput" in document.createElement('input')
   }
 
   if(lazy){
-    elem.addEventListener("change", handler );
+    dom.on(elem, 'change', handler)
   }else{
     if( hasInput){
       elem.addEventListener("input", handler );
@@ -138,8 +138,8 @@ function initText(elem, parsed, extra){
      parsed.set(self, elem.value);
   }
   return function (){
-    if(lazy) return elem.removeEventListener("change", handler);
-    if(dom.msie !== 9 && "oninput" in dom.tNode ){
+    if(lazy) return dom.off(elem, "change", handler);
+    if( hasInput ){
       elem.removeEventListener("input", handler );
     }else{
       dom.off(elem, "paste keyup cut change", handler)
