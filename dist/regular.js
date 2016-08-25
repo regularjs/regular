@@ -1135,6 +1135,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	var slice = [].slice;
 	var o2str = ({}).toString;
 	var win = typeof window !=='undefined'? window: global;
+	var MAX_PRIORITY = 9999;
 
 
 	_.noop = function(){};
@@ -1593,6 +1594,10 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    var attr = attrs[ len ];
 
+
+	    // @IE fix IE9- input type can't assign after value
+	    if(attr.name === 'type') attr.priority = MAX_PRIORITY+1;
+
 	    var directive = Component.directive( attr.name );
 	    if( directive ) {
 
@@ -1622,14 +1627,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	  });
 
 	  attrs.sort(function(a1, a2){
-	    // fix IE9- input type can't assign after value
-	    if(a2.name === "type") return 1;
-
+	    
 	    var p1 = a1.priority;
 	    var p2 = a2.priority;
 
-	    if(p1 == null) p1 = 10000;
-	    if(p2 == null) p2 = 10000;
+	    if( p1 == null ) p1 = MAX_PRIORITY;
+	    if( p2 == null ) p2 = MAX_PRIORITY;
 
 	    return p2 - p1;
 
@@ -5319,7 +5322,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }
 
 	  if(hasInput === undefined){
-	    hasInput = dom.msie !== 9 && "oninput" in dom.tNode;
+	    hasInput = dom.msie !== 9 && "oninput" in document.createElement('input')
 	  }
 
 	  if(lazy){
@@ -5335,8 +5338,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	     parsed.set(self, elem.value);
 	  }
 	  return function (){
-	    if(lazy) return elem.removeEventListener("change", handler);
-	    if(dom.msie !== 9 && "oninput" in dom.tNode ){
+	    if(lazy) return dom.off(elem, "change", handler);
+	    if( hasInput ){
 	      elem.removeEventListener("input", handler );
 	    }else{
 	      dom.off(elem, "paste keyup cut change", handler)
