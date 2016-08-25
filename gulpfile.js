@@ -6,6 +6,7 @@ var gulp = require('gulp');
 var git = require('gulp-git');
 var spawn = require('child_process').spawn;
 var shell = require('gulp-shell');
+var runSequence = require('run-sequence')
 var istanbul = require('gulp-istanbul');
 var jshint = require('gulp-jshint');
 var webpack = require('gulp-webpack');
@@ -13,7 +14,6 @@ var mocha = require('gulp-mocha');
 var uglify = require('gulp-uglify');
 var gutil = require('gulp-util');
 var bump = require('gulp-bump');
-var tag_version = require('gulp-tag-version');
 var through = require('through2');
 var rollup = require('rollup');
 var pkg;
@@ -147,8 +147,8 @@ gulp.task('build',["jshint"], function(){
 
 })
 
-gulp.task('testbundle',  function(){
-  gulp.src("test/test.exports.js")
+gulp.task('testbundle',  function(cb){
+  return gulp.src("test/test.exports.js")
     .pipe(webpack(testConfig))
     .pipe(gulp.dest('test/runner'))
     .on("error", function(err){
@@ -203,7 +203,9 @@ gulp.task('cover', function(cb){
 gulp.task('test', ['jshint', 'karma'])
 
 // for travis
-gulp.task('travis', ['jshint' ,'build',  'karma']);
+gulp.task('travis', function(cb){
+  runSequence( 'jshint' , 'testbundle', 'karma', cb );
+})
 
 
 gulp.task('casper', function(){

@@ -120,8 +120,17 @@ var Regular = function(definition, options){
   env.isRunning = prevRunning;
 
   // children is not required;
+  
+  if (this.devtools) {
+    this.devtools.emit("init", this)
+  }
 }
 
+// check if regular devtools hook exists
+var devtools = window.__REGULAR_DEVTOOLS_GLOBAL_HOOK__;
+if (devtools) {
+  Regular.prototype.devtools = devtools;
+}
 
 walkers && (walkers.Regular = Regular);
 
@@ -296,6 +305,10 @@ Regular.implement({
     this.$root = null;
     this._handles = null;
     this.$refs = null;
+
+    if (this.devtools) {
+      this.devtools.emit("destroy", this)
+    }
   },
 
   /**

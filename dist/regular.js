@@ -1,6 +1,6 @@
 /**
 @author	leeluolee
-@version	0.4.5
+@version	0.5.0
 @homepage	http://regularjs.github.io
 */
 (function webpackUniversalModuleDefinition(root, factory) {
@@ -243,8 +243,17 @@ return /******/ (function(modules) { // webpackBootstrap
 	  env.isRunning = prevRunning;
 
 	  // children is not required;
+	  
+	  if (this.devtools) {
+	    this.devtools.emit("init", this)
+	  }
 	}
 
+	// check if regular devtools hook exists
+	var devtools = window.__REGULAR_DEVTOOLS_GLOBAL_HOOK__;
+	if (devtools) {
+	  Regular.prototype.devtools = devtools;
+	}
 
 	walkers && (walkers.Regular = Regular);
 
@@ -419,6 +428,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	    this.$root = null;
 	    this._handles = null;
 	    this.$refs = null;
+
+	    if (this.devtools) {
+	      this.devtools.emit("destroy", this)
+	    }
 	  },
 
 	  /**
@@ -4244,7 +4257,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	        throw Error('there may a circular dependencies reaches')
 	      }
 	    }
-	    if( n > 0 && this.$emit) this.$emit("$update");
+	    if( n > 0 && this.$emit) {
+	      this.$emit("$update");
+	      if (this.devtools) {
+	        this.devtools.emit("flush", this)
+	      }
+	    }
 	    this.$phase = null;
 	  },
 	  // private digest logic
