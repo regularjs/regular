@@ -124,12 +124,13 @@ var methods = {
     var dirty = false, children, watcher, watcherDirty;
     var len = watchers && watchers.length;
     if(len){
-      for(;len--;){
-        watcher = watchers[len];
-        if( watcher.removed ){
-          watchers.splice( len, 1 );
+      for(var i =0; i < len; i++ ){
+        watcher = watchers[i];
+        if( !watcher ||  watcher.removed ){
+          watchers.splice( i--, 1 );
+          len--;
         }else{
-          watcherDirty = this._checkSingleWatch(watcher, len);
+          watcherDirty = this._checkSingleWatch(watcher, i);
           if(watcherDirty) dirty = true;
         }
       }

@@ -699,6 +699,25 @@ it('bugfix #50', function(){
 
   })
 
+  it("bug #112", function(){
+    var Nest = Regular.extend({
+      name: 'bug-112'
+    })
+    var component = new Regular({
+      template: '<div ref=cnt>{#if zipMode}<span on-click={this.changeZipMode()} class="u-icn u-icn-{zipMode.mode}"></span> {/if}</div>',
+      data: {
+        zipMode: {
+          mode: 'hello'
+        }
+      }
+    })
+
+    expect( nes.one('span',component.$refs.cnt).className).to.equal('u-icn u-icn-hello');
+    component.$update('zipMode', null)
+    expect( nes.one('span',component.$refs.cnt)).to.equal(null);
+
+  })
+
   // it('bug :directive return value that not function will throw error', function(){
   //   throw Error()
   // })
