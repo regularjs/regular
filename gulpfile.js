@@ -15,7 +15,6 @@ var uglify = require('gulp-uglify');
 var gutil = require('gulp-util');
 var bump = require('gulp-bump');
 var through = require('through2');
-var rollup = require('rollup');
 var pkg;
 
 
@@ -61,7 +60,6 @@ var testConfig = {
 }
 
 
-require('./scripts/release')(gulp);
 
 gulp.task('default', ['watch'], function() {});
 
