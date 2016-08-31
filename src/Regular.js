@@ -193,6 +193,7 @@ _.extend(Regular, {
       if( type === 'string' ){
         if(directive = directives[name]) return directive;
         else{
+
           var regexp = directives.__regexp__;
           for(var i = 0, len = regexp.length; i < len ; i++){
             directive = regexp[i];
@@ -445,7 +446,7 @@ Regular.implement({
     expr2.set(component, expr1.get(this));
   },
   _walk: function(ast, arg1){
-    if( _.typeOf(ast) === 'array' ){
+    if( Array.isArray(ast) ){
       var res = [];
 
       for(var i = 0, len = ast.length; i < len; i++){

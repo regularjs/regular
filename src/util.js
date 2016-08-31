@@ -210,7 +210,7 @@ _.createObject = Object.create? function(o){
 }: (function(){
     function Temp() {}
     return function(o){
-      if(!o) return {};
+      if(!o) return {}
       Temp.prototype = o;
       var obj = new Temp();
       Temp.prototype = null; // 不要保持一个 O 的杂散引用（a stray reference）...
@@ -240,23 +240,21 @@ _.removeOne = function(list , filter){
 clone
 */
 _.clone = function clone(obj){
-    var type = _.typeOf(obj);
-    if(type === 'array'){
-      var cloned = [];
-      for(var i=0,len = obj.length; i< len;i++){
-        cloned[i] = obj[i]
-      }
-      return cloned;
+  if(!obj || (typeof obj !== 'object' )) return obj;
+  if(Array.isArray(obj)){
+    var cloned = [];
+    for(var i=0,len = obj.length; i< len;i++){
+      cloned[i] = obj[i]
     }
-    if(type === 'object'){
-      var cloned = {};
-      for(var i in obj) if(obj.hasOwnProperty(i)){
-        cloned[i] = obj[i];
-      }
-      return cloned;
+    return cloned;
+  }else{
+    var cloned = {};
+    for(var i in obj) if(obj.hasOwnProperty(i)){
+      cloned[i] = obj[i];
     }
-    return obj;
+    return cloned;
   }
+}
 
 _.equals = function(now, old){
   var type = typeof now;

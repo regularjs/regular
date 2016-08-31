@@ -9,6 +9,7 @@
 // license: MIT-style license. http://mootools.net
 
 
+
 var dom = module.exports;
 var env = require("./env");
 var _ = require("./util");
@@ -236,7 +237,7 @@ dom.remove = function(node){
 // =================================
 // it isnt computed style 
 dom.css = function(node, name, value){
-  if( _.typeOf(name) === "object" ){
+  if( typeof (name) === "object" && name ){
     for(var i in name){
       if( name.hasOwnProperty(i) ){
         dom.css( node, i, name[i] );

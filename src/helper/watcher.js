@@ -156,27 +156,31 @@ var methods = {
 
       now = watcher.get(this);
       last = watcher.last;
-      tlast = _.typeOf(last);
-      tnow = _.typeOf(now);
-      eq = true, diff;
 
-      // !Object
-      if( !(tnow === 'object' && tlast==='object' && watcher.deep) ){
-        // Array
-        if( tnow === 'array' && ( tlast=='undefined' || tlast === 'array') ){
-          diff = diffArray(now, watcher.last || [], watcher.diff)
-          if( tlast !== 'array' || diff === true || diff.length ) dirty = true;
-        }else{
-          eq = _.equals( now, last );
-          if( !eq || watcher.force ){
-            watcher.force = null;
-            dirty = true; 
+      if(now !== last || watcher.force){
+        tlast = _.typeOf(last);
+        tnow = _.typeOf(now);
+        eq = true, diff;
+
+        // !Object
+        if( !(tnow === 'object' && tlast==='object' && watcher.deep) ){
+          // Array
+          if( tnow === 'array' && ( tlast=='undefined' || tlast === 'array') ){
+            diff = diffArray(now, watcher.last || [], watcher.diff)
+            if( tlast !== 'array' || diff === true || diff.length ) dirty = true;
+          }else{
+            eq = _.equals( now, last );
+            if( !eq || watcher.force ){
+              watcher.force = null;
+              dirty = true; 
+            }
           }
+        }else{
+          diff =  diffObject( now, last, watcher.diff );
+          if( diff === true || diff.length ) dirty = true;
         }
-      }else{
-        diff =  diffObject( now, last, watcher.diff );
-        if( diff === true || diff.length ) dirty = true;
       }
+
     } else{
       // @TODO 是否把多重改掉
       var result = watcher.test(this);
@@ -207,7 +211,7 @@ var methods = {
    */
   $set: function(path, value){
     if(path != null){
-      var type = _.typeOf(path);
+      var type = typeof (path);
       if( type === 'string' || path.type === 'expression' ){
         path = this.$expression(path);
         path.set(this, value);
