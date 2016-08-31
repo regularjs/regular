@@ -59,7 +59,7 @@ var methods = {
     this._watchers.push( watcher );
 
     rlen = this._records && this._records.length;
-    if(rlen) this._records[rlen-1].push(uid)
+    if(rlen) this._records[rlen-1].push(watcher)
     // init state.
     if(options.init === true){
       var prephase = this.$phase;
