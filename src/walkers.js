@@ -45,10 +45,9 @@ walkers.list = function(ast, options){
     for(var o = index; o < end; o++){ //add
       // prototype inherit
       var item = newList[o];
-      var data = {};
+      var data = _.createObject(extra);
       updateTarget(data, o, item, rawNewValue);
 
-      data = _.createObject(extra, data);
       var section = self.$compile(ast.body, {
         extra: data,
         namespace:namespace,

@@ -179,34 +179,37 @@ _.extend(Regular, {
    * @return {Object} Copy of ...
    */  
   directive: function(name, cfg){
+    if(!name) return;
 
-    if(_.typeOf(name) === "object"){
+    var type = typeof name;
+    if(type === 'object' && !cfg){
       for(var k in name){
         if(name.hasOwnProperty(k)) this.directive(k, name[k]);
       }
       return this;
     }
-    var type = _.typeOf(name);
     var directives = this._directives, directive;
     if(cfg == null){
-      if( type === "string" && (directive = directives[name]) ) return directive;
-      else{
-        var regexp = directives.__regexp__;
-        for(var i = 0, len = regexp.length; i < len ; i++){
-          directive = regexp[i];
-          var test = directive.regexp.test(name);
-          if(test) return directive;
+      if( type === 'string' ){
+        if(directive = directives[name]) return directive;
+        else{
+          var regexp = directives.__regexp__;
+          for(var i = 0, len = regexp.length; i < len ; i++){
+            directive = regexp[i];
+            var test = directive.regexp.test(name);
+            if(test) return directive;
+          }
         }
       }
-      return undefined;
+    }else{
+      if( typeof cfg === 'function') cfg = { link: cfg } 
+      if( type === 'string' ) directives[name] = cfg;
+      else{
+        cfg.regexp = name;
+        directives.__regexp__.push(cfg)
+      }
+      return this
     }
-    if(typeof cfg === 'function') cfg = { link: cfg } 
-    if(type === 'string') directives[name] = cfg;
-    else if(type === 'regexp'){
-      cfg.regexp = name;
-      directives.__regexp__.push(cfg)
-    }
-    return this
   },
   plugin: function(name, fn){
     var plugins = this._plugins;

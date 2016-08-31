@@ -205,13 +205,18 @@ _.convertEntity = function(chr){
 
 // simple get accessor
 
-_.createObject = function(o, props){
-    function Foo() {}
-    Foo.prototype = o;
-    var res = new Foo;
-    if(props) _.extend(res, props);
-    return res;
-}
+_.createObject = Object.create? function(o){
+  return Object.create(o || null)
+}: (function(){
+    function Temp() {}
+    return function(o){
+      if(!o) return {};
+      Temp.prototype = o;
+      var obj = new Temp();
+      Temp.prototype = null; // 不要保持一个 O 的杂散引用（a stray reference）...
+      return obj
+    }
+})();
 
 _.createProto = function(fn, o){
     function Foo() { this.constructor = fn;}
