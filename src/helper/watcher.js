@@ -124,14 +124,24 @@ var methods = {
     var dirty = false, children, watcher, watcherDirty;
     var len = watchers && watchers.length;
     if(len){
+      var mark = 0, needRemoved=0, distance;
       for(var i =0; i < len; i++ ){
         watcher = watchers[i];
-        if( !watcher ||  watcher.removed ){
-          watchers.splice( i--, 1 );
-          len--;
+        var shouldRemove = !watcher ||  watcher.removed;
+        if( shouldRemove ){
+          needRemoved += 1;
         }else{
-          watcherDirty = this._checkSingleWatch(watcher, i);
+          watcherDirty = this._checkSingleWatch(watcher);
           if(watcherDirty) dirty = true;
+        }
+        // remove when encounter first unmoved item or touch the end
+        if( !shouldRemove || i === len-1 ){
+          if( needRemoved ){
+            watchers.splice(mark, needRemoved );          
+            len -= needRemoved;
+            needRemoved = 0;
+          }
+          mark = i+1;
         }
       }
     }
@@ -196,7 +206,7 @@ var methods = {
         watcher.last = now;
       }
       watcher.fn.call(this, now, last, diff)
-      if(watcher.once) this._watchers.splice(i, 1);
+      if(watcher.once) this.$unwatch(watcher)
     }
 
     return dirty;
