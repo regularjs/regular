@@ -72,22 +72,25 @@ var methods = {
   $unwatch: function( watcher ){
     if(!this._watchers || !watcher) return;
     var watchers = this._watchers;
-    if(typeof watcher === 'number'){
+    var type = typeof watcher;
+
+    if(type === 'object'){
+      var len = watcher.length;
+      if(!len){
+        watcher.removed = true
+      }else{
+        while( (len--) >= 0 ){
+          this.$unwatch(watcher[len])
+        }
+      }
+    }else if(type === 'number'){
       var id = watcher;
       watcher = _.findItem( watchers, function(item){
         return item.id === id;
       } );
       return this.$unwatch(watcher);
     }
-    var len = watcher.length;
-    if( len ){
-      while( (len--) >= 0 ){
-        this.$unwatch(watcher[len])
-      }
-      return;
-    }else{
-      watcher.removed = true
-    }
+    return this;
   },
   $expression: function(value){
     return this._touchExpr(parseExpression(value))
@@ -124,7 +127,7 @@ var methods = {
     var dirty = false, children, watcher, watcherDirty;
     var len = watchers && watchers.length;
     if(len){
-      var mark = 0, needRemoved=0, distance;
+      var mark = 0, needRemoved=0;
       for(var i =0; i < len; i++ ){
         watcher = watchers[i];
         var shouldRemove = !watcher ||  watcher.removed;

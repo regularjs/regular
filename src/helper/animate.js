@@ -83,6 +83,7 @@ animate.inject = function( node, refer ,direction, callback ){
  * @param  {Function} callback [description]
  * @return {[type]}            [description]
  */
+
 animate.remove = function(node, callback){
   if(!node) return;
   var count = 0;
@@ -90,13 +91,13 @@ animate.remove = function(node, callback){
     count++;
     if(count === len) callback && callback()
   }
-  if(Array.isArray(node)){
+  if( Array.isArray(node) ){
     for(var i = 0, len = node.length; i < len ; i++){
       animate.remove(node[i], loop)
     }
-    return node;
+    return;
   }
-  if(node.onleave){
+  if(typeof node.onleave ==='function'){
     node.onleave(function(){
       removeDone(node, callback)
     })
@@ -105,7 +106,7 @@ animate.remove = function(node, callback){
   }
 }
 
-var removeDone = function (node, callback){
+function removeDone(node, callback){
     dom.remove(node);
     callback && callback();
 }

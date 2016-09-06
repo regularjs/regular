@@ -52,14 +52,13 @@ _.nextTick = typeof setImmediate === 'function'?
 
 
 
-_.prefix = "var " + _.varName + "=" + _.ctxName + ".data;" +  _.extName  + "=" + _.extName + "||'';";
+_.prefix = "'use strict';var " + _.varName + "=" + _.ctxName + ".data;" +  _.extName  + "=" + _.extName + "||'';";
 
 
 _.slice = function(obj, start, end){
   var res = [];
   for(var i = start || 0, len = end || obj.length; i < len; i++){
-    var item = obj[i];
-    res.push(item)
+    res.push(obj[i])
   }
   return res;
 }
@@ -350,11 +349,6 @@ _.cache = function(max){
 }
 
 // // setup the raw Expression
-// _.touchExpression = function(expr){
-//   if(expr.type === 'expression'){
-//   }
-//   return expr;
-// }
 
 
 // handle the same logic on component's `on-*` and element's `on-*`
@@ -377,7 +371,7 @@ _.handleEvent = function(value, type ){
     }
   }else{
     return function fire(){
-      var args = slice.call(arguments)      
+      var args = _.slice(arguments);
       args.unshift(value);
       self.$update(function(){
         self.$emit.apply(self, args);

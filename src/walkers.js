@@ -66,7 +66,6 @@ walkers.list = function(ast, options){
   }
 
   function updateTarget(target, index, item, rawNewValue){
-
       target[ indexName ] = index;
       if( rawNewValue ){
         target[ keyName ] = item;
@@ -314,12 +313,15 @@ walkers['if'] = function(ast, options){
 walkers.expression = function(ast, options){
   var node = document.createTextNode("");
   this.$watch(ast, function(newval){
-    dom.text(node, "" + (newval == null? "": "" + newval) );
+    dom.text(node,  newval == null? "": String(newval) );
   },{init: true})
   return node;
 }
 walkers.text = function(ast, options){
-  var node = document.createTextNode(_.convertEntity(ast.text));
+  var text = ast.text;
+  var node = document.createTextNode(
+    text.indexOf('&') !== -1? _.convertEntity(text): text
+  );
   return node;
 }
 

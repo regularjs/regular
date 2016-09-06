@@ -1,6 +1,6 @@
 // simplest event emitter 60 lines
 // ===============================
-var slice = [].slice, _ = require("../util.js");
+var _ = require("../util.js");
 var API = {
   $on: function(event, fn, desc) {
     if(typeof event === "object" && event){
@@ -53,7 +53,7 @@ var API = {
     var context = this;
     var handles = context._handles, calls, args, type;
     if(!event) return;
-    var args = slice.call(arguments, 1);
+    var args = _.slice(arguments, 1);
     var type = event;
 
     if(!handles) return context;

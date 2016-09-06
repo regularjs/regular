@@ -445,18 +445,19 @@ Regular.implement({
     // sync the component's state to called's state
     expr2.set(component, expr1.get(this));
   },
-  _walk: function(ast, arg1){
-    if( Array.isArray(ast) ){
+  _walk: function(ast, opt){
+    if( Array.isArray(ast)  ){
+      var len = ast.length;
+      if(!len) return;
       var res = [];
-
-      for(var i = 0, len = ast.length; i < len; i++){
-        res.push( this._walk(ast[i], arg1) );
+      for(var i = 0; i < len; i++){
+        var ret = this._walk(ast[i], opt) 
+        if(ret) res.push( ret );
       }
-
       return new Group(res);
     }
     if(typeof ast === 'string') return doc.createTextNode(ast)
-    return walkers[ast.type || "default"].call(this, ast, arg1);
+    return walkers[ast.type || "default"].call(this, ast, opt);
   },
   _append: function(component){
     this._children.push(component);
@@ -481,7 +482,12 @@ Regular.implement({
   _touchExpr: function(expr){
     var  rawget, ext = this.__ext__, touched = {};
     if(expr.type !== 'expression' || expr.touched) return expr;
-    rawget = expr.get || (expr.get = new Function(_.ctxName, _.extName , _.prefix+ "return (" + expr.body + ")"));
+
+    rawget = expr.get;
+    if(!rawget){
+      rawget = expr.get = new Function(_.ctxName, _.extName , _.prefix+ "return (" + expr.body + ")");
+      expr.body = null;
+    }
     touched.get = !ext? rawget: function(context){
       return rawget(context, ext)
     }
@@ -499,11 +505,10 @@ Regular.implement({
         return expr.set(ctx, value, ext);
       }
     }
-    _.extend(touched, {
-      type: 'expression',
-      touched: true,
-      once: expr.once || expr.constant
-    })
+
+    touched.type = 'expression';
+    touched.touched = true;
+    touched.once = expr.once || expr.constant;
     return touched
   },
   // find filter
@@ -516,7 +521,6 @@ Regular.implement({
   // simple accessor get
   _sg_:function(path, defaults, ext){
     if(typeof ext !== 'undefined'){
-      // if(path === "demos")  debugger
       var computed = this.computed,
         computedProperty = computed[path];
       if(computedProperty){
