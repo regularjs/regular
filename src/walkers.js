@@ -9,6 +9,18 @@ var _ = require('./util');
 
 var walkers = module.exports = {};
 
+
+// used in walkers.list
+// remove block in group
+function removeRange(index, rlen, children){
+  for(var j = 1; j <= rlen; j++){ //removed
+    var removed = children[ index + j ];
+    if(removed) removed.destroy(true);
+  }
+  children.splice(index+1, rlen);
+}
+
+
 walkers.list = function(ast, options){
 
   var Regular = walkers.Regular;  
@@ -17,6 +29,8 @@ walkers.list = function(ast, options){
     extra = options.extra;
   var self = this;
   var group = new Group([placeholder]);
+  var children = group.children;
+
   var indexName = ast.variable + '_index';
   var keyName = ast.variable + '_key';
   var variable = ast.variable;
@@ -31,13 +45,6 @@ walkers.list = function(ast, options){
       extraObj[ indexName ] = index;
       // @FIX keyName
       return track.get( self, extraObj );
-    }
-  }
-
-  function removeRange(index, rlen){
-    for(var j = 0; j< rlen; j++){ //removed
-      var removed = group.children.splice( index + 1, 1)[0];
-      if(removed) removed.destroy(true);
     }
   }
 
@@ -61,7 +68,7 @@ walkers.list = function(ast, options){
         animate.inject(combine.node(section),insert, 'after');
       }
       // insert.parentNode.insertBefore(combine.node(section), insert.nextSibling);
-      group.children.splice( o + 1 , 0, section);
+      children.splice( o + 1 , 0, section);
     }
   }
 
@@ -107,7 +114,7 @@ walkers.list = function(ast, options){
         var tIndex = 0;
         while(tIndex < minar){
           if( keyOf(newList[index], index) !== keyOf( removed[0], index ) ){
-            removeRange(index, 1)
+            removeRange(index, 1, children)
             addRange(index, index+1, newList, rawNewValue)
           }
           removed.shift();
@@ -120,7 +127,7 @@ walkers.list = function(ast, options){
       // update
       updateRange(m, index, newList, rawNewValue);
 
-      removeRange( index ,rlen)
+      removeRange( index ,rlen, children)
 
       addRange(index, index+add, newList, rawNewValue)
 
@@ -146,7 +153,7 @@ walkers.list = function(ast, options){
 
     updateRange(0, mlen, newList, rawNewValue)
     if(nlen < olen){ //need add
-      removeRange(nlen, olen-nlen);
+      removeRange(nlen, olen-nlen, children);
     }else if(nlen > olen){
       addRange(olen, nlen, newList, rawNewValue);
     }
@@ -168,7 +175,7 @@ walkers.list = function(ast, options){
 
     // if previous list has , we need to remove the altnated section.
     if( !olen && nlen && group.get(1) ){
-      var altGroup = group.children.pop();
+      var altGroup = children.pop();
       if(altGroup.destroy)  altGroup.destroy(true);
     }
 
@@ -188,7 +195,7 @@ walkers.list = function(ast, options){
         outer: options.outer,
         namespace: namespace
       })
-      group.children.push(section);
+      children.push(section);
       if(placeholder.parentNode){
         animate.inject(combine.node(section), placeholder, 'after');
       }
@@ -203,10 +210,6 @@ walkers.list = function(ast, options){
   return group;
 }
 
-
-function updateItem(){
-  
-}
 
 
 // {#include } or {#inc template}
