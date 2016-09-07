@@ -299,16 +299,16 @@ Regular.implement({
     this.group && this.group.destroy(true);
     this.group = null;
     this.parentNode = null;
-    this._children = [];
+    this._children = null;
+    this.$root = null;
+    this._handles = null;
+    this.$refs = null;
     var parent = this.$parent;
-    if(parent){
+    if(parent && parent._children){
       var index = parent._children.indexOf(this);
       parent._children.splice(index,1);
     }
     this.$parent = null;
-    this.$root = null;
-    this._handles = null;
-    this.$refs = null;
 
     if (this.devtools) {
       this.devtools.emit("destroy", this)

@@ -10,17 +10,19 @@ var combine = module.exports = {
   node: function(item){
     var children,node, nodes;
     if(!item) return;
-    if(item.element) return item.element;
     if(typeof item.node === "function") return item.node();
     if(typeof item.nodeType === "number") return item;
     if(item.group) return combine.node(item.group)
-    if(children = item.children){
-      if(children.length === 1){
-        return combine.node(children[0]);
+
+    item = item.children || item;
+    if( Array.isArray(item )){
+      var len = item.length;
+      if(len === 1){
+        return combine.node(item[0]);
       }
       nodes = [];
-      for(var i = 0, len = children.length; i < len; i++ ){
-        node = combine.node(children[i]);
+      for(var i = 0, len = item.length; i < len; i++ ){
+        node = combine.node(item[i]);
         if(Array.isArray(node)){
           nodes.push.apply(nodes, node)
         }else if(node) {
@@ -29,6 +31,7 @@ var combine = module.exports = {
       }
       return nodes;
     }
+    
   },
   // @TODO remove _gragContainer
   inject: function(node, pos ){

@@ -244,9 +244,7 @@ walkers.template = function(ast, options){
 };
 
 function getListFromValue(value, type){
-  return type === 'object'? _.keys(value): (
-      type === 'array'? value: []
-    )
+  return type === 'array'? value: (type === 'object'? _.keys(value) :  []);
 }
 
 

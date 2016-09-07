@@ -159,7 +159,7 @@ var methods = {
     return dirty;
   },
   // check a single one watcher 
-  _checkSingleWatch: function(watcher, i){
+  _checkSingleWatch: function(watcher){
     var dirty = false;
     if(!watcher) return;
 
@@ -173,7 +173,7 @@ var methods = {
       if(now !== last || watcher.force){
         tlast = _.typeOf(last);
         tnow = _.typeOf(now);
-        eq = true, diff;
+        eq = true; 
 
         // !Object
         if( !(tnow === 'object' && tlast==='object' && watcher.deep) ){

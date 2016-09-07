@@ -27,8 +27,7 @@ _.extend = function( o1, o2, override ){
   return o1;
 }
 
-_.keys = function(obj){
-  if(Object.keys) return Object.keys(obj);
+_.keys = Object.keys? Object.keys: function(obj){
   var res = [];
   for(var i in obj) if(obj.hasOwnProperty(i)){
     res.push(i);
