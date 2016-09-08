@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Include advanced </title>
+    <title>Regular.js • Include-Advanced</title>
   <link rel="stylesheet" href="http://getbootstrap.com/dist/css/bootstrap.min.css">
 </head>
 <body>
@@ -36,7 +36,31 @@
     </div>
   </script>
 
-  <script src="https://rawgit.com/sindresorhus/multiline/master/browser.js"></script>
+    <script type='text/tpl' id="app">
+      <button class="btn" on-click={show = !show}>show</button>
+      <input r-model="num" />
+      <modal show={show} autohide={true} title.cmpl='Custom Title <span class="badge" >{num}</span>' close-btn  >
+        <modal.body> 
+          <nav class="navbar navbar-default">
+            <div class="container-fluid">
+              <div class="navbar-header">
+                <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+                  <span class="sr-only">Toggle navigation</span>
+                  <span class="icon-bar"></span>
+                  <span class="icon-bar"></span>
+                  <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="#">Brand</a>
+              </div>
+            </div>
+          </nav>
+        </modal.body>
+        <modal.foot>
+          <button class="btn btn-primary" on-click={show=false}>CLose it!</button> 
+        </modal.foot>
+      </modal>
+    </script>
+
   <script src="https://rawgit.com/regularjs/regular/group/dist/regular.js"></script>
   <script>
     var Modal = Regular.extend({
@@ -45,7 +69,7 @@
       config: function(data){
         var target = data.target = data.target || document.body;
         this.$watch('show', function(show){
-          this.$inject(show? target: false)
+          this.$inject(show && target)
         })
       },
       confirm: function(accept){
@@ -75,26 +99,7 @@
     })
 
     var app = new Regular({
-      template: multiline(function(){/*
-        <button class='btn' on-click={show = !show}>show</button>
-        <input r-model='num' />
-        <modal show={show} autohide={true} title.cmpl='Virtual Box' close-btn  >
-          <modal.foot>Custom Title <span class="badge" >{num}</span> <button class='btn btn-primary' on-click={show=false}>CLose it!</button> </modal.foot>
-            <nav class="navbar navbar-default">
-              <div class="container-fluid">
-                <div class="navbar-header">
-                  <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
-                    <span class="sr-only">Toggle navigation</span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                  </button>
-                  <a class="navbar-brand" href="#">Brand</a>
-                </div>
-              </div>
-            </nav>
-        </modal>
-      */}),
+      template: '#app',
       data: { "num": 100, show: true }
     }).$inject(document.body)
   </script>
