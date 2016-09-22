@@ -5,6 +5,9 @@ var animate = require("../helper/animate.js");
 var Regular = require("../Regular.js");
 var consts = require("../const");
 var namespaces = consts.NAMESPACE;
+var OPTIONS = consts.OPTIONS
+var STABLE = OPTIONS.STABLE;
+var DEEP_STABLE = {deep: true, stable: true};
 
 
 
@@ -36,7 +39,7 @@ module.exports = {
       }else{
         elem.className = className
       }
-    },true);
+    }, DEEP_STABLE);
   },
   // **warn**: style inteplation will override this directive 
   'r-style': function(elem, value){
@@ -47,7 +50,7 @@ module.exports = {
       for(var i in nvalue) if(nvalue.hasOwnProperty(i)){
         dom.css(elem, i, nvalue[i]);
       }
-    },true);
+    },DEEP_STABLE);
   },
   // when expression is evaluate to true, the elem will add display:none
   // Example: <div r-hide={{items.length > 0}}></div>
@@ -75,7 +78,7 @@ module.exports = {
             elem.onenter();
           }
         }
-      });
+      }, STABLE);
     }else if(!!value){
       elem.style.display = "none";
     }
@@ -84,7 +87,7 @@ module.exports = {
     this.$watch(value, function(nvalue){
       nvalue = nvalue || "";
       dom.html(elem, nvalue)
-    }, {force: true});
+    }, {force: true, stable: true});
   },
   'ref': {
     accept: consts.COMPONENT_TYPE + consts.ELEMENT_TYPE,
@@ -96,7 +99,7 @@ module.exports = {
           cval = nval;
           if(refs[oval] === elem) refs[oval] = null;
           if(cval) refs[cval] = elem;
-        })
+        }, STABLE)
       }else{
         refs[cval = value] = elem;
       }

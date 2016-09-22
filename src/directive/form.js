@@ -1,7 +1,9 @@
 // Regular
-var _ = require("../util.js");
-var dom = require("../dom.js");
-var Regular = require("../Regular.js");
+var _ = require("../util");
+var dom = require("../dom");
+var Regular = require("../Regular");
+var OPTIONS = require('../const').OPTIONS
+var STABLE = OPTIONS.STABLE;
 var hasInput;
 
 var modelHandlers = {
@@ -60,7 +62,7 @@ function initSelect( elem, parsed, extra){
         break;
       }
     }
-  });
+  }, STABLE);
 
   function handler(){
     parsed.set(self, this.value);
@@ -96,7 +98,7 @@ function initText(elem, parsed, extra){
   var self = this;
   var wc = this.$watch(parsed, function(newValue){
     if(elem.value !== newValue) elem.value = newValue == null? "": "" + newValue;
-  });
+  }, STABLE);
 
   // @TODO to fixed event
   var handler = function (ev){
@@ -154,7 +156,7 @@ function initCheckBox(elem, parsed){
   var self = this;
   var watcher = this.$watch(parsed, function(newValue){
     dom.attr(elem, 'checked', !!newValue);
-  });
+  }, STABLE);
 
   var handler = function handler(){
     var value = this.checked;
@@ -181,7 +183,7 @@ function initRadio(elem, parsed){
   var wc = this.$watch(parsed, function( newValue ){
     if(newValue == elem.value) elem.checked = true;
     else elem.checked = false;
-  });
+  }, STABLE);
 
 
   var handler = function handler(){

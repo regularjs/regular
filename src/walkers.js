@@ -1,13 +1,16 @@
-var diffArray = require('./helper/diff.js').diffArray;
-var combine = require('./helper/combine.js');
-var animate = require("./helper/animate.js");
-var node = require("./parser/node.js");
-var Group = require('./group.js');
-var dom = require("./dom.js");
+var diffArray = require('./helper/diff').diffArray;
+var combine = require('./helper/combine');
+var animate = require("./helper/animate");
+var node = require("./parser/node");
+var Group = require('./group');
+var dom = require("./dom");
 var _ = require('./util');
+var consts = require('./const');
+var OPTIONS = consts.OPTIONS;
 
 
 var walkers = module.exports = {};
+
 
 
 // used in walkers.list
@@ -236,9 +239,7 @@ walkers.template = function(ast, options){
       if(placeholder.parentNode) {
         compiled.$inject(placeholder, 'before')
       }
-    }, {
-      init: true
-    });
+    }, OPTIONS.INIT);
   }
   return group;
 };
@@ -262,7 +263,7 @@ walkers['if'] = function(ast, options){
         if(ast.alternate) alternate = self.$compile(ast.alternate, {record: true, element: options.element, extra: extra});
       }
     }
-    this.$watch(ast.test, update, { force: true });
+    this.$watch(ast.test, update, OPTIONS.FORCE);
     return {
       destroy: function(){
         if(consequent) combine.destroy(consequent);
@@ -305,7 +306,7 @@ walkers['if'] = function(ast, options){
       }
     }
   }
-  this.$watch(ast.test, update, {force: true, init: true});
+  this.$watch(ast.test, update, OPTIONS.FORCE_INIT);
 
   return group;
 }
@@ -315,7 +316,7 @@ walkers.expression = function(ast, options){
   var node = document.createTextNode("");
   this.$watch(ast, function(newval){
     dom.text(node,  newval == null? "": String(newval) );
-  },{init: true})
+  }, OPTIONS.STABLE_INIT )
   return node;
 }
 walkers.text = function(ast, options){
@@ -509,10 +510,10 @@ walkers.component = function(ast, options){
       if( !(isolate & 2) ) 
         this.$watch(value, (function(name, val){
           this.data[name] = val;
-        }).bind(component, name), { sync: true })
+        }).bind(component, name), OPTIONS.SYNC)
       if( value.set && !(isolate & 1 ) ) 
         // sync the data. it force the component don't trigger attr.name's first dirty echeck
-        component.$watch(name, self.$update.bind(self, value), { init: true });
+        component.$watch(name, self.$update.bind(self, value), OPTIONS.INIT);
     }
   }
   if(is && is.type === 'expression'  ){
@@ -531,7 +532,7 @@ walkers.component = function(ast, options){
       if(ref){
         self.$refs[ref] = ncomponent;
       }
-    }, {sync: true})
+    }, OPTIONS.SYNC)
     return group;
   }
   return component;
@@ -584,7 +585,7 @@ walkers.attribute = function(ast ,options){
     if(value.type === 'expression' ){
       this.$watch(value, function(nvalue, old){
         dom.attr(element, name, nvalue);
-      }, {init: true});
+      }, OPTIONS.STABLE_INIT);
     }else{
       if(_.isBooleanAttr(name)){
         dom.attr(element, name, true);

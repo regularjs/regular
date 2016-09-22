@@ -62,9 +62,12 @@ _.slice = function(obj, start, end){
   return res;
 }
 
+// beacuse slice and toLowerCase is expensive. we handle undefined and null in another way
 _.typeOf = function (o) {
   return o == null ? String(o) :o2str.call(o).slice(8, -1).toLowerCase();
 }
+
+
 
 
 _.makePredicate = function makePredicate(words, prefix) {

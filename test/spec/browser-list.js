@@ -341,7 +341,7 @@ describe("List", function(){
     })
 
 
-      it("item in list should not emit ,init, update or destroy to outerComponent", function(){
+    it("item in list should not emit ,init, update or destroy to outerComponent", function(){
       var List = Regular.extend({
         template: "{#list items as item}<div>{item}</div>{/list}"
       })

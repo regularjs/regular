@@ -687,6 +687,7 @@ it('bugfix #50', function(){
   //   expect(component.data.item).to.equal(undefined);
   // })
   it("bug #93", function(){
+
     var Nest = Regular.extend({
       name: 'bug-96'
     })
@@ -714,7 +715,7 @@ it('bugfix #50', function(){
 
     expect( nes.one('span',component.$refs.cnt).className).to.equal('u-icn u-icn-hello');
     component.$update('zipMode', null)
-    expect( nes.one('span',component.$refs.cnt)).to.equal(null);
+    expect( nes.all('span',component.$refs.cnt).length ).to.equal(0);
 
   })
 

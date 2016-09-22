@@ -565,6 +565,7 @@ describe("component.watcher", function(){
     expect(trigger2).to.equal(5);
   })
 
+  // @UPDATE v0.5.2 
   it('$digest in $update should be ignored', function(){
     var i = 0;
     var Component = Regular.extend({
@@ -586,14 +587,20 @@ describe("component.watcher", function(){
       }
     })
 
+    it('after destroy, _watcherForStable should be removed', function(){
+      throw Error('not removed')
+    })
+
     var comp = new Component();
 
-    expect(i).to.equal(1);
+    // stable 1, unstable 1;
+    expect(i).to.equal(2);
     expect(comp.$refs.div.innerHTML). to.equal('2')
 
     dispatchMockEvent(comp.$refs.div, 'click');
 
-    expect(i).to.equal(3);
+    // stable 1, unstable 1;
+    expect(i).to.equal(4);
 
   })
 
@@ -638,6 +645,33 @@ describe("component.watcher", function(){
      expect(watcher._watchers.length).to.equal(1)
      watcher.$unwatch(null)
      expect(watcher._watchers.length).to.equal(1)
+  })
+  it("$digest after wont jump over untouched watcher", function(){
+     var watcher = new Regular({ 
+      data: {before:1,after:1 }
+     });
+     var locals=  {
+      shouldTouched1:0,
+      shouldTouched2:0
+     }
+     watcher.$watch('foo', function(){ })
+     watcher.$watch('before', function(){
+      locals.shouldTouched2 ++;
+     })
+     var removed = watcher.$watch('beremove', function(){ })
+     watcher.$watch('after', function(){ 
+      locals.shouldTouched1 ++;
+     })
+     watcher.$update();
+
+     expect(locals.shouldTouched1).to.equal(1);
+     expect(locals.shouldTouched2).to.equal(1);
+     watcher.$unwatch(removed);
+     watcher.data.before=2;
+     watcher.data.after=2;
+     watcher.$update();
+     expect(locals.shouldTouched1).to.equal(2);
+     expect(locals.shouldTouched2).to.equal(2);
   })
   it('$unwatch accept Array and Number', function(){
      var watcher = new Regular({ });

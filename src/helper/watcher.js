@@ -10,6 +10,7 @@ var methods = {
   $watch: function(expr, fn, options){
     var get, once, test, rlen, extra = this.__ext__; //records length
     if(!this._watchers) this._watchers = [];
+    if(!this._watchersForStable) this._watchersForStable = [];
 
     options = options || {};
     if(options === true){
@@ -55,16 +56,17 @@ var methods = {
       deep: options.deep,
       last: options.sync? get(this): options.last
     }
-    
-    this._watchers.push( watcher );
 
+
+    this[options.stable? '_watchersForStable': '_watchers'].push(watcher);
+    
     rlen = this._records && this._records.length;
     if(rlen) this._records[rlen-1].push(watcher)
     // init state.
     if(options.init === true){
       var prephase = this.$phase;
       this.$phase = 'digest';
-      this._checkSingleWatch( watcher, this._watchers.length-1 );
+      this._checkSingleWatch( watcher);
       this.$phase = prephase;
     }
     return watcher;
@@ -85,9 +87,12 @@ var methods = {
       }
     }else if(type === 'number'){
       var id = watcher;
-      watcher = _.findItem( watchers, function(item){
+      watcher =  _.findItem( watchers, function(item){
         return item.id === id;
       } );
+      if(!watcher) watcher = _.findItem(this._watchersForStable, function( item ){
+        return item.id === id
+      })
       return this.$unwatch(watcher);
     }
     return this;
@@ -112,7 +117,10 @@ var methods = {
         throw Error('there may a circular dependencies reaches')
       }
     }
-    if( n > 0 && this.$emit) {
+    // stable watch is dirty
+    var stableDirty =  this._digest(true);
+
+    if( (n > 0 || stableDirty) && this.$emit) {
       this.$emit("$update");
       if (this.devtools) {
         this.devtools.emit("flush", this)
@@ -121,9 +129,9 @@ var methods = {
     this.$phase = null;
   },
   // private digest logic
-  _digest: function(){
+  _digest: function(stable){
 
-    var watchers = this._watchers;
+    var watchers = !stable? this._watchers: this._watchersForStable;
     var dirty = false, children, watcher, watcherDirty;
     var len = watchers && watchers.length;
     if(len){
@@ -142,6 +150,7 @@ var methods = {
           if( needRemoved ){
             watchers.splice(mark, needRemoved );          
             len -= needRemoved;
+            i -= needRemoved;
             needRemoved = 0;
           }
           mark = i+1;
@@ -153,7 +162,7 @@ var methods = {
     if(children && children.length){
       for(var m = 0, mlen = children.length; m < mlen; m++){
         var child = children[m];
-        if(child && child._digest()) dirty = true;
+        if(child && child._digest(stable)) dirty = true;
       }
     }
     return dirty;

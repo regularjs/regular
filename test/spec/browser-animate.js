@@ -379,7 +379,7 @@ describe("Animation", function(){
       dom.nextReflow(function(){
         expect(dom.hasClass(element, 'animated')).to.equal(true);
       })
-      component.destroy
+      component.destroy();
     })
 
     it("'on: click' add addListener on dom but not component", function(done){

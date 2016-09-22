@@ -424,9 +424,9 @@ var expect = require('expect.js');
         config: function(){
           this.num = 0;
         },
-        _digest: function(){
+        _digest: function(stable){
           this.num++;
-          return this.supr();
+          return this.supr(stable);
         }
 
       })
@@ -439,17 +439,32 @@ var expect = require('expect.js');
         data: {title: 'leeluolee'}
       });
 
-      expect(component.$refs.a.num).to.equal(1);
-      expect(component.$refs.b.num).to.equal(1);
-      expect(component.$refs.c.num).to.equal(2);
-      expect(component.$refs.d.num).to.equal(2);
+      expect(component.$refs.a.data.title).to.equal('leeluolee')
+      expect(component.$refs.b.data.title).to.equal('leeluolee')
+      expect(component.$refs.c.data.title).to.equal('leeluolee')
+      expect(component.$refs.d.data.title).to.equal('leeluolee')
 
       component.$update('title', 'hello')
 
-      expect(component.$refs.a.num).to.equal(1);
-      expect(component.$refs.b.num).to.equal(1);
-      expect(component.$refs.c.num).to.equal(4);
-      expect(component.$refs.d.num).to.equal(4);
+      expect(component.$refs.a.data.title).to.equal('leeluolee')
+      expect(component.$refs.b.data.title).to.equal('leeluolee')
+      expect(component.$refs.c.data.title).to.equal('hello')
+      expect(component.$refs.d.data.title).to.equal('hello')
+
+      component.$refs.b.$update('title', 'nested')
+
+      expect(component.$refs.a.data.title).to.equal('leeluolee')
+      expect(component.$refs.b.data.title).to.equal('nested')
+      expect(component.$refs.c.data.title).to.equal('nested')
+      expect(component.$refs.d.data.title).to.equal('nested')
+
+
+      component.$refs.c.$update('title', 'local')
+
+      expect(component.$refs.a.data.title).to.equal('leeluolee')
+      expect(component.$refs.b.data.title).to.equal('nested')
+      expect(component.$refs.c.data.title).to.equal('local')
+      expect(component.$refs.d.data.title).to.equal('nested')
 
     })
 

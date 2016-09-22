@@ -139,8 +139,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  return o1;
 	}
 
-	_.keys = function(obj){
-	  if(Object.keys) return Object.keys(obj);
+	_.keys = Object.keys? Object.keys: function(obj){
 	  var res = [];
 	  for(var i in obj) if(obj.hasOwnProperty(i)){
 	    res.push(i);
@@ -164,21 +163,23 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 
-	_.prefix = "var " + _.varName + "=" + _.ctxName + ".data;" +  _.extName  + "=" + _.extName + "||'';";
+	_.prefix = "'use strict';var " + _.varName + "=" + _.ctxName + ".data;" +  _.extName  + "=" + _.extName + "||'';";
 
 
 	_.slice = function(obj, start, end){
 	  var res = [];
 	  for(var i = start || 0, len = end || obj.length; i < len; i++){
-	    var item = obj[i];
-	    res.push(item)
+	    res.push(obj[i])
 	  }
 	  return res;
 	}
 
+	// beacuse slice and toLowerCase is expensive. we handle undefined and null in another way
 	_.typeOf = function (o) {
-	  return o == null ? String(o) :o2str.call(o).slice(8, -1).toLowerCase();
+	  return o == null ? String(o) :o2str.call(o).slice(8, -1);
 	}
+
+
 
 
 	_.makePredicate = function makePredicate(words, prefix) {
@@ -322,7 +323,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}: (function(){
 	    function Temp() {}
 	    return function(o){
-	      if(!o) return {};
+	      if(!o) return {}
 	      Temp.prototype = o;
 	      var obj = new Temp();
 	      Temp.prototype = null; // 不要保持一个 O 的杂散引用（a stray reference）...
@@ -352,23 +353,21 @@ return /******/ (function(modules) { // webpackBootstrap
 	clone
 	*/
 	_.clone = function clone(obj){
-	    var type = _.typeOf(obj);
-	    if(type === 'array'){
-	      var cloned = [];
-	      for(var i=0,len = obj.length; i< len;i++){
-	        cloned[i] = obj[i]
-	      }
-	      return cloned;
+	  if(!obj || (typeof obj !== 'object' )) return obj;
+	  if(Array.isArray(obj)){
+	    var cloned = [];
+	    for(var i=0,len = obj.length; i< len;i++){
+	      cloned[i] = obj[i]
 	    }
-	    if(type === 'object'){
-	      var cloned = {};
-	      for(var i in obj) if(obj.hasOwnProperty(i)){
-	        cloned[i] = obj[i];
-	      }
-	      return cloned;
+	    return cloned;
+	  }else{
+	    var cloned = {};
+	    for(var i in obj) if(obj.hasOwnProperty(i)){
+	      cloned[i] = obj[i];
 	    }
-	    return obj;
+	    return cloned;
 	  }
+	}
 
 	_.equals = function(now, old){
 	  var type = typeof now;
@@ -464,11 +463,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 	// // setup the raw Expression
-	// _.touchExpression = function(expr){
-	//   if(expr.type === 'expression'){
-	//   }
-	//   return expr;
-	// }
 
 
 	// handle the same logic on component's `on-*` and element's `on-*`
@@ -491,7 +485,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	  }else{
 	    return function fire(){
-	      var args = slice.call(arguments)      
+	      var args = _.slice(arguments);
 	      args.unshift(value);
 	      self.$update(function(){
 	        self.$emit.apply(self, args);
@@ -534,9 +528,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	_.normListener = function( events  ){
 	    var eventListeners = [];
 	    var pType = _.typeOf( events );
-	    if( pType === 'array' ){
+	    if( pType === 'Array' ){
 	      return events;
-	    }else if ( pType === 'object' ){
+	    }else if ( pType === 'Object' ){
 	      for( var i in events ) if ( events.hasOwnProperty(i) ){
 	        eventListeners.push({
 	          type: i,
@@ -1488,6 +1482,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      if( type === 'string' ){
 	        if(directive = directives[name]) return directive;
 	        else{
+
 	          var regexp = directives.__regexp__;
 	          for(var i = 0, len = regexp.length; i < len ; i++){
 	            directive = regexp[i];
@@ -1593,16 +1588,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	    this.group && this.group.destroy(true);
 	    this.group = null;
 	    this.parentNode = null;
-	    this._children = [];
+	    this._children = null;
+	    this.$root = null;
+	    this._handles = null;
+	    this.$refs = null;
 	    var parent = this.$parent;
-	    if(parent){
+	    if(parent && parent._children){
 	      var index = parent._children.indexOf(this);
 	      parent._children.splice(index,1);
 	    }
 	    this.$parent = null;
-	    this.$root = null;
-	    this._handles = null;
-	    this.$refs = null;
 
 	    if (this.devtools) {
 	      this.devtools.emit("destroy", this)
@@ -1668,13 +1663,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	   */
 	  $bind: function(component, expr1, expr2){
 	    var type = _.typeOf(expr1);
-	    if( expr1.type === 'expression' || type === 'string' ){
+	    if( expr1.type === 'expression' || type === 'String' ){
 	      this._bind(component, expr1, expr2)
-	    }else if( type === "array" ){ // multiply same path binding through array
+	    }else if( type === "Array" ){ // multiply same path binding through array
 	      for(var i = 0, len = expr1.length; i < len; i++){
 	        this._bind(component, expr1[i]);
 	      }
-	    }else if(type === "object"){
+	    }else if(type === "Object"){
 	      for(var i in expr1) if(expr1.hasOwnProperty(i)){
 	        this._bind(component, i, expr1[i]);
 	      }
@@ -1739,18 +1734,19 @@ return /******/ (function(modules) { // webpackBootstrap
 	    // sync the component's state to called's state
 	    expr2.set(component, expr1.get(this));
 	  },
-	  _walk: function(ast, arg1){
-	    if( _.typeOf(ast) === 'array' ){
+	  _walk: function(ast, opt){
+	    if( Array.isArray(ast)  ){
+	      var len = ast.length;
+	      if(!len) return;
 	      var res = [];
-
-	      for(var i = 0, len = ast.length; i < len; i++){
-	        res.push( this._walk(ast[i], arg1) );
+	      for(var i = 0; i < len; i++){
+	        var ret = this._walk(ast[i], opt) 
+	        if(ret) res.push( ret );
 	      }
-
 	      return new Group(res);
 	    }
 	    if(typeof ast === 'string') return doc.createTextNode(ast)
-	    return walkers[ast.type || "default"].call(this, ast, arg1);
+	    return walkers[ast.type || "default"].call(this, ast, opt);
 	  },
 	  _append: function(component){
 	    this._children.push(component);
@@ -1775,7 +1771,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	  _touchExpr: function(expr){
 	    var  rawget, ext = this.__ext__, touched = {};
 	    if(expr.type !== 'expression' || expr.touched) return expr;
-	    rawget = expr.get || (expr.get = new Function(_.ctxName, _.extName , _.prefix+ "return (" + expr.body + ")"));
+
+	    rawget = expr.get;
+	    if(!rawget){
+	      rawget = expr.get = new Function(_.ctxName, _.extName , _.prefix+ "return (" + expr.body + ")");
+	      expr.body = null;
+	    }
 	    touched.get = !ext? rawget: function(context){
 	      return rawget(context, ext)
 	    }
@@ -1793,11 +1794,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	        return expr.set(ctx, value, ext);
 	      }
 	    }
-	    _.extend(touched, {
-	      type: 'expression',
-	      touched: true,
-	      once: expr.once || expr.constant
-	    })
+
+	    touched.type = 'expression';
+	    touched.touched = true;
+	    touched.once = expr.once || expr.constant;
 	    return touched
 	  },
 	  // find filter
@@ -1810,7 +1810,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	  // simple accessor get
 	  _sg_:function(path, defaults, ext){
 	    if(typeof ext !== 'undefined'){
-	      // if(path === "demos")  debugger
 	      var computed = this.computed,
 	        computedProperty = computed[path];
 	      if(computedProperty){
@@ -2132,7 +2131,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      if(typeof handler === 'string'){
 	        handler = wrapHander(handler);
 	      }
-	      if(_.typeOf(reg) === 'regexp') reg = reg.toString().slice(1, -1);
+	      if(_.typeOf(reg) === 'RegExp') reg = reg.toString().slice(1, -1);
 
 	      reg = reg.replace(/\{(\w+)\}/g, replaceFn)
 	      retain = _.findSubCapture(reg) + 1; 
@@ -3184,6 +3183,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	// license: MIT-style license. http://mootools.net
 
 
+
 	var dom = module.exports;
 	var env = __webpack_require__(1);
 	var _ = __webpack_require__(2);
@@ -3411,7 +3411,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	// =================================
 	// it isnt computed style 
 	dom.css = function(node, name, value){
-	  if( _.typeOf(name) === "object" ){
+	  if( typeof (name) === "object" && name ){
 	    for(var i in name){
 	      if( name.hasOwnProperty(i) ){
 	        dom.css( node, i, name[i] );
@@ -3572,8 +3572,17 @@ return /******/ (function(modules) { // webpackBootstrap
 	  'NAMESPACE': {
 	    html: "http://www.w3.org/1999/xhtml",
 	    svg: "http://www.w3.org/2000/svg"
+	  },
+	  'OPTIONS': {
+	    'STABLE_INIT': { stable: !0, init: !0 },
+	    'FORCE_INIT': { force: !0, init: !0 },
+	    'STABLE': {stable: !0},
+	    'INIT': { init: !0 },
+	    'SYNC': { sync: !0 },
+	    'FORCE': { force: !0 }
 	  }
 	}
+
 
 /***/ },
 /* 15 */
@@ -3586,9 +3595,24 @@ return /******/ (function(modules) { // webpackBootstrap
 	var Group = __webpack_require__(19);
 	var dom = __webpack_require__(13);
 	var _ = __webpack_require__(2);
+	var consts = __webpack_require__(14);
+	var OPTIONS = consts.OPTIONS;
 
 
 	var walkers = module.exports = {};
+
+
+
+	// used in walkers.list
+	// remove block in group
+	function removeRange(index, rlen, children){
+	  for(var j = 1; j <= rlen; j++){ //removed
+	    var removed = children[ index + j ];
+	    if(removed) removed.destroy(true);
+	  }
+	  children.splice(index+1, rlen);
+	}
+
 
 	walkers.list = function(ast, options){
 
@@ -3598,6 +3622,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	    extra = options.extra;
 	  var self = this;
 	  var group = new Group([placeholder]);
+	  var children = group.children;
+
 	  var indexName = ast.variable + '_index';
 	  var keyName = ast.variable + '_key';
 	  var variable = ast.variable;
@@ -3612,13 +3638,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	      extraObj[ indexName ] = index;
 	      // @FIX keyName
 	      return track.get( self, extraObj );
-	    }
-	  }
-
-	  function removeRange(index, rlen){
-	    for(var j = 0; j< rlen; j++){ //removed
-	      var removed = group.children.splice( index + 1, 1)[0];
-	      if(removed) removed.destroy(true);
 	    }
 	  }
 
@@ -3642,12 +3661,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	        animate.inject(combine.node(section),insert, 'after');
 	      }
 	      // insert.parentNode.insertBefore(combine.node(section), insert.nextSibling);
-	      group.children.splice( o + 1 , 0, section);
+	      children.splice( o + 1 , 0, section);
 	    }
 	  }
 
 	  function updateTarget(target, index, item, rawNewValue){
-
 	      target[ indexName ] = index;
 	      if( rawNewValue ){
 	        target[ keyName ] = item;
@@ -3689,7 +3707,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var tIndex = 0;
 	        while(tIndex < minar){
 	          if( keyOf(newList[index], index) !== keyOf( removed[0], index ) ){
-	            removeRange(index, 1)
+	            removeRange(index, 1, children)
 	            addRange(index, index+1, newList, rawNewValue)
 	          }
 	          removed.shift();
@@ -3702,7 +3720,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      // update
 	      updateRange(m, index, newList, rawNewValue);
 
-	      removeRange( index ,rlen)
+	      removeRange( index ,rlen, children)
 
 	      addRange(index, index+add, newList, rawNewValue)
 
@@ -3728,7 +3746,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    updateRange(0, mlen, newList, rawNewValue)
 	    if(nlen < olen){ //need add
-	      removeRange(nlen, olen-nlen);
+	      removeRange(nlen, olen-nlen, children);
 	    }else if(nlen > olen){
 	      addRange(olen, nlen, newList, rawNewValue);
 	    }
@@ -3750,11 +3768,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    // if previous list has , we need to remove the altnated section.
 	    if( !olen && nlen && group.get(1) ){
-	      var altGroup = group.children.pop();
+	      var altGroup = children.pop();
 	      if(altGroup.destroy)  altGroup.destroy(true);
 	    }
 
-	    if( nType === 'object' ) rawNewValue = newValue;
+	    if( nType === 'Object' ) rawNewValue = newValue;
 
 	    if(track === true){
 	      updateSimple( newList, oldList,  rawNewValue );
@@ -3770,7 +3788,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        outer: options.outer,
 	        namespace: namespace
 	      })
-	      group.children.push(section);
+	      children.push(section);
 	      if(placeholder.parentNode){
 	        animate.inject(combine.node(section), placeholder, 'after');
 	      }
@@ -3785,10 +3803,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	  return group;
 	}
 
-
-	function updateItem(){
-	  
-	}
 
 
 	// {#include } or {#inc template}
@@ -3815,17 +3829,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	      if(placeholder.parentNode) {
 	        compiled.$inject(placeholder, 'before')
 	      }
-	    }, {
-	      init: true
-	    });
+	    }, OPTIONS.INIT);
 	  }
 	  return group;
 	};
 
 	function getListFromValue(value, type){
-	  return type === 'object'? _.keys(value): (
-	      type === 'array'? value: []
-	    )
+	  return type === 'Array'? value: (type === 'Object'? _.keys(value) :  []);
 	}
 
 
@@ -3843,7 +3853,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        if(ast.alternate) alternate = self.$compile(ast.alternate, {record: true, element: options.element, extra: extra});
 	      }
 	    }
-	    this.$watch(ast.test, update, { force: true });
+	    this.$watch(ast.test, update, OPTIONS.FORCE);
 	    return {
 	      destroy: function(){
 	        if(consequent) combine.destroy(consequent);
@@ -3886,7 +3896,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      }
 	    }
 	  }
-	  this.$watch(ast.test, update, {force: true, init: true});
+	  this.$watch(ast.test, update, OPTIONS.FORCE_INIT);
 
 	  return group;
 	}
@@ -3895,12 +3905,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	walkers.expression = function(ast, options){
 	  var node = document.createTextNode("");
 	  this.$watch(ast, function(newval){
-	    dom.text(node, "" + (newval == null? "": "" + newval) );
-	  },{init: true})
+	    dom.text(node,  newval == null? "": String(newval) );
+	  }, OPTIONS.STABLE_INIT )
 	  return node;
 	}
 	walkers.text = function(ast, options){
-	  var node = document.createTextNode(_.convertEntity(ast.text));
+	  var text = ast.text;
+	  var node = document.createTextNode(
+	    text.indexOf('&') !== -1? _.convertEntity(text): text
+	  );
 	  return node;
 	}
 
@@ -4087,10 +4100,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	      if( !(isolate & 2) ) 
 	        this.$watch(value, (function(name, val){
 	          this.data[name] = val;
-	        }).bind(component, name), { sync: true })
+	        }).bind(component, name), OPTIONS.SYNC)
 	      if( value.set && !(isolate & 1 ) ) 
 	        // sync the data. it force the component don't trigger attr.name's first dirty echeck
-	        component.$watch(name, self.$update.bind(self, value), { init: true });
+	        component.$watch(name, self.$update.bind(self, value), OPTIONS.INIT);
 	    }
 	  }
 	  if(is && is.type === 'expression'  ){
@@ -4109,7 +4122,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      if(ref){
 	        self.$refs[ref] = ncomponent;
 	      }
-	    }, {sync: true})
+	    }, OPTIONS.SYNC)
 	    return group;
 	  }
 	  return component;
@@ -4162,7 +4175,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    if(value.type === 'expression' ){
 	      this.$watch(value, function(nvalue, old){
 	        dom.attr(element, name, nvalue);
-	      }, {init: true});
+	      }, OPTIONS.STABLE_INIT);
 	    }else{
 	      if(_.isBooleanAttr(name)){
 	        dom.attr(element, name, true);
@@ -4390,17 +4403,19 @@ return /******/ (function(modules) { // webpackBootstrap
 	  node: function(item){
 	    var children,node, nodes;
 	    if(!item) return;
-	    if(item.element) return item.element;
 	    if(typeof item.node === "function") return item.node();
 	    if(typeof item.nodeType === "number") return item;
 	    if(item.group) return combine.node(item.group)
-	    if(children = item.children){
-	      if(children.length === 1){
-	        return combine.node(children[0]);
+
+	    item = item.children || item;
+	    if( Array.isArray(item )){
+	      var len = item.length;
+	      if(len === 1){
+	        return combine.node(item[0]);
 	      }
 	      nodes = [];
-	      for(var i = 0, len = children.length; i < len; i++ ){
-	        node = combine.node(children[i]);
+	      for(var i = 0, len = item.length; i < len; i++ ){
+	        node = combine.node(item[i]);
 	        if(Array.isArray(node)){
 	          nodes.push.apply(nodes, node)
 	        }else if(node) {
@@ -4409,6 +4424,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      }
 	      return nodes;
 	    }
+	    
 	  },
 	  // @TODO remove _gragContainer
 	  inject: function(node, pos ){
@@ -4448,17 +4464,13 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	  destroy: function(item, first){
 	    if(!item) return;
-	    if(Array.isArray(item)){
+	    if( typeof item.nodeType === "number"  ) return first && dom.remove(item)
+	    if( typeof item.destroy === "function" ) return item.destroy(first);
+
+	    if( Array.isArray(item)){
 	      for(var i = 0, len = item.length; i < len; i++ ){
 	        combine.destroy(item[i], first);
 	      }
-	    }
-	    var children = item.children;
-	    if(typeof item.destroy === "function") return item.destroy(first);
-	    if(typeof item.nodeType === "number" && first)  dom.remove(item);
-	    if(children && children.length){
-	      combine.destroy(children, true);
-	      item.children = null;
 	    }
 	  }
 
@@ -4574,6 +4586,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	 * @param  {Function} callback [description]
 	 * @return {[type]}            [description]
 	 */
+
 	animate.remove = function(node, callback){
 	  if(!node) return;
 	  var count = 0;
@@ -4581,13 +4594,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	    count++;
 	    if(count === len) callback && callback()
 	  }
-	  if(Array.isArray(node)){
+	  if( Array.isArray(node) ){
 	    for(var i = 0, len = node.length; i < len ; i++){
 	      animate.remove(node[i], loop)
 	    }
-	    return node;
+	    return;
 	  }
-	  if(node.onleave){
+	  if(typeof node.onleave ==='function'){
 	    node.onleave(function(){
 	      removeDone(node, callback)
 	    })
@@ -4596,7 +4609,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }
 	}
 
-	var removeDone = function (node, callback){
+	function removeDone(node, callback){
 	    dom.remove(node);
 	    callback && callback();
 	}
@@ -4779,7 +4792,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	// simplest event emitter 60 lines
 	// ===============================
-	var slice = [].slice, _ = __webpack_require__(2);
+	var _ = __webpack_require__(2);
 	var API = {
 	  $on: function(event, fn, desc) {
 	    if(typeof event === "object" && event){
@@ -4832,7 +4845,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var context = this;
 	    var handles = context._handles, calls, args, type;
 	    if(!event) return;
-	    var args = slice.call(arguments, 1);
+	    var args = _.slice(arguments, 1);
 	    var type = event;
 
 	    if(!handles) return context;
@@ -4881,6 +4894,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  $watch: function(expr, fn, options){
 	    var get, once, test, rlen, extra = this.__ext__; //records length
 	    if(!this._watchers) this._watchers = [];
+	    if(!this._watchersForStable) this._watchersForStable = [];
 
 	    options = options || {};
 	    if(options === true){
@@ -4926,16 +4940,17 @@ return /******/ (function(modules) { // webpackBootstrap
 	      deep: options.deep,
 	      last: options.sync? get(this): options.last
 	    }
-	    
-	    this._watchers.push( watcher );
 
+
+	    this[options.stable? '_watchersForStable': '_watchers'].push(watcher);
+	    
 	    rlen = this._records && this._records.length;
 	    if(rlen) this._records[rlen-1].push(watcher)
 	    // init state.
 	    if(options.init === true){
 	      var prephase = this.$phase;
 	      this.$phase = 'digest';
-	      this._checkSingleWatch( watcher, this._watchers.length-1 );
+	      this._checkSingleWatch( watcher);
 	      this.$phase = prephase;
 	    }
 	    return watcher;
@@ -4943,22 +4958,28 @@ return /******/ (function(modules) { // webpackBootstrap
 	  $unwatch: function( watcher ){
 	    if(!this._watchers || !watcher) return;
 	    var watchers = this._watchers;
-	    if(typeof watcher === 'number'){
+	    var type = typeof watcher;
+
+	    if(type === 'object'){
+	      var len = watcher.length;
+	      if(!len){
+	        watcher.removed = true
+	      }else{
+	        while( (len--) >= 0 ){
+	          this.$unwatch(watcher[len])
+	        }
+	      }
+	    }else if(type === 'number'){
 	      var id = watcher;
-	      watcher = _.findItem( watchers, function(item){
+	      watcher =  _.findItem( watchers, function(item){
 	        return item.id === id;
 	      } );
+	      if(!watcher) watcher = _.findItem(this._watchersForStable, function( item ){
+	        return item.id === id
+	      })
 	      return this.$unwatch(watcher);
 	    }
-	    var len = watcher.length;
-	    if( len ){
-	      while( (len--) >= 0 ){
-	        this.$unwatch(watcher[len])
-	      }
-	      return;
-	    }else{
-	      watcher.removed = true
-	    }
+	    return this;
 	  },
 	  $expression: function(value){
 	    return this._touchExpr(parseExpression(value))
@@ -4980,7 +5001,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	        throw Error('there may a circular dependencies reaches')
 	      }
 	    }
-	    if( n > 0 && this.$emit) {
+	    // stable watch is dirty
+	    var stableDirty =  this._digest(true);
+
+	    if( n > 0 && stableDirty && this.$emit) {
 	      this.$emit("$update");
 	      if (this.devtools) {
 	        this.devtools.emit("flush", this)
@@ -4989,20 +5013,31 @@ return /******/ (function(modules) { // webpackBootstrap
 	    this.$phase = null;
 	  },
 	  // private digest logic
-	  _digest: function(){
+	  _digest: function(stable){
 
-	    var watchers = this._watchers;
+	    var watchers = !stable? this._watchers: this._watchersForStable;
 	    var dirty = false, children, watcher, watcherDirty;
 	    var len = watchers && watchers.length;
 	    if(len){
+	      var mark = 0, needRemoved=0;
 	      for(var i =0; i < len; i++ ){
 	        watcher = watchers[i];
-	        if( !watcher ||  watcher.removed ){
-	          watchers.splice( i--, 1 );
-	          len--;
+	        var shouldRemove = !watcher ||  watcher.removed;
+	        if( shouldRemove ){
+	          needRemoved += 1;
 	        }else{
-	          watcherDirty = this._checkSingleWatch(watcher, i);
+	          watcherDirty = this._checkSingleWatch(watcher);
 	          if(watcherDirty) dirty = true;
+	        }
+	        // remove when encounter first unmoved item or touch the end
+	        if( !shouldRemove || i === len-1 ){
+	          if( needRemoved ){
+	            watchers.splice(mark, needRemoved );          
+	            len -= needRemoved;
+	            i -= needRemoved;
+	            needRemoved = 0;
+	          }
+	          mark = i+1;
 	        }
 	      }
 	    }
@@ -5011,13 +5046,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	    if(children && children.length){
 	      for(var m = 0, mlen = children.length; m < mlen; m++){
 	        var child = children[m];
-	        if(child && child._digest()) dirty = true;
+	        if(child && child._digest(stable)) dirty = true;
 	      }
 	    }
 	    return dirty;
 	  },
 	  // check a single one watcher 
-	  _checkSingleWatch: function(watcher, i){
+	  _checkSingleWatch: function(watcher){
 	    var dirty = false;
 	    if(!watcher) return;
 
@@ -5027,27 +5062,31 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	      now = watcher.get(this);
 	      last = watcher.last;
-	      tlast = _.typeOf(last);
-	      tnow = _.typeOf(now);
-	      eq = true, diff;
 
-	      // !Object
-	      if( !(tnow === 'object' && tlast==='object' && watcher.deep) ){
-	        // Array
-	        if( tnow === 'array' && ( tlast=='undefined' || tlast === 'array') ){
-	          diff = diffArray(now, watcher.last || [], watcher.diff)
-	          if( tlast !== 'array' || diff === true || diff.length ) dirty = true;
-	        }else{
-	          eq = _.equals( now, last );
-	          if( !eq || watcher.force ){
-	            watcher.force = null;
-	            dirty = true; 
+	      if(now !== last || watcher.force){
+	        tlast = _.typeOf(last);
+	        tnow = _.typeOf(now);
+	        eq = true; 
+
+	        // !Object
+	        if( !(tnow === 'Object' && tlast==='Object' && watcher.deep) ){
+	          // Array
+	          if( tnow === 'Array' && ( tlast=='undefined' || tlast === 'Array') ){
+	            diff = diffArray(now, watcher.last || [], watcher.diff)
+	            if( tlast !== 'Array' || diff === true || diff.length ) dirty = true;
+	          }else{
+	            eq = _.equals( now, last );
+	            if( !eq || watcher.force ){
+	              watcher.force = null;
+	              dirty = true; 
+	            }
 	          }
+	        }else{
+	          diff =  diffObject( now, last, watcher.diff );
+	          if( diff === true || diff.length ) dirty = true;
 	        }
-	      }else{
-	        diff =  diffObject( now, last, watcher.diff );
-	        if( diff === true || diff.length ) dirty = true;
 	      }
+
 	    } else{
 	      // @TODO 是否把多重改掉
 	      var result = watcher.test(this);
@@ -5057,13 +5096,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	      }
 	    }
 	    if(dirty && !watcher.test){
-	      if(tnow === 'object' && watcher.deep || tnow === 'array'){
+	      if(tnow === 'Object' && watcher.deep || tnow === 'Array'){
 	        watcher.last = _.clone(now);
 	      }else{
 	        watcher.last = now;
 	      }
 	      watcher.fn.call(this, now, last, diff)
-	      if(watcher.once) this._watchers.splice(i, 1);
+	      if(watcher.once) this.$unwatch(watcher)
 	    }
 
 	    return dirty;
@@ -5078,7 +5117,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	   */
 	  $set: function(path, value){
 	    if(path != null){
-	      var type = _.typeOf(path);
+	      var type = typeof (path);
 	      if( type === 'string' || path.type === 'expression' ){
 	        path = this.$expression(path);
 	        path.set(this, value);
@@ -5236,6 +5275,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	var Regular = __webpack_require__(8);
 	var consts = __webpack_require__(14);
 	var namespaces = consts.NAMESPACE;
+	var OPTIONS = consts.OPTIONS
+	var STABLE = OPTIONS.STABLE;
+	var DEEP_STABLE = {deep: true, stable: true};
 
 
 
@@ -5267,7 +5309,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      }else{
 	        elem.className = className
 	      }
-	    },true);
+	    }, DEEP_STABLE);
 	  },
 	  // **warn**: style inteplation will override this directive 
 	  'r-style': function(elem, value){
@@ -5278,7 +5320,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      for(var i in nvalue) if(nvalue.hasOwnProperty(i)){
 	        dom.css(elem, i, nvalue[i]);
 	      }
-	    },true);
+	    },DEEP_STABLE);
 	  },
 	  // when expression is evaluate to true, the elem will add display:none
 	  // Example: <div r-hide={{items.length > 0}}></div>
@@ -5306,7 +5348,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            elem.onenter();
 	          }
 	        }
-	      });
+	      }, STABLE);
 	    }else if(!!value){
 	      elem.style.display = "none";
 	    }
@@ -5315,7 +5357,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    this.$watch(value, function(nvalue){
 	      nvalue = nvalue || "";
 	      dom.html(elem, nvalue)
-	    }, {force: true});
+	    }, {force: true, stable: true});
 	  },
 	  'ref': {
 	    accept: consts.COMPONENT_TYPE + consts.ELEMENT_TYPE,
@@ -5327,7 +5369,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	          cval = nval;
 	          if(refs[oval] === elem) refs[oval] = null;
 	          if(cval) refs[cval] = elem;
-	        })
+	        }, STABLE)
 	      }else{
 	        refs[cval = value] = elem;
 	      }
@@ -5443,6 +5485,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	var _ = __webpack_require__(2);
 	var dom = __webpack_require__(13);
 	var Regular = __webpack_require__(8);
+	var OPTIONS = __webpack_require__(14).OPTIONS
+	var STABLE = OPTIONS.STABLE;
 	var hasInput;
 
 	var modelHandlers = {
@@ -5501,7 +5545,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        break;
 	      }
 	    }
-	  });
+	  }, STABLE);
 
 	  function handler(){
 	    parsed.set(self, this.value);
@@ -5537,7 +5581,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  var self = this;
 	  var wc = this.$watch(parsed, function(newValue){
 	    if(elem.value !== newValue) elem.value = newValue == null? "": "" + newValue;
-	  });
+	  }, STABLE);
 
 	  // @TODO to fixed event
 	  var handler = function (ev){
@@ -5595,7 +5639,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  var self = this;
 	  var watcher = this.$watch(parsed, function(newValue){
 	    dom.attr(elem, 'checked', !!newValue);
-	  });
+	  }, STABLE);
 
 	  var handler = function handler(){
 	    var value = this.checked;
@@ -5622,7 +5666,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  var wc = this.$watch(parsed, function( newValue ){
 	    if(newValue == elem.value) elem.checked = true;
 	    else elem.checked = false;
-	  });
+	  }, STABLE);
 
 
 	  var handler = function handler(){

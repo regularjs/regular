@@ -128,14 +128,17 @@ describe("If", function(){
         data: { test: 1 }
       }).$inject(container);
 
-      expect(component._watchers.length).to.equal(2)
+      expect(component._watchers.length).to.equal(1)
+      expect(component._watchersForStable.length).to.equal(1)
 
       component.$update('test', 6);
 
-      expect(component._watchers.length).to.equal(3)
+      expect(component._watchers.length).to.equal(1)
+      expect(component._watchersForStable.length).to.equal(2)
       component.$update('test', 0);
 
-      expect(component._watchers.length).to.equal(2)
+      expect(component._watchers.length).to.equal(1)
+      expect(component._watchersForStable.length).to.equal(1)
       destroy(component, container);
     })
 
@@ -146,14 +149,17 @@ describe("If", function(){
         data: { test: 6 }
       }).$inject(container);
 
-      expect(component._watchers.length).to.equal(4);
+      expect(component._watchers.length).to.equal(2);
+      expect(component._watchersForStable.length).to.equal(2);
 
       component.$update("test", 10);
       expect(component._watchers.length).to.equal(2);
       component.$update("test", 6);
-      expect(component._watchers.length).to.equal(4);
+      expect(component._watchers.length).to.equal(2);
+      expect(component._watchersForStable.length).to.equal(2);
       component.$update("test", 10);
       expect(component._watchers.length).to.equal(2);
+      expect(component._watchersForStable.length).to.equal(0);
 
       destroy(component, container)
     })
@@ -218,7 +224,8 @@ describe("If", function(){
       expect(component._watchers.length).to.equal(1);
       component.$update("test", 10);
       expect($node.attr("ng-repeat")).to.equal("hahah");
-      expect(component._watchers.length).to.equal(2);
+      expect(component._watchers.length).to.equal(1);
+      expect(component._watchersForStable.length).to.equal(1);
       component.$update("test", 0);
       expect($node.attr("ng-repeat")).to.equal(undefined);
       expect(component._watchers.length).to.equal(1);
