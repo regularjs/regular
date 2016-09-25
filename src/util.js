@@ -35,6 +35,12 @@ _.keys = Object.keys? Object.keys: function(obj){
   return res;
 }
 
+_.some = function(list, fn){
+  for(var i =0,len = list.length; i < len; i++){
+    if(fn(list[i])) return true
+  }
+}
+
 _.varName = 'd';
 _.setName = 'p_';
 _.ctxName = 'c';

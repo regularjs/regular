@@ -504,6 +504,7 @@ var expect = require('expect.js');
     })
 
 
+
     it("auto unwatch when component destroy", function(){
 
       var Component1 = NameSpace.extend({

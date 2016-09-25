@@ -719,6 +719,85 @@ it('bugfix #50', function(){
 
   })
 
+
+  it("bug #122", function(){
+    var Sub = Regular.extend({
+      name: 'Sub',
+      template: '<div>disabled is {disabled}</div>'
+    });
+
+    var obj = {};
+    var Top = Regular.extend({
+      template: '<Sub ref=sub disabled={myName|isJerry} complex = {(myName|other).a}></Sub>',
+      config: function(){
+        this.data = {
+          myName: 'Tom'
+        };
+      }
+    }).filter({
+      'isJerry': function(_name){
+        return _name == 'Jerry';
+      },
+      'other': function(){
+        return obj
+      }
+    });
+
+    var component;
+    expect(function(){
+      component = new Top();
+    }).to.not.throwException();
+
+    expect(component.$refs.sub.data.disabled ).to.equal(false)
+    component.$refs.sub.$update('disabled', true)
+    expect(component.data.myName).to.equal('Tom')
+
+    component.$refs.sub.$update('complex', 'hello')
+    expect(obj.a).to.equal('hello')
+
+
+    
+  })
+
+  // it("bug #122: paren Expression shouldn't change the set property it wrapped", function(){
+  //   var Sub = Regular.extend({
+  //     name: 'Sub',
+  //     template: '<div>disabled is {disabled}</div>'
+  //   });
+
+  //   var Top = Regular.extend({
+  //     template: '<Sub ref=sub disabled={num|towWay} actived={(num2|oneWay)} ></Sub>',
+  //     config: function(data){
+  //       data.num = 1;
+  //       data.num2 = 2;
+  //     }
+  //   }).filter({
+  //     towWay: {
+  //       get: function( val ){
+  //         return '' + val;
+  //       },
+  //       set: function( val ){
+  //         return parseInt(val, 10);
+  //       }
+  //     },
+  //     oneWay: function(val){
+  //       return '' + val;
+  //     }
+  //   });
+
+  //   var compo = new Top();
+  //   expect(compo.data.num).to.equal(1);
+  //   expect(compo.data.num2).to.equal(2);
+  //   expect(compo.$refs.sub.data.disabled).to.equal('1');
+  //   expect(compo.$refs.sub.data.actived).to.equal('2');
+
+  //   compo.$refs.sub.$update('disabled', '3');
+  //   expect(compo.data.num).to.equal(3);
+
+  //   compo.$refs.sub.$update('actived', '3');
+  //   expect(compo.data.num2).to.equal(2);
+
+  // })
   // it('bug :directive return value that not function will throw error', function(){
   //   throw Error()
   // })

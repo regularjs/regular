@@ -361,14 +361,21 @@ describe("Dom", function(){
       name: "nest",
       template: "{#if !show}<div id='hide'>HIDE</div>{/if}"
     })
-    var component = new Regular({
-      template: "<nest show={show}></nest>{#if show}<div id='show'>SHOW</div>{/if}\
-                {#list nodes as node}<div class='list'>list{node_index}</div>{/list}",
-      data: {
-        show: false,
-        nodes: [1,2,3]
-      }
-    })
+
+    var component;
+    // before(function(){
+      component = new Regular({
+        template: "<nest show={show}></nest>{#if show}<div id='show'>SHOW</div>{/if}\
+                  {#list nodes as node}<div class='list'>list{node_index}</div>{/list}",
+        data: {
+          show: false,
+          nodes: [1,2,3]
+        }
+      })
+    // })
+    // after(function(){
+      // component.destroy()
+    // })
     it("dom.element basic", function(){
       component.$update('show', false);
       expect(dom.element(component).innerHTML).to.equal('HIDE')

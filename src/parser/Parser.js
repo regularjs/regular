@@ -350,7 +350,7 @@ op.expr = function(){
 
   var body = buffer.get || buffer;
   var setbody = buffer.set;
-  return node.expression(body, setbody, !this.depend.length);
+  return node.expression(body, setbody, !this.depend.length, buffer.filters);
 }
 
 
@@ -359,25 +359,34 @@ op.expr = function(){
 op.filter = function(){
   var left = this.assign();
   var ll = this.eat('|');
-  var buffer = [], setBuffer, prefix,
+  var buffer = [], filters,setBuffer, prefix,
     attr = "t", 
     set = left.set, get, 
     tmp = "";
 
   if(ll){
-    if(set) setBuffer = [];
+    if(set) {
+      setBuffer = [];
+      filters = [];
+    }
 
     prefix = "(function(" + attr + "){";
 
     do{
-      tmp = attr + " = " + ctxName + "._f_('" + this.match('IDENT').value+ "' ).get.call( "+_.ctxName +"," + attr ;
+      var filterName = this.match('IDENT').value;
+      tmp = attr + " = " + ctxName + "._f_('" + filterName + "' ).get.call( "+_.ctxName +"," + attr ;
       if(this.eat(':')){
         tmp +=", "+ this.arguments("|").join(",") + ");"
       }else{
         tmp += ');'
       }
       buffer.push(tmp);
-      setBuffer && setBuffer.unshift( tmp.replace(" ).get.call", " ).set.call") );
+      
+      if(set){
+        // only in runtime ,we can detect  whether  the filter has a set function. 
+        filters.push(filterName);
+        setBuffer.unshift( tmp.replace(" ).get.call", " ).set.call") );
+      }
 
     }while(ll = this.eat('|'));
     buffer.push("return " + attr );
@@ -392,7 +401,9 @@ op.filter = function(){
 
     }
     // the set function is depend on the filter definition. if it have set method, the set will work
-    return this.getset(get, set);
+    var ret = getset(get, set);
+    ret.filters = filters;
+    return ret;
   }
   return left;
 }
@@ -403,8 +414,8 @@ op.assign = function(){
   var left = this.condition(), ll;
   if(ll = this.eat(['=', '+=', '-=', '*=', '/=', '%='])){
     if(!left.set) this.error('invalid lefthand expression in assignment expression');
-    return this.getset( left.set.replace( "," + _.setName, "," + this.condition().get ).replace("'='", "'"+ll.type+"'"), left.set);
-    // return this.getset('(' + left.get + ll.type  + this.condition().get + ')', left.set);
+    return getset( left.set.replace( "," + _.setName, "," + this.condition().get ).replace("'='", "'"+ll.type+"'"), left.set);
+    // return getset('(' + left.get + ll.type  + this.condition().get + ')', left.set);
   }
   return left;
 }
@@ -415,7 +426,7 @@ op.condition = function(){
 
   var test = this.or();
   if(this.eat('?')){
-    return this.getset([test.get + "?", 
+    return getset([test.get + "?", 
       this.assign().get, 
       this.match(":").type, 
       this.assign().get].join(""));
@@ -431,7 +442,7 @@ op.or = function(){
   var left = this.and();
 
   if(this.eat('||')){
-    return this.getset(left.get + '||' + this.or().get);
+    return getset(left.get + '||' + this.or().get);
   }
 
   return left;
@@ -443,7 +454,7 @@ op.and = function(){
   var left = this.equal();
 
   if(this.eat('&&')){
-    return this.getset(left.get + '&&' + this.and().get);
+    return getset(left.get + '&&' + this.and().get);
   }
   return left;
 }
@@ -457,7 +468,7 @@ op.equal = function(){
   var left = this.relation(), ll;
   // @perf;
   if( ll = this.eat(['==','!=', '===', '!=='])){
-    return this.getset(left.get + ll.type + this.equal().get);
+    return getset(left.get + ll.type + this.equal().get);
   }
   return left
 }
@@ -470,7 +481,7 @@ op.relation = function(){
   var left = this.additive(), ll;
   // @perf
   if(ll = (this.eat(['<', '>', '>=', '<=']) || this.eat('IDENT', 'in') )){
-    return this.getset(left.get + ll.value + this.relation().get);
+    return getset(left.get + ll.value + this.relation().get);
   }
   return left
 }
@@ -481,7 +492,7 @@ op.relation = function(){
 op.additive = function(){
   var left = this.multive() ,ll;
   if(ll= this.eat(['+','-']) ){
-    return this.getset(left.get + ll.value + this.additive().get);
+    return getset(left.get + ll.value + this.additive().get);
   }
   return left
 }
@@ -493,7 +504,7 @@ op.additive = function(){
 op.multive = function(){
   var left = this.range() ,ll;
   if( ll = this.eat(['*', '/' ,'%']) ){
-    return this.getset(left.get + ll.type + this.multive().get);
+    return getset(left.get + ll.type + this.multive().get);
   }
   return left;
 }
@@ -505,7 +516,7 @@ op.range = function(){
     right = this.unary();
     var body = 
       "(function(start,end){var res = [],step=end>start?1:-1; for(var i = start; end>start?i <= end: i>=end; i=i+step){res.push(i); } return res })("+left.get+","+right.get+")"
-    return this.getset(body);
+    return getset(body);
   }
 
   return left;
@@ -521,7 +532,7 @@ op.range = function(){
 op.unary = function(){
   var ll;
   if(ll = this.eat(['+','-','~', '!'])){
-    return this.getset('(' + ll.type + this.unary().get + ')') ;
+    return getset('(' + ll.type + this.unary().get + ')') ;
   }else{
     return this.member()
   }
@@ -647,14 +658,14 @@ op.primary = function(){
       this.next();
       var value = "" + ll.value;
       var quota = ~value.indexOf("'")? "\"": "'" ;
-      return this.getset(quota + value + quota);
+      return getset(quota + value + quota);
     case 'NUMBER':
       this.next();
-      return this.getset( "" + ll.value );
+      return getset( "" + ll.value );
     case "IDENT":
       this.next();
       if(isKeyWord(ll.value)){
-        return this.getset( ll.value );
+        return getset( ll.value );
       }
       return ll.value;
     default: 
@@ -711,11 +722,12 @@ op.paren = function(){
   this.match('(');
   var res = this.filter()
   res.get = '(' + res.get + ')';
+  res.set = res.set;
   this.match(')');
   return res;
 }
 
-op.getset = function(get, set){
+function getset(get, set){
   return {
     get: get,
     set: set

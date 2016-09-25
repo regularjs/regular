@@ -494,11 +494,15 @@ Regular.implement({
 
     if(expr.setbody && !expr.set){
       var setbody = expr.setbody;
-      expr.set = function(ctx, value, ext){
-        expr.set = new Function(_.ctxName, _.setName , _.extName, _.prefix + setbody);          
-        return expr.set(ctx, value, ext);
+      var filters = expr.filters;
+      var self = this;
+      if(!filters || !_.some(filters, function(filter){ return !self._f_(filter).set }) ){
+        expr.set = function(ctx, value, ext){
+          expr.set = new Function(_.ctxName, _.setName , _.extName, _.prefix + setbody);          
+          return expr.set(ctx, value, ext);
+        }
       }
-      expr.setbody = null;
+      expr.filters = expr.setbody = null;
     }
     if(expr.set){
       touched.set = !ext? expr.set : function(ctx, value){
