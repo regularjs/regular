@@ -1,6 +1,6 @@
 /**
 @author	leeluolee
-@version	0.5.1
+@version	0.5.2
 @homepage	http://regularjs.github.io
 */
 (function webpackUniversalModuleDefinition(root, factory) {
@@ -147,6 +147,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	  return res;
 	}
 
+	_.some = function(list, fn){
+	  for(var i =0,len = list.length; i < len; i++){
+	    if(fn(list[i])) return true
+	  }
+	}
+
 	_.varName = 'd';
 	_.setName = 'p_';
 	_.ctxName = 'c';
@@ -176,7 +182,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	// beacuse slice and toLowerCase is expensive. we handle undefined and null in another way
 	_.typeOf = function (o) {
-	  return o == null ? String(o) :o2str.call(o).slice(8, -1);
+	  return o == null ? String(o) :o2str.call(o).slice(8, -1).toLowerCase();
 	}
 
 
@@ -528,9 +534,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	_.normListener = function( events  ){
 	    var eventListeners = [];
 	    var pType = _.typeOf( events );
-	    if( pType === 'Array' ){
+	    if( pType === 'array' ){
 	      return events;
-	    }else if ( pType === 'Object' ){
+	    }else if ( pType === 'object' ){
 	      for( var i in events ) if ( events.hasOwnProperty(i) ){
 	        eventListeners.push({
 	          type: i,
@@ -1663,13 +1669,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	   */
 	  $bind: function(component, expr1, expr2){
 	    var type = _.typeOf(expr1);
-	    if( expr1.type === 'expression' || type === 'String' ){
+	    if( expr1.type === 'expression' || type === 'string' ){
 	      this._bind(component, expr1, expr2)
-	    }else if( type === "Array" ){ // multiply same path binding through array
+	    }else if( type === "array" ){ // multiply same path binding through array
 	      for(var i = 0, len = expr1.length; i < len; i++){
 	        this._bind(component, expr1[i]);
 	      }
-	    }else if(type === "Object"){
+	    }else if(type === "object"){
 	      for(var i in expr1) if(expr1.hasOwnProperty(i)){
 	        this._bind(component, i, expr1[i]);
 	      }
@@ -1783,11 +1789,15 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    if(expr.setbody && !expr.set){
 	      var setbody = expr.setbody;
-	      expr.set = function(ctx, value, ext){
-	        expr.set = new Function(_.ctxName, _.setName , _.extName, _.prefix + setbody);          
-	        return expr.set(ctx, value, ext);
+	      var filters = expr.filters;
+	      var self = this;
+	      if(!filters || !_.some(filters, function(filter){ return !self._f_(filter).set }) ){
+	        expr.set = function(ctx, value, ext){
+	          expr.set = new Function(_.ctxName, _.setName , _.extName, _.prefix + setbody);          
+	          return expr.set(ctx, value, ext);
+	        }
 	      }
-	      expr.setbody = null;
+	      expr.filters = expr.setbody = null;
 	    }
 	    if(expr.set){
 	      touched.set = !ext? expr.set : function(ctx, value){
@@ -2131,7 +2141,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      if(typeof handler === 'string'){
 	        handler = wrapHander(handler);
 	      }
-	      if(_.typeOf(reg) === 'RegExp') reg = reg.toString().slice(1, -1);
+	      if(_.typeOf(reg) === 'regexp') reg = reg.toString().slice(1, -1);
 
 	      reg = reg.replace(/\{(\w+)\}/g, replaceFn)
 	      retain = _.findSubCapture(reg) + 1; 
@@ -2629,7 +2639,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	  var body = buffer.get || buffer;
 	  var setbody = buffer.set;
-	  return node.expression(body, setbody, !this.depend.length);
+	  return node.expression(body, setbody, !this.depend.length, buffer.filters);
 	}
 
 
@@ -2638,25 +2648,34 @@ return /******/ (function(modules) { // webpackBootstrap
 	op.filter = function(){
 	  var left = this.assign();
 	  var ll = this.eat('|');
-	  var buffer = [], setBuffer, prefix,
+	  var buffer = [], filters,setBuffer, prefix,
 	    attr = "t", 
 	    set = left.set, get, 
 	    tmp = "";
 
 	  if(ll){
-	    if(set) setBuffer = [];
+	    if(set) {
+	      setBuffer = [];
+	      filters = [];
+	    }
 
 	    prefix = "(function(" + attr + "){";
 
 	    do{
-	      tmp = attr + " = " + ctxName + "._f_('" + this.match('IDENT').value+ "' ).get.call( "+_.ctxName +"," + attr ;
+	      var filterName = this.match('IDENT').value;
+	      tmp = attr + " = " + ctxName + "._f_('" + filterName + "' ).get.call( "+_.ctxName +"," + attr ;
 	      if(this.eat(':')){
 	        tmp +=", "+ this.arguments("|").join(",") + ");"
 	      }else{
 	        tmp += ');'
 	      }
 	      buffer.push(tmp);
-	      setBuffer && setBuffer.unshift( tmp.replace(" ).get.call", " ).set.call") );
+	      
+	      if(set){
+	        // only in runtime ,we can detect  whether  the filter has a set function. 
+	        filters.push(filterName);
+	        setBuffer.unshift( tmp.replace(" ).get.call", " ).set.call") );
+	      }
 
 	    }while(ll = this.eat('|'));
 	    buffer.push("return " + attr );
@@ -2671,7 +2690,9 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    }
 	    // the set function is depend on the filter definition. if it have set method, the set will work
-	    return this.getset(get, set);
+	    var ret = getset(get, set);
+	    ret.filters = filters;
+	    return ret;
 	  }
 	  return left;
 	}
@@ -2682,8 +2703,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	  var left = this.condition(), ll;
 	  if(ll = this.eat(['=', '+=', '-=', '*=', '/=', '%='])){
 	    if(!left.set) this.error('invalid lefthand expression in assignment expression');
-	    return this.getset( left.set.replace( "," + _.setName, "," + this.condition().get ).replace("'='", "'"+ll.type+"'"), left.set);
-	    // return this.getset('(' + left.get + ll.type  + this.condition().get + ')', left.set);
+	    return getset( left.set.replace( "," + _.setName, "," + this.condition().get ).replace("'='", "'"+ll.type+"'"), left.set);
+	    // return getset('(' + left.get + ll.type  + this.condition().get + ')', left.set);
 	  }
 	  return left;
 	}
@@ -2694,7 +2715,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	  var test = this.or();
 	  if(this.eat('?')){
-	    return this.getset([test.get + "?", 
+	    return getset([test.get + "?", 
 	      this.assign().get, 
 	      this.match(":").type, 
 	      this.assign().get].join(""));
@@ -2710,7 +2731,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  var left = this.and();
 
 	  if(this.eat('||')){
-	    return this.getset(left.get + '||' + this.or().get);
+	    return getset(left.get + '||' + this.or().get);
 	  }
 
 	  return left;
@@ -2722,7 +2743,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  var left = this.equal();
 
 	  if(this.eat('&&')){
-	    return this.getset(left.get + '&&' + this.and().get);
+	    return getset(left.get + '&&' + this.and().get);
 	  }
 	  return left;
 	}
@@ -2736,7 +2757,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  var left = this.relation(), ll;
 	  // @perf;
 	  if( ll = this.eat(['==','!=', '===', '!=='])){
-	    return this.getset(left.get + ll.type + this.equal().get);
+	    return getset(left.get + ll.type + this.equal().get);
 	  }
 	  return left
 	}
@@ -2749,7 +2770,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  var left = this.additive(), ll;
 	  // @perf
 	  if(ll = (this.eat(['<', '>', '>=', '<=']) || this.eat('IDENT', 'in') )){
-	    return this.getset(left.get + ll.value + this.relation().get);
+	    return getset(left.get + ll.value + this.relation().get);
 	  }
 	  return left
 	}
@@ -2760,7 +2781,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	op.additive = function(){
 	  var left = this.multive() ,ll;
 	  if(ll= this.eat(['+','-']) ){
-	    return this.getset(left.get + ll.value + this.additive().get);
+	    return getset(left.get + ll.value + this.additive().get);
 	  }
 	  return left
 	}
@@ -2772,7 +2793,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	op.multive = function(){
 	  var left = this.range() ,ll;
 	  if( ll = this.eat(['*', '/' ,'%']) ){
-	    return this.getset(left.get + ll.type + this.multive().get);
+	    return getset(left.get + ll.type + this.multive().get);
 	  }
 	  return left;
 	}
@@ -2784,7 +2805,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    right = this.unary();
 	    var body = 
 	      "(function(start,end){var res = [],step=end>start?1:-1; for(var i = start; end>start?i <= end: i>=end; i=i+step){res.push(i); } return res })("+left.get+","+right.get+")"
-	    return this.getset(body);
+	    return getset(body);
 	  }
 
 	  return left;
@@ -2800,7 +2821,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	op.unary = function(){
 	  var ll;
 	  if(ll = this.eat(['+','-','~', '!'])){
-	    return this.getset('(' + ll.type + this.unary().get + ')') ;
+	    return getset('(' + ll.type + this.unary().get + ')') ;
 	  }else{
 	    return this.member()
 	  }
@@ -2926,14 +2947,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	      this.next();
 	      var value = "" + ll.value;
 	      var quota = ~value.indexOf("'")? "\"": "'" ;
-	      return this.getset(quota + value + quota);
+	      return getset(quota + value + quota);
 	    case 'NUMBER':
 	      this.next();
-	      return this.getset( "" + ll.value );
+	      return getset( "" + ll.value );
 	    case "IDENT":
 	      this.next();
 	      if(isKeyWord(ll.value)){
-	        return this.getset( ll.value );
+	        return getset( ll.value );
 	      }
 	      return ll.value;
 	    default: 
@@ -2990,11 +3011,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	  this.match('(');
 	  var res = this.filter()
 	  res.get = '(' + res.get + ')';
+	  res.set = res.set;
 	  this.match(')');
 	  return res;
 	}
 
-	op.getset = function(get, set){
+	function getset(get, set){
 	  return {
 	    get: get,
 	    set: set
@@ -3045,12 +3067,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	      track: track
 	    }
 	  },
-	  expression: function( body, setbody, constant ){
+	  expression: function( body, setbody, constant, filters ){
 	    return {
 	      type: "expression",
 	      body: body,
 	      constant: constant || false,
-	      setbody: setbody || false
+	      setbody: setbody || false,
+	      filters: filters
 	    }
 	  },
 	  text: function(text){
@@ -3772,7 +3795,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      if(altGroup.destroy)  altGroup.destroy(true);
 	    }
 
-	    if( nType === 'Object' ) rawNewValue = newValue;
+	    if( nType === 'object' ) rawNewValue = newValue;
 
 	    if(track === true){
 	      updateSimple( newList, oldList,  rawNewValue );
@@ -3835,7 +3858,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	};
 
 	function getListFromValue(value, type){
-	  return type === 'Array'? value: (type === 'Object'? _.keys(value) :  []);
+	  return type === 'array'? value: (type === 'object'? _.keys(value) :  []);
 	}
 
 
@@ -5004,7 +5027,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    // stable watch is dirty
 	    var stableDirty =  this._digest(true);
 
-	    if( n > 0 && stableDirty && this.$emit) {
+	    if( (n > 0 || stableDirty) && this.$emit) {
 	      this.$emit("$update");
 	      if (this.devtools) {
 	        this.devtools.emit("flush", this)
@@ -5069,11 +5092,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	        eq = true; 
 
 	        // !Object
-	        if( !(tnow === 'Object' && tlast==='Object' && watcher.deep) ){
+	        if( !(tnow === 'object' && tlast==='object' && watcher.deep) ){
 	          // Array
-	          if( tnow === 'Array' && ( tlast=='undefined' || tlast === 'Array') ){
+	          if( tnow === 'array' && ( tlast=='undefined' || tlast === 'array') ){
 	            diff = diffArray(now, watcher.last || [], watcher.diff)
-	            if( tlast !== 'Array' || diff === true || diff.length ) dirty = true;
+	            if( tlast !== 'array' || diff === true || diff.length ) dirty = true;
 	          }else{
 	            eq = _.equals( now, last );
 	            if( !eq || watcher.force ){
@@ -5096,7 +5119,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      }
 	    }
 	    if(dirty && !watcher.test){
-	      if(tnow === 'Object' && watcher.deep || tnow === 'Array'){
+	      if(tnow === 'object' && watcher.deep || tnow === 'array'){
 	        watcher.last = _.clone(now);
 	      }else{
 	        watcher.last = now;
