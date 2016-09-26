@@ -46,10 +46,10 @@
             Option two can be something else and selecting it will deselect option one
           </label>
         </div>
-        <div class="form-group" ng-repeat>
-        <!-- no wrap in {} is allowed -->
-        {textarea}
-        <textarea class="form-control" rows="3" r-model='textarea'>hahah</textarea>
+        <div class="form-group">
+          <!-- no wrap in {} is allowed -->
+          {textarea}
+          <textarea class="form-control" rows="3" r-model='textarea'>hahah</textarea>
         </div>
         <p>{select}</p>
         <select class="form-control" id='select' r-model='select'>
@@ -77,28 +77,26 @@
       name: 'r-option',
       template: '<option ref=option value={value}>{#inc this.$body}</option>',
       init: function(){
-        this.$watch('value', this._checkSelect.bind(this))
+        this.$watch('value', this._checkSelect.bind(this));
       },
       _checkSelect: function(){
         var selectNode = this.findParent();
         if(selectNode._tid) return;
         selectNode._tid = setTimeout(function(){
           selectNode._tid = 0;
-
-        },0)
+        },0);
       },
       findParent: function(){
         var selectNode = this.$refs.option.parentNode;
         if(selectNode && selectNode.tagName === 'SELECT') return selectNode;
       },
       destroy: function(){
-        this.supr(  )
+        this.supr()
         this._checkSelect();
       }
+    });
 
-
-    })
-    var Modal = Regular.extend({ template: '#form'})
+    var Modal = Regular.extend({template: '#form'})
       .filter("join", {
         set: function(str){
           return str.split(",");
@@ -110,7 +108,7 @@
 
     var app = new Modal({
       data: {
-        list: [{}],
+        list: [],
         select: '11'
       }
     }).$inject("#app");
@@ -120,14 +118,12 @@
       if(value.indexOf("@") === -1){
         app.data.email = value + "@";
       }
-    })
+    });
     app.$watch("select", function(value){
       if(value == 2){
         app.data.select = 4
       }
-    })
-
-
+    });
 
     </script>
   </body>

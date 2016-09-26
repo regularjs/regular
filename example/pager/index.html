@@ -6,54 +6,27 @@
     <link rel="stylesheet" href="pager.css">
     <script src="../../dist/regular.js"></script>
     <script src="pager.js"></script>
-    <script type='text/tpl' id='tpl'>
-
-
-<div>
-  {#inc $body}
-
-</div>
-
-
-
-<button de-click={total = total + 1}>total+1</button>
-  <pager ref='hello' total={Math.floor(total/20)} current={current} title.cmpl='<div>{total}</div>'  title={} >
-bdajldasjkl
-</pager>
-<pager total={this.$refs.hello.data.current+1} ref='pager2' current={current} title.cmpl='<h2>{current + 10000}</h2>'></pager>
-
-
-    </script>
-
   </head>
   <body>
 
     <div id="app"> </div>
-
-    <script>
-    // //1. nest style
-
-    Regular.filter('compile', function(value){
-      return this.$compile(value)
-    })
-    var app = new Regular({
-      template: '#tpl',
-      data: {total: 100, current:10},
-      config: function(data){
-        console.log(data)
-      },
-      go: function(page){
-        this.data.current = page;
-      } 
-    } )
-    app.$inject("#app");
-
-    setTimeout(function(){
-      app.$update('total', 1000)
-    },1000)
-
-
+    
+    <script type='text/tpl' id='tpl'>
+      <button de-click={total = total + 1}>total+1</button>
+      <pager ref='pager' total={Math.floor(total/20)} current={current} title.cmpl='<div>{total}</div>' ></pager>
+      <input ref='goto' type="number" value="{current}" max="{this.$refs.pager.data.total}" min=1 >
+      <button de-click={current = +this.$refs.goto.value}>go</button>
     </script>
 
+    <script>
+      var app = new Regular({
+        template: '#tpl',
+        data: {total: 100, current:3},
+        config: function(data){
+          console.log(data)
+        }
+      });
+      app.$inject("#app");
+    </script>
   </body>
 </html>

@@ -5,71 +5,71 @@
     <title>Regular.js • Syntax-Editor</title>
     <link rel="stylesheet" href="codemirror.css"/>
     <style>
-    /* neo theme for codemirror */
+      /* neo theme for codemirror */
 
-    /* Color scheme */
+      /* Color scheme */
 
-    .cm-s-neo.CodeMirror {
-      background-color:#ffffff;
-      color:#2e383c;
-      line-height:1.4375;
-      font-family: Menlo,Monaco,"Andale Mono","lucida console","Courier New",monospace !important;
-    }
-    .cm-s-neo .cm-comment {color:#75787b}
-    .cm-s-neo .cm-keyword, .cm-s-neo .cm-property {color:#1d75b3}
-    .cm-s-neo .cm-atom,.cm-s-neo .cm-number {color:#75438a}
-    .cm-s-neo .cm-node,.cm-s-neo .cm-tag {color:#9c3328}
-    .cm-s-neo .cm-string {color:#b35e14}
-    .cm-s-neo .cm-variable,.cm-s-neo .cm-qualifier {color:#047d65}
+      .cm-s-neo.CodeMirror {
+        background-color:#ffffff;
+        color:#2e383c;
+        line-height:1.4375;
+        font-family: Menlo,Monaco,"Andale Mono","lucida console","Courier New",monospace !important;
+      }
+      .cm-s-neo .cm-comment {color:#75787b}
+      .cm-s-neo .cm-keyword, .cm-s-neo .cm-property {color:#1d75b3}
+      .cm-s-neo .cm-atom,.cm-s-neo .cm-number {color:#75438a}
+      .cm-s-neo .cm-node,.cm-s-neo .cm-tag {color:#9c3328}
+      .cm-s-neo .cm-string {color:#b35e14}
+      .cm-s-neo .cm-variable,.cm-s-neo .cm-qualifier {color:#047d65}
 
 
-    /* Editor styling */
+      /* Editor styling */
 
-    .cm-s-neo pre {
-      padding:0;
-    }
+      .cm-s-neo pre {
+        padding:0;
+      }
 
-    .cm-s-neo .CodeMirror-gutters {
-      border:none;
-      border-right:10px solid transparent;
-      background-color:transparent;
-    }
+      .cm-s-neo .CodeMirror-gutters {
+        border:none;
+        border-right:10px solid transparent;
+        background-color:transparent;
+      }
 
-    .cm-s-neo .CodeMirror-linenumber {
-      padding:0;
-      color:#e0e2e5;
-    }
+      .cm-s-neo .CodeMirror-linenumber {
+        padding:0;
+        color:#e0e2e5;
+      }
 
-    .cm-s-neo div.CodeMirror-cursor {
-      width: auto;
-      border: 0;
-      background: rgba(155,157,162,0.37);
-      z-index: 1;
-    }
+      .cm-s-neo div.CodeMirror-cursor {
+        width: auto;
+        border: 0;
+        background: rgba(155,157,162,0.37);
+        z-index: 1;
+      }
 
-    .editor{
-      width: 50%;
-      display: inline-block;
+      .editor{
+        width: 50%;
+        display: inline-block;
 
-    }
-    .template, .input{
-      border: 1px solid #ccc;
-    }
-    #dashboard{
-      margin-top: 24px;
-      padding: 10px;
-      border: 2px solid #ccc;
-    }
-    .btn{
-      border-radius: 5px;
-      background-color:#34495e;
-      color: #fff;
-      border:none;
-      cursor: pointer;
-      font-weight: bold;
-      padding: .3em .8em;
-      font-size: 16px;
-    }
+      }
+      .template, .input{
+        border: 1px solid #ccc;
+      }
+      #dashboard{
+        margin-top: 24px;
+        padding: 10px;
+        border: 2px solid #ccc;
+      }
+      .btn{
+        border-radius: 5px;
+        background-color:#34495e;
+        color: #fff;
+        border:none;
+        cursor: pointer;
+        font-weight: bold;
+        padding: .3em .8em;
+        font-size: 16px;
+      }
 
     </style>
 
@@ -85,12 +85,14 @@
       <div class="editor">
         <h3>template：</h3>
         <div class="template">
-        <textarea id="" cols="30" rows="10"></textarea>
+          <textarea ref="taTemplate" cols="30" rows="10"></textarea>
         </div>
       </div>
       <div class="editor">
         <h3>data: </h3>
-        <div class="input"><textarea id="" cols="30" rows="10"></textarea></div>
+        <div class="input">
+          <textarea ref="iptTemplate" cols="30" rows="10"></textarea>
+        </div>
       </div>
       <button class='btn' on-click={this.run()}>运行</button>
       <h3>result: </h3>
@@ -98,77 +100,77 @@
     </script>
 
     <script>
+      var SyntaxEditor = Regular.extend({
+        template: '#syntax-editor',
+        init: function(){
+          var self = this;
+          var data = this.data;
 
-
-    var SyntaxEditor = Regular.extend({
-      template: '#syntax-editor',
-      init: function(){
-        var self = this;
-        var data = this.data;
-        // initialize codemirror
-        var templateEditor = CodeMirror.fromTextArea(this.element.querySelector('.template textarea'), {
-            mode: 'html',
-            theme: 'neo',
-            tabSize: 2,
-            autofocus: true,
-            dragDrop: false,
-            extraKeys: {
-              Tab: function(cm) {
-                  var spaces = new Array(cm.getOption("indentUnit") + 1).join(" ")
-                  cm.replaceSelection(spaces, "end", "+input")
-              }
-            }
-        });
-        templateEditor.on('change', function(mirror){
-          self.$update('template', mirror.getValue())
-        });
-
-        // initialize codemirror
-        var inputEditor = CodeMirror.fromTextArea(this.element.querySelector('.input textarea' ), {
-            mode: 'javascript',
-            theme: 'neo',
-            tabSize: 2,
-            autofocus: true,
-            dragDrop: false,
-            extraKeys: {
+          // initialize codemirror
+          var templateEditor = CodeMirror.fromTextArea(this.$refs.taTemplate, {
+              mode: 'html',
+              theme: 'neo',
+              tabSize: 2,
+              autofocus: true,
+              dragDrop: false,
+              extraKeys: {
                 Tab: function(cm) {
                     var spaces = new Array(cm.getOption("indentUnit") + 1).join(" ")
                     cm.replaceSelection(spaces, "end", "+input")
                 }
-            }
-        });
+              }
+          });
+          templateEditor.on('change', function(mirror){
+            self.$update('template', mirror.getValue())
+          });
 
-        inputEditor.on('change', function(mirror){
-          self.$update('input', mirror.getValue())
-        });
+          // initialize codemirror
+          var inputEditor = CodeMirror.fromTextArea(this.$refs.iptTemplate, {
+              mode: 'javascript',
+              theme: 'neo',
+              tabSize: 2,
+              autofocus: true,
+              dragDrop: false,
+              extraKeys: {
+                  Tab: function(cm) {
+                      var spaces = new Array(cm.getOption("indentUnit") + 1).join(" ")
+                      cm.replaceSelection(spaces, "end", "+input")
+                  }
+              }
+          });
+
+          inputEditor.on('change', function(mirror){
+            self.$update('input', mirror.getValue())
+          });
 
 
-        this.$watch('input', function(){
+          this.$watch('input', function(){
+            try{
+              var input = new Function("return "+ data.input )();
+            }catch(e){}
+            if(input && self.component) self.component.$update(input)
+          })
+
+
+
+        },
+        run: function(){
+          var data = this.data;
+          var template = data.template;
           try{
             var input = new Function("return "+ data.input )();
-          }catch(e){}
-          if(input && self.component) self.component.$update(input)
-        })
-      },
-      run: function(){
-        var data = this.data;
-        var template = data.template;
-        try{
-          var input = new Function("return "+ data.input )();
-        }catch(e){
-          console.error(data.input + ' cant be Parsed By JSON')
-        }
+          }catch(e){
+            console.error(data.input + ' cant be Parsed By JSON')
+          }
 
-        if(input && template){
-          this.component && this.component.destroy();
-          this.component = new Regular({template: template, data:input}).inject('#dashboard')
+          if(input && template){
+            this.component && this.component.destroy();
+            this.component = new Regular({template: template, data:input}).$inject('#dashboard')
+          }
         }
-      }
-    }) 
-  
+      }) 
 
-    var editor = new SyntaxEditor().inject('#editor');
-    
+      var editor = new SyntaxEditor().$inject('#editor');
 
     </script>
     
