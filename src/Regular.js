@@ -296,6 +296,7 @@ Regular.implement({
     // destroy event wont propgation;
     this.$emit("$destroy");
     this._watchers = null;
+    this._watchersForStable = null;
     this.group && this.group.destroy(true);
     this.group = null;
     this.parentNode = null;

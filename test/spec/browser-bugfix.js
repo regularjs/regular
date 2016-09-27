@@ -759,6 +759,22 @@ it('bugfix #50', function(){
     
   })
 
+  it('bugfix #123', function(){
+    // _watchersForStable should be removed
+    Regular.extend({
+      template: 'djaklsdjaldjaldjsalkdjl',
+      name: 'test-a1',
+      info: function(){
+        return '1'
+      }
+    })
+    var watcher = new Regular({
+      template: '<div r-html={this.$refs.a.info()}></div><test-a1 ref=a></test-a1>'
+    });
+    watcher.destroy();
+    watcher.$update();
+  })
+
   // it("bug #122: paren Expression shouldn't change the set property it wrapped", function(){
   //   var Sub = Regular.extend({
   //     name: 'Sub',
