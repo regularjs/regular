@@ -4,9 +4,24 @@ var config = require("../../src/config.js");
 
 var Regular = require("../../src/index.js");
 
+var ao = expect.Assertion.prototype;
+
 /**
  * setup template
  */
+
+ao.typeEqual = function(list){
+  if(typeof list == 'string') list = list.split(',')
+  var types = this.obj.map(function(item){
+    return item.type
+  });
+  this.assert(
+      expect.eql(types, list) 
+    , function(){ return 'expected ' + list + ' to equal ' + types }
+    , function(){ return 'expected ' + list + ' to not equal ' + types });
+  return this;
+}
+
 
 
 var l = function(input){
@@ -71,14 +86,6 @@ describe("Lexer under mode 1 and 2", function(){
 
 })
 
-describe("Regular.parse", function(){
-  it("Regular.parse should work in nodejs", function(){
-    var content = Regular.parse("{title}");
-    expect(content).to.eql([ { type: 'expression',
-    body: 'c._sg_(\'title\', d, e)',
-    constant: false,
-    setbody: 'c._ss_(\'title\',p_,d, \'=\', 1)' } ])
-  })
-})
+
 
 

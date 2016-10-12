@@ -127,9 +127,11 @@ var Regular = function(definition, options){
 }
 
 // check if regular devtools hook exists
-var devtools = window.__REGULAR_DEVTOOLS_GLOBAL_HOOK__;
-if (devtools) {
-  Regular.prototype.devtools = devtools;
+if(typeof window !== 'undefined'){
+  var devtools = window.__REGULAR_DEVTOOLS_GLOBAL_HOOK__;
+  if (devtools) {
+    Regular.prototype.devtools = devtools;
+  }
 }
 
 walkers && (walkers.Regular = Regular);

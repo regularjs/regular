@@ -201,8 +201,8 @@ gulp.task('cover', function(cb){
 gulp.task('test', ['jshint', 'karma'])
 
 // for travis
-gulp.task('travis', function(cb){
-  runSequence( 'jshint' , 'testbundle', 'karma', cb );
+gulp.task('travis',  function(cb){
+  runSequence( 'jshint' ,  'testbundle', 'mocha' , 'karma', cb );
 })
 
 
@@ -224,6 +224,18 @@ gulp.task('casper', function(){
 
 })
 
+
+gulp.task('mocha', function() {
+
+  return gulp.src(['test/spec/test-*.js'])
+    .pipe(mocha({reporter: 'spec' }) )
+    .on('error', function(){
+      gutil.log.apply(this, arguments);
+      console.log('\u0007');
+    })
+    .on('end', function(){
+    });
+});
 
 
 function wrap(fn){
