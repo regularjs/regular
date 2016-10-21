@@ -130,7 +130,7 @@ var methods = {
   },
   // private digest logic
   _digest: function(stable){
-
+    if(this._mute) return;
     var watchers = !stable? this._watchers: this._watchersForStable;
     var dirty = false, children, watcher, watcherDirty;
     var len = watchers && watchers.length;
