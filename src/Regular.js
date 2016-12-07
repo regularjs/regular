@@ -91,14 +91,26 @@ var Regular = function(definition, options){
   this.config && this.config(this.data);
   this.$emit("$afterConfig");
 
+  var extra = options.extra;
+  if(extra && extra.$$modify){
+    extra.$$modify(this);
+  }
+
   var body = this._body;
   this._body = null;
 
   if(body && body.ast && body.ast.length){
+    // @0.6.0
+    var modifyBodyComponent = this.modifyBodyComponent;
+    if( typeof modifyBodyComponent  === 'function'){
+      modifyBodyComponent = modifyBodyComponent.bind(this)
+      extra = _.createObject(extra);
+      extra.$$modify = modifyBodyComponent;
+    }
     this.$body = _.getCompileFn(body.ast, body.ctx , {
       outer: this,
       namespace: options.namespace,
-      extra: options.extra,
+      extra: extra,
       record: true
     })
   }

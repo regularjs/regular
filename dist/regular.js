@@ -585,7 +585,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 	    // @IE fix IE9- input type can't assign after value
-	    if(attr.name === 'type') attr.priority = MAX_PRIORITY+1;
+	    if(attr.name === 'type') attr.priority = MAX_PRIORITY + 1;
 
 	    var directive = Component.directive( attr.name );
 	    if( directive ) {
@@ -754,25 +754,40 @@ return /******/ (function(modules) { // webpackBootstrap
 	var cachedSetTimeout;
 	var cachedClearTimeout;
 
+	function defaultSetTimout() {
+	    throw new Error('setTimeout has not been defined');
+	}
+	function defaultClearTimeout () {
+	    throw new Error('clearTimeout has not been defined');
+	}
 	(function () {
 	    try {
-	        cachedSetTimeout = setTimeout;
-	    } catch (e) {
-	        cachedSetTimeout = function () {
-	            throw new Error('setTimeout is not defined');
+	        if (typeof setTimeout === 'function') {
+	            cachedSetTimeout = setTimeout;
+	        } else {
+	            cachedSetTimeout = defaultSetTimout;
 	        }
+	    } catch (e) {
+	        cachedSetTimeout = defaultSetTimout;
 	    }
 	    try {
-	        cachedClearTimeout = clearTimeout;
-	    } catch (e) {
-	        cachedClearTimeout = function () {
-	            throw new Error('clearTimeout is not defined');
+	        if (typeof clearTimeout === 'function') {
+	            cachedClearTimeout = clearTimeout;
+	        } else {
+	            cachedClearTimeout = defaultClearTimeout;
 	        }
+	    } catch (e) {
+	        cachedClearTimeout = defaultClearTimeout;
 	    }
 	} ())
 	function runTimeout(fun) {
 	    if (cachedSetTimeout === setTimeout) {
 	        //normal enviroments in sane situations
+	        return setTimeout(fun, 0);
+	    }
+	    // if setTimeout wasn't available but was latter defined
+	    if ((cachedSetTimeout === defaultSetTimout || !cachedSetTimeout) && setTimeout) {
+	        cachedSetTimeout = setTimeout;
 	        return setTimeout(fun, 0);
 	    }
 	    try {
@@ -793,6 +808,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	function runClearTimeout(marker) {
 	    if (cachedClearTimeout === clearTimeout) {
 	        //normal enviroments in sane situations
+	        return clearTimeout(marker);
+	    }
+	    // if clearTimeout wasn't available but was latter defined
+	    if ((cachedClearTimeout === defaultClearTimeout || !cachedClearTimeout) && clearTimeout) {
+	        cachedClearTimeout = clearTimeout;
 	        return clearTimeout(marker);
 	    }
 	    try {
@@ -1386,14 +1406,26 @@ return /******/ (function(modules) { // webpackBootstrap
 	  this.config && this.config(this.data);
 	  this.$emit("$afterConfig");
 
+	  var extra = options.extra;
+	  if(extra && extra.$$modify){
+	    extra.$$modify(this);
+	  }
+
 	  var body = this._body;
 	  this._body = null;
 
 	  if(body && body.ast && body.ast.length){
+	    // @0.6.0
+	    var modifyBodyComponent = this.modifyBodyComponent;
+	    if( typeof modifyBodyComponent  === 'function'){
+	      modifyBodyComponent = modifyBodyComponent.bind(this)
+	      extra = _.createObject(extra);
+	      extra.$$modify = modifyBodyComponent;
+	    }
 	    this.$body = _.getCompileFn(body.ast, body.ctx , {
 	      outer: this,
 	      namespace: options.namespace,
-	      extra: options.extra,
+	      extra: extra,
 	      record: true
 	    })
 	  }
@@ -1422,9 +1454,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 	// check if regular devtools hook exists
-	var devtools = window.__REGULAR_DEVTOOLS_GLOBAL_HOOK__;
-	if (devtools) {
-	  Regular.prototype.devtools = devtools;
+	if(typeof window !== 'undefined'){
+	  var devtools = window.__REGULAR_DEVTOOLS_GLOBAL_HOOK__;
+	  if (devtools) {
+	    Regular.prototype.devtools = devtools;
+	  }
 	}
 
 	walkers && (walkers.Regular = Regular);
@@ -1591,6 +1625,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    // destroy event wont propgation;
 	    this.$emit("$destroy");
 	    this._watchers = null;
+	    this._watchersForStable = null;
 	    this.group && this.group.destroy(true);
 	    this.group = null;
 	    this.parentNode = null;
@@ -5037,7 +5072,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  },
 	  // private digest logic
 	  _digest: function(stable){
-
+	    if(this._mute) return;
 	    var watchers = !stable? this._watchers: this._watchersForStable;
 	    var dirty = false, children, watcher, watcherDirty;
 	    var len = watchers && watchers.length;

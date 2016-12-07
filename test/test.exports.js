@@ -12,5 +12,6 @@ require("./spec/browser-directive.js");
 require("./spec/browser-filter.js");
 require("./spec/browser-watcher.js");
 require("./spec/browser-nested.js");
+require("./spec/browser-modifier.js");
 require("./spec/test-util.js");
 require("./spec/test-event.js");

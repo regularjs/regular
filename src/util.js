@@ -473,7 +473,7 @@ _.fixTagAST = function( tagAST, Component ){
 
 
     // @IE fix IE9- input type can't assign after value
-    if(attr.name === 'type') attr.priority = MAX_PRIORITY+1;
+    if(attr.name === 'type') attr.priority = MAX_PRIORITY + 1;
 
     var directive = Component.directive( attr.name );
     if( directive ) {
