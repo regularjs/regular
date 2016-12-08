@@ -1,13 +1,14 @@
-require('./helper/shim.js')();
+require('./helper/shim')();
 
 
 
 var _  = module.exports;
-var entities = require('./helper/entities.js');
+var entities = require('./helper/entities');
 var slice = [].slice;
 var o2str = ({}).toString;
 var win = typeof window !=='undefined'? window: global;
 var MAX_PRIORITY = 9999;
+var config = require('./config');
 
 
 _.noop = function(){};
@@ -449,7 +450,14 @@ _.isGroup = function(group){
   return group.inject || group.$inject;
 }
 
+_.blankReg = /\s+/; 
+
 _.getCompileFn = function(source, ctx, options){
+  return function( passedOptions ){
+    if( passedOptions && options ) _.extend( passedOptions , options );
+    else passedOptions = options;
+    return ctx.$compile(source, passedOptions )
+  }
   return ctx.$compile.bind(ctx,source, options)
 }
 
@@ -536,6 +544,42 @@ _.getParamObj = function(component, param){
   }
   return paramObj;
 }
+_.eventReg = /^on-(\w[-\w]+)$/;
+
+_.toText = function(obj){
+  return obj == null ? "": "" + obj;
+}
+
+
+// hogan
+// https://github.com/twitter/hogan.js
+// MIT
+_.escape = (function(){
+  var rAmp = /&/g,
+      rLt = /</g,
+      rGt = />/g,
+      rApos = /\'/g,
+      rQuot = /\"/g,
+      hChars = /[&<>\"\']/;
+
+  function ignoreNullVal(val) {
+    return String((val === undefined || val == null) ? '' : val);
+  }
+
+  return function (str) {
+    str = ignoreNullVal(str);
+    return hChars.test(str) ?
+      str
+        .replace(rAmp, '&amp;')
+        .replace(rLt, '&lt;')
+        .replace(rGt, '&gt;')
+        .replace(rApos, '&#39;')
+        .replace(rQuot, '&quot;') :
+      str;
+  }
+
+})();
+
 
 
 

@@ -155,6 +155,19 @@ describe("Interplation", function(){
     destroy(component, container)
   })
 
+  it("Invalid tag should throw Error" , function(){
+    var Component = Regular.extend();
+
+    expect(function(){
+      Regular.parse("<script>var</script>")
+    }).to.throwError();
+
+    expect(function(){
+      Regular.parse("<style>body</style>")
+    }).to.throwError();
+
+  })
+
   it("Invalid Lefthand Expression should throw Error" , function(){
     var component = new Regular({
       data: {name: 2}
@@ -178,3 +191,62 @@ describe("Interplation", function(){
   })
 
 })
+
+describe('String inteplation', function(){
+
+  it("auto covert 'String inteplation' to Expression", function(){
+
+    var component = new Regular({
+      template: "<div ref=div title='haha {name} haha' name='{items.join(\",\")}'></div>",
+      data: {
+        name: "hehe",
+        items: [1,2,3]
+      }
+    })
+
+    expect(component.$refs.div.getAttribute('title')).to.equal('haha hehe haha');
+    expect(component.$refs.div.getAttribute('name')).to.equal('1,2,3');
+
+  })
+  it("Directive with String inteplation", function(done){
+
+    var Component = Regular.extend({ 
+      template: "<div r-test='haa {name} haha' ></div>"
+    });
+    Component.directive({
+      'r-test': {
+        link: function(elem, value){
+          expect(value.type).equal('expression')
+          done()
+        }
+      }
+    })
+
+    new Component;
+  })
+  it("Directive without PreCompile Interplation", function(done){
+
+    var Component = Regular.extend({ 
+      template: "<div r-test='haa {name} haha' ></div>"
+    });
+
+    Component.directive({
+      'r-test': {
+        nps: true,
+        link: function(elem, value){
+          expect(typeof value).equal('string')
+          done()
+        }
+
+      }
+    })
+
+    new Component();
+
+  })
+})
+
+
+
+
+

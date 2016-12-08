@@ -1,14 +1,14 @@
-var _ = require("../util.js");
+var _ = require("../util");
 
-var config = require("../config.js");
-var node = require("./node.js");
-var Lexer = require("./Lexer.js");
+var config = require("../config");
+var node = require("./node");
+var Lexer = require("./Lexer");
 var varName = _.varName;
 var ctxName = _.ctxName;
 var extName = _.extName;
 var isPath = _.makePredicate("STRING IDENT NUMBER");
 var isKeyWord = _.makePredicate("true false undefined null this Array Date JSON Math NaN RegExp decodeURI decodeURIComponent encodeURI encodeURIComponent parseFloat parseInt Object");
-
+var isInvalidTag = _.makePredicate("script style");
 
 
 
@@ -130,6 +130,10 @@ op.statement = function(){
 op.xml = function(){
   var name, attrs, children, selfClosed;
   name = this.match('TAG_OPEN').value;
+
+  if( isInvalidTag(name)){
+    this.error('Invalid Tag: ' + name);
+  }
   attrs = this.attrs();
   selfClosed = this.eat('/')
   this.match('>');
@@ -197,30 +201,9 @@ op.attvalue = function(mdf){
     case "STRING":
       this.next();
       var value = ll.value;
-      if(~value.indexOf(config.BEGIN) && ~value.indexOf(config.END) && mdf!=='cmpl'){
-        var constant = true;
-        var parsed = new Parser(value, { mode: 2 }).parse();
-        if(parsed.length === 1 && parsed[0].type === 'expression') return parsed[0];
-        var body = [];
-        parsed.forEach(function(item){
-          if(!item.constant) constant=false;
-          // silent the mutiple inteplation
-            body.push(item.body || "'" + item.text.replace(/'/g, "\\'") + "'");        
-        });
-        body = "[" + body.join(",") + "].join('')";
-        value = node.expression(body, null, constant);
-      }
       return value;
     case "EXPR_OPEN":
       return this.interplation();
-    // case "OPEN":
-    //   if(ll.value === 'inc' || ll.value === 'include'){
-    //     this.next();
-    //     return this.inc();
-    //   }else{
-    //     this.error('attribute value only support inteplation and {#inc} statement')
-    //   }
-    //   break;
     default:
       this.error('Unexpected token: '+ this.la())
   }
@@ -237,6 +220,9 @@ op.directive = function(){
     this.error('Undefined directive['+ name +']');
   }
 }
+
+
+
 
 
 // {{}}

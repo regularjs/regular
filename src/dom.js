@@ -1,3 +1,4 @@
+/*jshint -W082 */ 
 
 // thanks for angular && mootools for some concise&cross-platform  implemention
 // =====================================
@@ -9,7 +10,8 @@
 // license: MIT-style license. http://mootools.net
 
 
-
+if(typeof window !== 'undefined'){
+  
 var dom = module.exports;
 var env = require("./env");
 var _ = require("./util");
@@ -21,18 +23,18 @@ var noop = function(){}
 var namespaces = consts.NAMESPACE;
 
 dom.body = document.body;
-
 dom.doc = document;
+dom.tNode = tNode;
+
 
 // camelCase
-function camelCase(str){
+var camelCase = function (str){
   return ("" + str).replace(/-\D/g, function(match){
     return match.charAt(1).toUpperCase();
   });
 }
 
 
-dom.tNode = tNode;
 
 if(tNode.addEventListener){
   addEvent = function(node, type, fn) {
@@ -110,7 +112,7 @@ dom.id = function(id){
 }
 
 // createElement 
-dom.create = function(type, ns, attrs){
+dom.create = function(type, ns){
   if(ns === 'svg'){
     if(!env.svg) throw Error('the env need svg support')
     ns = namespaces.svg;
@@ -122,6 +124,7 @@ dom.create = function(type, ns, attrs){
 dom.fragment = function(){
   return document.createDocumentFragment();
 }
+
 
 
 
@@ -383,6 +386,8 @@ dom.nextReflow = dom.msie? function(callback){
     callback();
   })
 }: dom.nextFrame;
+
+}
 
 
 

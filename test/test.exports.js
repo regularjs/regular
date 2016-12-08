@@ -1,3 +1,17 @@
+var expect = require('expect.js');
+var ao = expect.Assertion.prototype;
+ao.typeEqual = function(list){
+  if(typeof list == 'string') list = list.split(',')
+  var types = this.obj.map(function(item){
+    return item.type
+  });
+  this.assert(
+      expect.eql(types, list) 
+    , function(){ return 'expected ' + list + ' to equal ' + types }
+    , function(){ return 'expected ' + list + ' to not equal ' + types });
+  return this;
+}
+
 
 require("./spec/browser-syntax.js");
 require("./spec/browser-bugfix.js");
@@ -14,3 +28,5 @@ require("./spec/browser-watcher.js");
 require("./spec/browser-nested.js");
 require("./spec/test-util.js");
 require("./spec/test-event.js");
+require("./spec/test-lexer.js");
+require("./spec/test-ssr.js");
