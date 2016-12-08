@@ -1,4 +1,4 @@
-var _ = require('../util.js');
+var _ = require('../util');
 
 function simpleDiff(now, old){
   var nlen = now.length;

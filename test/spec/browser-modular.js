@@ -10,6 +10,8 @@ function destroy(component, container){
 
 describe("test Regular's modular mechanism", function(){
 
+
+
   describe("Regular definition" , function(){
 
 

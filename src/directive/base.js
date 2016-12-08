@@ -1,8 +1,8 @@
 // Regular
-var _ = require("../util.js");
-var dom = require("../dom.js");
-var animate = require("../helper/animate.js");
-var Regular = require("../Regular.js");
+var _ = require("../util");
+var dom = require("../dom");
+var animate = require("../helper/animate");
+var Regular = require("../render/client");
 var consts = require("../const");
 var namespaces = consts.NAMESPACE;
 var OPTIONS = consts.OPTIONS
@@ -83,11 +83,17 @@ module.exports = {
       elem.style.display = "none";
     }
   },
-  'r-html': function(elem, value){
-    this.$watch(value, function(nvalue){
-      nvalue = nvalue || "";
-      dom.html(elem, nvalue)
-    }, {force: true, stable: true});
+  'r-html': {
+    ssr: function(value, tag){
+      tag.body = value;
+      return "";
+    },
+    link: function(elem, value){
+      this.$watch(value, function(nvalue){
+        nvalue = nvalue || "";
+        dom.html(elem, nvalue)
+      }, {force: true, stable: true});
+    }
   },
   'ref': {
     accept: consts.COMPONENT_TYPE + consts.ELEMENT_TYPE,

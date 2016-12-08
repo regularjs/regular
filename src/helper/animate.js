@@ -1,9 +1,10 @@
 var _ = require("../util");
-var dom  = require("../dom.js");
+var dom  = require("../dom");
 var animate = {};
-var env = require("../env.js");
+var env = require("../env");
 
 
+if(typeof window !== 'undefined'){
 var 
   transitionEnd = 'transitionend', 
   animationEnd = 'animationend', 
@@ -34,6 +35,7 @@ if(!('onanimationend' in window)){
     animationEnd += ' oAnimationEnd';
     animationProperty = 'oAnimation';
   }
+}
 }
 
 /**
@@ -68,6 +70,7 @@ animate.inject = function( node, refer ,direction, callback ){
       }
     }
   }else{
+    if(!node) return;
     dom.inject( node, refer, direction );
     if(node.onenter){
       node.onenter(callback)

@@ -1,5 +1,5 @@
-var _ = require("../util.js");
-var config = require("../config.js");
+var _ = require("../util");
+var config = require("../config");
 
 // some custom tag  will conflict with the Lexer progress
 var conflictTag = {"}": "{", "]": "["}, map1, map2;
@@ -123,7 +123,8 @@ lo.leave = function(state){
 Lexer.setup = function(){
   macro.END = config.END;
   macro.BEGIN = config.BEGIN;
-  //
+  
+  // living template lexer
   map1 = genMap([
     // INIT
     rules.ENTER_JST,

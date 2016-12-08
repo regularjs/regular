@@ -1,22 +1,29 @@
+/**
+ * render for component in browsers
+ */
 
-var env = require('./env.js');
-var Lexer = require("./parser/Lexer.js");
-var Parser = require("./parser/Parser.js");
-var config = require("./config.js");
-var _ = require('./util');
-var extend = require('./helper/extend.js');
+var env = require('../env');
+var Lexer = require('../parser/Lexer');
+var Parser = require('../parser/Parser');
+var config = require('../config');
+var _ = require('../util');
+var extend = require('../helper/extend');
+var shared = require('./shared');
 var combine = {};
 if(env.browser){
-  var dom = require("./dom.js");
-  var walkers = require('./walkers.js');
-  var Group = require('./group.js');
+  var dom = require("../dom");
+  var walkers = require('../walkers');
+  var Group = require('../group');
   var doc = dom.doc;
-  combine = require('./helper/combine.js');
+  combine = require('../helper/combine');
 }
-var events = require('./helper/event.js');
-var Watcher = require('./helper/watcher.js');
-var parse = require('./helper/parse.js');
-var filter = require('./helper/filter.js');
+var events = require('../helper/event');
+var Watcher = require('../helper/watcher');
+var parse = require('../helper/parse');
+var filter = require('../helper/filter');
+var ERROR = require('../const').ERROR;
+var nodeCursor = require('../helper/cursor');
+var shared = require('./shared');
 
 
 /**
@@ -30,105 +37,90 @@ var filter = require('./helper/filter.js');
 var Regular = function(definition, options){
   var prevRunning = env.isRunning;
   env.isRunning = true;
-  var node, template;
-
-  definition = definition || {};
-  var usePrototyeString = typeof this.template === 'string' && !definition.template;
+  var node, template, cursor, context = this, body, mountNode;
   options = options || {};
+  definition = definition || {};
 
-  definition.data = definition.data || {};
-  definition.computed = definition.computed || {};
-  if( this.data ) _.extend( definition.data, this.data );
-  if( this.computed ) _.extend( definition.computed, this.computed );
 
-  var listeners = this._eventListeners || [];
-  var normListener;
-  // hanle initialized event binding
-  if( definition.events){
-    normListener = _.normListener(definition.events);
-    if(normListener.length){
-      listeners = listeners.concat(normListener)
+
+  var dtemplate = definition.template;
+
+  if(env.browser) {
+
+    if( node = tryGetSelector( dtemplate ) ){
+      dtemplate = node;
     }
-    delete definition.events;
-  }
+    if( dtemplate && dtemplate.nodeType ){
+      definition.template = dtemplate.innerHTML
+    }
+    
+    mountNode = definition.mountNode;
+    if(typeof mountNode === 'string'){
+      mountNode = dom.find( mountNode );
+      if(!mountNode) throw Error('mountNode ' + mountNode + ' is not found')
+    } 
 
-  _.extend(this, definition, true);
-
-  if(this.$parent){
-     this.$parent._append(this);
-  }
-  this._children = [];
-  this.$refs = {};
-
-  template = this.template;
-
-  // template is a string (len < 16). we will find it container first
-  if((typeof template === 'string' && template.length < 16) && (node = dom.find(template))) {
-    template = node.innerHTML;
-  }
-  // if template is a xml
-  if(template && template.nodeType) template = template.innerHTML;
-  if(typeof template === 'string') {
-    template = new Parser(template).parse();
-    if(usePrototyeString) {
-    // avoid multiply compile
-      this.constructor.prototype.template = template;
+    if(mountNode){
+      cursor = nodeCursor(mountNode.firstChild)
+      delete definition.mountNode
     }else{
-      delete this.template;
+      cursor = options.cursor
     }
   }
 
-  this.computed = handleComputed(this.computed);
-  this.$root = this.$root || this;
-  // if have events
 
-  if(listeners && listeners.length){
-    listeners.forEach(function( item ){
-      this.$on(item.type, item.listener)
-    }.bind(this))
+
+  template = shared.initDefinition(context, definition)
+  
+
+  if(context.$parent){
+     context.$parent._append(context);
   }
-  this.$emit("$config");
-  this.config && this.config(this.data);
-  this.$emit("$afterConfig");
+  context._children = [];
+  context.$refs = {};
 
   var extra = options.extra;
   if(extra && extra.$$modify){
     extra.$$modify(this);
   }
-
-  var body = this._body;
-  this._body = null;
-
-  if(body && body.ast && body.ast.length){
-    // @0.6.0
-    var modifyBodyComponent = this.modifyBodyComponent;
+  context.$root = context.$root || context;
+  
+  if( body = context._body ){
+    context._body = null
+    var modifyBodyComponent = context.modifyBodyComponent;
     if( typeof modifyBodyComponent  === 'function'){
       modifyBodyComponent = modifyBodyComponent.bind(this)
       extra = _.createObject(extra);
       extra.$$modify = modifyBodyComponent;
     }
-    this.$body = _.getCompileFn(body.ast, body.ctx , {
-      outer: this,
-      namespace: options.namespace,
-      extra: extra,
-      record: true
-    })
+    if(body.ast && body.ast.length){
+      context.$body = _.getCompileFn(body.ast, body.ctx , {
+        outer: context,
+        namespace: options.namespace,
+        extra: extra,
+        record: true
+      })
+    }
   }
+
   // handle computed
   if(template){
-    this.group = this.$compile(template, {namespace: options.namespace});
-    combine.node(this);
+    context.group = context.$compile(template, {
+      namespace: options.namespace,
+      cursor: cursor
+    });
+    combine.node(context);
   }
 
 
-  if(!this.$parent) this.$update();
-  this.$ready = true;
-  this.$emit("$init");
-  if( this.init ) this.init(this.data);
-  this.$emit("$afterInit");
+  // this is outest component
+  if( !context.$parent ) context.$update();
+  context.$ready = true;
 
-  // @TODO: remove, maybe , there is no need to update after init; 
-  // if(this.$root === this) this.$update();
+  context.$emit("$init");
+  if( context.init ) context.init( context.data );
+  context.$emit("$afterInit");
+
   env.isRunning = prevRunning;
 
   // children is not required;
@@ -167,21 +159,22 @@ _.extend(Regular, {
     // this.prototype.template = dom.initTemplate(o)
     if(template = o.template){
       var node, name;
-      if( typeof template === 'string' && template.length < 16 && ( node = dom.find( template )) ){
-        template = node ;
-      }
+      if( env.browser ){
+        if( node = tryGetSelector(template) ) template = node ;
+        if( template && template.nodeType ){
 
-      if(template && template.nodeType){
-        if(name = dom.attr(template, 'name')) Regular.component(name, this);
-        template = template.innerHTML;
-      } 
+          if(name = dom.attr(template, 'name')) Regular.component(name, this);
+
+          template = template.innerHTML;
+        } 
+      }
 
       if(typeof template === 'string' ){
         this.prototype.template = config.PRECOMPILE? new Parser(template).parse(): template;
       }
     }
 
-    if(o.computed) this.prototype.computed = handleComputed(o.computed);
+    if(o.computed) this.prototype.computed = shared.handleComputed(o.computed);
     // inherit directive and other config from supr
     Regular._inheritConfig(this, supr);
 
@@ -328,6 +321,8 @@ Regular.implement({
     if (this.devtools) {
       this.devtools.emit("destroy", this)
     }
+    this._handles = null;
+    this.$phase = "destroyed";
   },
 
   /**
@@ -346,6 +341,7 @@ Regular.implement({
       records;
 
     if(options.extra) this.__ext__ = options.extra;
+
 
     if(record) this._record();
     var group = this._walk(ast, options);
@@ -460,19 +456,22 @@ Regular.implement({
     // sync the component's state to called's state
     expr2.set(component, expr1.get(this));
   },
-  _walk: function(ast, opt){
-    if( Array.isArray(ast)  ){
-      var len = ast.length;
-      if(!len) return;
+  _walk: function(ast, options){
+    if( Array.isArray(ast) ){
       var res = [];
-      for(var i = 0; i < len; i++){
-        var ret = this._walk(ast[i], opt) 
-        if(ret) res.push( ret );
+
+      for(var i = 0, len = ast.length; i < len; i++){
+        var ret = this._walk(ast[i], options);
+        if(ret && ret.code === ERROR.UNMATCHED_AST){
+          ast.splice(i, 1);
+          i--;
+          len--;
+        }else res.push( ret );
       }
       return new Group(res);
     }
     if(typeof ast === 'string') return doc.createTextNode(ast)
-    return walkers[ast.type || "default"].call(this, ast, opt);
+    return walkers[ast.type || "default"].call(this, ast, options);
   },
   _append: function(component){
     this._children.push(component);
@@ -547,7 +546,7 @@ Regular.implement({
         if(computedProperty.get)  return computedProperty.get(this);
         else _.log("the computed '" + path + "' don't define the get function,  get data."+path + " altnately", "warn")
       }
-  }
+    }
     if(typeof defaults === "undefined" || typeof path == "undefined" ){
       return undefined;
     }
@@ -590,7 +589,7 @@ Regular.implement({
 });
 
 Regular.prototype.inject = function(){
-  _.log("use $inject instead of inject", "error");
+  _.log("use $inject instead of inject", "warn");
   return this.$inject.apply(this, arguments);
 }
 
@@ -603,44 +602,10 @@ module.exports = Regular;
 
 
 
-var handleComputed = (function(){
-  // wrap the computed getter;
-  function wrapGet(get){
-    return function(context){
-      return get.call(context, context.data );
-    }
+function tryGetSelector(tpl){
+  var node;
+  if( typeof tpl === 'string' && tpl.length < 16 && (node = dom.find( tpl )) ) {
+    _.log("pass selector as template has be deprecated, pass node or template string instead", 'warn')
+    return node
   }
-  // wrap the computed setter;
-  function wrapSet(set){
-    return function(context, value){
-      set.call( context, value, context.data );
-      return value;
-    }
-  }
-
-  return function(computed){
-    if(!computed) return;
-    var parsedComputed = {}, handle, pair, type;
-    for(var i in computed){
-      handle = computed[i]
-      type = typeof handle;
-
-      if(handle.type === 'expression'){
-        parsedComputed[i] = handle;
-        continue;
-      }
-      if( type === "string" ){
-        parsedComputed[i] = parse.expression(handle)
-      }else{
-        pair = parsedComputed[i] = {type: 'expression'};
-        if(type === "function" ){
-          pair.get = wrapGet(handle);
-        }else{
-          if(handle.get) pair.get = wrapGet(handle.get);
-          if(handle.set) pair.set = wrapSet(handle.set);
-        }
-      } 
-    }
-    return parsedComputed;
-  }
-})();
+}

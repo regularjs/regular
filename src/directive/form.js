@@ -1,10 +1,10 @@
 // Regular
 var _ = require("../util");
 var dom = require("../dom");
-var Regular = require("../Regular");
 var OPTIONS = require('../const').OPTIONS
 var STABLE = OPTIONS.STABLE;
 var hasInput;
+var Regular = require("../render/client");
 
 var modelHandlers = {
   "text": initText,
@@ -46,7 +46,13 @@ Regular.directive("r-model", {
       return modelHandlers.text.call(this, elem, value, extra);
     }
   }
-})
+  //@TODO
+  // ssr: function(name, value){
+  //   return value? "value=" + value: ""
+  // }
+});
+
+
 
 
 

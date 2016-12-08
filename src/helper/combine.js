@@ -1,8 +1,8 @@
 // some nested  operation in ast 
 // --------------------------------
 
-var dom = require("../dom.js");
-var animate = require("./animate.js");
+var dom = require("../dom");
+var animate = require("./animate");
 
 var combine = module.exports = {
 

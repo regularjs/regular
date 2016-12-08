@@ -1,8 +1,8 @@
 var // packages
-  _ = require("../util.js"),
- animate = require("../helper/animate.js"),
- dom = require("../dom.js"),
- Regular = require("../Regular.js");
+  _ = require("../util"),
+ animate = require("../helper/animate"),
+ dom = require("../dom"),
+ Regular = require("../render/client");
 
 
 var // variables

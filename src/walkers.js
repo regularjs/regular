@@ -1,12 +1,19 @@
 var diffArray = require('./helper/diff').diffArray;
 var combine = require('./helper/combine');
 var animate = require("./helper/animate");
+var Parser = require('./parser/Parser');
 var node = require("./parser/node");
 var Group = require('./group');
 var dom = require("./dom");
 var _ = require('./util');
 var consts = require('./const');
 var OPTIONS = consts.OPTIONS;
+var ERROR = consts.ERROR;
+var MSG = consts.MSG;
+var nodeCursor = require('./helper/cursor');
+var config = require('./config')
+var shared = require('./render/shared');
+
 
 
 var walkers = module.exports = {};
@@ -30,6 +37,7 @@ walkers.list = function(ast, options){
   var placeholder = document.createComment("Regular list"),
     namespace = options.namespace,
     extra = options.extra;
+
   var self = this;
   var group = new Group([placeholder]);
   var children = group.children;
@@ -39,6 +47,7 @@ walkers.list = function(ast, options){
   var variable = ast.variable;
   var alternate = ast.alternate;
   var track = ast.track, keyOf, extraObj;
+  var cursor = options.cursor;
 
   if( track && track !== true ){
     track = this._touchExpr(track);
@@ -62,12 +71,13 @@ walkers.list = function(ast, options){
         extra: data,
         namespace:namespace,
         record: true,
-        outer: options.outer
+        outer: options.outer,
+        cursor: cursor
       })
       section.data = data;
       // autolink
       var insert =  combine.last(group.get(o));
-      if(insert.parentNode){
+      if(insert.parentNode && !(cursor && cursor.node) ){
         animate.inject(combine.node(section),insert, 'after');
       }
       // insert.parentNode.insertBefore(combine.node(section), insert.nextSibling);
@@ -210,6 +220,8 @@ walkers.list = function(ast, options){
     diff: track !== true ,
     deep: true
   });
+  //@FIXIT, beacuse it is sync process, we can 
+  cursor = null;
   return group;
 }
 
@@ -221,6 +233,8 @@ walkers.template = function(ast, options){
   var placeholder = document.createComment('inlcude');
   var compiled, namespace = options.namespace, extra = options.extra;
   var group = new Group([placeholder]);
+  var cursor = options.cursor;
+
   if(content){
     var self = this;
     this.$watch(content, function(value){
@@ -231,10 +245,11 @@ walkers.template = function(ast, options){
       }
       if(!value) return;
 
-      group.push( compiled = type === 'function' ? value(): self.$compile( type !== 'object'? String(value): value, {
-        record: true, 
+      group.push( compiled = type === 'function' ? value(cursor? {cursor: cursor}: null): self.$compile( type !== 'object'? String(value): value, {
+        record: true,
         outer: options.outer,
-        namespace: namespace, 
+        namespace: namespace,
+        cursor: cursor,
         extra: extra}) ); 
       if(placeholder.parentNode) {
         compiled.$inject(placeholder, 'before')
@@ -257,10 +272,14 @@ walkers['if'] = function(ast, options){
     var update = function(nvalue){
       if(!!nvalue){
         if(alternate) combine.destroy(alternate)
-        if(ast.consequent) consequent = self.$compile(ast.consequent, {record: true, element: options.element , extra:extra});
+        if(ast.consequent) consequent = self.$compile(ast.consequent, {
+          record: true, 
+          element: options.element , 
+          extra:extra
+        });
       }else{
-        if(consequent) combine.destroy(consequent)
-        if(ast.alternate) alternate = self.$compile(ast.alternate, {record: true, element: options.element, extra: extra});
+        if( consequent ) combine.destroy(consequent)
+        if( ast.alternate ) alternate = self.$compile(ast.alternate, {record: true, element: options.element, extra: extra});
       }
     }
     this.$watch(ast.test, update, OPTIONS.FORCE);
@@ -272,39 +291,51 @@ walkers['if'] = function(ast, options){
     }
   }
 
-  var test, consequent, alternate, node;
+  var test, node;
   var placeholder = document.createComment("Regular if" + ii++);
   var group = new Group();
   group.push(placeholder);
   var preValue = null, namespace= options.namespace;
+  var cursor = options.cursor;
+  if(cursor && cursor.node){
+    dom.inject( placeholder , cursor.node,'before')
+  }
 
 
   var update = function (nvalue, old){
-    var value = !!nvalue;
+    var value = !!nvalue, compiledSection;
     if(value === preValue) return;
     preValue = value;
     if(group.children[1]){
       group.children[1].destroy(true);
       group.children.pop();
     }
+    var curOptions = {
+      record: true, 
+      outer: options.outer,
+      namespace: namespace, 
+      extra: extra,
+      cursor: cursor
+    }
     if(value){ //true
-      if(ast.consequent && ast.consequent.length){
-        consequent = self.$compile( ast.consequent , {record:true, outer: options.outer,namespace: namespace, extra:extra })
-        // placeholder.parentNode && placeholder.parentNode.insertBefore( node, placeholder );
-        group.push(consequent);
-        if(placeholder.parentNode){
-          animate.inject(combine.node(consequent), placeholder, 'before');
-        }
+
+      if(ast.consequent && ast.consequent.length){ 
+        compiledSection = self.$compile( ast.consequent , curOptions );
       }
     }else{ //false
       if(ast.alternate && ast.alternate.length){
-        alternate = self.$compile(ast.alternate, {record:true, outer: options.outer,namespace: namespace, extra:extra});
-        group.push(alternate);
-        if(placeholder.parentNode){
-          animate.inject(combine.node(alternate), placeholder, 'before');
-        }
+        compiledSection = self.$compile(ast.alternate, curOptions);
       }
     }
+    // placeholder.parentNode && placeholder.parentNode.insertBefore( node, placeholder );
+    if(compiledSection){
+      group.push(compiledSection);
+      if(placeholder.parentNode){
+        animate.inject(combine.node(compiledSection), placeholder, 'before');
+      }
+    }
+    cursor = null;
+    // after first mount , we need clear this flat;
   }
   this.$watch(ast.test, update, OPTIONS.FORCE_INIT);
 
@@ -312,41 +343,110 @@ walkers['if'] = function(ast, options){
 }
 
 
+walkers._handleMountText = function(cursor, astText){
+    var node, mountNode = cursor.node;
+    // fix unused black in astText;
+    var nodeText = dom.text(mountNode);
+
+    if( nodeText === astText ){
+      node = mountNode;
+      cursor.next();
+    }else{
+      // maybe have some redundancy  blank
+      var index = nodeText.indexOf(astText);
+      if(~index){
+        node = document.createTextNode(astText);
+        dom.text( mountNode, nodeText.slice(index + astText.length) );
+      } else {
+        // if( _.blankReg.test( astText ) ){ }
+        throw Error( MSG[ERROR.UNMATCHED_AST]);
+      }
+    }
+
+    return node;
+}
+
+
 walkers.expression = function(ast, options){
-  var node = document.createTextNode("");
+
+  var cursor = options.cursor, node,
+    mountNode = cursor && cursor.node;
+
+  if(mountNode){
+    //@BUG: if server render &gt; in Expression will cause error
+    var astText = _.toText( this.$get(ast) );
+
+    node = walkers._handleMountText(cursor, astText);
+
+  }else{
+    node = document.createTextNode("");
+  }
+
   this.$watch(ast, function(newval){
-    dom.text(node,  newval == null? "": String(newval) );
+    dom.text(node, _.toText(newval));
   }, OPTIONS.STABLE_INIT )
   return node;
+
 }
+
+
 walkers.text = function(ast, options){
+  var cursor = options.cursor , node;
   var text = ast.text;
-  var node = document.createTextNode(
-    text.indexOf('&') !== -1? _.convertEntity(text): text
-  );
-  return node;
+  var astText = text.indexOf('&') !== -1? _.convertEntity(text): text;
+
+  if(cursor && cursor.node) { 
+    var mountNode = cursor.node;
+    // maybe regularjs parser have some difference with html builtin parser when process  empty text
+    // @todo error report
+    if(mountNode.nodeType !== 3 ){
+
+      if( _.blankReg.test(astText) ) return {
+        code:  ERROR.UNMATCHED_AST
+      }
+
+    }else{
+      node = walkers._handleMountText( cursor, astText )
+    } 
+  }
+      
+
+  return node || document.createTextNode( astText );
 }
 
 
 
-var eventReg = /^on-(.+)$/
 
 /**
  * walkers element (contains component)
  */
 walkers.element = function(ast, options){
+
   var attrs = ast.attrs, self = this,
     Constructor = this.constructor,
     children = ast.children,
     namespace = options.namespace, 
     extra = options.extra,
+    cursor = options.cursor,
     tag = ast.tag,
     Component = Constructor.component(tag),
-    ref, group, element;
+    ref, group, element, mountNode;
+
+  // if inititalized with mount mode, sometime, 
+  // browser will ignore the whitespace between node, and sometimes it won't
+  if(cursor){
+    // textCOntent with Empty text
+    if(cursor.node && cursor.node.nodeType === 3){
+      if(_.blankReg.test(dom.text(cursor.node) ) ) cursor.next();
+      else throw Error(MSG[ERROR.UNMATCHED_AST]);
+    }
+  }
+
+  if(cursor) mountNode = cursor.node;
 
   if( tag === 'r-content' ){
     _.log('r-content is deprecated, use {#inc this.$body} instead (`{#include}` as same)', 'warn');
-    return this.$body && this.$body();
+    return this.$body && this.$body(cursor? {cursor: cursor}: null);
   } 
 
   if(Component || tag === 'r-component'){
@@ -358,13 +458,27 @@ walkers.element = function(ast, options){
   // @Deprecated: may be removed in next version, use {#inc } instead
   
   if( children && children.length ){
-    group = this.$compile(children, {outer: options.outer,namespace: namespace, extra: extra });
+
+    var subMountNode = mountNode? mountNode.firstChild: null;
+    group = this.$compile(children, {
+      extra: extra ,
+      outer: options.outer,
+      namespace: namespace, 
+      cursor:  subMountNode? nodeCursor(subMountNode): null
+    });
   }
 
-  element = dom.create(tag, namespace, attrs);
 
-  if(group && !_.isVoidTag(tag)){
-    dom.inject( combine.node(group) , element)
+  if(mountNode){
+    element = mountNode
+    cursor.next();
+  }else{
+    element = dom.create( tag, namespace, attrs);
+  }
+  
+
+  if(group && !_.isVoidTag(tag) ){ // if not init with mount mode
+    animate.inject( combine.node(group) , element)
   }
 
   // fix tag ast, some infomation only avaliable at runtime (directive etc..)
@@ -406,10 +520,12 @@ walkers.element = function(ast, options){
 walkers.component = function(ast, options){
   var attrs = ast.attrs, 
     Component = options.Component,
+    cursor = options.cursor,
     Constructor = this.constructor,
     isolate, 
     extra = options.extra,
     namespace = options.namespace,
+    refDirective = walkers.Regular.directive('ref'),
     ref, self = this, is;
 
   var data = {}, events;
@@ -417,6 +533,9 @@ walkers.component = function(ast, options){
   for(var i = 0, len = attrs.length; i < len; i++){
     var attr = attrs[i];
     // consider disabled   equlasto  disabled={true}
+
+    shared.prepareAttr( attr, attr.name === 'ref' && refDirective );
+
     var value = this._touchExpr(attr.value === undefined? true: attr.value);
     if(value.constant) value = attr.value = value.get(this);
     if(attr.value && attr.value.constant === true){
@@ -424,7 +543,7 @@ walkers.component = function(ast, options){
     }
     var name = attr.name;
     if(!attr.event){
-      var etest = name.match(eventReg);
+      var etest = name.match(_.eventReg);
       // event: 'nav'
       if(etest) attr.event = etest[1];
     }
@@ -487,6 +606,7 @@ walkers.component = function(ast, options){
   }
   var options = {
     namespace: namespace, 
+    cursor: cursor,
     extra: options.extra
   }
 
@@ -495,10 +615,10 @@ walkers.component = function(ast, options){
 
 
   if(ref && this.$refs){
-    reflink = Component.directive('ref').link
-    this.$on('$destroy', reflink.call(this, component, ref) )
+    reflink = refDirective.link;
+    var refDestroy = reflink.call(this, component, ref);
+    component.$on('$destroy', refDestroy);
   }
-  if(ref &&  self.$refs) self.$refs[ref] = component;
   for(var i = 0, len = attrs.length; i < len; i++){
     var attr = attrs[i];
     var value = attr.value||true;
@@ -547,16 +667,21 @@ function walkAttributes(attrs, element, extra){
   return bindings;
 }
 
+
 walkers.attribute = function(ast ,options){
 
   var attr = ast;
+  var Component = this.constructor;
   var name = attr.name;
+  var directive = Component.directive(name);
+
+  shared.prepareAttr(ast, directive);
+
   var value = attr.value || "";
   var constant = value.constant;
-  var Component = this.constructor;
-  var directive = Component.directive(name);
   var element = options.element;
   var self = this;
+
 
 
   value = this._touchExpr(value);

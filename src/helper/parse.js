@@ -1,6 +1,6 @@
 var exprCache = require('../env').exprCache;
 var _ = require("../util");
-var Parser = require("../parser/Parser.js");
+var Parser = require("../parser/Parser");
 module.exports = {
   expression: function(expr, simple){
     // @TODO cache
