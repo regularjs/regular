@@ -80,24 +80,26 @@ var Regular = function(definition, options){
   context.$refs = {};
 
   var extra = options.extra;
+
   if(extra && extra.$$modify){
     extra.$$modify(this);
   }
   context.$root = context.$root || context;
   
+  var newExtra;
   if( body = context._body ){
     context._body = null
     var modifyBodyComponent = context.modifyBodyComponent;
     if( typeof modifyBodyComponent  === 'function'){
       modifyBodyComponent = modifyBodyComponent.bind(this)
-      extra = _.createObject(extra);
-      extra.$$modify = modifyBodyComponent;
+      newExtra = _.createObject(extra);
+      newExtra.$$modify = modifyBodyComponent;
     }
     if(body.ast && body.ast.length){
       context.$body = _.getCompileFn(body.ast, body.ctx , {
         outer: context,
         namespace: options.namespace,
-        extra: extra,
+        extra: newExtra,
         record: true
       })
     }
@@ -107,7 +109,8 @@ var Regular = function(definition, options){
   if(template){
     context.group = context.$compile(template, {
       namespace: options.namespace,
-      cursor: cursor
+      cursor: cursor,
+      extra: { $$modify : extra && extra.$$modify} 
     });
     combine.node(context);
   }
