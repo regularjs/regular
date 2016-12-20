@@ -50,6 +50,7 @@ walkers.list = function(ast, options){
   var cursor = options.cursor;
 
   if( track && track !== true ){
+    
     track = this._touchExpr(track);
     extraObj = _.createObject(extra);
     keyOf = function( item, index ){

@@ -610,7 +610,7 @@ it("list with else should also works under track mode", function(){
       })
       var divs = nes.all('div', list.$refs.cnt);
 
-      list.data.list = [{a: 4},{a: 2} , {a: 6}]
+      list.data.list = [{a: 4},{a: 2} , {a: 1}]
       list.$update();
 
       var divs2 = nes.all('div', list.$refs.cnt);
@@ -618,31 +618,11 @@ it("list with else should also works under track mode", function(){
       expect(divs[0]).to.not.equal(divs2[0]);
       expect(divs[1]).to.equal(divs2[1]);
       expect(divs[2]).to.not.equal(divs2[2]);
-
-    })
-    it("list track non-index expression" , function(){
-      var List = Regular.extend({
-        template: '<div ref=cnt>{#list list as item by item.a}\
-          <div>{item.a}</div>{/list}</div>'
-      })
-      var list = new List({
-        data: {
-          list: [{a: 1}, {a: 2} , {a: 3}]
-        }
-      })
-      var divs = nes.all('div', list.$refs.cnt);
-
-      list.data.list = [{a: 4},{a: 2} , {a: 6}]
-      list.$update();
-
-      var divs2 = nes.all('div', list.$refs.cnt);
-
-      expect(divs[0]).to.not.equal(divs2[0]);
-      expect(divs[1]).to.equal(divs2[1]);
-      expect(divs[2]).to.not.equal(divs2[2]);
+      expect(divs[2]).to.not.equal(divs2[0]);
 
     })
   })
+  
 
   describe("List with Object", function(){
 

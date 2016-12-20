@@ -109,11 +109,14 @@ var Regular = function(definition, options){
 
   // handle computed
   if(template){
-    context.group = context.$compile(template, {
+    var cplOpt = {
       namespace: options.namespace,
-      cursor: cursor,
-      extra: { $$modify : extra && extra.$$modify} 
-    });
+      cursor: cursor
+    }
+    // if(extra && extra.$$modify){
+      cplOpt.extra = {$$modify : extra&& extra.$$modify}
+    // }
+    context.group = context.$compile(template, cplOpt);
     combine.node(context);
   }
 
@@ -498,8 +501,8 @@ Regular.implement({
   },
   // 1. 用来处理exprBody -> Function
   // 2. list里的循环
-  _touchExpr: function(expr){
-    var  rawget, ext = this.__ext__, touched = {};
+  _touchExpr: function(expr, ext){
+    var rawget, ext = this.__ext__, touched = {};
     if(expr.type !== 'expression' || expr.touched) return expr;
 
     rawget = expr.get;
@@ -507,8 +510,8 @@ Regular.implement({
       rawget = expr.get = new Function(_.ctxName, _.extName , _.prefix+ "return (" + expr.body + ")");
       expr.body = null;
     }
-    touched.get = !ext? rawget: function(context){
-      return rawget(context, ext)
+    touched.get = !ext? rawget: function(context, e){
+      return rawget( context, e || ext )
     }
 
     if(expr.setbody && !expr.set){
