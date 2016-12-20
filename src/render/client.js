@@ -94,6 +94,8 @@ var Regular = function(definition, options){
       modifyBodyComponent = modifyBodyComponent.bind(this)
       newExtra = _.createObject(extra);
       newExtra.$$modify = modifyBodyComponent;
+    }else{ //@FIXIT: multiply modifier
+      newExtra = extra
     }
     if(body.ast && body.ast.length){
       context.$body = _.getCompileFn(body.ast, body.ctx , {

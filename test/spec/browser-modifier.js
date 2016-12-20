@@ -41,7 +41,6 @@ describe("Modifier", function(){
         expect(component.$refs.c1.s).to.equal(component.$refs.c2.s);
 
     })
-    it("nested lifycycle config -> modify -> init")
     it("nested modifier should work", function( ){
 
         var NestedComponent = Regular.extend({
@@ -58,6 +57,33 @@ describe("Modifier", function(){
         })
 
         expect(component.$refs.c1.$refs.hello.s.name).to.equal('leeluolee');
+
+    })
+    it("nested modifier should work", function( ){
+
+        var NestedComponent = Regular.extend({
+          name: 'modifier-nested2',
+          template: '<hello ref=hello><name/></hello>'
+        })
+
+        var instance;
+        NestedComponent.component('hello', Regular.extend({ 
+          template: '{#inc this.$body}'
+        }))
+        NestedComponent.component('name', Regular.extend({ 
+          init: function(){
+            instance = this;
+            expect(this.s.name).to.equal('leeluolee')
+          }
+        }))
+
+
+
+        var component = new BaseComponent({
+          template: '<injector><modifier-nested2 ref=c1  /><component1 ref=c2 /></injector>' 
+        })
+
+        expect(instance).to.not.equal(undefined);
 
     })
     it("modifier in #list", function(){
