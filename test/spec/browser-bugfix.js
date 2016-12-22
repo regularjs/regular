@@ -774,6 +774,29 @@ it('bugfix #50', function(){
     watcher.destroy();
     watcher.$update();
   })
+  it('bugfix #145', function(){
+    // _watchersForStable should be removed
+    Regular.extend({
+      name: 'bug-145'
+    })
+    var component;
+    expect(function(){
+      component = new Regular({
+        data: {
+          name: 'leeluolee'
+        },
+        template: '<bug-145 ref=child fn={this.fn1.bind(this)} />',
+        fn1: function(){
+          return this.data.name;
+        }
+      });
+    }).to.not.throwException();
+
+    expect(component.$refs.child.data.fn()).to.equal('leeluolee')
+
+    delete Regular._components['bug-145'];
+    component.destroy();
+  })
 
   // it("bug #122: paren Expression shouldn't change the set property it wrapped", function(){
   //   var Sub = Regular.extend({

@@ -9,6 +9,7 @@ var extName = _.extName;
 var isPath = _.makePredicate("STRING IDENT NUMBER");
 var isKeyWord = _.makePredicate("true false undefined null this Array Date JSON Math NaN RegExp decodeURI decodeURIComponent encodeURI encodeURIComponent parseFloat parseInt Object");
 var isInvalidTag = _.makePredicate("script style");
+var isLastBind = /\.bind$/;
 
 
 
@@ -570,7 +571,7 @@ op.member = function(base, last, pathes, prevBase){
         if( this.la() !== "(" ){ 
           base = ctxName + "._sg_('" + tmpName + "', " + base + ")";
         }else{
-          base += "['" + tmpName + "']";
+          base += "." + tmpName ;
         }
         return this.member( base, tmpName, pathes,  prevBase);
       case '[':
@@ -588,7 +589,10 @@ op.member = function(base, last, pathes, prevBase){
         return this.member(base, path, pathes, prevBase);
       case '(':
         // call(callee, args)
+
+        base = base.replace(isLastBind, '.__bind__')
         var args = this.arguments().join(',');
+
         base =  base+"(" + args +")";
         this.match(')')
         return this.member(base, null, pathes);

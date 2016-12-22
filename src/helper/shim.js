@@ -89,6 +89,14 @@ module.exports = function(){
         var args = preArgs.concat(slice.call(arguments));
         return fn.apply(context, args);
       }
+    },
+    //@FIXIT
+    __bind__: function(context){
+      if(this.__binding__){
+        return this.__binding__
+      }else{
+        return (this.__binding__ = this.bind.apply(this, arguments))
+      }
     }
   })
   
