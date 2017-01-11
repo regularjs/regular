@@ -38,7 +38,7 @@ var methods = {
       if(typeof expr === 'function'){
         get = expr.bind(this);      
       }else{
-        expr = this._touchExpr( parseExpression(expr) );
+        expr = this.$expression(expr);
         get = expr.get;
         once = expr.once;
       }
