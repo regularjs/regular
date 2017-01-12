@@ -40,7 +40,11 @@ var API = {
       fn = fn.real || fn;
       for (var i = 0, len = calls.length; i < len; i++) {
         if (fn === calls[i]) {
-          calls.splice(i, 1);
+          setTimeout((function (n){
+            return function () {
+              calls.splice(n, 1);
+            }
+			    })(i),0);
           return context;
         }
       }
