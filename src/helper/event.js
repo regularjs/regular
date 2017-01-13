@@ -58,11 +58,13 @@ var API = {
 
     if(!handles) return context;
     if(calls = handles[type.slice(1)]){
+      calls = calls.slice(0);
       for (var j = 0, len = calls.length; j < len; j++) {
         calls[j].apply(context, args)
       }
     }
     if (!(calls = handles[type])) return context;
+    calls = calls.slice(0);
     for (var i = 0, len = calls.length; i < len; i++) {
       calls[i].apply(context, args)
     }
