@@ -24,12 +24,18 @@ var methods = {
       }
       var prev = [];
       test = function(context){
-        var equal = true;
+        var equal = true,dresult,tnow;
         for(var i =0, len = tests.length; i < len; i++){
           var splice = tests[i](context, extra);
-          if(!_.equals(splice, prev[i])){
-             equal = false;
-             prev[i] = _.clone(splice);
+          dresult=context._checkDirty(splice,prev[i],this);
+          if(dresult.dirty){
+            equal = false;
+            tnow=_.typeOf(splice);
+            if(tnow === 'object' && this.deep || tnow === 'array'){
+              prev[i] = _.clone(splice);
+            }else{
+              prev[i] = splice;
+            }
           }
         }
         return equal? false: prev;
@@ -172,36 +178,15 @@ var methods = {
     var dirty = false;
     if(!watcher) return;
 
-    var now, last, tlast, tnow,  eq, diff;
+    var now, last, tlast, tnow,  eq, diff,dresult;
 
     if(!watcher.test){
 
       now = watcher.get(this);
       last = watcher.last;
-
-      if(now !== last || watcher.force){
-        tlast = _.typeOf(last);
-        tnow = _.typeOf(now);
-        eq = true; 
-
-        // !Object
-        if( !(tnow === 'object' && tlast==='object' && watcher.deep) ){
-          // Array
-          if( tnow === 'array' && ( tlast=='undefined' || tlast === 'array') ){
-            diff = diffArray(now, watcher.last || [], watcher.diff)
-            if( tlast !== 'array' || diff === true || diff.length ) dirty = true;
-          }else{
-            eq = _.equals( now, last );
-            if( !eq || watcher.force ){
-              watcher.force = null;
-              dirty = true; 
-            }
-          }
-        }else{
-          diff =  diffObject( now, last, watcher.diff );
-          if( diff === true || diff.length ) dirty = true;
-        }
-      }
+      dresult=this._checkDirty(now,last,watcher);
+      diff=dresult.diff;
+      dirty=dresult.dirty;
 
     } else{
       // @TODO 是否把多重改掉
@@ -212,6 +197,7 @@ var methods = {
       }
     }
     if(dirty && !watcher.test){
+      tnow=_.typeOf(now);
       if(tnow === 'object' && watcher.deep || tnow === 'array'){
         watcher.last = _.clone(now);
       }else{
@@ -222,6 +208,35 @@ var methods = {
     }
 
     return dirty;
+  },
+  _checkDirty:function(now,last,watcher){
+      var tlast,tnow,eq,diff,dirty=false;
+      if(!watcher){
+          watcher={deep:false,diff:false};
+      }
+      if(now !== last || watcher.force){
+          tlast = _.typeOf(last);
+          tnow = _.typeOf(now);
+          eq = true;
+          // !Object
+          if( !(tnow === 'object' && tlast==='object' && watcher.deep) ){
+              // Array
+              if( tnow === 'array' && ( tlast=='undefined' || tlast === 'array') ){
+                  diff = diffArray(now, watcher.last || [], watcher.diff)
+                  if( tlast !== 'array' || diff === true || diff.length ) dirty = true;
+              }else{
+                  eq = _.equals( now, last );
+                  if( !eq || watcher.force ){
+                      watcher.force = null;
+                      dirty = true;
+                  }
+              }
+          }else{
+              diff =  diffObject( now, last, watcher.diff );
+              if( diff === true || diff.length ) dirty = true;
+          }
+      }
+      return {dirty:dirty,diff:diff}
   },
 
   /**
