@@ -314,6 +314,25 @@ describe("Watcher-System", function(){
 
     component.destroy();
   })
+  
+  it('$watch should accept [Array<any>] param', function () {
+    var component = new Regular();
+    component.$watch(['obj', 'arr', 'num', 'str'], function (obj, arr, num, str) {
+      expect(obj).to.be.an('object');
+      expect(arr).to.be.an('array');
+      expect(num).to.be.an('number');
+      expect(str).to.be.an('string');
+    });
+
+    component.$update({
+      obj: { x: 1 },
+      arr: [1, 2],
+      num: 2,
+      str: 'lee'
+    });
+
+    component.destroy();
+  })
 
   it("$update should also accpect [Function] param to act apply", function(){
     var component = new Regular();

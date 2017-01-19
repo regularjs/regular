@@ -29,7 +29,7 @@ var methods = {
           var splice = tests[i](context, extra);
           if(!_.equals(splice, prev[i])){
              equal = false;
-             prev[i] = _.clone(splice);
+             prev[i] = splice;//_.clone(splice);
           }
         }
         return equal? false: prev;
