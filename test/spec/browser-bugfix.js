@@ -798,6 +798,29 @@ it('bugfix #50', function(){
     component.destroy();
   })
 
+  it("bug #157: \r\n bug", function(){
+    var Server = require("../../src/render/server.js");
+
+    var container = document.createElement('div');
+    var Component = Regular.extend({
+      name: 'bug-157',
+      data: {name: 'hello'},
+      template: '<div>\r\n 大<span>{name}</span>大\r\n \n</div>'
+    })
+
+    var str = Server.render(Component)
+    container.innerHTML = str;
+
+    new Component({
+      mountNode: container
+    })
+
+    expect(nes.one('span', container).innerHTML).to.equal('hello');
+
+
+  })
+
+
   // it("bug #122: paren Expression shouldn't change the set property it wrapped", function(){
   //   var Sub = Regular.extend({
   //     name: 'Sub',

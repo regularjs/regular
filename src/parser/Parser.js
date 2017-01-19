@@ -104,6 +104,7 @@ op.program = function(){
 //  : xml
 //  | jst
 //  | text
+var rRN = /\r\n/g;
 op.statement = function(){
   var ll = this.ll();
   switch(ll.type){
@@ -114,7 +115,7 @@ op.statement = function(){
       while(ll = this.eat(['NAME', 'TEXT'])){
         text += ll.value;
       }
-      return node.text(text);
+      return node.text(text.replace(rRN, '\n'));
     case 'TAG_OPEN':
       return this.xml();
     case 'OPEN': 
