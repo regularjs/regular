@@ -1,7 +1,7 @@
 var expect = require('expect.js');
 // contains basic dom && event specs
-var dom = require("../../src/dom.js");
-var Regular = require("../../src/index.js");
+var dom = require("../../lib/dom.js");
+var Regular = require("../../lib/index.js");
 
 function destroy(component, container){
   component.destroy();

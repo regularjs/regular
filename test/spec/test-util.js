@@ -1,8 +1,8 @@
 var expect = require('expect.js');
-var _ = require("../../src/util.js");
-var shim = require("../../src/helper/shim.js");
-var extend = require("../../src/helper/extend.js");
-var diff = require("../../src/helper/diff.js")
+var _ = require("../../lib/util.js");
+var shim = require("../../lib/helper/shim.js");
+var extend = require("../../lib/helper/extend.js");
+var diff = require("../../lib/helper/diff.js")
 var diffArray = diff.diffArray;
 var diffObject = diff.diffObject;
 

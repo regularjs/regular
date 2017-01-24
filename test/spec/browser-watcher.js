@@ -1,6 +1,6 @@
 var expect = require('expect.js');
-var Regular = require("../../src/index.js");
-var parse = require("../../src/helper/parse");
+var Regular = require("../../lib/index.js");
+var parse = require("../../lib/helper/parse");
 
 var Component = Regular.extend();
 

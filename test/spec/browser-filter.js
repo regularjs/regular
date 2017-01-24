@@ -1,6 +1,6 @@
 var expect = require('expect.js');
 
-var Regular = require("../../src/index.js");
+var Regular = require("../../lib/index.js");
 
 
 describe("Filter", function(){

@@ -1,6 +1,6 @@
 var expect = require('expect.js');
-var Regular = require("../../src/index.js");
-var combine = require("../../src/helper/combine.js");
+var Regular = require("../../lib/index.js");
+var combine = require("../../lib/helper/combine.js");
 function destroy(component, container){
   component.destroy();
   expect(container.innerHTML).to.equal('');

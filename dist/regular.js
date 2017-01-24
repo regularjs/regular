@@ -1,6 +1,6 @@
 /**
 @author	leeluolee
-@version	0.6.0
+@version	0.6.0-beta.1
 @homepage	http://regularjs.github.io
 */
 (function webpackUniversalModuleDefinition(root, factory) {
@@ -1072,6 +1072,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var args = preArgs.concat(slice.call(arguments));
 	        return fn.apply(context, args);
 	      }
+	    },
+	    //@FIXIT
+	    __bind__: function(context){
+	      if(this.__binding__){
+	        return this.__binding__
+	      }else{
+	        return (this.__binding__ = this.bind.apply(this, arguments))
+	      }
 	    }
 	  })
 	  
@@ -1461,6 +1469,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	      modifyBodyComponent = modifyBodyComponent.bind(this)
 	      newExtra = _.createObject(extra);
 	      newExtra.$$modify = modifyBodyComponent;
+	    }else{ //@FIXIT: multiply modifier
+	      newExtra = extra
 	    }
 	    if(body.ast && body.ast.length){
 	      context.$body = _.getCompileFn(body.ast, body.ctx , {
@@ -1474,11 +1484,14 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	  // handle computed
 	  if(template){
-	    context.group = context.$compile(template, {
+	    var cplOpt = {
 	      namespace: options.namespace,
-	      cursor: cursor,
-	      extra: { $$modify : extra && extra.$$modify} 
-	    });
+	      cursor: cursor
+	    }
+	    // if(extra && extra.$$modify){
+	      cplOpt.extra = {$$modify : extra&& extra.$$modify}
+	    // }
+	    context.group = context.$compile(template, cplOpt);
 	    combine.node(context);
 	  }
 
@@ -1863,8 +1876,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	  },
 	  // 1. 用来处理exprBody -> Function
 	  // 2. list里的循环
-	  _touchExpr: function(expr){
-	    var  rawget, ext = this.__ext__, touched = {};
+	  _touchExpr: function(expr, ext){
+	    var rawget, ext = this.__ext__, touched = {};
 	    if(expr.type !== 'expression' || expr.touched) return expr;
 
 	    rawget = expr.get;
@@ -1872,8 +1885,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	      rawget = expr.get = new Function(_.ctxName, _.extName , _.prefix+ "return (" + expr.body + ")");
 	      expr.body = null;
 	    }
-	    touched.get = !ext? rawget: function(context){
-	      return rawget(context, ext)
+	    touched.get = !ext? rawget: function(context, e){
+	      return rawget( context, e || ext )
 	    }
 
 	    if(expr.setbody && !expr.set){
@@ -2354,6 +2367,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	var isPath = _.makePredicate("STRING IDENT NUMBER");
 	var isKeyWord = _.makePredicate("true false undefined null this Array Date JSON Math NaN RegExp decodeURI decodeURIComponent encodeURI encodeURIComponent parseFloat parseInt Object");
 	var isInvalidTag = _.makePredicate("script style");
+	var isLastBind = /\.bind$/;
 
 
 
@@ -2915,7 +2929,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        if( this.la() !== "(" ){ 
 	          base = ctxName + "._sg_('" + tmpName + "', " + base + ")";
 	        }else{
-	          base += "['" + tmpName + "']";
+	          base += "." + tmpName ;
 	        }
 	        return this.member( base, tmpName, pathes,  prevBase);
 	      case '[':
@@ -2933,7 +2947,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	        return this.member(base, path, pathes, prevBase);
 	      case '(':
 	        // call(callee, args)
+
+	        base = base.replace(isLastBind, '.__bind__')
 	        var args = this.arguments().join(',');
+
 	        base =  base+"(" + args +")";
 	        this.match(')')
 	        return this.member(base, null, pathes);
@@ -3891,6 +3908,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  var cursor = options.cursor;
 
 	  if( track && track !== true ){
+	    
 	    track = this._touchExpr(track);
 	    extraObj = _.createObject(extra);
 	    keyOf = function( item, index ){

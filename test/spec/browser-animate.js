@@ -1,6 +1,6 @@
-var Regular = require("../../src/index.js");
-var animate = require("../../src/helper/animate.js");
-var dom = require("../../src/dom.js");
+var Regular = require("../../lib/index.js");
+var animate = require("../../lib/helper/animate.js");
+var dom = require("../../lib/dom.js");
 
 function destroy(component, container){
   component.destroy();

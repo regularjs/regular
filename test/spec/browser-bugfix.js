@@ -1,6 +1,6 @@
 var expect = require('expect.js');
 
-var Regular = require("../../src/index.js");
+var Regular = require("../../lib/index.js");
 var dom = Regular.dom;
 
 function destroy(component, container){
@@ -799,7 +799,7 @@ it('bugfix #50', function(){
   })
 
   it("bug #157: \r\n bug", function(){
-    var Server = require("../../src/render/server.js");
+    var Server = require("../../lib/render/server.js");
 
     var container = document.createElement('div');
     var Component = Regular.extend({

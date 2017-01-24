@@ -1,5 +1,5 @@
 var expect = require('expect.js');
-var Event = require("../../src/helper/event.js");
+var Event = require("../../lib/helper/event.js");
 
 
 

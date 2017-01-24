@@ -1,6 +1,6 @@
 var expect = require('expect.js');
-var SSR = require('../../src/render/server');
-var Regular = require('../../src/index');
+var SSR = require('../../lib/render/server');
+var Regular = require('../../lib/index');
 
 
 

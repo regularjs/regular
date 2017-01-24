@@ -12,10 +12,10 @@ ao.typeEqual = function(list){
   return this;
 }
 
-var Lexer = require("../../src/parser/Lexer.js");
-var config = require("../../src/config.js");
+var Lexer = require("../../lib/parser/Lexer.js");
+var config = require("../../lib/config.js");
 
-var Regular = require("../../src/index.js");
+var Regular = require("../../lib/index.js");
 
 var ao = expect.Assertion.prototype;
 

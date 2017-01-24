@@ -1,6 +1,6 @@
 var expect = require('expect.js');
-var Regular = require("../../src/index.js");
-var SSR = require("../../src/render/server.js");
+var Regular = require("../../lib/index.js");
+var SSR = require("../../lib/render/server.js");
 var _ = Regular.util;
 
 function destroy(component, container){
@@ -158,6 +158,28 @@ describe("List", function(){
       component.$emit("hello");
 
       expect(num).to.equal(2);
+
+    })
+    
+    it("should work with same computed property", function(){
+
+      var container = document.createElement('div');
+
+      var list =
+        "{#list todos as todo}" + 
+          "<div class='a-{todo_index}'>{todo.content}</div>" + 
+        "{/list}";
+      var component = new Regular({
+        computed: {
+          todo: function(data){
+            return data.fake
+          }
+        },
+        data: {todos: [{content: "hello"}, {content: "hello2"}], fake: {content:'badboy'}},
+        template: list
+      }).$inject(container);
+
+      expect(nes.one('div', container).innerHTML).to.equal('hello');
 
     })
   })
@@ -920,6 +942,7 @@ describe("SSR: list", function(){
 
   })
 
+
   it("should handle common xss error", function(){
 
     var container = document.createElement('div');
@@ -929,7 +952,7 @@ describe("SSR: list", function(){
         </div>",
         data: {
           onerror: "><script>alert(1000)</script>",
-          script: "test2</a><img src=# onerror='alert(1)'>"
+          script: "test2</a><img lib=# onerror='alert(1)'>"
         }
     })
     expect(function(){
