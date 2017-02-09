@@ -10,7 +10,7 @@
     "template",
     "data-binding"
   ],
-  "main": "src/index.js",
+  "main": "lib/index.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/regularjs/regular"
