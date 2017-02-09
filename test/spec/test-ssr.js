@@ -1,5 +1,5 @@
 var expect = require('expect.js');
-var SSR = require('../../lib/render/server');
+var SSR = require('../../lib/server');
 var Regular = require('../../lib/index');
 
 
@@ -97,6 +97,13 @@ describe("Server Side Rendering", function(){
 
       }
     })).to.equal('<div title="haha heihei"></div>')
+  })
+
+  it('safeStringify should work as expected' , function(){
+    var safeString = SSR.safeStringify({
+      html: '<script></script><!--gdasdada'
+    })
+    expect(safeString).to.equal('{"html":"<script><\\/script><\\!--gdasdada"}');
   })
 
 })

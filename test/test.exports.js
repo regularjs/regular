@@ -30,4 +30,7 @@ require("./spec/browser-modifier.js");
 require("./spec/test-util.js");
 require("./spec/test-event.js");
 require("./spec/test-lexer.js");
-require("./spec/test-ssr.js");
+
+if(Object.create !== undefined){
+  require("./spec/test-ssr.js");
+}

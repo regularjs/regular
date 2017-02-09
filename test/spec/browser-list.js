@@ -911,6 +911,7 @@ it("list with else should also works under track mode", function(){
 })
 
 describe("SSR: list", function(){
+  if(Object.create === undefined) return;
   it("basic usage of ssr with list", function( ){
     var container = document.createElement('div');
     var Component = Regular.extend({

@@ -1399,6 +1399,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	var ERROR = __webpack_require__(16).ERROR;
 	var nodeCursor = __webpack_require__(22);
 	var shared = __webpack_require__(13);
+	var NOOP = function(){};
 
 
 	/**
@@ -1455,9 +1456,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	  context.$refs = {};
 
 	  var extra = options.extra;
+	  var oldModify = extra && extra.$$modify;
 
-	  if(extra && extra.$$modify){
-	    extra.$$modify(this);
+	  if( oldModify ){
+	    oldModify(this);
 	  }
 	  context.$root = context.$root || context;
 	  
@@ -1468,7 +1470,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	    if( typeof modifyBodyComponent  === 'function'){
 	      modifyBodyComponent = modifyBodyComponent.bind(this)
 	      newExtra = _.createObject(extra);
-	      newExtra.$$modify = modifyBodyComponent;
+	      newExtra.$$modify = function( comp ){
+	        return modifyBodyComponent(comp, oldModify? oldModify: NOOP)
+	      }
 	    }else{ //@FIXIT: multiply modifier
 	      newExtra = extra
 	    }
@@ -1731,7 +1735,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    if(record){
 	      records = this._release();
 	      var self = this;
-	      if(records.length){
+	      if( records.length ){
 	        // auto destroy all wather;
 	        group.ondestroy = function(){ self.$unwatch(records); }
 	      }
@@ -1921,19 +1925,22 @@ return /******/ (function(modules) { // webpackBootstrap
 	  },
 	  // simple accessor get
 	  _sg_:function(path, defaults, ext){
-	    if(typeof ext !== 'undefined'){
-	      var computed = this.computed,
-	        computedProperty = computed[path];
-	      if(computedProperty){
-	        if(computedProperty.type==='expression' && !computedProperty.get) this._touchExpr(computedProperty);
-	        if(computedProperty.get)  return computedProperty.get(this);
-	        else _.log("the computed '" + path + "' don't define the get function,  get data."+path + " altnately", "warn")
-	      }
+	    if( path === undefined ) return undefined;
+	    if(ext && typeof ext === 'object'){
+	      if(ext[path] !== undefined)  return ext[path];
 	    }
-	    if(typeof defaults === "undefined" || typeof path == "undefined" ){
+	    var computed = this.computed,
+	      computedProperty = computed[path];
+	    if(computedProperty){
+	      if(computedProperty.type==='expression' && !computedProperty.get) this._touchExpr(computedProperty);
+	      if(computedProperty.get)  return computedProperty.get(this);
+	      else _.log("the computed '" + path + "' don't define the get function,  get data."+path + " altnately", "warn")
+	    }
+
+	    if( defaults === undefined  ){
 	      return undefined;
 	    }
-	    return (ext && typeof ext[path] !== 'undefined')? ext[path]: defaults[path];
+	    return defaults[path];
 
 	  },
 	  // simple accessor set
@@ -2462,6 +2469,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	//  : xml
 	//  | jst
 	//  | text
+	var rRN = /\r\n/g;
 	op.statement = function(){
 	  var ll = this.ll();
 	  switch(ll.type){
@@ -2472,7 +2480,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      while(ll = this.eat(['NAME', 'TEXT'])){
 	        text += ll.value;
 	      }
-	      return node.text(text);
+	      return node.text(text.replace(rRN, '\n'));
 	    case 'TAG_OPEN':
 	      return this.xml();
 	    case 'OPEN': 
@@ -2889,7 +2897,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	// member . ident  
 
 	op.member = function(base, last, pathes, prevBase){
-	  var ll, path, extValue;
+	  var ll, path;
 
 
 	  var onlySimpleAccessor = false;
@@ -2900,7 +2908,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	      pathes = [];
 	      pathes.push( path );
 	      last = path;
-	      extValue = extName + "." + path
 	      base = ctxName + "._sg_('" + path + "', " + varName + ", " + extName + ")";
 	      onlySimpleAccessor = true;
 	    }else{ //Primative Type
@@ -4696,7 +4703,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  var UPDATE = 1;
 	  var n = 0;m=0;
 	  var steps = [];
-	  var step = {index: null, add:0, removed:[]};
+	  var step = { index: null, add:0, removed:[] };
 
 	  for(var i=0;i<edits.length;i++){
 	    if(edits[i] > 0 ){ // NOT LEAVE
