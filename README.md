@@ -204,3 +204,7 @@ __regularjs is still under heavy development__, and please help us with feedback
 ## LICENSE
 
 [MIT](https://github.com/regularjs/regular/blob/master/LICENSE).
+
+## TODO
+
+remove log code in production mode;

@@ -825,6 +825,46 @@ it('bugfix #50', function(){
   }
 
 
+  it("bug #156 once bug", function(){
+
+    var component = new Regular;
+    var test = {a: 0, b:0};
+    component.$once("test",function () { test.a++ });
+    component.$once("test",function () { test.b++ });
+    component.$once("1test",function () { test.a++ });
+    component.$once("1test",function () { test.b++ });
+    component.$emit("test");
+    component.$emit("test");
+    expect(test.a).to.equal(1)
+    expect(test.b).to.equal(1)
+    component.$emit("1test");
+    component.$emit("1test");
+    expect(test.a).to.equal(2)
+    expect(test.b).to.equal(2)
+
+  })
+
+
+  it("bug #156 side effect", function(){
+
+    var component = new Regular;
+    var test = {a: 0, b:0};
+    component.$on("test",function () { test.a++ });
+    component.$on("$test",function () { test.a++ });
+    component.$on("$init",function () { test.b++ });
+    component.$on("init",function () { test.b++ });
+    component.$emit("init");
+    component.$emit("$init");
+
+    component.$emit("$test");
+    expect(test.a).to.equal(1)
+    expect(test.b).to.equal(4)
+
+    component.$emit("test");
+    expect(test.a).to.equal(2)
+  })
+
+
   // it("bug #122: paren Expression shouldn't change the set property it wrapped", function(){
   //   var Sub = Regular.extend({
   //     name: 'Sub',

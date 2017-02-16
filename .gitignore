@@ -1,5 +1,6 @@
 *node_modules*
 *sublime*
+*.idea*
 example
 npm-debug.log
 */tmp/*
