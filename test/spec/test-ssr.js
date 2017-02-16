@@ -13,6 +13,8 @@ var clean = function(str){
 
 describe("Server Side Rendering", function(){
 
+  var Namespace = Regular.extend();
+
   it("template with null won't throw error", function(){
 
     var Component = Regular.extend({ })
@@ -104,6 +106,34 @@ describe("Server Side Rendering", function(){
       html: '<script></script><!--gdasdada'
     })
     expect(safeString).to.equal('{"html":"<script><\\/script><\\!--gdasdada"}');
+  })
+
+
+  it('modifyBodyComponent should wont accept ssr', function(){
+
+    var Comp = Namespace.extend({
+      template: "{#inc this.$body}",
+      modifyBodyComponent: function(component){
+        component.data.name = 'zhenghaibo'
+        // just some code will cause error in serverside
+
+      }
+    })
+    var Nested = Namespace.extend({
+      template: "<div>{name}</div>",
+    })
+
+    Namespace.component({
+      provider: Comp,
+      nested: Nested
+    })
+
+    expect( SSR.render(Namespace.extend({
+      template: '<provider><nested name={name}/></provider>'
+    }), {data: {name: 'leeluolee'}}) ).to.equal('<div>leeluolee</div>')
+
+
+
   })
 
 })
