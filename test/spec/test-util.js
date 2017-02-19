@@ -1,9 +1,10 @@
 var expect = require('expect.js');
-var _ = require("../../lib/util.js");
-var shim = require("../../lib/helper/shim.js");
-var extend = require("../../lib/helper/extend.js");
-var diff = require("../../lib/helper/diff.js")
-var diffArray = diff.diffArray;
+var _ = require("../../lib/util");
+var shim = require("../../lib/helper/shim");
+var extend = require("../../lib/helper/extend");
+var diff = require("../../lib/helper/diff")
+var diffTrack = window.diffTrack = require("../../lib/helper/diffTrack")
+var diffArray = window.diffArray = diff.diffArray;
 var diffObject = diff.diffObject;
 
 
@@ -110,86 +111,6 @@ describe("Regular.util", function(){
     // expect(_.extend(c, {b:1,c:2},["c"])).to.eql({a:1,c:2})
   })
 
-  it('diffArray should works as expect', function(){
-    expect(diffArray([], [1,2], true)).to.eql([
-      {
-        "index": 0,
-        "add": 0,
-        "removed": [
-          1,
-          2
-        ]
-      }
-    ])
-    expect(diffArray([1,2], [], true)).to.eql([
-      { index: 0, add: 2, removed: [] } 
-    ]);
-    expect(diffArray([1,2,3], [2], true)).to.eql([
-      { index: 0, add: 1, removed: [] },
-      { index: 2, add: 1, removed: []} 
-    ]);
-    var a = [1,2,3];
-    expect(diffArray(_.slice(a, 1),[], true)).to.eql([
-      { index: 0, add: 2, removed: []} 
-    ]);
-
-    expect(diffArray([{a:1},{a:3}], [{a:2}, {a:3}])).to.equal(true)
-    expect(diffArray([1,2], [1,2])).to.equal(false)
-  })
-
-  it('complex diffObject should work as expect when the values are deep Equal', function(){
-
-    var obj = {a: 1, b:2, c:3};
-    var obj2 = {a: 1, b:2, c:3};
-
-    expect( diffObject(obj, obj2, true) ).to.eql([])
-
-  })
-
-  it('complex diffObject should work as expect when the values aren"t deep Equal', function(){
-
-    var obj = { a: 1, b:2, c:3 };
-    var obj2 = { a: 1, b:2, c:4 };
-
-    expect( diffObject(obj, obj2, true) ).to.eql([ { index: 2, add: 1, removed: [ 'c' ] } ] )
-
-  })
-
-  it('complex diffObject"s equalitation should judged by value, but not the key ', function(){
-
-    var obj = { a: 1, b:2, c:3 };
-    var obj2 = { a: 1, c: 2};
-
-    expect( diffObject(obj, obj2, true) ).to.eql([ { index: 2, add: 1, removed: [] } ] )
-
-  })
-
-  it('complex diffObject should work as expect when the keys"s number aren"t equal', function(){
-
-    var obj = { a: 1, b:2, c:3 };
-    var obj2 = { a: 1, b:2};
-
-    expect( diffObject(obj, obj2, true) ).to.eql([ { index: 2, add: 1, removed: [  ] } ] )
-
-  })
-
-  it('simple diffObject should work as expect when the value are deep Equal', function(){
-
-    var obj = {a: 1, b:2, c:3};
-    var obj2 = {a: 1, b:2, c:3};
-
-    expect( diffObject(obj, obj2) ).to.equal(false)
-
-  })
-
-  it('simple diffObject should work as expect when the value aren"t deep Equal', function(){
-
-    var obj = {a: 1, b:2, c:3};
-    var obj2 = {a: 1, b:2, c:4};
-
-    expect( diffObject(obj, obj2) ).to.equal(true)
-
-  })
 
 
   it('_.equals should works as expect', function(){
@@ -316,6 +237,195 @@ describe("Regular.util", function(){
         expect(three).to.equal(3)
       }.bind({a:1}, 1, 2)(3)
     })
+  })
+
+
+
+})
+
+
+describe("Diff", function(){
+
+  it('diffArray should works as expect', function(){
+    expect(diffArray([], [1,2], true)).to.eql([
+      {
+        "index": 0,
+        "add": 0,
+        "removed": [
+          1,
+          2
+        ]
+      }
+    ])
+    expect(diffArray([1,2], [], true)).to.eql([
+      { index: 0, add: 2, removed: [] } 
+    ]);
+    expect(diffArray([1,2,3], [2], true)).to.eql([
+      { index: 0, add: 1, removed: [] },
+      { index: 2, add: 1, removed: []} 
+    ]);
+    var a = [1,2,3];
+    expect(diffArray(_.slice(a, 1),[], true)).to.eql([
+      { index: 0, add: 2, removed: []} 
+    ]);
+
+    expect(diffArray([{a:1},{a:3}], [{a:2}, {a:3}])).to.equal(true)
+    expect(diffArray([1,2], [1,2])).to.equal(false)
+  })
+
+  it('complex diffObject should work as expect when the values are deep Equal', function(){
+
+    var obj = {a: 1, b:2, c:3};
+    var obj2 = {a: 1, b:2, c:3};
+
+    expect( diffObject(obj, obj2, true) ).to.eql([])
+
+  })
+
+  it('complex diffObject should work as expect when the values aren"t deep Equal', function(){
+
+    var obj = { a: 1, b:2, c:3 };
+    var obj2 = { a: 1, b:2, c:4 };
+
+    expect( diffObject(obj, obj2, true) ).to.eql([ { index: 2, add: 1, removed: [ 'c' ] } ] )
+
+  })
+
+  it('complex diffObject"s equalitation should judged by value, but not the key ', function(){
+
+    var obj = { a: 1, b:2, c:3 };
+    var obj2 = { a: 1, c: 2};
+
+    expect( diffObject(obj, obj2, true) ).to.eql([ { index: 2, add: 1, removed: [] } ] )
+
+  })
+
+  it('complex diffObject should work as expect when the keys"s number aren"t equal', function(){
+
+    var obj = { a: 1, b:2, c:3 };
+    var obj2 = { a: 1, b:2};
+
+    expect( diffObject(obj, obj2, true) ).to.eql([ { index: 2, add: 1, removed: [  ] } ] )
+
+  })
+
+  it('simple diffObject should work as expect when the value are deep Equal', function(){
+
+    var obj = {a: 1, b:2, c:3};
+    var obj2 = {a: 1, b:2, c:3};
+
+    expect( diffObject(obj, obj2) ).to.equal(false)
+
+  })
+
+  it('simple diffObject should work as expect when the value aren"t deep Equal', function(){
+
+    var obj = {a: 1, b:2, c:3};
+    var obj2 = {a: 1, b:2, c:4};
+
+    expect( diffObject(obj, obj2) ).to.equal(true)
+
+  })
+
+
+  it(' equal', function(){
+
+    var newList = [1,2,3]
+    var oldList = [1,2,3] 
+
+    expect( diffTrack( newList, oldList, function(i){return i}) ).to.eql([ ])
+
+  })
+
+  it('simple', function(){
+
+    var newList = [1,2,3]
+    var oldList = [2,3, 5, 6] 
+
+    expect( diffTrack(newList, oldList, function(i){return i}) ).to.eql([
+      {len: 2, mode:0, index: 2}, 
+      {len: 1, mode: 1, index: 0}
+    ])
+
+  })
+
+  it('arr -> empty', function(){
+
+    var newList = []
+    var oldList = [1,2] 
+
+    expect( diffTrack(newList, oldList, function(i){return i}) ).to.eql([
+      {len: 2, mode: 0, index: 0 }
+    ])
+  })
+  it(' empty -> arr', function(){
+
+    var oldList = []
+    var newList = [1,2] 
+
+    expect( diffTrack(newList, oldList, function(i){return i}) ).to.eql([
+      {len: 2, mode: 1, index: 0 }
+    ])
+  })
+  it(' with order', function(){
+
+    var newList = [1,2,3]
+    var oldList = [7, 3,2, 5, 6] 
+
+    expect( diffTrack(newList, oldList, function(i){return i}) ).to.eql([
+      { len: 1, mode: 0, index: 0 },
+      { len: 2, mode: 0, index: 2 },
+      { len: 2, mode: 1, index: 0 },
+      { len: 1, mode: 0, index: 3 }
+
+    ])
+
+  })
+  it(' with order flow by insert', function(){
+
+    var newList = [1,2,4, 3]
+    var oldList = [7, 3,2, 5, 6] 
+
+    expect( diffTrack(newList, oldList, function(i){return i}) ).to.eql([
+      { len: 1, mode: 0, index: 0 },
+      { len: 2, mode: 0, index: 2 },
+      { len: 3, mode: 1, index: 0 },
+      { len: 1, mode: 0, index: 4 }
+    ])
+
+  })
+  it('new List more than old', function(){
+
+    var oldList = [1,2,4, 3]
+    var newList = [7, 3,2, 5, 6] 
+
+    expect( diffTrack(newList, oldList, function(i){return i}) ).to.eql([
+      { len: 1, mode: 0, index: 0 },
+      { len: 1, mode: 0, index: 1 },
+      { len: 2, mode: 1, index: 0 },
+      { len: 1, mode: 0, index: 3 },
+      { len: 2, mode: 1, index: 3 }
+    ])
+
+  })
+  it('revert', function(){
+
+    var newList = [1,2,3,4,5,6,7];
+    var oldList = [7,6,5,4,3,2,1];
+
+    expect( diffTrack(newList, oldList, function(i){return i}) ).to.eql([
+      { len: 6, mode: 1, index: 0 },
+      { len: 6, mode: 1, index: 0 },
+    ])
+
+  })
+
+  it('重复key', function(){
+    throw Error('')
+  })
+
+  it('无法key', function(){
+    throw Error('')
   })
 
 })

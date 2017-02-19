@@ -825,49 +825,55 @@ it('bugfix #50', function(){
   }
 
 
-  // it("bug #122: paren Expression shouldn't change the set property it wrapped", function(){
-  //   var Sub = Regular.extend({
-  //     name: 'Sub',
-  //     template: '<div>disabled is {disabled}</div>'
-  //   });
 
-  //   var Top = Regular.extend({
-  //     template: '<Sub ref=sub disabled={num|towWay} actived={(num2|oneWay)} ></Sub>',
-  //     config: function(data){
-  //       data.num = 1;
-  //       data.num2 = 2;
-  //     }
-  //   }).filter({
-  //     towWay: {
-  //       get: function( val ){
-  //         return '' + val;
-  //       },
-  //       set: function( val ){
-  //         return parseInt(val, 10);
-  //       }
-  //     },
-  //     oneWay: function(val){
-  //       return '' + val;
-  //     }
-  //   });
 
-  //   var compo = new Top();
-  //   expect(compo.data.num).to.equal(1);
-  //   expect(compo.data.num2).to.equal(2);
-  //   expect(compo.$refs.sub.data.disabled).to.equal('1');
-  //   expect(compo.$refs.sub.data.actived).to.equal('2');
 
-  //   compo.$refs.sub.$update('disabled', '3');
-  //   expect(compo.data.num).to.equal(3);
 
-  //   compo.$refs.sub.$update('actived', '3');
-  //   expect(compo.data.num2).to.equal(2);
+  })
 
-  // })
-  // it('bug :directive return value that not function will throw error', function(){
-  //   throw Error()
-  // })
+
+  describe("M 0.6", function(){
+
+    it('bug #90: simple', function(){
+    var List = Regular.extend({
+      template: '<div ref=cnt>{#list list as item by item.a}<span>{item.a}</span>{/list}</div>'
+    });
+    var list = new List({
+      data: {
+      list: [{a: 0}, {a: 1} , {a: 2}, {a: 3}, {a: 4}, {a: 5}]
+      }
+    });
+    var dataList = list.data.list;
+
+    var spans = nes.all( 'span', list.$refs.cnt );
+    expect( spans.length ).to.equal(6);
+    spans.forEach(function(div , index){
+      expect(div.innerHTML).to.equal('' + index)
+    })
+
+    var newList = []
+
+    for(var len = spans.length; len--;){
+      newList.push(dataList[len])
+    }
+
+    list.data.list = newList;
+    list.$update();
+
+    var newSpans = nes.all( 'span', list.$refs.cnt );
+
+    newSpans.forEach(function(d, index){
+      expect(d).to.equal(spans[newSpans.length - 1 - index])
+    })
+
+    it('bug #90: raw value', function(){
+
+    })
+  })
+
+
 })
+
 
 
 

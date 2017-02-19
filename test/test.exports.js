@@ -13,6 +13,10 @@ ao.typeEqual = function(list){
 }
 
 
+
+
+
+
 require("./spec/browser-syntax.js");
 require("./spec/browser-bugfix.js");
 require("./spec/browser-animate.js");
