@@ -2,6 +2,7 @@ var expect = require('expect.js');
 
 var Regular = require("../../lib/index.js");
 var dom = Regular.dom;
+var SSR = require("../../lib/render/server.js");
 
 function destroy(component, container){
   component.destroy();
@@ -464,6 +465,45 @@ var template = '<input type="text"  class="form-control" \
 
 })
 
+
+describe("Milestones v0.6.*", function(){
+  describe("SSR", function(){
+
+    if(!Object.create) return;
+
+    it('nested component startWith str', function(){
+      var container = document.createElement('div');
+      var Price = Regular.extend({
+        name: 'price',
+        template: "¥<i class='num'>{price}</i>"
+      })
+      var Component = Regular.extend({
+        template: "<p class='price'> <price  price={price} /></p>"
+      });
+
+
+      container.innerHTML = SSR.render(Component, {
+        data: {
+          price: 1
+        }
+      });
+
+      var component = new Component({
+        mountNode: container,
+        data: {
+          price: 1
+        }
+      })
+
+      expect(nes.one('.num', container).innerHTML).to.equal('1');
+
+      component.$update('price', 2)
+
+      expect(nes.one('.num', container).innerHTML).to.equal('2');
+    })
+
+  })
+})
 describe("Milestones v0.4.*", function(){
   it("#53 nested component with delegate-event and [postion:after or before ] bug", function( done ){
     var after = document.createElement('div');
@@ -845,6 +885,8 @@ it('bugfix #50', function(){
   })
 
 
+
+
   it("bug #156 side effect", function(){
 
     var component = new Regular;
@@ -863,6 +905,8 @@ it('bugfix #50', function(){
     component.$emit("test");
     expect(test.a).to.equal(2)
   })
+
+
 
 
   // it("bug #122: paren Expression shouldn't change the set property it wrapped", function(){
