@@ -501,6 +501,50 @@ describe("Milestones v0.6.*", function(){
 
       expect(nes.one('.num', container).innerHTML).to.equal('2');
     })
+    it(' blank test str', function(){
+      var container = document.createElement('div');
+      var tpl = "<h2>\n <span class='num'>{price}</span></h2>";
+      var tpl2 = '<div>\n\
+        {#list resources as res}\
+          <price2 price = {res.price} />\
+        {/list}\n\
+        </div>';
+      var Price = Regular.extend({
+        name: 'price2',
+        template: tpl
+      })
+      var Component = Regular.extend({
+        template: tpl2
+      });
+
+
+      container.innerHTML = SSR.render(Component.extend({template: tpl2}), {
+        data: {
+          resources: [{ price: 1}, {price: 2}]
+        }
+      });
+
+      // 由于前后端同时touch发生了冲突
+      Regular.extend({
+        name: 'price2',
+        template: tpl
+      })
+
+      var component = new Component({
+        mountNode: container,
+        data: {
+          resources: [{ price: 1}, {price: 2}]
+        }
+      })
+
+      expect(nes.one('.num', container).innerHTML).to.equal('1');
+
+      component.data.resources[0].price = 2;
+      component.$update();
+
+
+      expect(nes.one('.num', container).innerHTML).to.equal('2');
+    })
 
   })
 })
