@@ -547,6 +547,43 @@ describe("Milestones v0.6.*", function(){
     })
 
   })
+
+
+
+ it("bugfix-161: r-component  update ref ", function(){
+
+    var NameSpace = Regular.extend();
+    var container = document.createElement("div");
+    var Component1 = NameSpace.extend({
+      name: "c1",
+      template: "<p ref=p>c1</p>"
+    })
+    var Component2 = NameSpace.extend({
+      name: "c2",
+      template: "<p ref=p>c2</p>"
+    })
+
+    var component = new NameSpace({
+
+      data: {
+        modules: [1,2],
+        compName: 'c1'
+      },
+
+      template: 
+        '{#list modules as module}\
+            <r-component is={compName} ref="module-{module_index}"/>\
+        {/list}'
+    }).$inject(container);
+
+    expect(component.$refs['module-0'].$refs.p.innerHTML).to.equal('c1');
+    expect(component.$refs['module-1'].$refs.p.innerHTML).to.equal('c1');
+
+    component.$update('compName', 'c2')
+    
+    expect(component.$refs['module-0'].$refs.p.innerHTML).to.equal('c2');
+    expect(component.$refs['module-1'].$refs.p.innerHTML).to.equal('c2');
+  })
 })
 describe("Milestones v0.4.*", function(){
   it("#53 nested component with delegate-event and [postion:after or before ] bug", function( done ){
@@ -951,7 +988,7 @@ it('bugfix #50', function(){
   })
 
 
-
+ 
 
   // it("bug #122: paren Expression shouldn't change the set property it wrapped", function(){
   //   var Sub = Regular.extend({
