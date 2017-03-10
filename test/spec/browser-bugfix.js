@@ -461,7 +461,15 @@ var template = '<input type="text"  class="form-control" \
     outer.destroy();
 
   })
+  it('bugfix #166',function () {
+      expect(function(){
+          var component = Regular.extend({
+              watch:function () {
 
+              }
+          })
+      }).to.not.throwException();
+  })
 
 })
 
