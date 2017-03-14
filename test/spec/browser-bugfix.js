@@ -470,6 +470,34 @@ var template = '<input type="text"  class="form-control" \
           })
       }).to.not.throwException();
   })
+  it('bugfix #170',function () {
+        expect(function(){
+            var Nest = Regular.extend({
+                name:"test",
+                template:"<p>h3中的内容:{test}</p><h3 ref=test>regular测试demo</h3>",
+                computed:{
+                    test:function () {
+                        //console.log(this.$refs);
+                        if(this.$refs.test){
+                            return this.$refs.test.innerHTML;
+                        }
+                        return "";
+                    }
+                },
+                startAjaxRequire:function () {
+                    setTimeout(function() {
+                        //模拟ajax的回调，并调用更新
+                        //这种操作感觉还是比较常见
+                        this.$update();
+                    }.bind(this),200);
+                }
+            });
+            var test=new Nest();
+            test.startAjaxRequire();
+            //在ajax回调前组件被销毁
+            test.destroy();
+        }).to.not.throwException();
+    })
 
 })
 
