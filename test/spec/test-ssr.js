@@ -77,6 +77,43 @@ describe("Server Side Rendering", function(){
     })).to.eql('<div div="1"></div>')
   })
 
+  it('"{expr}inteplation"  in compoennt', function(){
+
+    var Comp = Regular.extend({
+      template: '<ssr-expr name="{id}1" />'
+    })
+    Regular.extend({
+      name: 'ssr-expr',
+      template: '<div>{name}</div>'
+    })
+
+
+    expect(SSR.render(Comp, {
+      data: {
+        id: 1
+      }
+    })).to.eql('<div>11</div>')
+
+    delete Regular._components['ssr-expr'];
+
+  })
+
+  it('"{expr}inteplation"  in attribute', function(){
+
+    var Comp = Regular.extend({
+      template: '<div name="{id}1"></div>'
+    })
+
+
+    expect(SSR.render(Comp, {
+      data: {
+        id: 1
+      }
+    })).to.eql('<div name="11"></div>')
+
+    delete Regular._components['ssr-expr'];
+
+  })
 
   it('r-html should work as expect', function(){
     var Comp = Regular.extend({
