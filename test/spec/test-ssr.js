@@ -125,6 +125,16 @@ describe("Server Side Rendering", function(){
       }
     })).to.equal('<div title="haha"><p>html</p></div>')
   })
+  it('r-hide with ssr', function(){
+    var Comp = Regular.extend({
+      template: '<div  r-hide={html}></div>'
+    })
+    expect(SSR.render(Comp, {
+      data: {
+        html: "<p>html</p>"
+      }
+    })).to.equal('<div style="display:none"></div>')
+  })
 
   it("string inteplation should work at server", function(){
     var Comp = Regular.extend({

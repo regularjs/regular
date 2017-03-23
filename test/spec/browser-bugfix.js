@@ -509,6 +509,15 @@ describe("Milestones v0.6.*", function(){
 
       expect(nes.one('.num', container).innerHTML).to.equal('2');
     })
+    it(' content in tag with r-html and ssr', function(){
+      throw Error;
+    })
+    it(' &nbsp in tag', function(){
+      throw Error;
+    })
+    it('r-sytle r-class withssr', function(){
+      throw Error;
+    })
     it(' blank test str', function(){
       var container = document.createElement('div');
       var tpl = "<h2>\n <span class='num'>{price}</span></h2>";
