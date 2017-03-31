@@ -515,6 +515,12 @@ describe("Milestones v0.6.*", function(){
     it(' &nbsp in tag', function(){
       throw Error;
     })
+    it('#if blank ', function(){
+      throw Error;
+    })
+    it('#list blank ', function(){
+      throw Error;
+    })
     it('r-sytle r-class withssr', function(){
       throw Error;
     })
