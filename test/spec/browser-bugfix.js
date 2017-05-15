@@ -475,6 +475,54 @@ var template = '<input type="text"  class="form-control" \
 
 
 describe("Milestones v0.6.*", function(){
+  describe("{~ body parse}", function(){
+    var Component = Regular.extend({});
+    it("{~ <div>{name}</div> }", function( ){
+      var A = Regular.extend({
+        template: '{#inc title}',
+        config(data){
+          data.name='A'
+        }
+      })
+
+      Component.component('A', A);
+
+      var b = new Component({
+        data: {
+          name: 'B'
+        },
+        template: '<A ref=a title={~ <div>{name}</div>} ></A>'
+      })
+
+      var div = Regular.dom.element(b)
+      expect(div.innerHTML).to.equal('B');
+
+    })
+    it("{~ <div class='name'>{name}</div><A title={~<div class='age'>{age}</div>}></A> }", function( ){
+      var A = Regular.extend({
+        template: '{#inc title}',
+        config(data){
+          data.name='A'
+          data.age=12
+        }
+      })
+
+      Component.component('A', A);
+
+      var b = new Component({
+        data: {
+          name: 'B',
+          age: 11,
+        },
+        template: '<div ref=container><A ref=a title={~ <div class="name">{name}</div><A title={~<div class="age">{age}</div>}></A> } ></A></div>'
+      })
+
+      expect(nes.one('.name', b.$refs.container).innerHTML).to.equal('B')
+      expect(nes.one('.age', b.$refs.container).innerHTML).to.equal('11')
+
+
+    })
+  })
   describe("SSR", function(){
 
     if(!Object.create) return;
@@ -570,6 +618,7 @@ describe("Milestones v0.6.*", function(){
     })
 
   })
+
 
 
 
