@@ -1,7 +1,4 @@
-<a href="http://regularjs.github.io">
-  ![regularjs](http://regularjs.github.io/image/regular-icon-100.png)
-</a>
-
+[![regularjs](http://regularjs.github.io/image/regular-icon-100.png)](http://regularjs.github.io)
 
 # Regularjs
 
