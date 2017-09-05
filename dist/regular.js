@@ -1,6 +1,6 @@
 /**
 @author	leeluolee
-@version	0.6.0-beta.1
+@version	0.6.0-beta.6
 @homepage	http://regularjs.github.io
 */
 (function webpackUniversalModuleDefinition(root, factory) {
@@ -310,7 +310,6 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _  = module.exports;
 	var entities = __webpack_require__(6);
-	var slice = [].slice;
 	var o2str = ({}).toString;
 	var win = typeof window !=='undefined'? window: global;
 	var MAX_PRIORITY = 9999;
@@ -1454,14 +1453,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }
 	  context._children = [];
 	  context.$refs = {};
+	  context.$root = context.$root || context;
 
 	  var extra = options.extra;
 	  var oldModify = extra && extra.$$modify;
 
-	  if( oldModify ){
-	    oldModify(this);
-	  }
-	  context.$root = context.$root || context;
 	  
 	  var newExtra;
 	  if( body = context._body ){
@@ -1499,6 +1495,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	    combine.node(context);
 	  }
 
+
+
+	  // modify在compile之后调用， 这样就无需处理SSR相关逻辑
+	  
+	  if( oldModify ){
+	    oldModify(this);
+	  }
 
 	  // this is outest component
 	  if( !context.$parent ) context.$update();
@@ -2093,7 +2096,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    if(testSubCapure(args[index])) {
 	      marched = true;
 	      if(handler){
-	        token = handler.apply(this, args.slice(index, index + link[1]))
+	        token = handler.apply(this, _.slice(args, index, index + link[1]))
 	        if(token)  token.pos = this.index;
 	      }
 	      break;
@@ -2134,6 +2137,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  // living template lexer
 	  map1 = genMap([
 	    // INIT
+	    rules.BODY_END,
 	    rules.ENTER_JST,
 	    rules.ENTER_TAG,
 	    rules.TEXT,
@@ -2151,8 +2155,8 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    // JST
 	    rules.JST_OPEN,
+	    rules.JST_BODY_OPEN,
 	    rules.JST_CLOSE,
-	    rules.JST_COMMENT,
 	    rules.JST_EXPR_OPEN,
 	    rules.JST_IDENT,
 	    rules.JST_SPACE,
@@ -2166,11 +2170,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	  // ignored the tag-relative token
 	  map2 = genMap([
 	    // INIT no < restrict
+	    rules.BODY_END,
 	    rules.ENTER_JST2,
 	    rules.TEXT,
 	    // JST
-	    rules.JST_COMMENT,
 	    rules.JST_OPEN,
+	    rules.JST_BODY_OPEN,
 	    rules.JST_CLOSE,
 	    rules.JST_EXPR_OPEN,
 	    rules.JST_IDENT,
@@ -2252,6 +2257,23 @@ return /******/ (function(modules) { // webpackBootstrap
 	    if(all) return {type: 'TEXT', value: all}
 	  }],
 
+	  // {~ <div></div> }
+	  BODY_END: [/{SPACE}*{END}/,  function(val){
+
+	    var states = this.states, slen = states.length;
+
+
+	    if(states[slen-2] === 'JST' ){
+
+	      this.leave('INIT');
+	      this.leave('JST');
+	      return {type: 'END'}
+	    }
+
+	    return { type: 'TEXT', value: val }
+
+	  } ],
+
 	  TEXT: [/[^\x00]+/, 'TEXT' ],
 
 	  // 2. TAG
@@ -2277,6 +2299,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    if(all === '>') this.leave();
 	    return {type: all, value: all }
 	  }, 'TAG'],
+
 	  TAG_STRING:  [ /'([^']*)'|"([^"]*)\"/, /*'*/  function(all, one, two){ 
 	    var value = one || two || "";
 
@@ -2291,10 +2314,17 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	  // 3. JST
 	  // -------------------
-
 	  JST_OPEN: ['{BEGIN}#{SPACE}*({IDENT})', function(all, name){
 	    return {
 	      type: 'OPEN',
+	      value: name
+	    }
+	  }, 'JST'],
+	  // title = {~ <div></div>}
+	  JST_BODY_OPEN: ['{BEGIN}~{SPACE}*', function(all, name){
+	    this.enter('INIT');
+	    return {
+	      type: 'BODY_OPEN',
 	      value: name
 	    }
 	  }, 'JST'],
@@ -2454,12 +2484,17 @@ return /******/ (function(modules) { // webpackBootstrap
 	// program
 	//  :EOF
 	//  | (statement)* EOF
-	op.program = function(){
+	op.program = function(isAttr){
 	  var statements = [],  ll = this.ll();
 	  while(ll.type !== 'EOF' && ll.type !=='TAG_CLOSE'){
 
 	    statements.push(this.statement());
 	    ll = this.ll();
+	    // {~ <div></div>}
+	    if( isAttr && ll.type === 'END'){
+	      this.next();
+	      return node.body(statements)
+	    }
 	  }
 	  // if(ll.type === 'TAG_CLOSE') this.error("You may have unmatched Tag")
 	  return statements;
@@ -2571,6 +2606,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	      return value;
 	    case "EXPR_OPEN":
 	      return this.interplation();
+	    case "BODY_OPEN":
+	      this.next();
+	      return this.program(true);
 	    default:
 	      this.error('Unexpected token: '+ this.la())
 	  }
@@ -3142,6 +3180,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	      filters: filters
 	    }
 	  },
+	  // {~ <div>{name}</div>}
+	  body: function( body ){
+	    return {
+	      type: "body",
+	      body: body
+	    }
+	  },
 	  text: function(text){
 	    return {
 	      type: "text",
@@ -3201,7 +3246,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	function process( what, o, supro ) {
 	  for ( var k in o ) {
 	    if (o.hasOwnProperty(k)) {
-	      if(hooks[k]) {
+	      if(hooks.hasOwnProperty(k)) {
 	        hooks[k](o[k], what, supro)
 	      }
 	      what[k] = isFn( o[k] ) && isFn( supro[k] ) && 
@@ -3898,7 +3943,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	walkers.list = function(ast, options){
 
-	  var Regular = walkers.Regular;  
+	  var Regular = walkers.Regular;
 	  var placeholder = document.createComment("Regular list"),
 	    namespace = options.namespace,
 	    extra = options.extra;
@@ -3914,8 +3959,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	  var track = ast.track, keyOf, extraObj;
 	  var cursor = options.cursor;
 
+	  insertPlaceHolder(placeholder, cursor)
+
+
 	  if( track && track !== true ){
-	    
+
 	    track = this._touchExpr(track);
 	    extraObj = _.createObject(extra);
 	    keyOf = function( item, index ){
@@ -3943,7 +3991,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      section.data = data;
 	      // autolink
 	      var insert =  combine.last(group.get(o));
-	      if(insert.parentNode && !(cursor && cursor.node) ){
+	      if(insert.parentNode && !cursor ){
 	        animate.inject(combine.node(section),insert, 'after');
 	      }
 	      // insert.parentNode.insertBefore(combine.node(section), insert.nextSibling);
@@ -3980,7 +4028,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 
 	    if(!splices || !splices.length) return;
-	      
+
 	    for(var i = 0; i < splices.length; i++){ //init
 	      var splice = splices[i];
 	      var index = splice.index; // beacuse we use a comment for placeholder
@@ -4081,12 +4129,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	  }
 
-	  this.$watch(ast.sequence, update, { 
-	    init: true, 
+	  this.$watch(ast.sequence, update, {
+	    init: true,
 	    diff: track !== true ,
 	    deep: true
 	  });
-	  //@FIXIT, beacuse it is sync process, we can 
+	  //@FIXIT, beacuse it is sync process, we can
 	  cursor = null;
 	  return group;
 	}
@@ -4101,12 +4149,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	  var group = new Group([placeholder]);
 	  var cursor = options.cursor;
 
+	  insertPlaceHolder(placeholder, cursor);
+
 	  if(content){
 	    var self = this;
 	    this.$watch(content, function(value){
 	      var removed = group.get(1), type= typeof value;
 	      if( removed){
-	        removed.destroy(true); 
+	        removed.destroy(true);
 	        group.children.pop();
 	      }
 	      if(!value) return;
@@ -4116,11 +4166,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	        outer: options.outer,
 	        namespace: namespace,
 	        cursor: cursor,
-	        extra: extra}) ); 
-	      if(placeholder.parentNode) {
+	        extra: extra}) );
+	      if(placeholder.parentNode && !cursor) {
 	        compiled.$inject(placeholder, 'before')
 	      }
 	    }, OPTIONS.INIT);
+	    cursor = null;
 	  }
 	  return group;
 	};
@@ -4139,8 +4190,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	      if(!!nvalue){
 	        if(alternate) combine.destroy(alternate)
 	        if(ast.consequent) consequent = self.$compile(ast.consequent, {
-	          record: true, 
-	          element: options.element , 
+	          record: true,
+	          element: options.element ,
 	          extra:extra
 	        });
 	      }else{
@@ -4163,10 +4214,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  group.push(placeholder);
 	  var preValue = null, namespace= options.namespace;
 	  var cursor = options.cursor;
-	  if(cursor && cursor.node){
-	    dom.inject( placeholder , cursor.node,'before')
-	  }
-
+	  insertPlaceHolder(placeholder, cursor)
 
 	  var update = function (nvalue, old){
 	    var value = !!nvalue, compiledSection;
@@ -4177,15 +4225,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	      group.children.pop();
 	    }
 	    var curOptions = {
-	      record: true, 
+	      record: true,
 	      outer: options.outer,
-	      namespace: namespace, 
+	      namespace: namespace,
 	      extra: extra,
 	      cursor: cursor
 	    }
 	    if(value){ //true
 
-	      if(ast.consequent && ast.consequent.length){ 
+	      if(ast.consequent && ast.consequent.length){
 	        compiledSection = self.$compile( ast.consequent , curOptions );
 	      }
 	    }else{ //false
@@ -4195,8 +4243,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	    // placeholder.parentNode && placeholder.parentNode.insertBefore( node, placeholder );
 	    if(compiledSection){
-	      group.push(compiledSection);
-	      if(placeholder.parentNode){
+	      group.push(compiledSection );
+	      if(placeholder.parentNode && !cursor){
 	        animate.inject(combine.node(compiledSection), placeholder, 'before');
 	      }
 	    }
@@ -4223,6 +4271,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      if(~index){
 	        node = document.createTextNode(astText);
 	        dom.text( mountNode, nodeText.slice(index + astText.length) );
+	        dom.inject(node, mountNode, 'before');
 	      } else {
 	        // if( _.blankReg.test( astText ) ){ }
 	        throw Error( MSG[ERROR.UNMATCHED_AST]);
@@ -4241,7 +4290,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	  if(mountNode){
 	    //@BUG: if server render &gt; in Expression will cause error
 	    var astText = _.toText( this.$get(ast) );
-
 	    node = walkers._handleMountText(cursor, astText);
 
 	  }else{
@@ -4261,7 +4309,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  var text = ast.text;
 	  var astText = text.indexOf('&') !== -1? _.convertEntity(text): text;
 
-	  if(cursor && cursor.node) { 
+	  if(cursor && cursor.node) {
 	    var mountNode = cursor.node;
 	    // maybe regularjs parser have some difference with html builtin parser when process  empty text
 	    // @todo error report
@@ -4273,9 +4321,9 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    }else{
 	      node = walkers._handleMountText( cursor, astText )
-	    } 
+	    }
 	  }
-	      
+
 
 	  return node || document.createTextNode( astText );
 	}
@@ -4291,46 +4339,52 @@ return /******/ (function(modules) { // webpackBootstrap
 	  var attrs = ast.attrs, self = this,
 	    Constructor = this.constructor,
 	    children = ast.children,
-	    namespace = options.namespace, 
+	    namespace = options.namespace,
 	    extra = options.extra,
 	    cursor = options.cursor,
 	    tag = ast.tag,
 	    Component = Constructor.component(tag),
 	    ref, group, element, mountNode;
+	    
 
-	  // if inititalized with mount mode, sometime, 
-	  // browser will ignore the whitespace between node, and sometimes it won't
-	  if(cursor){
-	    // textCOntent with Empty text
-	    if(cursor.node && cursor.node.nodeType === 3){
-	      if(_.blankReg.test(dom.text(cursor.node) ) ) cursor.next();
-	      else throw Error(MSG[ERROR.UNMATCHED_AST]);
-	    }
-	  }
 
-	  if(cursor) mountNode = cursor.node;
 
 	  if( tag === 'r-content' ){
 	    _.log('r-content is deprecated, use {#inc this.$body} instead (`{#include}` as same)', 'warn');
 	    return this.$body && this.$body(cursor? {cursor: cursor}: null);
-	  } 
+	  }
 
+
+	  // if inititalized with mount mode, sometime, 
+	  // browser will ignore the whitespace between node, and sometimes it won't
+	  if(cursor ){
+	    // textCOntent with Empty text
+	    if(cursor.node && cursor.node.nodeType === 3){
+	      if(_.blankReg.test(dom.text(cursor.node) ) ) cursor.next();
+	      else if( !Component && tag !== 'r-component' ) {
+	        throw Error(MSG[ERROR.UNMATCHED_AST]);
+	      } 
+	    }
+	  }
+	  
 	  if(Component || tag === 'r-component'){
 	    options.Component = Component;
 	    return walkers.component.call(this, ast, options)
 	  }
 
+	  if(cursor) mountNode = cursor.node;
+
 	  if(tag === 'svg') namespace = "svg";
 	  // @Deprecated: may be removed in next version, use {#inc } instead
-	  
+
 	  if( children && children.length ){
 
 	    var subMountNode = mountNode? mountNode.firstChild: null;
 	    group = this.$compile(children, {
 	      extra: extra ,
 	      outer: options.outer,
-	      namespace: namespace, 
-	      cursor:  subMountNode? nodeCursor(subMountNode): null
+	      namespace: namespace,
+	      cursor: nodeCursor(subMountNode, mountNode)
 	    });
 	  }
 
@@ -4341,10 +4395,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }else{
 	    element = dom.create( tag, namespace, attrs);
 	  }
-	  
 
-	  if(group && !_.isVoidTag(tag) ){ // if not init with mount mode
-	    animate.inject( combine.node(group) , element)
+	  if(group && !_.isVoidTag( tag ) && !mountNode ){ // if not init with mount mode
+	    animate.inject( combine.node( group ) , element)
 	  }
 
 	  // fix tag ast, some infomation only avaliable at runtime (directive etc..)
@@ -4384,11 +4437,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 	walkers.component = function(ast, options){
-	  var attrs = ast.attrs, 
+	  var attrs = ast.attrs,
 	    Component = options.Component,
 	    cursor = options.cursor,
 	    Constructor = this.constructor,
-	    isolate, 
+	    isolate,
 	    extra = options.extra,
 	    namespace = options.namespace,
 	    refDirective = walkers.Regular.directive('ref'),
@@ -4414,16 +4467,27 @@ return /******/ (function(modules) { // webpackBootstrap
 	      if(etest) attr.event = etest[1];
 	    }
 
-	    // @compile modifier
+
+	    // @deprecated  use 
 	    if(attr.mdf === 'cmpl'){
 	      value = _.getCompileFn(value, this, {
-	        record: true, 
-	        namespace:namespace, 
-	        extra: extra, 
+	        record: true,
+	        namespace:namespace,
+	        extra: extra,
 	        outer: options.outer
 	      })
 	    }
-	    
+
+	    // title = {~ <h2>{name}</h2>}
+	    if(value.type === 'body'){
+	      value = _.getCompileFn(value.body, this, {
+	        record: true,
+	        namespace: namespace,
+	        extra: extra,
+	        outer: options.outer
+	      }) 
+	    }
+
 	    // @if is r-component . we need to find the target Component
 	    if(name === 'is' && !Component){
 	      is = value;
@@ -4438,13 +4502,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	      events[eventName] = _.handleEvent.call(this, value, eventName);
 	      continue;
 	    }else {
-	      name = attr.name = _.camelCase(name);
+	      name = attr.name = _.camelCase( name );
 	    }
 
 	    if(!value || value.type !== 'expression'){
 	      data[name] = value;
 	    }else{
-	      data[name] = value.get(self); 
+	      data[name] = value.get(self);
 	    }
 	    if( name === 'ref'  && value != null){
 	      ref = value
@@ -4459,9 +4523,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	  }
 
-	  var definition = { 
-	    data: data, 
-	    events: events, 
+	  var definition = {
+	    data: data,
+	    events: events,
 	    $parent: (isolate & 2)? null: this,
 	    $root: this.$root,
 	    $outer: options.outer,
@@ -4471,7 +4535,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	  }
 	  var options = {
-	    namespace: namespace, 
+	    namespace: namespace,
 	    cursor: cursor,
 	    extra: options.extra
 	  }
@@ -4493,11 +4557,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	    if(value.type === 'expression' && !attr.event){
 	      value = self._touchExpr(value);
 	      // use bit operate to control scope
-	      if( !(isolate & 2) ) 
+	      if( !(isolate & 2) )
 	        this.$watch(value, (function(name, val){
 	          this.data[name] = val;
 	        }).bind(component, name), OPTIONS.SYNC)
-	      if( value.set && !(isolate & 1 ) ) 
+	      if( value.set && !(isolate & 1 ) )
 	        // sync the data. it force the component don't trigger attr.name's first dirty echeck
 	        component.$watch(name, self.$update.bind(self, value), OPTIONS.INIT);
 	    }
@@ -4516,7 +4580,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	      component.destroy();
 	      // @TODO  if component changed , we need update ref
 	      if(ref){
-	        self.$refs[ref] = ncomponent;
+	        var refName = ref.get? ref.get(this): ref;
+	        self.$refs[refName] = ncomponent;
 	      }
 	    }, OPTIONS.SYNC)
 	    return group;
@@ -4557,20 +4622,20 @@ return /******/ (function(modules) { // webpackBootstrap
 	  if(directive && directive.link){
 	    var extra = {
 	      attrs: options.attrs,
-	      param: _.getParamObj(this, attr.param) 
+	      param: _.getParamObj(this, attr.param)
 	    }
 	    var binding = directive.link.call(self, element, value, name, extra);
 	    // if update has been passed in , we will  automately watch value for user
 	    if( typeof directive.update === 'function'){
 	      if(_.isExpr(value)){
 	        this.$watch(value, function(val, old){
-	          directive.update.call(self, element, val, old, extra); 
+	          directive.update.call(self, element, val, old, extra);
 	        })
 	      }else{
 	        directive.update.call(self, element, value, undefined, extra );
 	      }
 	    }
-	    if(typeof binding === 'function') binding = {destroy: binding}; 
+	    if(typeof binding === 'function') binding = {destroy: binding};
 	    return binding;
 	  } else{
 	    if(value.type === 'expression' ){
@@ -4595,7 +4660,15 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	}
 
-
+	function insertPlaceHolder(placeholder, cursor){
+	  if(cursor){
+	    if(cursor.node) dom.inject( placeholder , cursor.node,'before')
+	    else if(cursor.prev) {
+	      dom.inject( placeholder , cursor.prev,'after')
+	      cursor.prev = placeholder;
+	    }
+	  }
+	}
 
 
 /***/ },
@@ -5194,14 +5267,16 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 22 */
 /***/ function(module, exports) {
 
-	function NodeCursor(node){
+	function NodeCursor(node, parentNode){
 	  this.node = node;
+	  this.parent = parentNode;
 	}
 
 
 	var no = NodeCursor.prototype;
 
 	no.next = function(){
+	  this.prev = this.node;
 	  this.node = this.node.nextSibling;
 	  return this;
 	}
@@ -5216,6 +5291,19 @@ return /******/ (function(modules) { // webpackBootstrap
 	// simplest event emitter 60 lines
 	// ===============================
 	var _ = __webpack_require__(3);
+	var fallbackEvent = {
+	  destory: '$destory',
+	  update: '$update',
+	  init: '$init',
+	  config: '$config'
+	}
+
+	// to fix 0.2.x version event
+	// map init to $init;
+	// @FIXIT after version 1.0
+	function fix(type){
+	  return fallbackEvent[type] || type
+	}
 	var API = {
 	  $on: function(event, fn, desc) {
 	    if(typeof event === "object" && event){
@@ -5226,6 +5314,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      desc = desc || {};
 	      // @patch: for list
 	      var context = this;
+	      event = fix(event);
 	      var handles = context._handles || (context._handles = {}),
 	        calls = handles[event] || (handles[event] = []);
 	      var realFn;
@@ -5234,9 +5323,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	          fn.apply( this, arguments )
 	          this.$off(event, fn);
 	        }
+	        // @FIX: if  same fn
 	        fn.real = realFn;
 	      }
-	      calls.push(realFn || fn);
+	      calls.push( realFn || fn );
 	    }
 	    return this;
 	  },
@@ -5247,6 +5337,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var handles = context._handles,
 	      calls;
 
+	    event = fix(event);
 	    if (calls = handles[event]) {
 	      if (!fn) {
 	        handles[event] = [];
@@ -5269,19 +5360,18 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var handles = context._handles, calls, args, type;
 	    if(!event) return;
 	    var args = _.slice(arguments, 1);
-	    var type = event;
+	    var type = fix(event);
 
 	    if(!handles) return context;
-	    if(calls = handles[type.slice(1)]){
-	      for (var j = 0, len = calls.length; j < len; j++) {
-	        calls[j].apply(context, args)
-	      }
-	    }
 	    if (!(calls = handles[type])) return context;
-	    for (var i = 0, len = calls.length; i < len; i++) {
-	      calls[i].apply(context, args)
+
+	    if(calls.length > 1){ // handle, when first is off the event
+	      calls = calls.slice();
 	    }
-	    // if(calls.length) context.$update();
+	    
+	    for (var i = 0, len = calls.length; i < len; i++) {
+	      if(typeof calls[i] === 'function') calls[i].apply(context, args)
+	    }
 	    return context;
 	  },
 	  // capture  event
@@ -5300,6 +5390,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  _.extend(obj, API)
 	}
 	module.exports = Event;
+
 
 /***/ },
 /* 24 */
@@ -5336,7 +5427,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	          var splice = tests[i](context, extra);
 	          if(!_.equals(splice, prev[i])){
 	             equal = false;
-	             prev[i] = _.clone(splice);
+	             prev[i] = splice;//_.clone(splice);
 	          }
 	        }
 	        return equal? false: prev;
@@ -5345,7 +5436,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      if(typeof expr === 'function'){
 	        get = expr.bind(this);      
 	      }else{
-	        expr = this._touchExpr( parseExpression(expr) );
+	        expr = this.$expression(expr);
 	        get = expr.get;
 	        once = expr.once;
 	      }
@@ -5597,6 +5688,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	module.exports = Watcher;
 
+
 /***/ },
 /* 25 */
 /***/ function(module, exports) {
@@ -5644,23 +5736,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	  })
 	  return total;
 	}
-
-	// var basicSortFn = function(a, b){return b - a}
-
-	// f.sort = function(array, key, reverse){
-	//   var type = typeof key, sortFn; 
-	//   switch(type){
-	//     case 'function': sortFn = key; break;
-	//     case 'string': sortFn = function(a, b){};break;
-	//     default:
-	//       sortFn = basicSortFn;
-	//   }
-	//   // need other refernce.
-	//   return array.slice().sort(function(a,b){
-	//     return reverse? -sortFn(a, b): sortFn(a, b);
-	//   })
-	//   return array
-	// }
 
 
 
@@ -5725,33 +5800,38 @@ return /******/ (function(modules) { // webpackBootstrap
 	  },
 	  // when expression is evaluate to true, the elem will add display:none
 	  // Example: <div r-hide={{items.length > 0}}></div>
-	  'r-hide': function(elem, value){
-	    var preBool = null, compelete;
-	    if( _.isExpr(value) || typeof value === "string"){
-	      this.$watch(value, function(nvalue){
-	        var bool = !!nvalue;
-	        if(bool === preBool) return; 
-	        preBool = bool;
-	        if(bool){
-	          if(elem.onleave){
-	            compelete = elem.onleave(function(){
+	  'r-hide': {
+	    link:function(elem, value){
+	      var preBool = null, compelete;
+	      if( _.isExpr(value) || typeof value === "string"){
+	        this.$watch(value, function(nvalue){
+	          var bool = !!nvalue;
+	          if(bool === preBool) return; 
+	          preBool = bool;
+	          if(bool){
+	            if(elem.onleave){
+	              compelete = elem.onleave(function(){
+	                elem.style.display = "none"
+	                compelete = null;
+	              })
+	            }else{
 	              elem.style.display = "none"
-	              compelete = null;
-	            })
+	            }
+	            
 	          }else{
-	            elem.style.display = "none"
+	            if(compelete) compelete();
+	            elem.style.display = "";
+	            if(elem.onenter){
+	              elem.onenter();
+	            }
 	          }
-	          
-	        }else{
-	          if(compelete) compelete();
-	          elem.style.display = "";
-	          if(elem.onenter){
-	            elem.onenter();
-	          }
-	        }
-	      }, STABLE);
-	    }else if(!!value){
-	      elem.style.display = "none";
+	        }, STABLE);
+	      }else if(!!value){
+	        elem.style.display = "none";
+	      }
+	    },
+	    ssr: function(value){
+	      return value? 'style="display:none"': ''
 	    }
 	  },
 	  'r-html': {
@@ -5965,6 +6045,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	    wc.last = this.value;
 	    self.$update();
 	  }
+	  var isChanging = true 
+	  elem.__change = function(){
+	    if(isChanging) return;
+	    isChanging = true;
+	    setTimeout(handler,0)
+	  }
 
 	  dom.on( elem, "change", handler );
 	  
@@ -5974,6 +6060,8 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	  return function destroy(){
 	    dom.off(elem, "change", handler);
+	    // remove __change function 
+	    delete elem.__change;
 	  }
 	}
 

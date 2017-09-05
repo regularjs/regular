@@ -558,20 +558,108 @@ describe("Milestones v0.6.*", function(){
       expect(nes.one('.num', container).innerHTML).to.equal('2');
     })
     it(' content in tag with r-html and ssr', function(){
-      throw Error;
+
+      var container = document.createElement('div');
+      var Component = Regular.extend({
+        template: "<p class='price' r-html={content}>lalala</p>"
+      });
+
+      container.innerHTML = SSR.render(Component, {
+        data: {
+          content: 'abcd'
+        }
+      });
+
+      var component = new Component({
+        mountNode: container,
+        data: {
+          content: 'abcd'
+        }
+      })
+      expect(nes.one('p', container).innerHTML).to.equal('abcd')
+
+
     })
-    it(' &nbsp in tag', function(){
-      throw Error;
+    it('#if blank with ssr', function(){
+
+      var container = document.createElement('div');
+      var Component = Regular.extend({
+        template: "{#if test}<p class='price'>lalala</p>{/if}<p class='price'>{#if test}<span>hahaha</span>{/if}</p>"
+      });
+
+      container.innerHTML = SSR.render(Component, {
+        data: {
+          test: false
+        }
+      });
+
+      var component = new Component({
+        mountNode: container,
+        data: {
+          test: false
+        }
+      })
+
+      expect( nes.all('p', container).length ).to.equal(1)
+
+      component.$update('test', true);
+      expect( nes.all('p', container).length ).to.equal(2)
+      expect( nes.one('p span', container).innerHTML ).to.equal('hahaha');
+
     })
-    it('#if blank ', function(){
-      throw Error;
+    it('#list blank with ssr ', function(){
+
+      var container = document.createElement('div');
+      var Component = Regular.extend({
+        template: "{#list list as item}<p class='price'>{item}</p>{/list}"
+      });
+
+      container.innerHTML = SSR.render(Component, {
+        data: {
+          list: []
+        }
+      });
+
+      var component = new Component({
+        mountNode: container,
+        data: {
+          list: []
+        }
+      })
+
+      expect( nes.all('p', container).length ).to.equal(0)
+
+      component.$update('list', [1,2,3,4]);
+
+      expect( nes.all('p', container).length ).to.equal(4)
+      expect( nes.all('p', container)[3].innerHTML ).to.equal('4')
+
     })
-    it('#list blank ', function(){
-      throw Error;
-    })
-    it('r-sytle r-class withssr', function(){
-      throw Error;
-    })
+//    it('r-sytle r-class with ssr', function(){//
+
+//      var container = document.createElement('div');
+//      var Component = Regular.extend({
+//        template: "<p r-style={{'left': '10px'}} >lalala</p>"
+//      });//
+
+//      container.innerHTML = SSR.render(Component, {
+//        data: {
+//          test: false
+//        }
+//      });//
+
+//      var component = new Component({
+//        mountNode: container,
+//        data: {
+//          list: []
+//        }
+//      })//
+//
+
+//      expect()//
+//
+
+//    })
     it(' blank test str', function(){
       var container = document.createElement('div');
       var tpl = "<h2>\n <span class='num'>{price}</span></h2>";
@@ -773,11 +861,11 @@ it('bugfix #50', function(){
       template: "{checked}"
     }) 
 
-    expect(function(){
+    // expect(function(){
       new Regular({
         template: "<checked toggled='' checked={null} /> <checked checked={undefined}/ >"
       })
-    }).to.not.throwException();
+    // }).to.not.throwException();
 
   })
 

@@ -161,8 +161,8 @@ describe("Server Side Rendering", function(){
     var Comp = Namespace.extend({
       template: "{#inc this.$body}",
       modifyBodyComponent: function(component){
+        
         component.data.name = 'zhenghaibo'
-        // just some code will cause error in serverside
 
       }
     })
@@ -178,6 +178,22 @@ describe("Server Side Rendering", function(){
     expect( SSR.render(Namespace.extend({
       template: '<provider><nested name={name}/></provider>'
     }), {data: {name: 'leeluolee'}}) ).to.equal('<div>leeluolee</div>')
+
+  })
+  it('Boolean attribute should wont accept ssr', function(){
+
+    var Comp = Namespace.extend({
+      template: "<input checked={checked} /><div title></div>",
+    })
+    var text = SSR.render(Comp, {
+      data: {
+        checked: false
+      }
+    });
+    var div = document.createElement('div');
+    div.innerHTML = text;
+
+    expect(nes.one('input', div).checked).to.equal(false)
 
 
 
