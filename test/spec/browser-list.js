@@ -670,47 +670,48 @@ it("list with else should also works under track mode", function(){
 
     it("items should list by Object.keys", function( ){
 
-      var component = new Regular({
-        template: "<div ref=container>\
-          {#list json as item by item_key}\
-            <div>{item.age}:{item_key}:{item_index}</div>\
-          {/list}\
-        </div>",
-        data: {
-          json: {
-            "xiaomin": {age:11},
-            "xiaoli": {age:12},
-            "xiaogang": {age:13}
+      expect(function(){
+        var component = new Regular({
+          template: "<div ref=container>\
+            {#list json as item by item_key}\
+              <div>{item.age}:{item_key}:{item_index}</div>\
+            {/list}\
+          </div>",
+          data: {
+            json: {
+              "xiaomin": { age:11 },
+              "xiaoli": { age:12 },
+              "xiaogang": { age:13 }
+            }
           }
-        }
-      })
-
-      // only make sure 
-      var json = component.data.json;
-      var keys = _.keys(json);
-
-      var divs =  nes.all('div', component.$refs.container );
-
-      expect(divs.length).to.equal(3);
-
-      divs.forEach(function(div, index){
-        expect(div.innerHTML).to.equal('' + json[ keys[index] ].age + ':' + keys[index] + ':' + index);
-      })
-
-      delete json.xiaomin;
-      json.xiaoli = {age: 33}
-
-      component.$update();
-
-      divs =  nes.all('div', component.$refs.container );
-
-      expect(divs.length).to.equal(2);
-
-      expect(divs[0].innerHTML).to.equal('33:xiaoli:0')
-
-      component.destroy();
+        })
+      }).to.throwError();
 
 
+      // // only make sure 
+      // var json = component.data.json;
+      // var keys = _.keys(json);
+
+      // var divs =  nes.all('div', component.$refs.container );
+
+      // expect(divs.length).to.equal(3);
+
+      // divs.forEach(function(div, index){
+      //   expect(div.innerHTML).to.equal('' + json[ keys[index] ].age + ':' + keys[index] + ':' + index);
+      // })
+
+      // delete json.xiaomin;
+      // json.xiaoli = {age: 33}
+
+      // component.$update();
+
+      // divs =  nes.all('div', component.$refs.container );
+
+      // expect(divs.length).to.equal(2);
+
+      // expect( divs[0].innerHTML ).to.equal( '33:xiaoli:0' )
+
+      // component.destroy();
 
     })
     it("items should works under complex mode: item_index & item_key & item", function( ){
@@ -884,7 +885,7 @@ it("list with else should also works under track mode", function(){
     it("list Object also accept #else stateman", function(){
       var component = new Regular({
         template: "<div ref=container>\
-          {#list json as item by item_key}\
+          {#list json as item}\
             <div>{item.age}:{item_key}:{item_index}</div>\
           {#else} <div id='notfound'></div>\
           {/list}\
@@ -916,7 +917,7 @@ describe("SSR: list", function(){
     var container = document.createElement('div');
     var Component = Regular.extend({
       template: "<div ref=container>\
-        {#list json as item by item_key}\
+        {#list json as item }\
           <div class='item'>{item.age}:{item_index}</div>\
         {#else} <div id='notfound'></div>\
         {/list}\
