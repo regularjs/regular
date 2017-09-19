@@ -11,6 +11,7 @@
     "data-binding"
   ],
   "main": "lib/index.js",
+  "unpkg": "dist/regular.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/regularjs/regular"
