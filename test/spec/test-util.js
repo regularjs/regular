@@ -160,9 +160,9 @@ describe("Regular.util", function(){
 
 
   it("_.trackErrorPos should have no '...' prefix if not slice", function(){
+    
     expect(_.trackErrorPos("abcdefghi", 1)).to.equal('[1] abcdefghi\n     ^^^\n');
     expect(_.trackErrorPos("abcdefghi", 2)).to.equal('[1] abcdefghi\n      ^^^\n');
-
 
   })
 
@@ -416,18 +416,31 @@ describe("Diff", function(){
 
     expect( diffTrack(newList, oldList, function(i){return i}).steps ).to.eql([
       { len: 6, mode: 1, index: 0 },
-      { len: 6, mode: 0, index: 7 },
+      { len: 6, mode: 0, index: 7 }
+    ])
+    console.log(diffTrack(newList, oldList, function(i){return i}))
+
+  })
+  it(' track all', function(){
+
+    var newList = [1,2,3];
+    var oldList = [8,9,10];
+
+    expect( diffTrack(newList, oldList, function(i){return i}).steps ).to.eql([
+      { len: 3, mode: 0, index: 0 },
+      { len: 3, mode: 1, index: 0 }
     ])
 
   })
 
   it('track dup key', function(){
-    var newList = [1,1,2];
-    var oldList = [2,1,1];
+    var newList = [2, 1, 2];
+    var oldList = [1, 2, 1];
 
-    expect(function(){
-      diffTrack(newList, oldList, function(i){return i})
-    }).to.throwError('dup');
+    expect( diffTrack(newList, oldList, function(i){return i}).steps ).to.eql([
+      { len: 1, mode: 0, index: 2 },
+      { len: 1, mode: 1, index: 0 }
+    ])
 
   })
 
