@@ -3,8 +3,8 @@ var _ = require("../../lib/util");
 var shim = require("../../lib/helper/shim");
 var extend = require("../../lib/helper/extend");
 var diff = require("../../lib/helper/diff")
-var diffTrack = window.diffTrack = require("../../lib/helper/diffTrack")
-var diffArray = window.diffArray = diff.diffArray;
+var diffTrack =  require("../../lib/helper/diffTrack")
+var diffArray =  diff.diffArray;
 var diffObject = diff.diffObject;
 
 
@@ -366,86 +366,6 @@ describe("Diff", function(){
     expect( diffTrack(newList, oldList, function(i){return i}).steps ).to.eql([
       {len: 2, mode: 1, index: 0 }
     ])
-  })
-  it(' track  with order', function(){
-
-    var newList = [1,2,3]
-    var oldList = [7, 3,2, 5, 6] 
-
-    expect( diffTrack(newList, oldList, function(i){return i}).steps ).to.eql([
-      { len: 1, mode: 0, index: 0 },
-      { len: 2, mode: 0, index: 2 },
-      { len: 2, mode: 1, index: 0 },
-      { len: 1, mode: 0, index: 3 }
-
-    ])
-
-  })
-  it(' track  with order flow by insert', function(){
-
-    var newList = [1,2,4, 3]
-    var oldList = [7, 3,2, 5, 6] 
-
-    expect( diffTrack(newList, oldList, function(i){return i}).steps ).to.eql([
-      { len: 1, mode: 0, index: 0 },
-      { len: 2, mode: 0, index: 2 },
-      { len: 3, mode: 1, index: 0 },
-      { len: 1, mode: 0, index: 4 }
-    ])
-
-  })
-  it(' track new List more than old', function(){
-
-    var oldList = [1,2,4, 3]
-    var newList = [7, 3,2, 5, 6] 
-
-    expect( diffTrack(newList, oldList, function(i){return i}).steps ).to.eql([
-      { len: 1, mode: 0, index: 0 },
-      { len: 1, mode: 0, index: 1 },
-      { len: 2, mode: 1, index: 0 },
-      { len: 1, mode: 0, index: 3 },
-      { len: 2, mode: 1, index: 3 }
-    ])
-
-  })
-
-  it(' track revert', function(){
-
-    var newList = [1,2,3,4,5,6,7];
-    var oldList = [7,6,5,4,3,2,1];
-
-    expect( diffTrack(newList, oldList, function(i){return i}).steps ).to.eql([
-      { len: 6, mode: 1, index: 0 },
-      { len: 6, mode: 0, index: 7 }
-    ])
-    console.log(diffTrack(newList, oldList, function(i){return i}))
-
-  })
-  it(' track all', function(){
-
-    var newList = [1,2,3];
-    var oldList = [8,9,10];
-
-    expect( diffTrack(newList, oldList, function(i){return i}).steps ).to.eql([
-      { len: 3, mode: 0, index: 0 },
-      { len: 3, mode: 1, index: 0 }
-    ])
-
-  })
-
-  it('track dup key', function(){
-    var newList = [2, 1, 2];
-    var oldList = [1, 2, 1];
-
-    expect( diffTrack(newList, oldList, function(i){return i}).steps ).to.eql([
-      { len: 1, mode: 0, index: 2 },
-      { len: 1, mode: 1, index: 0 }
-    ])
-
-  })
-
-  it('无法key', function(){
-    throw Error('')
   })
 
 })
