@@ -9,14 +9,18 @@ var shell = require('gulp-shell');
 var runSequence = require('run-sequence')
 var istanbul = require('gulp-istanbul');
 var jshint = require('gulp-jshint');
-var webpack = require('gulp-webpack');
+var webpack = require('webpack-stream');
 var mocha = require('gulp-mocha');
 var uglify = require('gulp-uglify');
 var gutil = require('gulp-util');
 var bump = require('gulp-bump');
 var through = require('through2');
+const commonjs = require('rollup-plugin-commonjs');
+const nodeResolve = require('rollup-plugin-node-resolve');
+const rollup = require('rollup-stream');
+const source = require('vinyl-source-stream');
+const buffer = require('vinyl-buffer');
 var pkg;
-
 
 function inc(importance) {
   // get all the files to bump version in
@@ -42,14 +46,6 @@ try{
   pkg_bower = require('./bower.json')
 }catch(e){}
 
-var wpConfig = {
-  output: {
-    filename: "regular.js",
-    library: "Regular",
-    libraryTarget: "umd"
-  }
-
-}
 
 var testConfig = {
   devtool: 'source-map',
@@ -116,9 +112,10 @@ var karmaCommonConf = {
  * Run test once and exit
  */
 gulp.task('karma', function (done) {
+  process.env.CHROME_BIN = require('puppeteer').executablePath();
   var config = _.extend({}, karmaCommonConf);
-  if(process.argv[3] === '--phantomjs'){
-    config.browsers=["PhantomJS"]
+  if(process.argv[3] === '--chromeHeadless'){
+    config.browsers=["ChromeHeadless"]
     config.coverageReporter = {type : 'text-summary'}
     
     karma.start(_.extend(config, {singleRun: true}), done);
@@ -130,10 +127,22 @@ gulp.task('karma', function (done) {
 
 
 // build after jshint
-gulp.task('build',["jshint"], function(){
-  // form minify    
-  gulp.src('./lib/index.js')
-    .pipe(webpack(wpConfig))
+gulp.task('build',["jshint"], function(){  
+    rollup({
+      input: './lib/index.js',
+      format: 'umd',
+      name: 'Regular',
+      plugins: [
+        nodeResolve({
+          jsnext: true,
+          main: true
+        }),
+        commonjs()
+     ]
+    })
+     // give the file the name you want to output with
+    .pipe(source('index.js', "./lib"))
+    .pipe(buffer())
     .pipe(wrap(signatrue))
     .pipe(gulp.dest('./dist'))
     .pipe(wrap(mini))
@@ -143,8 +152,6 @@ gulp.task('build',["jshint"], function(){
     .on("error", function(err){
       throw err
     })
-
-
 })
 
 gulp.task('testbundle',  function(cb){
@@ -173,7 +180,6 @@ gulp.task('v', function(fn){
 
 
 gulp.task('watch', ["build", 'testbundle'], function(){
-  // gulp.watch(['lib/**/*.js'], ['build']);
   gulp.watch(['test/spec/*.js', 'lib/**/*.js'], ['jshint','testbundle'])
 })
 
@@ -187,20 +193,6 @@ gulp.task('jshint', function(){
     .pipe(jshint.reporter('default'))
 
 })
-
-
-gulp.task('mocha', function() {
-
-
-  return gulp.src(['test/spec/test-*.js'])
-    .pipe(mocha({reporter: 'spec' }) )
-    .on('error', function(){
-      gutil.log.apply(this, arguments);
-      console.log('\u0007');
-    })
-    .on('end', function(){
-    });
-});
 
 gulp.task('cover', function(cb){
   
@@ -221,25 +213,6 @@ gulp.task('travis',  function(cb){
 })
 
 
-gulp.task('casper', function(){
-  var casperjs = spawn('casperjs', ['test','--concise', 'spec'], {
-     cwd: path.resolve('test/fixtures')
-  })
-
-  casperjs.stdout.on('data', function (data) {
-    console.log(""+ data);
-  });
-  casperjs.stderr.on('data', function (data) {
-    console.log('stderr: ' + data);
-  });
-
-  casperjs.on('close', function (code) {
-    console.log('casperjs test compelete!');
-  });
-
-})
-
-
 gulp.task('mocha', function() {
 
   return gulp.src(['test/spec/test-*.js'])
@@ -247,6 +220,8 @@ gulp.task('mocha', function() {
     .on('error', function(){
       gutil.log.apply(this, arguments);
       console.log('\u0007');
+      // So travis ci know that test is failing 
+      process.exit(1);
     })
     .on('end', function(){
     });
