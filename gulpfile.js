@@ -214,7 +214,7 @@ gulp.task('cover', function(cb){
 gulp.task('test', ['jshint', 'karma', 'mocha'])
 
 gulp.task('travis',  function(cb){
-  runSequence( 'jshint' ,  'testbundle', 'mocha' , 'karma', cb );
+  return runSequence( 'jshint' ,  'testbundle', 'mocha' , 'karma', cb );
 })
 
 

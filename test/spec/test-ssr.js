@@ -183,18 +183,15 @@ describe("Server Side Rendering", function(){
   it('Boolean attribute should wont accept ssr', function(){
 
     var Comp = Namespace.extend({
-      template: "<input checked={checked} /><div title></div>",
+      template: "<input checked={checked} />",
     })
     var text = SSR.render(Comp, {
       data: {
         checked: false
       }
     });
-    var div = document.createElement('div');
-    div.innerHTML = text;
 
-    expect(nes.one('input', div).checked).to.equal(false)
-
+    expect(text).to.equal('<input></input>')
 
 
   })
