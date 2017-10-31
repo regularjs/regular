@@ -334,6 +334,19 @@ describe("Watcher-System", function(){
     component.destroy();
   })
 
+  it('$watch should accept raw object without ident', function () {
+    var component = new Regular();
+    component.$watch({foo: true, bar: 1}, function (obj) {
+      expect(obj).to.be.an('object');
+      expect(obj.foo).to.equal(true);
+      expect(obj.bar).to.equal(1);
+    });
+
+    component.$update();
+
+    component.destroy();
+  })
+
   it("$update should also accpect [Function] param to act apply", function(){
     var component = new Regular();
     component.$watch(["name", "age"], function(name, age){

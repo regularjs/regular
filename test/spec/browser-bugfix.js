@@ -744,6 +744,44 @@ describe("Milestones v0.6.*", function(){
     expect(component.$refs['module-0'].$refs.p.innerHTML).to.equal('c2');
     expect(component.$refs['module-1'].$refs.p.innerHTML).to.equal('c2');
   })
+
+  it("bug #175 r-class for raw object should not throwException", function(){
+    expect(function(){
+      new Regular({
+        template: "<div r-class={{ 'foo': true }}></div>"
+      })
+    }).to.not.throwException();
+  })
+
+  it("bug #175 r-class for raw object, combined with raw class attribute", function(){
+    var container = document.createElement('div');
+    
+    var template = "<div ref=test class='rawClass' r-class={ {'z-show': true, 'z-active': false} }>Please Login</div>" 
+    var component = new Regular({
+      template: template
+    }).$inject(container);
+
+    expect(component.$refs.test.className).to.equal('rawClass z-show');
+    component.$update();
+    expect(component.$refs.test.className).to.equal('rawClass z-show');
+
+    component.destroy();
+  })
+
+  it("bug #175 r-class for raw object, combined with class attribute interpolation", function(){
+    var container = document.createElement('div');
+    
+    var template = "<div ref=test class={ foo } r-class={ {'z-show': true, 'z-active': false} }>Please Login</div>" 
+    var component = new Regular({
+      template: template
+    }).$inject(container);
+
+    expect(component.$refs.test.className).to.equal('z-show');
+    component.$update( 'foo', 'hello' );
+    expect(component.$refs.test.className).to.equal('hello');
+
+    component.destroy();
+  })
 })
 describe("Milestones v0.4.*", function(){
   it("#53 nested component with delegate-event and [postion:after or before ] bug", function( done ){
