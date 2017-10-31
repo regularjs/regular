@@ -137,7 +137,6 @@ gulp.task('build',["jshint"], function(){
       name: 'Regular',
       plugins: [
         nodeResolve({
-          jsnext: true,
           main: true
         }),
         commonjs(),
