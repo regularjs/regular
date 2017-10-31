@@ -6,4 +6,4 @@ branches:
   - master
   - next
 before_install:
-- npm install -g casperjs phantomjs gulp
+- npm install -g puppeteer gulp
