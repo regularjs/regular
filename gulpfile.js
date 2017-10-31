@@ -20,6 +20,9 @@ const nodeResolve = require('rollup-plugin-node-resolve');
 const rollup = require('rollup-stream');
 const source = require('vinyl-source-stream');
 const buffer = require('vinyl-buffer');
+const replace = require('rollup-plugin-replace')
+const argv = require('yargs').argv;
+const isProduction = (argv.production === undefined) ? false : true;
 var pkg;
 
 function inc(importance) {
@@ -137,18 +140,20 @@ gulp.task('build',["jshint"], function(){
           jsnext: true,
           main: true
         }),
-        commonjs()
+        commonjs(),
+        replace({
+          'process.env.NODE_ENV': isProduction ? "production":"developement"
+        })
      ]
     })
-     // give the file the name you want to output with
-    .pipe(source('index.js', "./lib"))
+    .pipe(source('regular.js', "./lib"))
     .pipe(buffer())
     .pipe(wrap(signatrue))
     .pipe(gulp.dest('./dist'))
     .pipe(wrap(mini))
     .pipe(uglify())
     .pipe(wrap(signatrue))
-    .pipe(gulp.dest('./dist'))
+    .pipe(gulp.dest('./dist/'))
     .on("error", function(err){
       throw err
     })
@@ -180,7 +185,8 @@ gulp.task('v', function(fn){
 
 
 gulp.task('watch', ["build", 'testbundle'], function(){
-  gulp.watch(['test/spec/*.js', 'lib/**/*.js'], ['jshint','testbundle'])
+  gulp.watch(['test/spec/*.js'], ['testbundle']);
+  gulp.watch(['lib/**/*.js'], ['build']);
 })
 
 
