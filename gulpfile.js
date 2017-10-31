@@ -142,7 +142,7 @@ gulp.task('build',["jshint"], function(){
         }),
         commonjs(),
         replace({
-          'process.env.NODE_ENV': isProduction ? "production":"developement"
+          'process.env.NODE_ENV': JSON.stringify(isProduction ? "production":"developement")
         })
      ]
     })
