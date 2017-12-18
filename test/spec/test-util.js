@@ -239,8 +239,8 @@ describe("Regular.util", function(){
 
 
   it("_.trackErrorPos should have no '...' prefix if not slice", function(){
-    expect(_.trackErrorPos("abcdefghi", 1)).to.equal('[1] abcdefghi\n     ^^^\n');
-    expect(_.trackErrorPos("abcdefghi", 2)).to.equal('[1] abcdefghi\n      ^^^\n');
+    expect(_.trackErrorPos("abcdefghi", 1)).to.equal('[1] abcdefghi\n     ^\n');
+    expect(_.trackErrorPos("abcdefghi", 2)).to.equal('[1] abcdefghi\n      ^\n');
 
 
   })
