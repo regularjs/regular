@@ -1,8 +1,11 @@
 var _ = require("../util.js");
+
+var config = require("../config.js");
 var node = require("./node.js");
 var Lexer = require("./Lexer.js");
 var varName = _.varName;
 var ctxName = _.ctxName;
+var extName = _.extName;
 var isPath = _.makePredicate("STRING IDENT NUMBER");
 var isKeyWord = _.makePredicate("true false undefined null this Array Date JSON Math NaN RegExp decodeURI decodeURIComponent encodeURI encodeURIComponent parseFloat parseInt Object");
 
@@ -15,7 +18,6 @@ function Parser(input, opts){
   this.input = input;
   this.tokens = new Lexer(input, opts).lex();
   this.pos = 0;
-  this.noComputed =  opts.noComputed;
   this.length = this.tokens.length;
 }
 
@@ -57,7 +59,7 @@ op.match = function(type, value){
 }
 
 op.error = function(msg, pos){
-  msg =  "Parse Error: " + msg +  ':\n' + _.trackErrorPos(this.input, typeof pos === 'number'? pos: this.ll().pos||0);
+  msg =  "\n【 parse failed 】 " + msg +  ':\n\n' + _.trackErrorPos(this.input, typeof pos === 'number'? pos: this.ll().pos||0);
   throw new Error(msg);
 }
 
@@ -118,8 +120,6 @@ op.statement = function(){
       return this.directive();
     case 'EXPR_OPEN':
       return this.interplation();
-    case 'PART_OPEN':
-      return this.template();
     default:
       this.error('Unexpected token: '+ this.la())
   }
@@ -151,10 +151,17 @@ op.xml = function(){
 //  {{#if name}}on-click={{xx}}{{#else}}on-tap={{}}{{/if}}
 
 op.xentity = function(ll){
-  var name = ll.value, value;
+  var name = ll.value, value, modifier;
   if(ll.type === 'NAME'){
-    if( this.eat("=") ) value = this.attvalue();
-    return node.attribute( name, value );
+    //@ only for test
+    if(~name.indexOf('.')){
+      var tmp = name.split('.');
+      name = tmp[0];
+      modifier = tmp[1]
+
+    }
+    if( this.eat("=") ) value = this.attvalue(modifier);
+    return node.attribute( name, value, modifier );
   }else{
     if( name !== 'if') this.error("current version. ONLY RULE #if #else #elseif is valid in tag, the rule #" + name + ' is invalid');
     return this['if'](true);
@@ -182,7 +189,7 @@ op.attrs = function(isAttribute){
 // attvalue
 //  : STRING  
 //  | NAME
-op.attvalue = function(){
+op.attvalue = function(mdf){
   var ll = this.ll();
   switch(ll.type){
     case "NAME":
@@ -190,14 +197,15 @@ op.attvalue = function(){
     case "STRING":
       this.next();
       var value = ll.value;
-      if(~value.indexOf('{{')){
+      if(~value.indexOf(config.BEGIN) && ~value.indexOf(config.END) && mdf!=='cmpl'){
         var constant = true;
         var parsed = new Parser(value, { mode: 2 }).parse();
         if(parsed.length === 1 && parsed[0].type === 'expression') return parsed[0];
         var body = [];
         parsed.forEach(function(item){
           if(!item.constant) constant=false;
-          body.push(item.body || "'" + item.text + "'");
+          // silent the mutiple inteplation
+            body.push(item.body || "'" + item.text.replace(/'/g, "\\'") + "'");        
         });
         body = "[" + body.join(",") + "].join('')";
         value = node.expression(body, null, constant);
@@ -205,6 +213,14 @@ op.attvalue = function(){
       return value;
     case "EXPR_OPEN":
       return this.interplation();
+    // case "OPEN":
+    //   if(ll.value === 'inc' || ll.value === 'include'){
+    //     this.next();
+    //     return this.inc();
+    //   }else{
+    //     this.error('attribute value only support inteplation and {#inc} statement')
+    //   }
+    //   break;
     default:
       this.error('Unexpected token: '+ this.la())
   }
@@ -222,6 +238,7 @@ op.directive = function(){
   }
 }
 
+
 // {{}}
 op.interplation = function(){
   this.match('EXPR_OPEN');
@@ -231,7 +248,7 @@ op.interplation = function(){
 }
 
 // {{~}}
-op.include = function(){
+op.inc = op.include = function(){
   var content = this.expression();
   this.match('END');
   return node.template(content);
@@ -278,13 +295,25 @@ op["if"] = function(tag){
 // {{#list}}
 op.list = function(){
   // sequence can be a list or hash
-  var sequence = this.expression(), variable, ll;
+  var sequence = this.expression(), variable, ll, track;
   var consequent = [], alternate=[];
   var container = consequent;
 
   this.match('IDENT', 'as');
 
   variable = this.match('IDENT').value;
+
+  if(this.eat('IDENT', 'by')){
+    if(this.eat('IDENT',variable + '_index')){
+      track = true;
+    }else{
+      track = this.expression();
+      if(track.constant){
+        // true is means constant, we handle it just like xxx_index.
+        track = true;
+      }
+    }
+  }
 
   this.match('END');
 
@@ -296,8 +325,9 @@ op.list = function(){
       container.push(this.statement());
     }
   }
-  if(ll.value !== 'list') this.error('expect ' + '{{/list}} got ' + '{{/' + ll.value + '}}', ll.pos );
-  return node.list(sequence, variable, consequent, alternate);
+  
+  if(ll.value !== 'list') this.error('expect ' + 'list got ' + '/' + ll.value + ' ', ll.pos );
+  return node.list(sequence, variable, consequent, alternate, track);
 }
 
 
@@ -320,7 +350,7 @@ op.expr = function(){
 
   var body = buffer.get || buffer;
   var setbody = buffer.set;
-  return node.expression(body, setbody, !this.depend.length);
+  return node.expression(body, setbody, !this.depend.length, buffer.filters);
 }
 
 
@@ -329,23 +359,51 @@ op.expr = function(){
 op.filter = function(){
   var left = this.assign();
   var ll = this.eat('|');
-  var buffer, attr;
-  if(ll){
-    buffer = [
-      "(function(){", 
-          "var ", attr = "_f_", "=", left.get, ";"]
-    do{
+  var buffer = [], filters,setBuffer, prefix,
+    attr = "t", 
+    set = left.set, get, 
+    tmp = "";
 
-      buffer.push(attr + " = "+ctxName+"._f_('" + this.match('IDENT').value+ "')(" + attr) ;
+  if(ll){
+    if(set) {
+      setBuffer = [];
+      filters = [];
+    }
+
+    prefix = "(function(" + attr + "){";
+
+    do{
+      var filterName = this.match('IDENT').value;
+      tmp = attr + " = " + ctxName + "._f_('" + filterName + "' ).get.call( "+_.ctxName +"," + attr ;
       if(this.eat(':')){
-        buffer.push(", "+ this.arguments("|").join(",") + ");")
+        tmp +=", "+ this.arguments("|").join(",") + ");"
       }else{
-        buffer.push(');');
+        tmp += ');'
+      }
+      buffer.push(tmp);
+      
+      if(set){
+        // only in runtime ,we can detect  whether  the filter has a set function. 
+        filters.push(filterName);
+        setBuffer.unshift( tmp.replace(" ).get.call", " ).set.call") );
       }
 
     }while(ll = this.eat('|'));
-    buffer.push("return " + attr + "})()");
-    return this.getset(buffer.join(""));
+    buffer.push("return " + attr );
+    setBuffer && setBuffer.push("return " + attr);
+
+    get =  prefix + buffer.join("") + "})("+left.get+")";
+    // we call back to value.
+    if(setBuffer){
+      // change _ss__(name, _p_) to _s__(name, filterFn(_p_));
+      set = set.replace(_.setName, 
+        prefix + setBuffer.join("") + "})("+　_.setName　+")" );
+
+    }
+    // the set function is depend on the filter definition. if it have set method, the set will work
+    var ret = getset(get, set);
+    ret.filters = filters;
+    return ret;
   }
   return left;
 }
@@ -356,8 +414,8 @@ op.assign = function(){
   var left = this.condition(), ll;
   if(ll = this.eat(['=', '+=', '-=', '*=', '/=', '%='])){
     if(!left.set) this.error('invalid lefthand expression in assignment expression');
-    return this.getset( left.set.replace("_p_", this.condition().get).replace("'='", "'"+ll.type+"'"), left.set);
-    // return this.getset('(' + left.get + ll.type  + this.condition().get + ')', left.set);
+    return getset( left.set.replace( "," + _.setName, "," + this.condition().get ).replace("'='", "'"+ll.type+"'"), left.set);
+    // return getset('(' + left.get + ll.type  + this.condition().get + ')', left.set);
   }
   return left;
 }
@@ -368,7 +426,7 @@ op.condition = function(){
 
   var test = this.or();
   if(this.eat('?')){
-    return this.getset([test.get + "?", 
+    return getset([test.get + "?", 
       this.assign().get, 
       this.match(":").type, 
       this.assign().get].join(""));
@@ -384,7 +442,7 @@ op.or = function(){
   var left = this.and();
 
   if(this.eat('||')){
-    return this.getset(left.get + '||' + this.or().get);
+    return getset(left.get + '||' + this.or().get);
   }
 
   return left;
@@ -396,7 +454,7 @@ op.and = function(){
   var left = this.equal();
 
   if(this.eat('&&')){
-    return this.getset(left.get + '&&' + this.and().get);
+    return getset(left.get + '&&' + this.and().get);
   }
   return left;
 }
@@ -410,7 +468,7 @@ op.equal = function(){
   var left = this.relation(), ll;
   // @perf;
   if( ll = this.eat(['==','!=', '===', '!=='])){
-    return this.getset(left.get + ll.type + this.equal().get);
+    return getset(left.get + ll.type + this.equal().get);
   }
   return left
 }
@@ -423,7 +481,7 @@ op.relation = function(){
   var left = this.additive(), ll;
   // @perf
   if(ll = (this.eat(['<', '>', '>=', '<=']) || this.eat('IDENT', 'in') )){
-    return this.getset(left.get + ll.value + this.relation().get);
+    return getset(left.get + ll.value + this.relation().get);
   }
   return left
 }
@@ -434,7 +492,7 @@ op.relation = function(){
 op.additive = function(){
   var left = this.multive() ,ll;
   if(ll= this.eat(['+','-']) ){
-    return this.getset(left.get + ll.value + this.additive().get);
+    return getset(left.get + ll.value + this.additive().get);
   }
   return left
 }
@@ -446,7 +504,7 @@ op.additive = function(){
 op.multive = function(){
   var left = this.range() ,ll;
   if( ll = this.eat(['*', '/' ,'%']) ){
-    return this.getset(left.get + ll.type + this.multive().get);
+    return getset(left.get + ll.type + this.multive().get);
   }
   return left;
 }
@@ -458,7 +516,7 @@ op.range = function(){
     right = this.unary();
     var body = 
       "(function(start,end){var res = [],step=end>start?1:-1; for(var i = start; end>start?i <= end: i>=end; i=i+step){res.push(i); } return res })("+left.get+","+right.get+")"
-    return this.getset(body);
+    return getset(body);
   }
 
   return left;
@@ -474,7 +532,7 @@ op.range = function(){
 op.unary = function(){
   var ll;
   if(ll = this.eat(['+','-','~', '!'])){
-    return this.getset('(' + ll.type + this.unary().get + ')') ;
+    return getset('(' + ll.type + this.unary().get + ')') ;
   }else{
     return this.member()
   }
@@ -485,8 +543,9 @@ op.unary = function(){
 // member [ expression ]
 // member . ident  
 
-op.member = function(base, last, pathes){
-  var ll, path;
+op.member = function(base, last, pathes, prevBase){
+  var ll, path, extValue;
+
 
   var onlySimpleAccessor = false;
   if(!base){ //first
@@ -496,7 +555,8 @@ op.member = function(base, last, pathes){
       pathes = [];
       pathes.push( path );
       last = path;
-      base = ctxName + "._sg_('" + path + "', " + varName + "['" + path + "'])";
+      extValue = extName + "." + path
+      base = ctxName + "._sg_('" + path + "', " + varName + ", " + extName + ")";
       onlySimpleAccessor = true;
     }else{ //Primative Type
       if(path.get === 'this'){
@@ -520,14 +580,26 @@ op.member = function(base, last, pathes){
       case '.':
           // member(object, property, computed)
         var tmpName = this.match('IDENT').value;
+        prevBase = base;
+        if( this.la() !== "(" ){ 
+          base = ctxName + "._sg_('" + tmpName + "', " + base + ")";
+        }else{
           base += "['" + tmpName + "']";
-        return this.member( base, tmpName, pathes );
+        }
+        return this.member( base, tmpName, pathes,  prevBase);
       case '[':
           // member(object, property, computed)
         path = this.assign();
-        base += "[" + path.get + "]";
+        prevBase = base;
+        if( this.la() !== "(" ){ 
+        // means function call, we need throw undefined error when call function
+        // and confirm that the function call wont lose its context
+          base = ctxName + "._sg_(" + path.get + ", " + base + ")";
+        }else{
+          base += "[" + path.get + "]";
+        }
         this.match(']')
-        return this.member(base, path, pathes);
+        return this.member(base, path, pathes, prevBase);
       case '(':
         // call(callee, args)
         var args = this.arguments().join(',');
@@ -539,8 +611,12 @@ op.member = function(base, last, pathes){
   if( pathes && pathes.length ) this.depend.push( pathes );
   var res =  {get: base};
   if(last){
-    if(onlySimpleAccessor) res.set = ctxName + "._ss_('" + path + "'," + _.setName + "," + _.varName + ", '=')";
-    else res.set = base + '=' + _.setName;
+    res.set = ctxName + "._ss_(" + 
+        (last.get? last.get : "'"+ last + "'") + 
+        ","+ _.setName + ","+ 
+        (prevBase?prevBase:_.varName) + 
+        ", '=', "+ ( onlySimpleAccessor? 1 : 0 ) + ")";
+  
   }
   return res;
 }
@@ -580,14 +656,16 @@ op.primary = function(){
     // literal or ident
     case 'STRING':
       this.next();
-      return this.getset("'" + ll.value + "'")
+      var value = "" + ll.value;
+      var quota = ~value.indexOf("'")? "\"": "'" ;
+      return getset(quota + value + quota);
     case 'NUMBER':
       this.next();
-      return this.getset(""+ll.value);
+      return getset( "" + ll.value );
     case "IDENT":
       this.next();
       if(isKeyWord(ll.value)){
-        return this.getset( ll.value );
+        return getset( ll.value );
       }
       return ll.value;
     default: 
@@ -625,12 +703,17 @@ op.object = function(){
 // [ assign[,assign]*]
 op.array = function(){
   var code = [this.match('[').type], item;
-  while(item = this.assign()){
-    code.push(item.get);
-    if(this.eat(',')) code.push(",");
-    else break;
+  if( this.eat("]") ){
+
+     code.push("]");
+  } else {
+    while(item = this.assign()){
+      code.push(item.get);
+      if(this.eat(',')) code.push(",");
+      else break;
+    }
+    code.push(this.match(']').type);
   }
-  code.push(this.match(']').type);
   return {get: code.join("")};
 }
 
@@ -639,11 +722,12 @@ op.paren = function(){
   this.match('(');
   var res = this.filter()
   res.get = '(' + res.get + ')';
+  res.set = res.set;
   this.match(')');
   return res;
 }
 
-op.getset = function(get, set){
+function getset(get, set){
   return {
     get: get,
     set: set

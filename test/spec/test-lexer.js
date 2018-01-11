@@ -1,4 +1,8 @@
-var Lexer = require_lib("parser/Lexer.js");
+var expect = require('expect.js');
+var Lexer = require("../../src/parser/Lexer.js");
+var config = require("../../src/config.js");
+
+var Regular = require("../../src/index.js");
 
 /**
  * setup template
@@ -17,7 +21,7 @@ describe("Lexer under mode 1 and 2", function(){
   it("pure xml lex should return diff tokens under mode 1 and 2", function(){
     var input = "<ul><div>hello name</div></ul>";
     var input_attr = "<div attr='hello'></div>";
-    var input_attr_jst = "<div attr={{hello}}></div>";
+    var input_attr_jst = "<div attr={hello}></div>";
     // mode 1
     expect(l(input))
       .typeEqual("TAG_OPEN,>,TAG_OPEN,>,TEXT,TAG_CLOSE,TAG_CLOSE,EOF");
@@ -31,14 +35,11 @@ describe("Lexer under mode 1 and 2", function(){
     expect(l(input_attr_jst)).typeEqual("TAG_OPEN,NAME,=,EXPR_OPEN,IDENT,END,>,TAG_CLOSE,EOF")
 
 
-    // expect(function(){
-    //   l("<<div>")
-    // }).to.throwError();
   })
 
 
   it("pure jst lex is equals under mode 1 and mode 2", function(){
-    var input = "{{#list haha}}{{haha}}{{/list}}";
+    var input = "{#list haha}{haha}{/list}";
     // mode 1
     expect(l(input))
       .typeEqual("OPEN,IDENT,END,EXPR_OPEN,IDENT,END,CLOSE,EOF");
@@ -49,17 +50,18 @@ describe("Lexer under mode 1 and 2", function(){
 
   })
   it("inteplation is parsed as expect", function(){
-    expect(l2('{{hello}}'))
+    expect(l2('{hello}'))
       .typeEqual("EXPR_OPEN,IDENT,END,EOF");
   })
 
   it("complex input should works under mode 1 and 2", function(){
 
-    var input = "{{#dada}}<div data=data>{{dadad}}</div>{{/dada}}";
+    var input = "{#dada}<div data=data>{dadad}</div>{/dada}";
 
     // mode 1
     expect(l(input))
       .typeEqual("OPEN,END,TAG_OPEN,NAME,=,NAME,>,EXPR_OPEN,IDENT,END,TAG_CLOSE,CLOSE,EOF");
+
 
     // mode 2
     expect(l2(input))
@@ -69,5 +71,14 @@ describe("Lexer under mode 1 and 2", function(){
 
 })
 
+describe("Regular.parse", function(){
+  it("Regular.parse should work in nodejs", function(){
+    var content = Regular.parse("{title}");
+    expect(content).to.eql([ { type: 'expression',
+    body: 'c._sg_(\'title\', d, e)',
+    constant: false,
+    setbody: 'c._ss_(\'title\',p_,d, \'=\', 1)' } ])
+  })
+})
 
 

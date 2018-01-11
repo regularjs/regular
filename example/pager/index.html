@@ -10,25 +10,23 @@
   <body>
 
     <div id="app"> </div>
-
-    <script>
-    // //1. nest style
-    var app = new Regular({
-      template: 
-        "{{total}}:{{current}}<button on-click={{total = total + 1}}>total+1</button>\
-          <pager total={{Math.floor(total/20)}} current={{current}} on-nav='{{this.go}}'/>\
-          <pager total={{Math.floor(total/20)}} current={{current}} />",
-      data: {total: 292, current:10},
-      go: function(page){
-        console.log(page)
-      } 
-    } ).inject("#app");
-
-    //2. initialize style
-    // var pager = new Pager({data: {total: 100, current:11}}).inject('#app');
-
-
+    
+    <script type='text/tpl' id='tpl'>
+      <button de-click={total = total + 1}>total+1</button>
+      <pager ref='pager' total={Math.floor(total/20)} current={current} title.cmpl='<div>{total}</div>' ></pager>
+      <input ref='goto' type="number" value="{current}" max="{this.$refs.pager.data.total}" min=1 >
+      <button de-click={current = +this.$refs.goto.value}>go</button>
     </script>
 
+    <script>
+      var app = new Regular({
+        template: '#tpl',
+        data: {total: 100, current:3},
+        config: function(data){
+          console.log(data)
+        }
+      });
+      app.$inject("#app");
+    </script>
   </body>
 </html>

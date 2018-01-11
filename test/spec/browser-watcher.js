@@ -1,6 +1,6 @@
-var Regular = require_lib("index.js");
-
-void function(){
+var expect = require('expect.js');
+var Regular = require("../../src/index.js");
+var parse = require("../../src/helper/parse");
 
 var Component = Regular.extend();
 
@@ -45,7 +45,7 @@ describe("Computed Property", function(){
 
   it("define get/set computed property should works as expect", function(){
     var Component = Regular.extend({
-      template: "<div>{{fullname}}</div>",
+      template: "<div>{fullname}</div>",
       computed: {
         fullname: {
           get: function(data){
@@ -81,7 +81,7 @@ describe("Computed Property", function(){
 
   it("computed property in intialize will merge/override the setting on Component.extend", function(){
     var Component = Regular.extend({
-      template: "<div>{{fullname}}</div><div>{{hello}}</div>",
+      template: "<div>{fullname}</div><div>{hello}</div>",
       computed: {
         fullname: {
           get: function(data){
@@ -130,10 +130,9 @@ describe("Computed Property", function(){
 })
 describe("Expression", function(){
   function run_expr(expr, context){
-    return expect(Regular.expression(expr).get(context));
+    return expect(context.$expression(expr).get(context));
   }
   describe("compiled expression", function(){
-
     var context = new Regular({
       data: {
         a: 2,
@@ -243,11 +242,14 @@ describe("Expression", function(){
         var component = new Regular({data: {a: 1}});
         component.$get("a+=1");
         expect(component.data.a).to.equal(2);
-        
-        expect(component.$get("a-=1")).to.equal(1);
-        expect(component.$get("a*=100")).to.equal(100);
-        expect(component.$get("a/=2")).to.equal(50);
-        expect(component.$get("a%=3")).to.equal(2);
+        component.$get("a-=1")
+        expect(component.data.a).to.equal(1);
+        component.$get("a*=100")
+        expect(component.data.a).to.equal(100);
+        component.$get("a/=2")
+        expect(component.data.a).to.equal(50);
+        component.$get("a%=3")
+        expect(component.data.a).to.equal(2);
       })
     })
   })
@@ -270,9 +272,19 @@ describe("Watcher-System", function(){
     component.$update("name", "leeluolee");
     expect(component.hello).to.equal("leeluolee");
 
+
     component.destroy();
   })
 
+  it("digest will throw Error when watching dynamic 【Object】 without deep", function(){
+    var component = new Regular();
+    // every time call hello,  a new Object will be return
+    component.hello = function(){return {}}
+    component.$watch('this.hello()', function(){})
+    expect(function(){
+      component.$update()
+    }).to.throwError();
+  })
 
 
   it("$watch should accpect [Expression] param", function(){
@@ -320,14 +332,14 @@ describe("Watcher-System", function(){
   it("$bind should connect two component", function(){
     var container = document.createElement("div");
     var component = new Component({
-      template: "<div class='name'>{{name}}</div><div class='age'>{{age}}</div>",
+      template: "<div class='name'>{name}</div><div class='age'>{age}</div>",
       data: {
         name: "leeluolee",
         age: 10
       }
     }).$inject(container);
     var component2 = new Component({
-      template: "<div class='user-name'>{{user.name}}</div><div class='user-age'>{{user.age}}</div>",
+      template: "<div class='user-name'>{user.name}</div><div class='user-age'>{user.age}</div>",
       data: {user: {}}
     }).$inject(container);
 
@@ -361,7 +373,7 @@ describe("Watcher-System", function(){
   it("bind once should works on interpolation", function(){
     var container = document.createElement("div");
     var component = new Component({
-      template: "<div class='name'>{{ @(name) }}</div><div class='age'>{{age}}</div>",
+      template: "<div class='name'>{ @(name) }</div><div class='age'>{age}</div>",
       data: {
         name: "leeluolee",
         age: 10
@@ -378,7 +390,7 @@ describe("Watcher-System", function(){
   it("bind once should works on list", function(){
     var container = document.createElement("div");
     var component = new Component({
-      template: "{{#list @(todos) as todo}}<p>{{todo}}</p>{{/list}}",
+      template: "{#list @(todos) as todo}<p>{todo}</p>{/list}",
       data: {
         todos: ["name", "name2"]
       }
@@ -398,7 +410,7 @@ describe("Watcher-System", function(){
   it("bind once should works on if", function(){
     var container = document.createElement("div");
     var component = new Component({
-      template: "{{#if @(test) }}<p>haha</p>{{#else}}<a></a>{{/if}}",
+      template: "{#if @(test) }<p>haha</p>{#else}<a></a>{/if}",
       data: {test: true}
     }).$inject(container);
 
@@ -418,86 +430,263 @@ describe("Watcher-System", function(){
 })
 
 
-}();
 
-void function(){
-  var Regular = require_lib('index.js');
-  var parse = require_lib("helper/parse");
-  describe("component.watcher", function(){
+describe("component.watcher", function(){
+  var watcher = new Regular({
+    data: {
+      str: 'hehe',
+      obj: {},
+      array: []
+    }
+  });
+
+  it('it should watch once when have @(str) ', function(){
+    var trigger = 0;
+    var trigger2 =0;
+    watcher.$watch('@(str)', function(){
+      trigger++;
+    })
+    watcher.$watch('str', function(){
+      trigger2++;
+    })
+    watcher.data.str = 'haha'
+    watcher.$digest();
+    watcher.data.str = 'heihei'
+    watcher.$digest();
+    expect(trigger).to.equal(1);
+    expect(trigger2).to.equal(2);
+
+  } )
+
+  it("beacuse of cache passed same expr should return the same expression", function(){
+    var expr = parse.expression("a+b");
+    var expr2 = parse.expression("a+b");
+    expect(expr === expr2).to.equal(true);
+  })
+
+  it("watch accept multi binding ", function(done){
+    watcher.$watch(["str", "array.length"], function(str, len){
+      expect(str).to.equal("haha")
+      expect(len).to.equal(2)
+      done();
+    })
+
+    watcher.data.str = "haha";
+    watcher.data.array = [1,2];
+    watcher.$digest();
+  })
+
+
+  it("watch accept function", function(done){
+    watcher.$watch( function(){return this.first+":" + this.last}, function(now, old){
+      expect(old).to.equal(undefined)
+      expect(now).to.equal("first:last")
+      done();
+    })
+    watcher.first = "first";
+    watcher.last = "last";
+    watcher.$digest();
+  })
+  it("watch list [undefined - > [], [] -> undefined]", function(done){
+    var num = 0;
+    var watchid = watcher.$watch( 'list', function(now, old){
+      num++;
+      if(num === 1){
+        expect(old).to.equal(undefined)
+        expect(now).to.eql([])
+      }
+      if(num === 2){
+        expect(old).to.eql([])
+        expect(now).to.eql(undefined)
+        done()
+      }
+    })
+    watcher.data.list = [];
+    watcher.$digest();
+    expect(num).to.equal(1)
+    watcher.data.list = undefined;
+    watcher.$digest();
+  })
+  it("watch list [{} - > [], [] -> {}]", function(done){
+    var num = 0;
+    var watchid = watcher.$watch( 'list', function(now, old){
+      num++;
+      if(num === 2){
+        expect(old).to.eql({})
+        expect(now).to.eql([])
+      }
+      if(num === 3){
+        expect(now).to.eql({})
+        expect(old).to.eql([])
+        done()
+      }
+    })
+
+    watcher.data.list = {};
+    watcher.$digest();
+    watcher.data.list = [];
+    watcher.$digest();
+    watcher.data.list = {};
+    watcher.$digest();
+  })
+
+  it("watch object deep should checked the key", function(){
     var watcher = new Regular({
       data: {
         str: 'hehe',
         obj: {},
         array: []
       }
-    });
-
-    it('it should watch once when have @(str) ', function(){
-      var trigger = 0;
-      var trigger2 =0;
-      watcher.$watch('@(str)', function(){
-        trigger++;
-      })
-      watcher.$watch('str', function(){
-        trigger2++;
-      })
-      watcher.data.str = 'haha'
-      watcher.$digest();
-      watcher.data.str = 'heihei'
-      watcher.$digest();
-      expect(trigger).to.equal(1);
-      expect(trigger2).to.equal(2);
-
-    } )
-
-    it("beacuse of cache passed same expr should return the same expression", function(){
-      var expr = parse.expression("a+b");
-      var expr2 = parse.expression("a+b");
-      expect(expr === expr2).to.equal(true);
     })
 
-    it("watch accept multi binding ", function(done){
-      watcher.$watch(["str", "array.length"], function(str, len){
-        expect(str).to.equal("haha")
-        expect(len).to.equal(2)
-        done();
-      })
+    var trigger = 0;
+    var trigger2 = 0;
+    watcher.$watch("obj", function(){
+      trigger++;
+    })
+    watcher.$watch("obj", function(){
+      trigger2++;
+    }, true)
 
-      watcher.data.str = "haha";
-      watcher.data.array = [1,2];
-      watcher.$digest();
+    watcher.$digest();
+    watcher.data.obj.name = 1;
+    watcher.$digest();
+    watcher.data.obj.name = 2;
+    watcher.$digest();
+    expect(trigger).to.equal(1);
+    expect(trigger2).to.equal(3);
+    watcher.data.obj.key = 2;
+    watcher.$digest();
+    expect(trigger).to.equal(1);
+    expect(trigger2).to.equal(4);
+    delete watcher.data.obj.name;
+    watcher.$digest();
+    expect(trigger).to.equal(1);
+    expect(trigger2).to.equal(5);
+  })
+
+  // @UPDATE v0.5.2 
+  it('$digest in $update should be ignored', function(){
+    var i = 0;
+    var Component = Regular.extend({
+      data: {
+        'title':2
+      },
+      template: "<div ref=div on-click={this.click()}>{title}</div>",
+      _digest: function(){
+        i++;
+        return this.supr()
+      },
+      click: function(){
+        this.data.title='1';
+        this.show();
+        this.$update();
+      },
+      show: function(){
+        this.$update();
+      }
     })
 
-    it("watch object deep should checked the key", function(){
-      var watcher = new Regular({
-        data: {
-          str: 'hehe',
-          obj: {},
-          array: []
-        }
-      })
-
-      var trigger = 0;
-      var trigger2 = 0;
-      watcher.$watch("obj", function(){
-        trigger++;
-      })
-      watcher.$watch("obj", function(){
-        trigger2++;
-      }, true)
-
-      watcher.$digest();
-      watcher.data.obj.name = 1;
-      watcher.$digest();
-      watcher.data.obj.name = 2;
-      watcher.$digest();
-      expect(trigger).to.equal(1);
-      expect(trigger2).to.equal(3);
+    it('after destroy, _watcherForStable should be removed', function(){
+      throw Error('not removed')
     })
+
+    var comp = new Component();
+
+    // stable 1, unstable 1;
+    expect(i).to.equal(2);
+    expect(comp.$refs.div.innerHTML). to.equal('2')
+
+    dispatchMockEvent(comp.$refs.div, 'click');
+
+    // stable 1, unstable 1;
+    expect(i).to.equal(4);
 
   })
 
-}()
+  it("$watch list should pass the newarray  and old array", function(){
+     var watcher = new Regular({
+      data:{
+        list: [1,2]
+      }
+     });
+     var i=0;
+
+     watcher.$watch('list', function(nList, oList, splice){
+      expect(splice).to.equal(true);
+      i++;
+     })
+     watcher.$watch('list', function(nList, oList, splice){
+      expect(splice).to.not.equal(true);
+      i++;
+     },{
+      diff: true
+     })
+
+     watcher.$update('list', [1,2,3])
+     expect(i). to.equal(2);
+  })
+
+
+
+  it('$unwatch wont remove watcher directly, but markit as removed', function(){
+     var watcher = new Regular({
+     });
+     var wt = watcher.$watch('auto', function(){ })
+     expect(watcher._watchers.length).to.equal(1)
+     watcher.$unwatch(wt)
+     expect(watcher._watchers.length).to.equal(1)
+     watcher.$update();
+     expect(watcher._watchers.length).to.equal(0)
+  })
+  it('$unwatch accept null', function(){
+     var watcher = new Regular({ });
+     var wt = watcher.$watch('auto', function(){ })
+     expect(watcher._watchers.length).to.equal(1)
+     watcher.$unwatch(null)
+     expect(watcher._watchers.length).to.equal(1)
+  })
+  it("$digest after wont jump over untouched watcher", function(){
+     var watcher = new Regular({ 
+      data: {before:1,after:1 }
+     });
+     var locals=  {
+      shouldTouched1:0,
+      shouldTouched2:0
+     }
+     watcher.$watch('foo', function(){ })
+     watcher.$watch('before', function(){
+      locals.shouldTouched2 ++;
+     })
+     var removed = watcher.$watch('beremove', function(){ })
+     watcher.$watch('after', function(){ 
+      locals.shouldTouched1 ++;
+     })
+     watcher.$update();
+
+     expect(locals.shouldTouched1).to.equal(1);
+     expect(locals.shouldTouched2).to.equal(1);
+     watcher.$unwatch(removed);
+     watcher.data.before=2;
+     watcher.data.after=2;
+     watcher.$update();
+     expect(locals.shouldTouched1).to.equal(2);
+     expect(locals.shouldTouched2).to.equal(2);
+  })
+  it('$unwatch accept Array and Number', function(){
+     var watcher = new Regular({ });
+     var wt = watcher.$watch('auto', function(){ })
+     var wt2 = watcher.$watch('auto2', function(){ })
+     expect(watcher._watchers.length).to.equal(2)
+     watcher.$unwatch([wt, wt2.id]);
+     expect(watcher._watchers.length).to.equal(2)
+     watcher.$update();
+     expect(watcher._watchers.length).to.equal(0)
+  })
+
+
+
+})
 
 
 

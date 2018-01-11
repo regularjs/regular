@@ -8,17 +8,17 @@
 // ---
 // license: MIT-style license. http://mootools.net
 
+
+
 var dom = module.exports;
-var env = require("./env.js");
+var env = require("./env");
 var _ = require("./util");
+var consts = require('./const');
 var tNode = document.createElement('div')
 var addEvent, removeEvent;
 var noop = function(){}
 
-var namespaces = {
-  html: "http://www.w3.org/1999/xhtml",
-  svg: "http://www.w3.org/2000/svg"
-}
+var namespaces = consts.NAMESPACE;
 
 dom.body = document.body;
 
@@ -67,15 +67,16 @@ dom.find = function(sl){
   if(sl.indexOf('#')!==-1) return document.getElementById( sl.slice(1) );
 }
 
+
 dom.inject = function(node, refer, position){
 
   position = position || 'bottom';
-
+  if(!node) return ;
   if(Array.isArray(node)){
     var tmp = node;
     node = dom.fragment();
     for(var i = 0,len = tmp.length; i < len ;i++){
-      node.appendChild(tmp[i]);
+      node.appendChild(tmp[i])
     }
   }
 
@@ -126,7 +127,7 @@ dom.fragment = function(){
 
 var specialAttr = {
   'class': function(node, value){
-    ('className' in node && (node.namespaceURI === namespaces.html || !node.namespaceURI)) ?
+     ('className' in node && (!node.namespaceURI || node.namespaceURI === namespaces.html  )) ? 
       node.className = (value || '') : node.setAttribute('class', value);
   },
   'for': function(node, value){
@@ -150,7 +151,7 @@ dom.attr = function(node, name, value){
         node.setAttribute(name, name);
         // lt ie7 . the javascript checked setting is in valid
         //http://bytes.com/topic/javascript/insights/799167-browser-quirk-dynamically-appended-checked-checkbox-does-not-appear-checked-ie
-        if(dom.msie && dom.msie <=7 ) node.defaultChecked = true
+        if(dom.msie && dom.msie <=7 && name === 'checked' ) node.defaultChecked = true
       } else {
         node[name] = false;
         node.removeAttribute(name);
@@ -177,12 +178,15 @@ dom.attr = function(node, name, value){
 dom.on = function(node, type, handler){
   var types = type.split(' ');
   handler.real = function(ev){
-    handler.call(node, new Event(ev));
+    var $event = new Event(ev);
+    $event.origin = node;
+    handler.call(node, $event);
   }
   types.forEach(function(type){
     type = fixEventName(node, type);
     addEvent(node, type, handler.real);
   });
+  return dom;
 }
 dom.off = function(node, type, handler){
   var types = type.split(' ');
@@ -233,7 +237,7 @@ dom.remove = function(node){
 // =================================
 // it isnt computed style 
 dom.css = function(node, name, value){
-  if( _.typeOf(name) === "object" ){
+  if( typeof (name) === "object" && name ){
     for(var i in name){
       if( name.hasOwnProperty(i) ){
         dom.css( node, i, name[i] );
@@ -330,16 +334,15 @@ function Event(ev){
 }
 
 _.extend(Event.prototype, {
-  immediateStop: _.isFalse,
   stop: function(){
-    this.preventDefault().stopPropgation();
+    this.preventDefault().stopPropagation();
   },
   preventDefault: function(){
     if (this.event.preventDefault) this.event.preventDefault();
     else this.event.returnValue = false;
     return this;
   },
-  stopPropgation: function(){
+  stopPropagation: function(){
     if (this.event.stopPropagation) this.event.stopPropagation();
     else this.event.cancelBubble = true;
     return this;
@@ -355,7 +358,7 @@ dom.nextFrame = (function(){
                   window.webkitRequestAnimationFrame ||
                   window.mozRequestAnimationFrame|| 
                   function(callback){
-                    setTimeout(callback, 16)
+                    return setTimeout(callback, 16)
                   }
 
     var cancel = window.cancelAnimationFrame ||
@@ -373,13 +376,13 @@ dom.nextFrame = (function(){
 })();
 
 // 3ks for angular's raf  service
-var k;
-dom.nextReflow = function(callback){
-  dom.nextFrame(function(){
+var k
+dom.nextReflow = dom.msie? function(callback){
+  return dom.nextFrame(function(){
     k = document.body.offsetWidth;
     callback();
   })
-}
+}: dom.nextFrame;
 
 
 

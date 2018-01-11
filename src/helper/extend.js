@@ -12,8 +12,20 @@ var _ = require("../util.js"),
   fnTest = /xy/.test(function(){"xy";}) ? /\bsupr\b/:/.*/,
   isFn = function(o){return typeof o === "function"};
 
+var hooks = {
+  events: function( propertyValue, proto ){
+    var eventListeners = proto._eventListeners || [];
+    var normedEvents = _.normListener(propertyValue);
 
-function wrap(k, fn, supro) {
+    if(normedEvents.length) {
+      proto._eventListeners = eventListeners.concat( normedEvents );
+    }
+    delete proto.events ;
+  }
+}
+
+
+function wrap( k, fn, supro ) {
   return function () {
     var tmp = this.supr;
     this.supr = supro[k];
@@ -26,17 +38,22 @@ function wrap(k, fn, supro) {
 function process( what, o, supro ) {
   for ( var k in o ) {
     if (o.hasOwnProperty(k)) {
-
+      if(hooks[k]) {
+        hooks[k](o[k], what, supro)
+      }
       what[k] = isFn( o[k] ) && isFn( supro[k] ) && 
         fnTest.test( o[k] ) ? wrap(k, o[k], supro) : o[k];
     }
   }
 }
 
+// if the property is ["events", "data", "computed"] , we should merge them
+var merged = ["data", "computed"], mlen = merged.length;
 module.exports = function extend(o){
   o = o || {};
   var supr = this, proto,
     supro = supr && supr.prototype || {};
+
   if(typeof o === 'function'){
     proto = o.prototype;
     o.implement = implement;
@@ -51,6 +68,17 @@ module.exports = function extend(o){
   proto = _.createProto(fn, supro);
 
   function implement(o){
+    // we need merge the merged property
+    var len = mlen;
+    for(;len--;){
+      var prop = merged[len];
+      if(proto[prop] && o.hasOwnProperty(prop) && proto.hasOwnProperty(prop)){
+        _.extend(proto[prop], o[prop], true) 
+        delete o[prop];
+      }
+    }
+
+
     process(proto, o, supro); 
     return this;
   }

@@ -6,7 +6,7 @@ function Group(list){
 }
 
 
-_.extend(Group.prototype, {
+var o = _.extend(Group.prototype, {
   destroy: function(first){
     combine.destroy(this.children, first);
     if(this.ondestroy) this.ondestroy();
@@ -18,8 +18,8 @@ _.extend(Group.prototype, {
   push: function(item){
     this.children.push( item );
   }
-
 })
+o.inject = o.$inject = combine.inject
 
 
 

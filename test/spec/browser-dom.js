@@ -1,273 +1,403 @@
+var expect = require('expect.js');
 // contains basic dom && event specs
-var dom = require_lib('dom.js');
-var Regular = require_lib("index.js");
+var dom = require("../../src/dom.js");
+var Regular = require("../../src/index.js");
 
-void function(){
-  function destroy(component, container){
-    component.destroy();
-    expect(container.innerHTML).to.equal('');
-  }
+function destroy(component, container){
+  component.destroy();
+  expect(container.innerHTML).to.equal('');
+}
 
 
-  describe("Dom", function(){
+describe("Dom", function(){
 
-    describe("[Regular.dom] api", function(){
-      var div = dom.create("div");
-      
-      it("class relative api", function(){
-        dom.addClass(div, "name");
-        expect(dom.hasClass(div, "name")).to.equal(true);
-        dom.delClass(div, "name");
-        expect(dom.hasClass(div, "name")).to.equal(false);
-        div.className = "";
-      })
-
-      it("addClass should work as expect", function(){
-        dom.addClass(div, "name");
-        expect(div.className).to.equal("name");
-      })
-
-      it("delClass should work as expect", function(){
-        div.className = "name";
-        dom.delClass(div, "name");
-        expect(div.className).to.equal("");
-
-      })
+  describe("[Regular.dom] api", function(){
+    var div = dom.create("div");
+    
+    it("class relative api", function(){
+      dom.addClass(div, "name");
+      expect(dom.hasClass(div, "name")).to.equal(true);
+      dom.delClass(div, "name");
+      expect(dom.hasClass(div, "name")).to.equal(false);
+      div.className = "";
     })
 
-    describe("Event via `on-*`", function(){
-      it("trigger simple click event", function(){
+    it("addClass should work as expect", function(){
+      dom.addClass(div, "name");
+      expect(div.className).to.equal("name");
+    })
+
+    it("delClass should work as expect", function(){
+      div.className = "name";
+      dom.delClass(div, "name");
+      expect(div.className).to.equal("");
+
+    })
+  })
+
+
+  describe("Event via `on-*`", function(){
+    it("trigger simple click event", function(){
+      var container = document.createElement('div');
+      var component = new Regular({
+        template: "<div on-click={name=1}>test</div>",
+        data: {test: 0}
+      }).$inject(container);
+
+      var $node = $('div', container);
+
+      expect(component.data.name).to.equal(undefined);
+      expect($node.length).to.equal(1);
+
+      dispatchMockEvent($node[0], 'click');
+      expect(component.data.name).to.equal(1);
+
+      destroy(component, container);
+    })
+
+    it("custom Event handler's context should be component", function(){
+
         var container = document.createElement('div');
-        var component = new Regular({
-          template: "<div on-click={{name=1}}>test</div>",
-          data: {test: 0}
+        var Component = Regular.extend();
+        var context;
+        Component.event('hello', function(elem, fire){
+          context = this;
+        })
+        var component = new Component({
+          template: "<div on-hello={name=name+1} class='hello' >haha</div>",
+          data: { test: 0 , name: 'hahah'}
         }).$inject(container);
 
-        var $node = $('div', container);
+        expect(context).to.equal(component);
 
-        expect(component.data.name).to.equal(undefined);
-        expect($node.length).to.equal(1);
+    })
+    it("nested binder(>2) should be destroy after destroy", function(){
 
-        dispatchMockEvent($node[0], 'click');
-        expect(component.data.name).to.equal(1);
+        var container = document.createElement('div');
+        var Component = Regular.extend();
+        var destroy_directive=1, destroy_upload=1;
+        Component.event('upload', function(elem, fire){
+          return function(){
+            destroy_upload++;
+          }
+        }).directive("r-test", function(){
+          return function(){
+            destroy_directive++;
+          }
+          
+        })
+        var list = [];
+        var template = 
+        '<div class="m-imgview {clazz}">\
+            <div class="img  animated" >\
+              <div class="btns">\
+                <label class="local btn  btn-primary btn-sm" r-test=1 on-upload={this.handleUpload($event,img_index)}>本地上传</label>\
+              </div>\
+            </div>\
+        </div>';
 
-        destroy(component, container);
-      })
+        var component = new Component({
+          template: template,
+          data: { test: 0 , name: 'hahah', imgs:['null']}
+        }).$inject(container);
 
-      it("custom Event handler's context should be component", function(){
+        component.destroy();
+        expect(destroy_upload).to.equal(2)
+        expect(destroy_directive).to.equal(2)
 
-          var container = document.createElement('div');
-          var Component = Regular.extend();
-          var context;
-          Component.event('hello', function(elem, fire){
-            context = this;
+
+    })
+
+    it("event should go proxy way when pass Non-Expreesion as attribute_value", function(){
+      var container = document.createElement('div');
+      var i = 0;
+      var Component = Regular.extend({
+        init: function(){
+          this.$on("hello2", function(){
+            i = 1;
           })
-          var component = new Component({
-            template: "<div on-hello={{name=name+1}} class='hello' >haha</div>",
-            data: { test: 0 , name: 'hahah'}
-          }).$inject(container);
+        },
+        hello2: function(){
+          i = 2; 
+        }
 
-          expect(context).to.equal(component);
+      });
 
-      })
+      var component = new Component({
+        template: "<div on-click=hello2 class='hello' >haha</div>",
+        data: { test: 0 , name: 'hahah'}
+      }).$inject(container);
 
-      it("event should go proxy way when pass Non-Expreesion as attribute_value", function(){
-        var container = document.createElement('div');
-        var i = 0;
-        var Component = Regular.extend({
-          init: function(){
-            this.$on("hello2", function(){
-              i = 1;
-            })
-          },
-          hello2: function(){
-            i = 2; 
-          }
+      dispatchMockEvent(nes.one('div', container), "click");
 
-        });
-
-        var component = new Component({
-          template: "<div on-click=hello2 class='hello' >haha</div>",
-          data: { test: 0 , name: 'hahah'}
-        }).$inject(container);
-
-        dispatchMockEvent(nes.one('div', container), "click");
-
-        expect(i).to.equal(1);
+      expect(i).to.equal(1);
 
 
-        destroy(component, container);
+      destroy(component, container);
 
 
-      });  
+    });  
 
-      it("when go proxy way the fire's context should point to outer component", function(){
-        var container = document.createElement('div');
-        var i = 0, j=0;
-        var Component = Regular.extend({
-          template: "{{#list 1..1 as item}}{{#list 1..1 as todo}}<div on-click='hello2'></div>{{/list}}{{/list}}",
-          init: function(){
-            this.$on("hello2", function(){
-              i = 1;
-            })
-          }
-        });
-        var component = new Component;
-        component.$inject(container);
-        dispatchMockEvent(nes.one('div', container), "click");
-        expect(i).to.equal(1);
+    it("when go proxy way the fire's context should point to outer component", function(){
+      var container = document.createElement('div');
+      var i = 0, j=0;
+      var Component = Regular.extend({
+        template: "{#list 1..1 as item}{#list 1..1 as todo}<div on-click='hello2'></div>{/list}{/list}",
+        init: function(){
+          this.$on("hello2", function(){
+            i = 1;
+          })
+        }
+      });
+      var component = new Component;
+      component.$inject(container);
+      dispatchMockEvent(nes.one('div', container), "click");
+      expect(i).to.equal(1);
 
-        destroy(component, container)
-      })
+      destroy(component, container)
+    })
 
-      it("you can binding one event with same eventType on one node", function(){
-        var container = document.createElement('div');
-        var i = 0, j = 0;
-        var Component = Regular.extend({
-          init: function(){
-            this.$on("hello2", function(){
-              i = 1;
-            })
-          },
-          hello2: function(){
-            j = 1; 
-          }
+    it("you can binding one event with same eventType on one node", function(){
+      var container = document.createElement('div');
+      var i = 0, j = 0;
+      var Component = Regular.extend({
+        init: function(){
+          this.$on("hello2", function(){
+            i = 1;
+          })
+        },
+        hello2: function(){
+          j = 1; 
+        }
 
-        });
+      });
 
-        var component = new Component({
-          template: "<div on-click=hello2 on-click={{this.hello2()}} >haha</div>",
-          data: { test: 0 , name: 'hahah'}
-        }).$inject(container);
+      var component = new Component({
+        template: "<div on-click=hello2 on-click={this.hello2()} >haha</div>",
+        data: { test: 0 , name: 'hahah'}
+      }).$inject(container);
 
-        dispatchMockEvent(nes.one('div', container), "click");
+      dispatchMockEvent(nes.one('div', container), "click");
 
-        expect(i).to.equal(1);
-        expect(j).to.equal(1);
+      expect(i).to.equal(1);
+      expect(j).to.equal(1);
 
-        destroy(component, container);
+      destroy(component, container);
 
-
-      })
 
     })
 
-    describe("delegate Event via `delegate-*`", function(){
-      var Component = Regular.extend();
-      var container = document.createElement("div")
-      before(function(){
-        document.body.appendChild(container)
-      })
-
-      after(function(){
-        document.body.removeChild(container);
-      })
-
-      it("delegate Event should work via", function(){
-        var i,j;
-        var component = new Component({
-          template: "<div delegate-click=proxy delegate-click={{this.hello2()}} >haha</div>",
-          data: { test: 0 , name: 'hahah'},
-          hello2: function(){
-            i=1;
-          }
-
-        }).$inject(container);
-
-        component.$on("proxy", function(){
-          j=1;
-        })
-
-        dispatchMockEvent(nes.one('div', container), "click");
-
-
-        expect(i).to.equal(1);
-        expect(j).to.equal(1);
-
-        destroy(component, container);
-
-      })
-
-      it("delegate Event should destroy via {{#if}}", function(){
-        var i = 0, j=0;
-        var component = new Component({
-          template: "<div {{#if test}} delegate-click=proxy {{#else}} delegate-click=proxy2 {{/if}} >haha</div>",
-          data: { test: true , name: 'hahah'}
-        }).$inject(container);
-
-        component.$on("proxy", function(){i++})
-        component.$on("proxy2", function(){j++})
-
-        expect(j).to.equal(0);
-
-        dispatchMockEvent(nes.one('div', container), "click");
-
-        expect(i).to.equal(1);
-        expect(j).to.equal(0);
-
-        component.$update("test", false);
-
-        dispatchMockEvent(nes.one('div', container), "click");
-
-        expect(i).to.equal(1);
-        expect(j).to.equal(1);
-
-        component.$update("test", true);
-
-        dispatchMockEvent(nes.one('div', container), "click");
-
-        expect(i).to.equal(2);
-        expect(j).to.equal(1);
-
-        destroy(component, container);
-
-      })
-
-      it("delegate Event will merge to new container if use $inject", function(){
-        var container2 = document.createElement("div");
-        document.body.appendChild(container2);
-
-        var component = new Component({
-          template: "<div delegate-click={{i = i+1}}  >haha</div>",
-          data: { i: 1 }
-        }).$inject( container );
-
-        component.$inject( container2 );
-
-
-        dispatchMockEvent(nes.one( 'div', container2 ), "click" );
-
-        expect( component.data.i ).to.equal(2);
-
-        destroy( component, container2 );
-
-        document.body.removeChild( container2 );
-
-      })
-
-      it("delegate Event only bind on the rootComponent", function(){
-        var Nested = Regular.extend({
-          name: "nest",
-          template: "<div delegate-click=hello></div>"
-        })
-        var component = new Component({
-          template: "<nest></nest>",
-          data: { i: 1 }
-        }).$inject( container );
-
-
-        expect( component._delegates["click"].length ).to.equal(1);
-
-        destroy( component, container );
-
-        expect( component._delegates["click"] ).to.equal( null );
-
-      })
+    it("$event.origin should point to the element that bingding the event", function(done){
+      var container = document.createElement('div');
+      document.body.appendChild(container);
+      var component = new Regular({
+        template: "<div on-click=hello2 on-click={this.hello2($event)} ref=div > <a ref=a href='javascript:;'>haha</a></div>",
+        data: { test: 0 , name: 'hahah'},
+        hello2: function($event){
+          $event.preventDefault();
+          expect($event.origin).to.equal(this.$refs.div);
+          document.body.removeChild(container);
+          done();
+          this.destroy();
+        }
+      }).$inject(container);
+      dispatchMockEvent(component.$refs.a, "click");
     })
-
 
   })
 
-}()
+  describe("delegate Event via `delegate-*`", function(){
+    var Component = Regular.extend();
+    var container = document.createElement("div")
+    before(function(){
+      document.body.appendChild(container)
+    })
 
+    after(function(){
+      document.body.removeChild(container);
+    })
+
+    it("delegate Event should work via", function(){
+      var i,j;
+      var component = new Component({
+        template: "<div delegate-click=proxy delegate-click={this.hello2()} >haha</div>",
+        data: { test: 0 , name: 'hahah'},
+        hello2: function(){
+          i=1;
+        }
+
+      }).$inject(container);
+
+      component.$on("proxy", function(){
+        j=1;
+      })
+
+      dispatchMockEvent(nes.one('div', container), "click");
+
+
+      expect(i).to.equal(1);
+      expect(j).to.equal(1);
+
+      destroy(component, container);
+
+    })
+
+    it("delegate Event should destroy via {#if}", function(){
+      var i = 0, j=0;
+      var component = new Component({
+        template: "<div {#if test} delegate-click=proxy {#else} delegate-click=proxy2 {/if} >haha</div>",
+        data: { test: true , name: 'hahah'}
+      }).$inject(container);
+
+      component.$on("proxy", function(){i++})
+      component.$on("proxy2", function(){j++})
+
+      expect(j).to.equal(0);
+
+      dispatchMockEvent(nes.one('div', container), "click");
+
+      expect(i).to.equal(1);
+      expect(j).to.equal(0);
+
+      component.$update("test", false);
+
+      dispatchMockEvent(nes.one('div', container), "click");
+
+      expect(i).to.equal(1);
+      expect(j).to.equal(1);
+
+      component.$update("test", true);
+
+      dispatchMockEvent(nes.one('div', container), "click");
+
+      expect(i).to.equal(2);
+      expect(j).to.equal(1);
+
+      destroy(component, container);
+
+    })
+
+    it("delegate Event will merge to new container if use $inject", function(){
+      var container2 = document.createElement("div");
+      document.body.appendChild(container2);
+
+      var component = new Component({
+        template: "<div ref=a delegate-click={i = i+1}  >haha</div>",
+        data: { i: 1 }
+      }).$inject( container );
+
+      component.$inject( container2 );
+
+
+      dispatchMockEvent(component.$refs.a, "click" );
+
+      expect( component.data.i ).to.equal(2);
+
+      component.$inject(false);
+      dispatchMockEvent(component.$refs.a, "click" );
+
+      expect( component.data.i ).to.equal(2);
+
+      component.$inject( container2 );
+
+
+      dispatchMockEvent(component.$refs.a, "click" );
+
+      expect( component.data.i ).to.equal(3);
+
+      document.body.removeChild( container2 );
+
+      destroy(component, container2)
+
+    })
+
+    it("delegate Event only bind on the rootComponent", function(){
+      var Nested = Regular.extend({
+        name: "nest",
+        template: "<div delegate-click=hello></div>"
+      })
+      var component = new Component({
+        template: "<nest></nest>",
+        data: { i: 1 }
+      }).$inject( container );
+
+
+      expect( component._delegates["click"].length ).to.equal(1);
+
+      destroy( component, container );
+
+      expect( component._delegates["click"] ).to.equal( null );
+
+    })
+
+    it('delegate Event should work when the directive is linked after node being injected', function(){
+      var Nested = Regular.extend({
+        name: "nest",
+        template: "{#if show}<div delegate-click='hello'></div>{/if}"
+      })
+
+      var component = new Component({
+        template: "<nest show={show} on-hello={name=1}></nest>",
+        data: { i: 1 }
+      }).$inject( container );
+
+
+      expect( component._delegates ).to.equal(undefined);
+
+      component.$update('show', true);
+
+      expect( component._delegates["click"].length ).to.equal(1);
+      dispatchMockEvent(nes.one( 'div', container ), "click" );
+      expect(component.data.name).to.equal(1);
+
+      destroy( component, container );
+
+      expect( component._delegates["click"] ).to.equal( null );
+    })
+  })
+
+  describe("dom.element should work as expect", function(){
+    var Nested = Regular.extend({
+      name: "nest",
+      template: "{#if !show}<div id='hide'>HIDE</div>{/if}"
+    })
+
+    var component;
+    // before(function(){
+      component = new Regular({
+        template: "<nest show={show}></nest>{#if show}<div id='show'>SHOW</div>{/if}\
+                  {#list nodes as node}<div class='list'>list{node_index}</div>{/list}",
+        data: {
+          show: false,
+          nodes: [1,2,3]
+        }
+      })
+    // })
+    // after(function(){
+      // component.destroy()
+    // })
+    it("dom.element basic", function(){
+      component.$update('show', false);
+      expect(dom.element(component).innerHTML).to.equal('HIDE')
+      var all = dom.element(component, true);
+      expect(all.length).to.equal(4)
+      expect(all[1].className).to.equal('list')
+      expect(all[2].innerHTML).to.equal('list1')
+    })
+    it("dom.element is changed with its content", function(){
+      component.data.nodes = [1,2]
+      component.$update('show', true)
+      expect(dom.element(component).innerHTML).to.equal('SHOW')
+      var all = dom.element(component, true);
+      expect(all.length).to.equal(3)
+      expect(all[1].innerHTML).to.equal('list0')
+      expect(all[2].innerHTML).to.equal('list1')
+    })
+
+  })
+
+  
+
+
+})
 

@@ -1,13 +1,17 @@
 var _ = require('../util.js');
 var parseExpression = require('./parse.js').expression;
-
+var diff = require('./diff.js');
+var diffArray = diff.diffArray;
+var diffObject = diff.diffObject;
 
 function Watcher(){}
 
 var methods = {
   $watch: function(expr, fn, options){
-    var get, once, test, rlen; //records length
+    var get, once, test, rlen, extra = this.__ext__; //records length
     if(!this._watchers) this._watchers = [];
+    if(!this._watchersForStable) this._watchersForStable = [];
+
     options = options || {};
     if(options === true){
        options = { deep: true }
@@ -16,13 +20,13 @@ var methods = {
     if(Array.isArray(expr)){
       var tests = [];
       for(var i = 0,len = expr.length; i < len; i++){
-          tests.push(parseExpression(expr[i]).get) 
+          tests.push(this.$expression(expr[i]).get)
       }
       var prev = [];
       test = function(context){
         var equal = true;
         for(var i =0, len = tests.length; i < len; i++){
-          var splice = tests[i](context);
+          var splice = tests[i](context, extra);
           if(!_.equals(splice, prev[i])){
              equal = false;
              prev[i] = _.clone(splice);
@@ -31,9 +35,13 @@ var methods = {
         return equal? false: prev;
       }
     }else{
-      expr = this.$expression? this.$expression(expr) : parseExpression(expr);
-      get = expr.get;
-      once = expr.once || expr.constant;
+      if(typeof expr === 'function'){
+        get = expr.bind(this);      
+      }else{
+        expr = this._touchExpr( parseExpression(expr) );
+        get = expr.get;
+        once = expr.once;
+      }
     }
 
     var watcher = {
@@ -42,38 +50,55 @@ var methods = {
       fn: fn, 
       once: once, 
       force: options.force,
+      // don't use ld to resolve array diff
+      diff: options.diff,
       test: test,
-      deep: options.deep
+      deep: options.deep,
+      last: options.sync? get(this): options.last
     }
-    
-    this._watchers.push( watcher );
 
+
+    this[options.stable? '_watchersForStable': '_watchers'].push(watcher);
+    
     rlen = this._records && this._records.length;
-    if(rlen) this._records[rlen-1].push(uid)
+    if(rlen) this._records[rlen-1].push(watcher)
     // init state.
     if(options.init === true){
+      var prephase = this.$phase;
       this.$phase = 'digest';
-      this._checkSingleWatch( watcher, this._watchers.length-1 );
-      this.$phase = null;
+      this._checkSingleWatch( watcher);
+      this.$phase = prephase;
     }
-    return uid;
+    return watcher;
   },
-  $unwatch: function(uid){
-    if(!this._watchers) this._watchers = [];
-    if(Array.isArray(uid)){
-      for(var i =0, len = uid.length; i < len; i++){
-        this.$unwatch(uid[i]);
-      }
-    }else{
-      var watchers = this._watchers, watcher, wlen;
-      if(!uid || !watchers || !(wlen = watchers.length)) return;
-      for(;wlen--;){
-        watcher = watchers[wlen];
-        if(watcher && watcher.id === uid ){
-          watchers.splice(wlen, 1);
+  $unwatch: function( watcher ){
+    if(!this._watchers || !watcher) return;
+    var watchers = this._watchers;
+    var type = typeof watcher;
+
+    if(type === 'object'){
+      var len = watcher.length;
+      if(!len){
+        watcher.removed = true
+      }else{
+        while( (len--) >= 0 ){
+          this.$unwatch(watcher[len])
         }
       }
+    }else if(type === 'number'){
+      var id = watcher;
+      watcher =  _.findItem( watchers, function(item){
+        return item.id === id;
+      } );
+      if(!watcher) watcher = _.findItem(this._watchersForStable, function( item ){
+        return item.id === id
+      })
+      return this.$unwatch(watcher);
     }
+    return this;
+  },
+  $expression: function(value){
+    return this._touchExpr(parseExpression(value))
   },
   /**
    * the whole digest loop ,just like angular, it just a dirty-check loop;
@@ -83,102 +108,120 @@ var methods = {
    */
 
   $digest: function(){
-    if(this.$phase === 'digest') return;
+    if(this.$phase === 'digest' || this._mute) return;
     this.$phase = 'digest';
     var dirty = false, n =0;
     while(dirty = this._digest()){
 
       if((++n) > 20){ // max loop
-        throw 'there may a circular dependencies reaches' 
+        throw Error('there may a circular dependencies reaches')
       }
     }
-    if( n > 0 && this.$emit) this.$emit("$update");
+    // stable watch is dirty
+    var stableDirty =  this._digest(true);
+
+    if( (n > 0 || stableDirty) && this.$emit) {
+      this.$emit("$update");
+      if (this.devtools) {
+        this.devtools.emit("flush", this)
+      }
+    }
     this.$phase = null;
   },
   // private digest logic
-  _digest: function(){
-    // if(this.context) return this.context.$digest();
-    // if(this.$emit) this.$emit('digest');
-    var watchers = this._watchers;
+  _digest: function(stable){
+
+    var watchers = !stable? this._watchers: this._watchersForStable;
     var dirty = false, children, watcher, watcherDirty;
-    if(watchers && watchers.length){
-      for(var i = 0, len = watchers.length;i < len; i++){
+    var len = watchers && watchers.length;
+    if(len){
+      var mark = 0, needRemoved=0;
+      for(var i =0; i < len; i++ ){
         watcher = watchers[i];
-        watcherDirty = this._checkSingleWatch(watcher, i);
-        if(watcherDirty) dirty = true;
+        var shouldRemove = !watcher ||  watcher.removed;
+        if( shouldRemove ){
+          needRemoved += 1;
+        }else{
+          watcherDirty = this._checkSingleWatch(watcher);
+          if(watcherDirty) dirty = true;
+        }
+        // remove when encounter first unmoved item or touch the end
+        if( !shouldRemove || i === len-1 ){
+          if( needRemoved ){
+            watchers.splice(mark, needRemoved );          
+            len -= needRemoved;
+            i -= needRemoved;
+            needRemoved = 0;
+          }
+          mark = i+1;
+        }
       }
     }
     // check children's dirty.
     children = this._children;
     if(children && children.length){
       for(var m = 0, mlen = children.length; m < mlen; m++){
-        if(children[m]._digest()) dirty = true;
+        var child = children[m];
+        if(child && child._digest(stable)) dirty = true;
       }
     }
     return dirty;
   },
   // check a single one watcher 
-  _checkSingleWatch: function(watcher, i){
+  _checkSingleWatch: function(watcher){
     var dirty = false;
     if(!watcher) return;
-    if(watcher.test) { //multi 
+
+    var now, last, tlast, tnow,  eq, diff;
+
+    if(!watcher.test){
+
+      now = watcher.get(this);
+      last = watcher.last;
+
+      if(now !== last || watcher.force){
+        tlast = _.typeOf(last);
+        tnow = _.typeOf(now);
+        eq = true; 
+
+        // !Object
+        if( !(tnow === 'object' && tlast==='object' && watcher.deep) ){
+          // Array
+          if( tnow === 'array' && ( tlast=='undefined' || tlast === 'array') ){
+            diff = diffArray(now, watcher.last || [], watcher.diff)
+            if( tlast !== 'array' || diff === true || diff.length ) dirty = true;
+          }else{
+            eq = _.equals( now, last );
+            if( !eq || watcher.force ){
+              watcher.force = null;
+              dirty = true; 
+            }
+          }
+        }else{
+          diff =  diffObject( now, last, watcher.diff );
+          if( diff === true || diff.length ) dirty = true;
+        }
+      }
+
+    } else{
+      // @TODO 是否把多重改掉
       var result = watcher.test(this);
       if(result){
         dirty = true;
         watcher.fn.apply(this, result)
       }
-    }else{
-
-      var now = watcher.get(this);
-      var last = watcher.last;
-      var eq = true;
-
-      if(_.typeOf( now ) === 'object' && watcher.deep){
-        if(!watcher.last){
-           eq = false;
-         }else{
-          for(var j in now){
-            if(watcher.last[j] !== now[j]){
-              eq = false;
-              break;
-            }
-          }
-          if(eq !== false){
-            for(var n in last){
-              if(last[n] !== now[n]){
-                eq = false;
-                break;
-              }
-            }
-          }
-        }
-      }else{
-        eq = _.equals(now, watcher.last);
-      }
-      if(eq === false || watcher.force){ // in some case. if undefined, we must force digest.
-        eq = false;
-        watcher.force = null;
-        dirty = true;
-        watcher.fn.call(this, now, watcher.last);
-        if(typeof now !== 'object'|| watcher.deep){
-          watcher.last = _.clone(now);
-        }else{
-          watcher.last = now;
-        }
-      }else{ // if eq == true
-        if( _.typeOf(eq) === 'array' && eq.length ){
-          watcher.last = _.clone(now);
-          watcher.fn.call(this, now, eq);
-          dirty = true;
-        }else{
-          eq = true;
-        }
-      }
-      // @TODO
-      if(dirty && watcher.once) this._watchers.splice(i, 1);
-
-      return dirty;
     }
+    if(dirty && !watcher.test){
+      if(tnow === 'object' && watcher.deep || tnow === 'array'){
+        watcher.last = _.clone(now);
+      }else{
+        watcher.last = now;
+      }
+      watcher.fn.call(this, now, last, diff)
+      if(watcher.once) this.$unwatch(watcher)
+    }
+
+    return dirty;
   },
 
   /**
@@ -188,23 +231,43 @@ var methods = {
    * @param  {Whatever} value optional, when path is Function, the value is ignored
    * @return {this}     this 
    */
-  $update: function(path, value){
+  $set: function(path, value){
     if(path != null){
-      var type = _.typeOf(path);
+      var type = typeof (path);
       if( type === 'string' || path.type === 'expression' ){
-        path = parseExpression(path);
+        path = this.$expression(path);
         path.set(this, value);
       }else if(type === 'function'){
         path.call(this, this.data);
       }else{
         for(var i in path) {
-          if(path.hasOwnProperty(i)){
-            this.data[i] = path[i];
-          }
+          this.$set(i, path[i])
         }
       }
     }
-    if(this.$root) this.$root.$digest()
+  },
+  // 1. expr canbe string or a Expression
+  // 2. detect: if true, if expr is a string will directly return;
+  $get: function(expr, detect)  {
+    if(detect && typeof expr === 'string') return expr;
+    return this.$expression(expr).get(this);
+  },
+  $update: function(){
+    var rootParent = this;
+    do{
+      if(rootParent.data.isolate || !rootParent.$parent) break;
+      rootParent = rootParent.$parent;
+    } while(rootParent)
+
+    var prephase =rootParent.$phase;
+    rootParent.$phase = 'digest'
+
+    this.$set.apply(this, arguments);
+
+    rootParent.$phase = prephase
+
+    rootParent.$digest();
+    return this;
   },
   // auto collect watchers for logic-control.
   _record: function(){

@@ -1,6 +1,6 @@
 {
   "name": "regularjs",
-  "version": "0.2.12",
+  "version": "0.5.2",
   "author": {
     "name": "leeluolee"
   },
@@ -17,32 +17,35 @@
   },
   "homepage": "http://regularjs.github.io",
   "scripts": {
-    "test": "gulp travis --phantomjs"
+    "test": "gulp travis --phantomjs",
+    "prepublish": "gulp build"
   },
   "bin": {
     "regular": "./bin/regular"
   },
   "devDependencies": {
+    "expect.js": "~0.3.1",
     "gulp": "3.6.x",
-    "gulp-component": "~0.1.8",
-    "gulp-uglify": "~0.2.1",
+    "gulp-bump": "^1.0.0",
+    "gulp-git": "^1.4.0",
+    "gulp-istanbul": "~0.1.1",
     "gulp-jshint": "~1.5.3",
     "gulp-mocha": "~0.4.1",
-    "gulp-istanbul": "~0.1.1",
+    "gulp-shell": "^0.2.9",
+    "gulp-tag-version": "^1.3.0",
+    "gulp-uglify": "~0.2.1",
     "gulp-util": "~2.2.14",
-    "through2": "~0.4.1",
-    "mocha": "~1.18.2",
-    "expect.js": "~0.3.1",
+    "gulp-webpack": "^1.0.0",
     "karma": "~0.12.6",
+    "karma-chrome-launcher": "~0.1.4",
+    "karma-coverage": "~0.2.4",
+    "karma-firefox-launcher": "~0.1.3",
+    "karma-ie-launcher": "~0.1.5",
     "karma-mocha": "~0.1.3",
     "karma-phantomjs-launcher": "~0.1.4",
-    "karma-coverage": "~0.2.4",
-    "karma-ie-launcher": "~0.1.5",
-    "karma-chrome-launcher": "~0.1.4",
-    "karma-firefox-launcher": "~0.1.3"
-  },
-  "dependencies": {
-    "gulp-shell": "^0.2.9",
-    "gulp-webpack": "^1.0.0"
+    "mocha": "~1.18.2",
+    "run-sequence": "^1.2.2",
+    "through2": "~0.4.1",
+    "yargs": "^3.26.0"
   }
 }

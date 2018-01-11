@@ -3,38 +3,65 @@ var path = require('path');
 var karma = require('karma').server;
 var _ = require('./src/util.js');
 var gulp = require('gulp');
+var git = require('gulp-git');
 var spawn = require('child_process').spawn;
 var shell = require('gulp-shell');
-var component = require('gulp-component');
+var runSequence = require('run-sequence')
 var istanbul = require('gulp-istanbul');
 var jshint = require('gulp-jshint');
 var webpack = require('gulp-webpack');
 var mocha = require('gulp-mocha');
 var uglify = require('gulp-uglify');
 var gutil = require('gulp-util');
+var bump = require('gulp-bump');
 var through = require('through2');
-var before_mocha = require('./test/before_mocha.js');
 var pkg;
 
+
+function inc(importance) {
+  // get all the files to bump version in
+  return gulp.src(['./package.json', './bower.json'])
+    // bump the version number in those files
+    .pipe(bump({type: importance}))
+    // save it back to filesystem
+    .pipe(gulp.dest('./'))
+    // commit the changed version number
+    // .pipe(git.commit('bumps package version'))
+    // **tag it in the repository**
+    // .pipe(tag_version());
+}
+
+gulp.task('patch', function() { return inc('patch'); })
+gulp.task('feature', function() { return inc('minor'); })
+gulp.task('release', function() { return inc('major'); })
+
+
+
 try{
-  pkg = JSON.parse(fs.readFileSync('./package.json', 'utf8'))
-  pkg_bower = JSON.parse(fs.readFileSync('./bower.json', 'utf8'))
-  pkg_component = JSON.parse(fs.readFileSync('./component.json', 'utf8'))
+  pkg = require('./package.json')
+  pkg_bower = require('./bower.json')
 }catch(e){}
 
-gulp.task('node', function() {
-  return gulp.src('src/node.js')
-    .pipe(webpack({
-      output: {
-        filename: 'regular-parser.js',
-        libraryTarget: "umd"
-      }
-    }
-    ))
-    .pipe(gulp.dest('dist/'));
-});
+var wpConfig = {
+  output: {
+    filename: "regular.js",
+    library: "Regular",
+    libraryTarget: "umd"
+  }
 
-gulp.task('default', ['test'], function() {});
+}
+
+var testConfig = {
+  devtool: 'source-map',
+  output: {
+
+    filename: "dom.bundle.js"
+  }
+}
+
+
+
+gulp.task('default', ['watch'], function() {});
 
 
 //one could also externalize common config into a separate file,
@@ -43,14 +70,11 @@ var karmaCommonConf = {
   browsers: ['Chrome', 'Firefox', 'IE', 'IE9', 'IE8', 'IE7', 'PhantomJS'],
   frameworks: ['mocha'],
   files: [
-    'test/regular.js',
-    'test/karma.js',
     'test/runner/vendor/expect.js',
     'test/runner/vendor/jquery.js',
     'test/runner/vendor/nes.js',
     'test/runner/vendor/util.js',
-    'test/spec/test-*.js',
-    'test/spec/browser-*.js'
+    'test/runner/dom.bundle.js'
   ],
   client: {
     mocha: {ui: 'bdd'}
@@ -77,7 +101,7 @@ var karmaCommonConf = {
     // source files, that you wanna generate coverage for
     // do not include tests or libraries
     // (these files will be instrumented by Istanbul)
-    'test/regular.js': ['coverage']
+    'src/**/*.js': ['coverage']
   },
 
   // optionally, configure the reporter
@@ -105,30 +129,29 @@ gulp.task('karma', function (done) {
 
 
 // build after jshint
-gulp.task('build',["jshint", 'node'], function(){
+gulp.task('build',["jshint"], function(){
   // form minify    
-  gulp.src('./component.json')
-    .pipe(component.scripts({
-      standalone: 'Regular',
-      name: 'regular'
-    }))
+  gulp.src('./src/index.js')
+    .pipe(webpack(wpConfig))
     .pipe(wrap(signatrue))
-    .pipe(gulp.dest('dist'))
+    .pipe(gulp.dest('./dist'))
     .pipe(wrap(mini))
     .pipe(uglify())
-    .pipe(gulp.dest('dist'))
-    .on('error', function(err){
-      console.log(err)
+    .pipe(gulp.dest('./dist'))
+    .on("error", function(err){
+      throw err
     })
 
-  // for test
-  gulp.src('./component.json')
-    .pipe(component.scripts({
-      name: 'regular'
-    }))
-    .pipe(wrap(signatrue))
-    .pipe(gulp.dest('test'))
 
+})
+
+gulp.task('testbundle',  function(cb){
+  return gulp.src("test/test.exports.js")
+    .pipe(webpack(testConfig))
+    .pipe(gulp.dest('test/runner'))
+    .on("error", function(err){
+      throw err
+    })
 })
 
 
@@ -136,11 +159,9 @@ gulp.task('build',["jshint", 'node'], function(){
 gulp.task('v', function(fn){
   var version = process.argv[3].replace('-',"");
   pkg.version = version
-  pkg_component.version = version
   pkg_bower.version = version
   try{
     fs.writeFileSync('./package.json', JSON.stringify(pkg, null, 2), 'utf8');           
-    fs.writeFileSync('./component.json', JSON.stringify(pkg_component, null, 2), 'utf8');
     fs.writeFileSync('./bower.json', JSON.stringify(pkg_bower, null, 2), 'utf8');
   }catch(e){
     console.error('update version faild' + e.message)
@@ -148,25 +169,10 @@ gulp.task('v', function(fn){
 })
 
 
-// watch file then build
-gulp.task('dev', function(){
-  gulp.watch(['component.json', 'src/**/*.js'], ['build'])
-  // var puer = spawn('puer', ["--no-reload"], {})
-  // puer.stdout.on('data', function (data) {
-  //   console.log(""+ data);
-  // });
-  // puer.stderr.on('data', function (data) {
-  //   console.log('stderr: ' + data);
-  // });
 
-  // puer.on('close', function (code) {
-  //   console.log('puer test compelete!');
-  // });
-
-})
-
-gulp.task('dev-test', function(){
-  gulp.watch(['src/**/*.js', 'test/spec/**/*.js'], ['build','mocha'])
+gulp.task('watch', ["build", 'testbundle'], function(){
+  // gulp.watch(['src/**/*.js'], ['build']);
+  gulp.watch(['test/spec/*.js', 'src/**/*.js'], ['jshint','testbundle'])
 })
 
 
@@ -181,7 +187,7 @@ gulp.task('jshint', function(){
 })
 
 gulp.task('cover', function(cb){
-  before_mocha.dirty();
+  
   gulp.src(['src/**/*.js'])
     .pipe(istanbul()) // Covering files
     .on('end', function () {
@@ -192,25 +198,12 @@ gulp.task('cover', function(cb){
     });
 })
 
-gulp.task('test', ['jshint','mocha', 'karma'])
+gulp.task('test', ['jshint', 'karma'])
 
 // for travis
-gulp.task('travis', ['jshint' ,'build','mocha',  'karma']);
-
-gulp.task('mocha', function() {
-
-  before_mocha.dirty();
-
-  return gulp.src(['test/spec/test-*.js'])
-    .pipe(mocha({reporter: 'spec' }) )
-    .on('error', function(){
-      gutil.log.apply(this, arguments);
-      console.log('\u0007');
-    })
-    .on('end', function(){
-      before_mocha.clean();
-    });
-});
+gulp.task('travis', function(cb){
+  runSequence( 'jshint' , 'testbundle', 'karma', cb );
+})
 
 
 gulp.task('casper', function(){

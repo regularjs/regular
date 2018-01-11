@@ -10,23 +10,28 @@
 
     <div id="app">
       <div id="app"></div>
+      <div id='svg'></div>
     </div>
 
     <!-- Templates -->
     <script id="modal" type="text/regular" name='modal'>
-      <div class="modal show {{clazz}}">
+      <div class="modal show {clazz}">
         <div class="modal-dialog">
           <div class="modal-content">
+
             <div class="modal-header">
-              <button type="button" class="close" on-click={{this.close()}} data-dismiss="modal" aria-hidden="true">×</button>
-              <h4 class="modal-title">{{title}}</h4>
+              <button type="button" class="close" on-click={this.close()} data-dismiss="modal" aria-hidden="true">×</button>
+              <h4 class="modal-title">{title}</h4>
             </div>
             <div class="modal-body">
-              {{#include content }}
+            <svg>
+                <image href="http://img0.imgtn.bdimg.com/it/u=2090979813,2728843729&fm=21&gp=0.jpg" width="200" height="200" />  
+            </svg>
+              {#include content }
             </div>
             <div class="modal-footer">
-              <button type="button" class="btn btn-default" on-click={{this.close()}} >Close</button>
-              <button type="button" class="btn btn-primary" on-click={{this.confirm()}}>Confirm</button>
+              <button type="button" class="btn btn-default" on-click={this.close()} >Close</button>
+              <button type="button" class="btn btn-primary" on-click={this.confirm()}>Confirm</button>
             </div>
           </div>
         </div>
@@ -34,31 +39,61 @@
     </script>
     
     <script>
-    var Modal = Regular.extend({
-      template: '#modal',
-      init: function(){
-        if(!this.$parent) this.inject(document.body)
-      },
-      close: function(){
-        this.$emit('close');
-        this.destroy();
-      },
-      confirm: function(){
-        this.$emit('confirm', this.data);
-        this.destroy();
-      }
-    });
+      // on-enter event
+      Regular.event('enter', function(elem, fire){
+        function update(ev){
+          if(ev.which == 13){ // ENTER key
+            ev.preventDefault();
+            fire(ev); // if key is enter , we fire the event;
+          }
+        }
+        Regular.dom.on(elem, "keypress", update);
+        return function destroy(){ // return a destroy function
+          Regular.dom.off(elem, "keypress", update);
+        }
+      });
 
-    // 直接调用
-    var modal = new Modal({
-      data: {
-        content: '<input type="email" class="form-control" r-model={{email}} on-enter={{this.confirm()}}>',
-        title: '请确认您的邮箱'
-      }
-    });
-    modal.$on('confirm', function(data){
-      console.log(data.email)
-    });
+
+      var Modal = Regular.extend({
+        template: '#modal',
+        init: function(){
+          if(!this.$parent) this.$inject(document.body)
+        },
+        close: function(){
+          this.$emit('close');
+          this.destroy();
+        },
+        confirm: function(){
+          this.$emit('confirm', this.data);
+          this.destroy();
+        }
+      }).implement({
+        events: {
+          $config: function(){
+          }
+        },
+        // // or
+        // events: [{
+        //   type: '$config',
+        //   listener: function(){
+        //   }
+        // }]
+      });
+
+
+      // 直接调用
+      var modal = new Modal({
+        data: {
+          content: '<input type="email" class="form-control" r-model={email} on-enter={this.confirm()}>',
+          title: 'confirm your email'
+        }
+      });
+      modal.$on('close', function(){
+        console.log("on close");
+      });
+      modal.$on('confirm', function(data){
+        console.log("on confirm", data.email)
+      });
     </script>
   </body>
 </html>

@@ -6,79 +6,97 @@ function extend(o1, o2 ){
   for(var i in o2) if( o1[i] === undefined){
     o1[i] = o2[i]
   }
+  return o2;
 }
 
-// String proto ;
-extend(String.prototype, {
-  trim: function(){
-    return this.replace(/^\s+|\s+$/g, '');
-  }
-});
+
+module.exports = function(){
+  // String proto ;
+  extend(String.prototype, {
+    trim: function(){
+      return this.replace(/^\s+|\s+$/g, '');
+    }
+  });
 
 
-// Array proto;
-extend(Array.prototype, {
-  indexOf: function(obj, from){
-    from = from || 0;
-    for (var i = from, len = this.length; i < len; i++) {
-      if (this[i] === obj) return i;
-    }
-    return -1;
-  },
-  forEach: function(callback, context){
-    for (var i = 0, len = this.length; i < len; i++) {
-      callback.call(context, this[i], i, this);
-    }
-  },
-  filter: function(callback, context){
-    var res = [];
-    for (var i = 0, length = this.length; i < length; i++) {
-      var pass = callback.call(context, this[i], i, this);
-      if(pass) res.push(this[i]);
-    }
-    return res;
-  },
-  map: function(callback, context){
-    var res = [];
-    for (var i = 0, length = this.length; i < length; i++) {
-      res.push(callback.call(context, this[i], i, this));
-    }
-    return res;
-  }
-});
+  // Array proto;
+  extend(Array.prototype, {
+    indexOf: function(obj, from){
+      from = from || 0;
+      for (var i = from, len = this.length; i < len; i++) {
+        if (this[i] === obj) return i;
+      }
+      return -1;
+    },
+    // polyfill from MDN 
+    // https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Array/forEach
+    forEach: function(callback, ctx){
+      var k = 0;
 
-// Function proto;
-extend(Function.prototype, {
-  bind: function(context){
-    var fn = this;
-    var preArgs = slice.call(arguments, 1);
-    return function(){
-      var args = preArgs.concat(slice.call(arguments));
-      return fn.apply(context, args);
-    }
-  }
-})
+      // 1. Let O be the result of calling ToObject passing the |this| value as the argument.
+      var O = Object(this);
 
-// Object
-extend(Object, {
-  keys: function(obj){
-    var keys = [];
-    for(var i in obj) if(obj.hasOwnProperty(i)){
-      keys.push(i);
-    }
-    return keys;
-  } 
-})
+      var len = O.length >>> 0; 
 
-// Date
-extend(Date, {
-  now: function(){
-    return +new Date;
-  }
-})
-// Array
-extend(Array, {
-  isArray: function(arr){
-    return tstr.call(arr) === "[object Array]";
-  }
-})
+      if ( typeof callback !== "function" ) {
+        throw new TypeError( callback + " is not a function" );
+      }
+
+      // 7. Repeat, while k < len
+      while( k < len ) {
+
+        var kValue;
+
+        if ( k in O ) {
+
+          kValue = O[ k ];
+
+          callback.call( ctx, kValue, k, O );
+        }
+        k++;
+      }
+    },
+    // @deprecated
+    //  will be removed at 0.5.0
+    filter: function(fun, context){
+
+      var t = Object(this);
+      var len = t.length >>> 0;
+      if (typeof fun !== "function")
+        throw new TypeError();
+
+      var res = [];
+      for (var i = 0; i < len; i++)
+      {
+        if (i in t)
+        {
+          var val = t[i];
+          if (fun.call(context, val, i, t))
+            res.push(val);
+        }
+      }
+
+      return res;
+    }
+  });
+
+  // Function proto;
+  extend(Function.prototype, {
+    bind: function(context){
+      var fn = this;
+      var preArgs = slice.call(arguments, 1);
+      return function(){
+        var args = preArgs.concat(slice.call(arguments));
+        return fn.apply(context, args);
+      }
+    }
+  })
+  
+  // Array
+  extend(Array, {
+    isArray: function(arr){
+      return tstr.call(arr) === "[object Array]";
+    }
+  })
+}
+

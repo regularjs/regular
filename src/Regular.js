@@ -1,17 +1,22 @@
 
+var env = require('./env.js');
 var Lexer = require("./parser/Lexer.js");
 var Parser = require("./parser/Parser.js");
-var dom = require("./dom.js");
 var config = require("./config.js");
-var Group = require('./group.js');
 var _ = require('./util');
 var extend = require('./helper/extend.js');
-var Event = require('./helper/event.js');
-var combine = require('./helper/combine.js');
+var combine = {};
+if(env.browser){
+  var dom = require("./dom.js");
+  var walkers = require('./walkers.js');
+  var Group = require('./group.js');
+  var doc = dom.doc;
+  combine = require('./helper/combine.js');
+}
+var events = require('./helper/event.js');
 var Watcher = require('./helper/watcher.js');
 var parse = require('./helper/parse.js');
-var doc = typeof document==='undefined'? {} : document;
-var env = require('./env.js');
+var filter = require('./helper/filter.js');
 
 
 /**
@@ -22,17 +27,33 @@ var env = require('./env.js');
 * @constructor
 * @param {Object} options specification of the component
 */
-var Regular = function(options){
+var Regular = function(definition, options){
   var prevRunning = env.isRunning;
   env.isRunning = true;
   var node, template;
 
+  definition = definition || {};
+  var usePrototyeString = typeof this.template === 'string' && !definition.template;
   options = options || {};
-  options.data = options.data || {};
-  options.computed = options.computed || {};
-  if(this.data) _.extend(options.data, this.data);
-  if(this.computed) _.extend(options.computed, this.computed);
-  _.extend(this, options, true);
+
+  definition.data = definition.data || {};
+  definition.computed = definition.computed || {};
+  if( this.data ) _.extend( definition.data, this.data );
+  if( this.computed ) _.extend( definition.computed, this.computed );
+
+  var listeners = this._eventListeners || [];
+  var normListener;
+  // hanle initialized event binding
+  if( definition.events){
+    normListener = _.normListener(definition.events);
+    if(normListener.length){
+      listeners = listeners.concat(normListener)
+    }
+    delete definition.events;
+  }
+
+  _.extend(this, definition, true);
+
   if(this.$parent){
      this.$parent._append(this);
   }
@@ -41,46 +62,77 @@ var Regular = function(options){
 
   template = this.template;
 
-  // template is a string (len < 40). we will find it container first
-  if((typeof template === 'string' && template.length < 40) && (node = dom.find(template))) {
+  // template is a string (len < 16). we will find it container first
+  if((typeof template === 'string' && template.length < 16) && (node = dom.find(template))) {
     template = node.innerHTML;
   }
   // if template is a xml
   if(template && template.nodeType) template = template.innerHTML;
-  if(typeof template === 'string') this.template = new Parser(template).parse();
-
-  this.computed = handleComputed(this.computed);
-  this.$context = this.$context || this;
-  this.$root = this.$root || this;
-  // if have events
-  if(this.events){
-    this.$on(this.events);
-    this.events = null;
+  if(typeof template === 'string') {
+    template = new Parser(template).parse();
+    if(usePrototyeString) {
+    // avoid multiply compile
+      this.constructor.prototype.template = template;
+    }else{
+      delete this.template;
+    }
   }
 
+  this.computed = handleComputed(this.computed);
+  this.$root = this.$root || this;
+  // if have events
+
+  if(listeners && listeners.length){
+    listeners.forEach(function( item ){
+      this.$on(item.type, item.listener)
+    }.bind(this))
+  }
+  this.$emit("$config");
   this.config && this.config(this.data);
+  this.$emit("$afterConfig");
+
+  var body = this._body;
+  this._body = null;
+
+  if(body && body.ast && body.ast.length){
+    this.$body = _.getCompileFn(body.ast, body.ctx , {
+      outer: this,
+      namespace: options.namespace,
+      extra: options.extra,
+      record: true
+    })
+  }
   // handle computed
   if(template){
-    this.group = this.$compile(this.template, {namespace: options.namespace});
+    this.group = this.$compile(template, {namespace: options.namespace});
     combine.node(this);
   }
 
 
-  if(this.$root === this) this.$update();
+  if(!this.$parent) this.$update();
   this.$ready = true;
-  if(this.$context === this) this.$emit("$init");
+  this.$emit("$init");
   if( this.init ) this.init(this.data);
+  this.$emit("$afterInit");
 
   // @TODO: remove, maybe , there is no need to update after init; 
   // if(this.$root === this) this.$update();
   env.isRunning = prevRunning;
 
   // children is not required;
+  
+  if (this.devtools) {
+    this.devtools.emit("init", this)
+  }
 }
 
+// check if regular devtools hook exists
+var devtools = window.__REGULAR_DEVTOOLS_GLOBAL_HOOK__;
+if (devtools) {
+  Regular.prototype.devtools = devtools;
+}
 
-var walkers = require('./walkers.js');
-walkers.Regular = Regular;
+walkers && (walkers.Regular = Regular);
 
 
 // description
@@ -90,27 +142,28 @@ _.extend(Regular, {
   // private data stuff
   _directives: { __regexp__:[] },
   _plugins: {},
-  _exprCache:{},
-  _running: false,
-  _config: config,
-  _protoInheritCache: ['use', 'directive'] ,
+  _protoInheritCache: [ 'directive', 'use'] ,
   __after__: function(supr, o) {
 
     var template;
     this.__after__ = supr.__after__;
 
+    // use name make the component global.
     if(o.name) Regular.component(o.name, this);
+    // this.prototype.template = dom.initTemplate(o)
     if(template = o.template){
       var node, name;
-      if( typeof template === 'string' && template.length < 20 && ( node = dom.find( template )) ){
-        template = node.innerHTML;
-        if(name = dom.attr(node, 'name')) Regular.component(name, this);
+      if( typeof template === 'string' && template.length < 16 && ( node = dom.find( template )) ){
+        template = node ;
       }
 
-      if(template.nodeType) template = template.innerHTML;
+      if(template && template.nodeType){
+        if(name = dom.attr(template, 'name')) Regular.component(name, this);
+        template = template.innerHTML;
+      } 
 
-      if(typeof template === 'string'){
-        this.prototype.template = new Parser(template).parse();
+      if(typeof template === 'string' ){
+        this.prototype.template = config.PRECOMPILE? new Parser(template).parse(): template;
       }
     }
 
@@ -126,34 +179,38 @@ _.extend(Regular, {
    * @return {Object} Copy of ...
    */  
   directive: function(name, cfg){
+    if(!name) return;
 
-    if(_.typeOf(name) === "object"){
+    var type = typeof name;
+    if(type === 'object' && !cfg){
       for(var k in name){
         if(name.hasOwnProperty(k)) this.directive(k, name[k]);
       }
       return this;
     }
-    var type = _.typeOf(name);
     var directives = this._directives, directive;
     if(cfg == null){
-      if( type === "string" && (directive = directives[name]) ) return directive;
-      else{
-        var regexp = directives.__regexp__;
-        for(var i = 0, len = regexp.length; i < len ; i++){
-          directive = regexp[i];
-          var test = directive.regexp.test(name);
-          if(test) return directive;
+      if( type === 'string' ){
+        if(directive = directives[name]) return directive;
+        else{
+
+          var regexp = directives.__regexp__;
+          for(var i = 0, len = regexp.length; i < len ; i++){
+            directive = regexp[i];
+            var test = directive.regexp.test(name);
+            if(test) return directive;
+          }
         }
       }
-      return undefined;
+    }else{
+      if( typeof cfg === 'function') cfg = { link: cfg } 
+      if( type === 'string' ) directives[name] = cfg;
+      else{
+        cfg.regexp = name;
+        directives.__regexp__.push(cfg)
+      }
+      return this
     }
-    if(typeof cfg === 'function') cfg = { link: cfg } 
-    if(type === 'string') directives[name] = cfg;
-    else if(type === 'regexp'){
-      cfg.regexp = name;
-      directives.__regexp__.push(cfg)
-    }
-    return this
   },
   plugin: function(name, fn){
     var plugins = this._plugins;
@@ -180,18 +237,16 @@ _.extend(Regular, {
     if(needGenLexer) Lexer.setup();
   },
   expression: parse.expression,
-  parse: parse.parse,
-
   Parser: Parser,
   Lexer: Lexer,
-
-  _addProtoInheritCache: function(name){
+  _addProtoInheritCache: function(name, transform){
     if( Array.isArray( name ) ){
       return name.forEach(Regular._addProtoInheritCache);
     }
     var cacheKey = "_" + name + "s"
     Regular._protoInheritCache.push(name)
     Regular[cacheKey] = {};
+    if(Regular[name]) return;
     Regular[name] = function(key, cfg){
       var cache = this[cacheKey];
 
@@ -202,7 +257,7 @@ _.extend(Regular, {
         return this;
       }
       if(cfg == null) return cache[key];
-      cache[key] = cfg;
+      cache[key] = transform? transform(cfg) : cfg;
       return this;
     }
   },
@@ -224,10 +279,14 @@ _.extend(Regular, {
 
 extend(Regular);
 
-Regular._addProtoInheritCache(["filter", "component"])
+Regular._addProtoInheritCache("component")
+
+Regular._addProtoInheritCache("filter", function(cfg){
+  return typeof cfg === "function"? {get: cfg}: cfg;
+})
 
 
-Event.mixTo(Regular);
+events.mixTo(Regular);
 Watcher.mixTo(Regular);
 
 Regular.implement({
@@ -235,21 +294,25 @@ Regular.implement({
   config: function(){},
   destroy: function(){
     // destroy event wont propgation;
-    if(this.$context === this) this.$emit("$destroy");
+    this.$emit("$destroy");
+    this._watchers = null;
     this.group && this.group.destroy(true);
     this.group = null;
     this.parentNode = null;
-    this._watchers = null;
-    this._children = [];
+    this._children = null;
+    this.$root = null;
+    this._handles = null;
+    this.$refs = null;
     var parent = this.$parent;
-    if(parent){
+    if(parent && parent._children){
       var index = parent._children.indexOf(this);
       parent._children.splice(index,1);
     }
     this.$parent = null;
-    this.$root = null;
-    this._handles = null;
-    this.$refs = null;
+
+    if (this.devtools) {
+      this.devtools.emit("destroy", this)
+    }
   },
 
   /**
@@ -263,10 +326,12 @@ Regular.implement({
     if(typeof ast === 'string'){
       ast = new Parser(ast).parse()
     }
-    var preNs = this.__ns__,
+    var preExt = this.__ext__,
       record = options.record, 
       records;
-    if(options.namespace) this.__ns__ = options.namespace;
+
+    if(options.extra) this.__ext__ = options.extra;
+
     if(record) this._record();
     var group = this._walk(ast, options);
     if(record){
@@ -277,7 +342,7 @@ Regular.implement({
         group.ondestroy = function(){ self.$unwatch(records); }
       }
     }
-    if(options.namespace) this.__ns__ = preNs;
+    if(options.extra) this.__ext__ = preExt;
     return group;
   },
 
@@ -329,23 +394,22 @@ Regular.implement({
    *
    * unbind will unbind all relation between two component
    * 
-   * @param  {Regular} component [description]
+   * @param  {Regular} component [descriptionegular
    * @return {This}    this
    */
   $unbind: function(){
     // todo
   },
-  $get: function(expr){
-    return parse.expression(expr).get(this);
-  },
-  $inject: function(node, position){
-    var fragment = combine.node(this);
-    if(typeof node === 'string') node = dom.find(node);
-    if(!node) throw 'injected node is not found';
-    if(!fragment) return;
-    dom.inject(fragment, node, position);
-    this.$emit("$inject", node);
-    this.parentNode = Array.isArray(fragment)? fragment[0].parentNode: fragment.parentNode;
+  $inject: combine.inject,
+  $mute: function(isMute){
+
+    isMute = !!isMute;
+
+    var needupdate = isMute === false && this._mute;
+
+    this._mute = !!isMute;
+
+    if(needupdate) this.$update();
     return this;
   },
   // private bind logic
@@ -381,22 +445,22 @@ Regular.implement({
     // sync the component's state to called's state
     expr2.set(component, expr1.get(this));
   },
-  _walk: function(ast, arg1){
-    if( _.typeOf(ast) === 'array' ){
+  _walk: function(ast, opt){
+    if( Array.isArray(ast)  ){
+      var len = ast.length;
+      if(!len) return;
       var res = [];
-
-      for(var i = 0, len = ast.length; i < len; i++){
-        res.push( this._walk(ast[i], arg1) );
+      for(var i = 0; i < len; i++){
+        var ret = this._walk(ast[i], opt) 
+        if(ret) res.push( ret );
       }
-
       return new Group(res);
     }
     if(typeof ast === 'string') return doc.createTextNode(ast)
-    return walkers[ast.type || "default"].call(this, ast, arg1);
+    return walkers[ast.type || "default"].call(this, ast, opt);
   },
   _append: function(component){
     this._children.push(component);
-    component.$root = this.$root;
     component.$parent = this;
   },
   _handleEvent: function(elem, type, value, attrs){
@@ -413,32 +477,75 @@ Regular.implement({
       dom.off(elem, type, fire);
     }
   },
+  // 1. 用来处理exprBody -> Function
+  // 2. list里的循环
+  _touchExpr: function(expr){
+    var  rawget, ext = this.__ext__, touched = {};
+    if(expr.type !== 'expression' || expr.touched) return expr;
+
+    rawget = expr.get;
+    if(!rawget){
+      rawget = expr.get = new Function(_.ctxName, _.extName , _.prefix+ "return (" + expr.body + ")");
+      expr.body = null;
+    }
+    touched.get = !ext? rawget: function(context){
+      return rawget(context, ext)
+    }
+
+    if(expr.setbody && !expr.set){
+      var setbody = expr.setbody;
+      var filters = expr.filters;
+      var self = this;
+      if(!filters || !_.some(filters, function(filter){ return !self._f_(filter).set }) ){
+        expr.set = function(ctx, value, ext){
+          expr.set = new Function(_.ctxName, _.setName , _.extName, _.prefix + setbody);          
+          return expr.set(ctx, value, ext);
+        }
+      }
+      expr.filters = expr.setbody = null;
+    }
+    if(expr.set){
+      touched.set = !ext? expr.set : function(ctx, value){
+        return expr.set(ctx, value, ext);
+      }
+    }
+
+    touched.type = 'expression';
+    touched.touched = true;
+    touched.once = expr.once || expr.constant;
+    return touched
+  },
   // find filter
   _f_: function(name){
     var Component = this.constructor;
     var filter = Component.filter(name);
-    if(typeof filter !== 'function') throw 'filter ' + name + 'is undefined';
+    if(!filter) throw Error('filter ' + name + ' is undefined');
     return filter;
   },
   // simple accessor get
-  _sg_:function(path, defaults){
-    var computed = this.computed,
-      computedProperty = computed[path];
-    if(computedProperty){
-      if(computedProperty.get)  return computedProperty.get(this);
-      else _.log("the computed '" + path + "' don't define the get function,  get data."+path + " altnately", "error")
+  _sg_:function(path, defaults, ext){
+    if(typeof ext !== 'undefined'){
+      var computed = this.computed,
+        computedProperty = computed[path];
+      if(computedProperty){
+        if(computedProperty.type==='expression' && !computedProperty.get) this._touchExpr(computedProperty);
+        if(computedProperty.get)  return computedProperty.get(this);
+        else _.log("the computed '" + path + "' don't define the get function,  get data."+path + " altnately", "warn")
+      }
+  }
+    if(typeof defaults === "undefined" || typeof path == "undefined" ){
+      return undefined;
     }
-    return defaults;
+    return (ext && typeof ext[path] !== 'undefined')? ext[path]: defaults[path];
 
   },
   // simple accessor set
-  _ss_:function(path, value, data, op){
+  _ss_:function(path, value, data , op, computed){
     var computed = this.computed,
-      op = op || "=",
-      computedProperty = computed[path],
-      prev;
+      op = op || "=", prev, 
+      computedProperty = computed? computed[path]:null;
 
-    if(op!== '='){
+    if(op !== '='){
       prev = computedProperty? computedProperty.get(this): data[path];
       switch(op){
         case "+=":
@@ -457,18 +564,25 @@ Regular.implement({
           value = prev % value;
           break;
       }
-    }  
-
+    }
     if(computedProperty) {
       if(computedProperty.set) return computedProperty.set(this, value);
-      else _.log("the computed '" + path + "' don't define the set function,  assign data."+path + " altnately", "error" )
+      else _.log("the computed '" + path + "' don't define the set function,  assign data."+path + " altnately", "warn" )
     }
     data[path] = value;
     return value;
   }
 });
 
-Regular.prototype.inject = Regular.prototype.$inject;
+Regular.prototype.inject = function(){
+  _.log("use $inject instead of inject", "error");
+  return this.$inject.apply(this, arguments);
+}
+
+
+// only one builtin filter
+
+Regular.filter(filter);
 
 module.exports = Regular;
 
@@ -478,15 +592,13 @@ var handleComputed = (function(){
   // wrap the computed getter;
   function wrapGet(get){
     return function(context){
-      var ctx = context.$context;
-      return get.call(ctx, ctx.data );
+      return get.call(context, context.data );
     }
   }
   // wrap the computed setter;
   function wrapSet(set){
     return function(context, value){
-      var ctx = context.$context;
-      set.call( ctx, value, ctx.data );
+      set.call( context, value, context.data );
       return value;
     }
   }

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+    <title>Regular.js • Include-Advanced</title>
+  <link rel="stylesheet" href="http://getbootstrap.com/dist/css/bootstrap.min.css">
+</head>
+<body>
+
+
+  <script type='text/tpl' id="modal">
+    <div class="fade in modal" tabindex="-1" role="dialog" style="display:block;">
+      <div class="modal-dialog">
+        <div class="modal-content" role="document">
+          <div class="modal-header">
+            {#if closeBtn}
+            <button class="close" aria-label="Close">
+              <span aria-hidden="true">×</span>
+            </button>
+            {/if}
+            <h4 class="modal-title">{#inc title || 'Modal'}</h4>
+          </div>
+          <div class="modal-body">
+            {#inc  body || this.$body}
+          </div>
+          <div class="modal-footer">
+            {#if foot} 
+              {#inc foot} 
+            {#else}
+              <button type="button" class="btn btn-default" on-click={this.confirm(true)}>Confirm</button>
+              <button type="button" class="btn btn-default" on-click={this.confirm(false)}>Cancel</button>
+            {/if}
+          </div>
+        </div>
+      </div>
+    </div>
+  </script>
+
+    <script type='text/tpl' id="app">
+      <button class="btn" on-click={show = !show}>show</button>
+      <input r-model="num" />
+      <modal show={show} autohide={true} title.cmpl='Custom Title <span class="badge" >{num}</span>' close-btn  >
+        <modal.body> 
+          <nav class="navbar navbar-default">
+            <div class="container-fluid">
+              <div class="navbar-header">
+                <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+                  <span class="sr-only">Toggle navigation</span>
+                  <span class="icon-bar"></span>
+                  <span class="icon-bar"></span>
+                  <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="#">Brand</a>
+              </div>
+            </div>
+          </nav>
+        </modal.body>
+        <modal.foot>
+          <button class="btn btn-primary" on-click={show=false}>CLose it!</button> 
+        </modal.foot>
+      </modal>
+    </script>
+
+  <script src="https://rawgit.com/regularjs/regular/group/dist/regular.js"></script>
+  <script>
+    var Modal = Regular.extend({
+      name: "modal",
+      template: "#modal",
+      config: function(data){
+        var target = data.target = data.target || document.body;
+        this.$watch('show', function(show){
+          this.$inject(show && target)
+        })
+      },
+      confirm: function(accept){
+        this.$emit(accept? 'confirm': 'cancel');
+        if(this.data.autohide){
+          this.$update('show', false)
+        }
+      }
+    })
+    Modal.title = Regular.extend({
+      name: 'modal.title',
+      init: function(){
+        this.$outer.data.title = this.$body;
+      }
+    })
+    Modal.body = Regular.extend({
+      name: 'modal.body',
+      init: function(){
+        this.$outer.data.body = this.$body;
+      }
+    })
+    Modal.foot = Regular.extend({
+      name: 'modal.foot',
+      init: function(){
+        this.$outer.data.foot = this.$body;
+      }
+    })
+
+    var app = new Regular({
+      template: '#app',
+      data: { "num": 100, show: true }
+    }).$inject(document.body)
+  </script>
+
+</body>
+</html>
+

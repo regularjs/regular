@@ -7,11 +7,12 @@ module.exports = {
       children: children
     }
   },
-  attribute: function(name, value){
+  attribute: function(name, value, mdf){
     return {
       type: 'attribute',
       name: name,
-      value: value
+      value: value,
+      mdf: mdf
     }
   },
   "if": function(test, consequent, alternate){
@@ -22,20 +23,23 @@ module.exports = {
       alternate: alternate
     }
   },
-  list: function(sequence, variable, body){
+  list: function(sequence, variable, body, alternate, track){
     return {
       type: 'list',
       sequence: sequence,
+      alternate: alternate,
       variable: variable,
-      body: body
+      body: body,
+      track: track
     }
   },
-  expression: function( body, setbody, constant ){
+  expression: function( body, setbody, constant, filters ){
     return {
       type: "expression",
       body: body,
       constant: constant || false,
-      setbody: setbody || false
+      setbody: setbody || false,
+      filters: filters
     }
   },
   text: function(text){

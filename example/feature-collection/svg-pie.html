@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>SVG</title>
+  <title>Regular.js • SVG-Pie</title>
   <script src="../../dist/regular.js"></script>
 </head>
 <body>
@@ -11,18 +11,18 @@
   <!-- from http://snapsvg.io/demos/#coffee for complex static demo -->
   <script type="text/regular" id="app">
     <svg height="1400" version="1.1" width="1400">
-      <circle on-click={{this.small()}} cx="{{width}}" cy="{{height}}" r="{{circle}}" fill="#fefefe" stroke="#333" stroke-width="4" ></circle>
+      <circle on-click={this.small()} cx="{width}" cy="{height}" r="{circle}" fill="#fefefe" stroke="#333" stroke-width="4" ></circle>
       <g id="Layer_1_1_">
-          <defs>
-              <path id="textline" fill="none" d="M474.432,344.553c7.165-5.251,16.004-8.351,25.568-8.351c9.294,0,17.905,2.928,24.958,7.913"></path>
-          </defs>
+        <defs>
+            <path id="textline" fill="none" d="M474.432,344.553c7.165-5.251,16.004-8.351,25.568-8.351c9.294,0,17.905,2.928,24.958,7.913"></path>
+        </defs>
         <g>
           <polygon fill="#FFFFFF" points="358,707.5 358,686.086 418,626.086 418,303.5 580,303.5 580,626.086 640,686.086 640,707.5     "></polygon>
           <path fill="#60544F" d="M579,304.5v322l60,60v20H359v-20l60-60v-322H579 M581,302.5h-2H419h-2v2v321.172l-59.414,59.414
             L357,685.672v0.828v20v2h2h280h2v-2v-20v-0.828l-0.586-0.586L581,625.672V304.5V302.5L581,302.5z"></path>
         </g>
         
-          <linearGradient id="SVGID_1_" gradientUnits="userSpaceOnUse" x1="142.5" y1="660.5" x2="142.5" y2="57.5" gradientTransform="matrix(1 0 0 1 -42 206)">
+        <linearGradient id="SVGID_1_" gradientUnits="userSpaceOnUse" x1="142.5" y1="660.5" x2="142.5" y2="57.5" gradientTransform="matrix(1 0 0 1 -42 206)">
           <stop offset="0" style="stop-color:#E1DAD5"></stop>
           <stop offset="0.3204" style="stop-color:#FFFFFF"></stop>
         </linearGradient>
@@ -179,12 +179,14 @@
                 <ellipse transform="matrix(-0.1703 -0.9854 0.9854 -0.1703 298.3394 773.8927)" fill="#7F6C65" stroke="#60544F" stroke-miterlimit="10" cx="474.979" cy="261.345" rx="4" ry="6"></ellipse>
               
                 <ellipse transform="matrix(-0.1703 -0.9854 0.9854 -0.1703 232.4501 752.6062)" fill="#7F6C65" stroke="#60544F" stroke-miterlimit="10" cx="433.073" cy="278.442" rx="4" ry="6"></ellipse>
-              <ellipse fill="#7F6C65" stroke="#60544F" stroke-miterlimit="10" cx="439" cy="269.259" rx="4" ry="6"></ellipse>
+                
+                <ellipse fill="#7F6C65" stroke="#60544F" stroke-miterlimit="10" cx="439" cy="269.259" rx="4" ry="6"></ellipse>
               
                 <ellipse transform="matrix(-0.1703 -0.9854 0.9854 -0.1703 224.9438 737.9938)" fill="#7F6C65" stroke="#60544F" stroke-miterlimit="10" cx="423.168" cy="274.295" rx="4" ry="6"></ellipse>
               
                 <ellipse transform="matrix(-0.1703 -0.9854 0.9854 -0.1703 266.965 773.3755)" fill="#7F6C65" stroke="#60544F" stroke-miterlimit="10" cx="459.074" cy="274.295" rx="4" ry="6"></ellipse>
-              <ellipse fill="#7F6C65" stroke="#60544F" stroke-miterlimit="10" cx="437" cy="263.259" rx="4" ry="6"></ellipse>
+                
+                <ellipse fill="#7F6C65" stroke="#60544F" stroke-miterlimit="10" cx="437" cy="263.259" rx="4" ry="6"></ellipse>
               
                 <ellipse transform="matrix(-0.1703 -0.9854 0.9854 -0.1703 278.1527 750.7935)" fill="#7F6C65" stroke="#60544F" stroke-miterlimit="10" cx="455.161" cy="258.294" rx="4" ry="6"></ellipse>
               
@@ -226,10 +228,8 @@
         </g>
         <polygon fill="#CCC1BC" stroke="#60544F" stroke-miterlimit="10" points="503,277.5 501.297,235.5 495.846,235.5 495,277.5   "></polygon>
         <path id="lead" fill="#E0D8D3" stroke="#60544F" stroke-width="3" stroke-miterlimit="10" d="M569,132.5l-10,96H438l-9-96H569z"></path>
-        
-          <ellipse id="waterlevel" display="none" fill="none" stroke="#60544F" stroke-width="2" stroke-miterlimit="10" cx="499" cy="526.5" rx="66.5" ry="20.9"></ellipse>
-        
-          <ellipse id="bottom" display="none" fill="none" stroke="#60544F" stroke-width="2" stroke-miterlimit="10" cx="499" cy="666.5" rx="50.909" ry="16"></ellipse>
+        <ellipse id="waterlevel" display="none" fill="none" stroke="#60544F" stroke-width="2" stroke-miterlimit="10" cx="499" cy="526.5" rx="66.5" ry="20.9"></ellipse>
+        <ellipse id="bottom" display="none" fill="none" stroke="#60544F" stroke-width="2" stroke-miterlimit="10" cx="499" cy="666.5" rx="50.909" ry="16"></ellipse>
       </g>
     </svg>
   </script>
