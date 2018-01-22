@@ -120,7 +120,7 @@ describe("Server Side Rendering", function(){
       }
     })
     var Nested = Namespace.extend({
-      template: "<div>{name}</div>",
+      template: "<div>{name}</div>"
     })
 
     Namespace.component({

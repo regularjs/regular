@@ -648,7 +648,7 @@ it("list with else should also works under list track mode", function(){
     describe("Track By Case ", function(){
       var List = Regular.extend({
           template: '<div ref=cnt>{#list list as item by item}\
-            <div>{time}:{item}</div>{/list}</div>'
+            <div>{time}:{item}:{item_index}</div>{/list}</div>'
       })
       function keyOf(i){return i}
       function getNodes(arr1, arr2, callback){
@@ -661,7 +661,7 @@ it("list with else should also works under list track mode", function(){
         })
         var divs = nes.all('div', list.$refs.cnt);
         for(var j =0, len= divs.length; j < len; j++){
-          expect(divs[j].innerHTML).to.equal( '0:' + arr1[j] );
+          expect(divs[j].innerHTML).to.equal( '0:' + arr1[j] + ':' + j );
         }
 
         list.data.time = 1;
@@ -672,8 +672,9 @@ it("list with else should also works under list track mode", function(){
         expect( divs.length ).to.equal(arr1.length)
         expect( divs2.length ).to.equal(arr2.length)
 
+        list.$update();
         for(var i =0, len= divs2.length; i < len; i++){
-          expect(divs2[i].innerHTML).to.equal('1:'+arr2[i]);
+          expect(divs2[i].innerHTML).to.equal('1:'+arr2[i]+':'+i);
         }
         callback( divs, divs2 )
 
@@ -691,16 +692,16 @@ it("list with else should also works under list track mode", function(){
           expect(oNodes[1]).to.equal(nNodes[1])
         });
 
+        // expect( diffTrack(newList, oldList, function(i){return i}).steps ).to.eql([
+        //   {len: 2, mode:0, index: 2}, 
+        //   {len: 1, mode: 1, index: 0}
+        // ])
 
 
       })
 
-      expect( diffTrack(newList, oldList, function(i){return i}).steps ).to.eql([
-        {len: 2, mode:0, index: 2}, 
-        {len: 1, mode: 1, index: 0}
-      ])
 
-      it(' list track simple', function(){
+      it('list track simple', function(){
 
         var newList = [1,2,3]
         var oldList = [2,3, 5, 6] 
@@ -795,13 +796,31 @@ it("list with else should also works under list track mode", function(){
           {  mode: 0, index: 1, len: 1 },
           {  mode: 1, index: 0, len: 2 },
           {  mode: 1, index: 3, len: 2 },
-          {  mode: 0, index: 5, len: 1 },
+          {  mode: 0, index: 5, len: 1 }
         ])
 
         getNodes(oldList, 
                  newList, function(oNodes, nNodes){
           expect(nNodes[1]).to.equal(oNodes[3])
           expect(nNodes[2]).to.equal(oNodes[1])
+        });
+
+      })
+
+      it('list track: updateTarget Logic', function(){
+        var newList = [1,2,3]
+        var oldList = [1,3,2] 
+
+        expect( diffTrack( newList, oldList, keyOf).steps ).to.eql([
+          {  mode: 1, index: 1, len: 1 },
+          {  mode: 0, index: 3, len: 1 }
+       ])
+
+        getNodes(oldList, newList, function(oNodes, nNodes){
+          expect(oNodes[0]).to.equal(nNodes[0])
+          expect(oNodes[1]).to.equal(nNodes[2])
+          expect(oNodes[2]).to.equal(nNodes[1])
+
         });
 
       })
