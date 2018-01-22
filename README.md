@@ -11,8 +11,6 @@
 > Regularjs is a __living template engine__ that helps us to create data-driven components.
 
 
-
-
 * __[✨中文指南 ](http://regularjs.github.io/guide/zh/index.html)__
 * __[✨中文API ](http://regularjs.github.io/reference/?api-zh)__
 

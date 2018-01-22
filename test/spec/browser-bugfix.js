@@ -1254,11 +1254,111 @@ it('bugfix #50', function(){
   //   compo.$refs.sub.$update('actived', '3');
   //   expect(compo.data.num2).to.equal(2);
 
-  // })
-  // it('bug :directive return value that not function will throw error', function(){
-  //   throw Error()
-  // })
+
+
+
+  })
+
+
+  describe("M 0.6", function(){
+
+    var List = Regular.extend({
+      template: '<div ref=cnt>{#list list as item by item.a}<span>{item.a}</span>{/list}</div>'
+    });
+    it('bug #90: simple', function(){
+    var list = new List({
+      data: {
+      list: [{a: 0}, {a: 1} , {a: 2}, {a: 3}, {a: 4}, {a: 5}]
+      }
+    });
+    var dataList = list.data.list;
+
+    var spans = nes.all( 'span', list.$refs.cnt );
+    expect( spans.length ).to.equal(6);
+    spans.forEach(function(div , index){
+      expect(div.innerHTML).to.equal('' + index)
+    })
+
+    var newList = []
+
+    for(var len = spans.length; len--;){
+      newList.push(dataList[len])
+    }
+
+    list.data.list = newList;
+    list.$update();
+
+    var newSpans = nes.all( 'span', list.$refs.cnt );
+
+    newSpans.forEach(function(d, index){
+      expect(d).to.equal(spans[newSpans.length - 1 - index])
+    })
+
+  })
+
+  it('bug #90: 1 => 3 =>0 = 3 ', function(){
+    var list = new List({
+      data: {
+        list: [{a: 2}]
+      }
+    });
+
+    var ospans = nes.all( 'span', list.$refs.cnt );
+
+    list.$update('list', [
+      { a:1 }, { a:2 }, { a:3 }
+    ])
+
+    var nspans = nes.all( 'span', list.$refs.cnt );
+
+    expect(ospans.length).to.equal(1)
+    expect(nspans.length).to.equal(3)
+    expect(nspans[1]).to.equal(ospans[0])
+
+
+    list.$update('list', [ ])
+
+    var tspans = nes.all( 'span', list.$refs.cnt );
+
+    expect(tspans.length).to.equal(0);
+
+    list.$update('list', [
+      { a:1 }, { a:2 }, { a:3 }
+    ])
+
+    tspans = nes.all( 'span', list.$refs.cnt );
+    expect(tspans.length).to.equal(3);
+
+  })
+
+
+  it('bug #90: multiply key', function(){
+    var List = Regular.extend({
+      template: '<div ref=cnt>{#list list as item by item.a}<span>{item.a}</span>{/list}</div>'
+    });
+    var list = new List({
+      data: {
+        list: [{a: 2}, {a: 1} , {a: 2}]
+      }
+    });
+
+    var ospans = nes.all( 'span', list.$refs.cnt );
+
+    list.$update('list', [
+      {a:1}, {a:2}, {a:1}
+    ])
+
+    var nspans = nes.all( 'span', list.$refs.cnt );
+
+    expect(nspans[1]).to.equal(ospans[0])
+    expect(nspans[2]).to.equal(ospans[1])
+
+
+  })
+
+
 })
+
 
 
 

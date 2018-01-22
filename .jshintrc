@@ -59,7 +59,7 @@
     "funcscope"     : false,    // Tolerate declarations of variables inside of control structures while accessing them later from the outside.
     "globalstrict"  : true,    // Allow global "use strict" (also enables 'strict').
     "iterator"      : false,    // Allow usage of __iterator__ property.
-    "lastsemic"     : false,    // Tolerat missing semicolons when the it is omitted for the last statement in a one-line block.
+    "lastsemic"     : true,    // Tolerat missing semicolons when the it is omitted for the last statement in a one-line block.
     "laxbreak"      : false,    // Tolerate unsafe line breaks e.g. `return [\n] x` without semicolons.
     "laxcomma"      : false,    // Suppress warnings about comma-first coding style.
     "loopfunc"      : false,    // Allow functions to be defined within loops.
