@@ -129,7 +129,6 @@ gulp.task('karma', function (done) {
 });
 
 
-// build after jshint
 gulp.task('build',["jshint"], function(){
   // form minify    
   gulp.src('./lib/index.js')
