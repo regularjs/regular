@@ -167,7 +167,7 @@ describe("Server Side Rendering", function(){
       }
     })
     var Nested = Namespace.extend({
-      template: "<div>{name}</div>",
+      template: "<div>{name}</div>"
     })
 
     Namespace.component({
@@ -183,7 +183,7 @@ describe("Server Side Rendering", function(){
   it('Boolean attribute should wont accept ssr', function(){
 
     var Comp = Namespace.extend({
-      template: "<input checked={checked} />",
+      template: "<input checked={checked} />"
     })
     var text = SSR.render(Comp, {
       data: {

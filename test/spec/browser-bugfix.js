@@ -508,7 +508,7 @@ describe("Milestones v0.6.*", function(){
     it("{~ <div>{name}</div> }", function( ){
       var A = Regular.extend({
         template: '{#inc title}',
-        config(data){
+        config:function(data){
           data.name='A'
         }
       })
@@ -529,7 +529,7 @@ describe("Milestones v0.6.*", function(){
     it("{~ <div class='name'>{name}</div><A title={~<div class='age'>{age}</div>}></A> }", function( ){
       var A = Regular.extend({
         template: '{#inc title}',
-        config(data){
+        config:function(data){
           data.name='A'
           data.age=12
         }
@@ -540,7 +540,7 @@ describe("Milestones v0.6.*", function(){
       var b = new Component({
         data: {
           name: 'B',
-          age: 11,
+          age: 11
         },
         template: '<div ref=container><A ref=a title={~ <div class="name">{name}</div><A title={~<div class="age">{age}</div>}></A> } ></A></div>'
       })
