@@ -942,9 +942,10 @@ it("list with else should also works under list track mode", function(){
       })
       it('tracked component with diff refer', function(){
         var oldList = [{id: 1, name:'name1'}];
-        var newList = [{id:0},{id: 1, name: 'name1changed'}];
+        var newList = [{id: 1, name: 'name1changed'}];
 
         var List = Regular.extend({
+            name:'list',
             template: '<div ref=cnt>{#list list as item by item.id}\
               <div>{item.name}{item_index}</div>{/list}</div>'
         })
@@ -963,9 +964,9 @@ it("list with else should also works under list track mode", function(){
         list.$update('list', newList)
 
 
-        var div = nes.all( 'div', list.$refs.cnt )[1];
+        var div = nes.one( 'div', list.$refs.cnt );
 
-        expect(div.innerHTML).to.equal('name1changed1');
+        expect(div.innerHTML).to.equal('name1changed0');
 
 
 
