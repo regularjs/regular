@@ -198,9 +198,9 @@ describe("Regular.util", function(){
     }
     shim();
     after( function(){
-      // for(var i in map){
-      //   _.extend(map.pro, map.proCache, true);
-      // }
+      for(var i in map){
+        _.extend(map[i].pro, map[i].preCache, true);
+      }
     })
 
     it("string.trim", function(){
