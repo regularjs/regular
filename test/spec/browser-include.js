@@ -1,5 +1,5 @@
 var expect = require('expect.js');
-var Regular = require("../../src/index.js");
+var Regular = require("../../lib/index.js");
 
 var container = document.createElement('div');
 function destroy(component, container){
@@ -79,38 +79,39 @@ describe("Dynamic include", function(){
     destroy(component, container)
 
   })
-  it("include can pass anything that compiled to Group", function(){
-    var Component = Regular.extend({});
-    var container = Regular.dom.create('div');
-    var Nested = Component.extend({
-      name: 'nested',
-      template: '<div><div class="head">{#inc hd}</div><div class="body">{#inc this.$body}</div><div class="foot">{#inc ft}</div></div>',
-      config: function(data){
-        data.head = 'InnerHEAD'
-        data.foot = 'InnerFoot'
-      }
-    })
-    var component = new Component({
-      template: '<nested hd.cmpl="<p>{head}</p>>" ft={"<p>{foot}</p>"}><strong>{head + foot}</strong></nested>',
-      data: {head: 'OuterHead', foot: 'OuterFoot'}
-    }).$inject(container);
+  // @TODO  add  cpml = {: <div></div> }
+  // it("include can pass anything that compiled to Group", function(){
+  //   var Component = Regular.extend({});
+  //   var container = Regular.dom.create('div');
+  //   var Nested = Component.extend({
+  //     name: 'nested',
+  //     template: '<div><div class="head">{#inc hd}</div><div class="body">{#inc this.$body}</div><div class="foot">{#inc ft}</div></div>',
+  //     config: function(data){
+  //       data.head = 'InnerHEAD'
+  //       data.foot = 'InnerFoot'
+  //     }
+  //   })
+  //   var component = new Component({
+  //     template: '<nested hd.cmpl="<p>{head}</p>>" ft={"<p>{foot}</p>"}><strong>{head + foot}</strong></nested>',
+  //     data: {head: 'OuterHead', foot: 'OuterFoot'}
+  //   }).$inject(container);
 
 
 
-    var head = nes.one('.head p', container);
-    var foot = nes.one('.foot p', container);
-    var body = nes.one('.body strong', container);
+  //   var head = nes.one('.head p', container);
+  //   var foot = nes.one('.foot p', container);
+  //   var body = nes.one('.body strong', container);
 
-    expect(head.innerHTML).to.equal('OuterHead');
-    expect(foot.innerHTML).to.equal('InnerFoot');
-    expect(body.innerHTML).to.equal('OuterHeadOuterFoot');
+  //   expect(head.innerHTML).to.equal('OuterHead');
+  //   expect(foot.innerHTML).to.equal('InnerFoot');
+  //   expect(body.innerHTML).to.equal('OuterHeadOuterFoot');
 
-    component.$update('head', 'OuterUpdate');
-    expect(head.innerHTML).to.equal('OuterUpdate');
+  //   component.$update('head', 'OuterUpdate');
+  //   expect(head.innerHTML).to.equal('OuterUpdate');
 
 
-    destroy(component, container)
-  })
+  //   destroy(component, container)
+  // })
 
  it("group switch twice works as expect", function(){
     var container = Regular.dom.create('div');

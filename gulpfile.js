@@ -1,7 +1,7 @@
 var fs = require('fs');
 var path = require('path');
 var karma = require('karma').server;
-var _ = require('./src/util.js');
+var _ = require('./lib/util.js');
 var gulp = require('gulp');
 var git = require('gulp-git');
 var spawn = require('child_process').spawn;
@@ -56,7 +56,8 @@ var testConfig = {
   output: {
 
     filename: "dom.bundle.js"
-  }
+  },
+  devtool: 'source-map'
 }
 
 
@@ -101,7 +102,7 @@ var karmaCommonConf = {
     // source files, that you wanna generate coverage for
     // do not include tests or libraries
     // (these files will be instrumented by Istanbul)
-    'src/**/*.js': ['coverage']
+    'lib/**/*.js': ['coverage']
   },
 
   // optionally, configure the reporter
@@ -128,16 +129,16 @@ gulp.task('karma', function (done) {
 });
 
 
-// build after jshint
 gulp.task('build',["jshint"], function(){
   // form minify    
-  gulp.src('./src/index.js')
+  gulp.src('./lib/index.js')
     .pipe(webpack(wpConfig))
     .pipe(wrap(signatrue))
     .pipe(gulp.dest('./dist'))
     .pipe(wrap(mini))
     .pipe(uglify())
-    .pipe(gulp.dest('./dist'))
+    .pipe(wrap(signatrue))
+    .pipe(gulp.dest('./dist/'))
     .on("error", function(err){
       throw err
     })
@@ -171,8 +172,7 @@ gulp.task('v', function(fn){
 
 
 gulp.task('watch', ["build", 'testbundle'], function(){
-  // gulp.watch(['src/**/*.js'], ['build']);
-  gulp.watch(['test/spec/*.js', 'src/**/*.js'], ['jshint','testbundle'])
+  gulp.watch(['test/spec/*.js', 'lib/**/*.js'], ['jshint','testbundle'])
 })
 
 
@@ -180,15 +180,29 @@ gulp.task('watch', ["build", 'testbundle'], function(){
 // 
 gulp.task('jshint', function(){
       // jshint
-  gulp.src(['src/**/*.js'])
+  gulp.src(['lib/**/*.js'])
     .pipe(jshint())
     .pipe(jshint.reporter('default'))
 
 })
 
+
+gulp.task('mocha', function() {
+
+
+  return gulp.src(['test/spec/test-*.js'])
+    .pipe(mocha({reporter: 'spec' }) )
+    .on('error', function(){
+      gutil.log.apply(this, arguments);
+      console.log('\u0007');
+    })
+    .on('end', function(){
+    });
+});
+
 gulp.task('cover', function(cb){
   
-  gulp.src(['src/**/*.js'])
+  gulp.src(['lib/**/*.js'])
     .pipe(istanbul()) // Covering files
     .on('end', function () {
       gulp.src(['test/spec/test-*.js'])
@@ -198,11 +212,10 @@ gulp.task('cover', function(cb){
     });
 })
 
-gulp.task('test', ['jshint', 'karma'])
+gulp.task('test', ['jshint', 'karma', 'mocha'])
 
-// for travis
-gulp.task('travis', function(cb){
-  runSequence( 'jshint' , 'testbundle', 'karma', cb );
+gulp.task('travis',  function(cb){
+  return runSequence( 'jshint' ,  'testbundle', 'mocha' , 'karma', cb );
 })
 
 
@@ -224,6 +237,18 @@ gulp.task('casper', function(){
 
 })
 
+
+gulp.task('mocha', function() {
+
+  return gulp.src(['test/spec/test-*.js'])
+    .pipe(mocha({reporter: 'spec' }) )
+    .on('error', function(){
+      gutil.log.apply(this, arguments);
+      console.log('\u0007');
+    })
+    .on('end', function(){
+    });
+});
 
 
 function wrap(fn){

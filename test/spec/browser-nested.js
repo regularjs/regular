@@ -1,6 +1,6 @@
 var expect = require('expect.js');
 
-  var Regular = require("../../src/index.js");
+  var Regular = require("../../lib/index.js");
   var Component = Regular.extend();
 
   function destroy(component, container){
@@ -503,6 +503,30 @@ var expect = require('expect.js');
       expect(data.normal).to.equal(true)
     })
 
+    it("{expr}inteplation  in compoennt", function(){
+
+      var container = document.createElement('div');
+      var Comp = Regular.extend({
+        template: '<ssr-expr name="{id}1" />'
+      })
+      Regular.extend({
+        name: 'ssr-expr',
+        template: '<div>{name}</div>'
+      })
+
+
+      var comp = new Comp({
+        data: {
+          id: 1
+        }
+      }).$inject(container)
+
+      expect(nes.one('div', container).innerHTML).to.equal('11')
+
+      delete Regular._components['ssr-expr'];
+
+
+    })
 
 
     it("auto unwatch when component destroy", function(){

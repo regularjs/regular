@@ -1,6 +1,6 @@
 {
   "name": "regularjs",
-  "version": "0.5.2",
+  "version": "0.6.0-beta.4",
   "main": "dist/regular.js",
   "description": "reactjs + angularjs = regularjs",
   "authors": "@leeluolee <87399126@163.com>",

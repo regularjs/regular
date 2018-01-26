@@ -1,5 +1,5 @@
 var expect = require('expect.js');
-  var Regular = require('../../src/index.js');
+  var Regular = require('../../lib/index.js');
 
 function reset(){}
 
@@ -9,6 +9,8 @@ function destroy(component, container){
 }
 
 describe("test Regular's modular mechanism", function(){
+
+
 
   describe("Regular definition" , function(){
 
@@ -415,6 +417,33 @@ describe("events: extend & implement", function(){
     });
 
     expect(processStack).to.eql([ 'config1', 'config2', 'config3', 'afterConfig1', 'afterConfig2', 'afterConfig3' ])
+  })
+  it("once multiple", function(){
+    var component = new Regular();
+    var obj = {
+      a: 0,
+      b: 0,
+      c:0
+    }
+    component.$once('hello', function(){
+      obj.a++
+    })
+    component.$once('hello', function(){
+      obj.b++;
+    })
+    component.$once('hello', function(){
+      obj.c++;
+    })
+
+    component.$emit('hello')
+    expect(obj.a).to.equal(1);
+    expect(obj.b).to.equal(1);
+    expect(obj.c).to.equal(1);
+    component.$emit('hello')
+
+    expect(obj.a).to.equal(1);
+    expect(obj.b).to.equal(1);
+    expect(obj.c).to.equal(1);
   })
 
   it("once event", function(){

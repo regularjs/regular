@@ -1,6 +1,6 @@
 var expect = require('expect.js');
-var Regular = require("../../src/index.js");
-var combine = require("../../src/helper/combine.js");
+var Regular = require("../../lib/index.js");
+var combine = require("../../lib/helper/combine.js");
 function destroy(component, container){
   component.destroy();
   expect(container.innerHTML).to.equal('');
@@ -165,4 +165,40 @@ describe("instance API", function(){
 
   })
 
+  it("$mute should work nested ", function(){
+
+    var NameSpace = Regular.extend();
+    var Nested = NameSpace.extend({
+      name: 'nested',
+      template: '<div ref=title>{title}</div>'
+    });
+
+
+    var component = new NameSpace({
+      data: {
+        hello: 'name'
+      },
+      template:"<div>{hello}</div><p>name</p><nested ref=nested title={hello}/>"
+    });
+
+    expect(component.$refs.nested.data.title).to.equal('name')
+    expect(component.$refs.nested.$refs.title.innerHTML).to.equal('name')
+
+    component.$refs.nested.$mute(true);
+
+    component.$update('hello', 'name2')
+
+    expect(component.$refs.nested.data.title).to.equal('name2')
+    expect(component.$refs.nested.$refs.title.innerHTML).to.equal('name')
+
+
+    component.$refs.nested.$mute(false);
+
+
+    expect(component.$refs.nested.data.title).to.equal('name2')
+    expect(component.$refs.nested.$refs.title.innerHTML).to.equal('name2')
+
+
+
+  })
 })

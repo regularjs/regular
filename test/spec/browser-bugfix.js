@@ -1,7 +1,8 @@
 var expect = require('expect.js');
 
-var Regular = require("../../src/index.js");
+var Regular = require("../../lib/index.js");
 var dom = Regular.dom;
+var SSR = require("../../lib/render/server.js");
 
 function destroy(component, container){
   component.destroy();
@@ -460,10 +461,356 @@ var template = '<input type="text"  class="form-control" \
     outer.destroy();
 
   })
+  it('bugfix #166',function () {
+      expect(function(){
+          var component = Regular.extend({
+              watch:function () {
 
+              }
+          })
+      }).to.not.throwException();
+  })
+  it('bugfix #170',function () {
+        expect(function(){
+            var Nest = Regular.extend({
+                name:"test",
+                template:"<p>h3中的内容:{test}</p><h3 ref=test>regular测试demo</h3>",
+                computed:{
+                    test:function () {
+                        //console.log(this.$refs);
+                        if(this.$refs.test){
+                            return this.$refs.test.innerHTML;
+                        }
+                        return "";
+                    }
+                },
+                startAjaxRequire:function () {
+                    setTimeout(function() {
+                        //模拟ajax的回调，并调用更新
+                        //这种操作感觉还是比较常见
+                        this.$update();
+                    }.bind(this),200);
+                }
+            });
+            var test=new Nest();
+            test.startAjaxRequire();
+            //在ajax回调前组件被销毁
+            test.destroy();
+        }).to.not.throwException();
+    })
 
 })
 
+
+describe("Milestones v0.6.*", function(){
+  describe("{~ body parse}", function(){
+    var Component = Regular.extend({});
+    it("{~ <div>{name}</div> }", function( ){
+      var A = Regular.extend({
+        template: '{#inc title}',
+        config:function(data){
+          data.name='A'
+        }
+      })
+
+      Component.component('A', A);
+
+      var b = new Component({
+        data: {
+          name: 'B'
+        },
+        template: '<A ref=a title={~ <div>{name}</div>} ></A>'
+      })
+
+      var div = Regular.dom.element(b)
+      expect(div.innerHTML).to.equal('B');
+
+    })
+    it("{~ <div class='name'>{name}</div><A title={~<div class='age'>{age}</div>}></A> }", function( ){
+      var A = Regular.extend({
+        template: '{#inc title}',
+        config:function(data){
+          data.name='A'
+          data.age=12
+        }
+      })
+
+      Component.component('A', A);
+
+      var b = new Component({
+        data: {
+          name: 'B',
+          age: 11
+        },
+        template: '<div ref=container><A ref=a title={~ <div class="name">{name}</div><A title={~<div class="age">{age}</div>}></A> } ></A></div>'
+      })
+
+      expect(nes.one('.name', b.$refs.container).innerHTML).to.equal('B')
+      expect(nes.one('.age', b.$refs.container).innerHTML).to.equal('11')
+
+
+    })
+  })
+  describe("SSR", function(){
+
+    if(!Object.create) return;
+
+    it('nested component startWith str', function(){
+      var container = document.createElement('div');
+      var Price = Regular.extend({
+        name: 'price',
+        template: "¥<i class='num'>{price}</i>"
+      })
+      var Component = Regular.extend({
+        template: "<p class='price'> <price  price={price} /></p>"
+      });
+
+
+      container.innerHTML = SSR.render(Component, {
+        data: {
+          price: 1
+        }
+      });
+
+      var component = new Component({
+        mountNode: container,
+        data: {
+          price: 1
+        }
+      })
+
+      expect(nes.one('.num', container).innerHTML).to.equal('1');
+
+      component.$update('price', 2)
+
+      expect(nes.one('.num', container).innerHTML).to.equal('2');
+    })
+    it(' content in tag with r-html and ssr', function(){
+
+      var container = document.createElement('div');
+      var Component = Regular.extend({
+        template: "<p class='price' r-html={content}>lalala</p>"
+      });
+
+      container.innerHTML = SSR.render(Component, {
+        data: {
+          content: 'abcd'
+        }
+      });
+
+      var component = new Component({
+        mountNode: container,
+        data: {
+          content: 'abcd'
+        }
+      })
+      expect(nes.one('p', container).innerHTML).to.equal('abcd')
+
+
+    })
+    it('#if blank with ssr', function(){
+
+      var container = document.createElement('div');
+      var Component = Regular.extend({
+        template: "{#if test}<p class='price'>lalala</p>{/if}<p class='price'>{#if test}<span>hahaha</span>{/if}</p>"
+      });
+
+      container.innerHTML = SSR.render(Component, {
+        data: {
+          test: false
+        }
+      });
+
+      var component = new Component({
+        mountNode: container,
+        data: {
+          test: false
+        }
+      })
+
+      expect( nes.all('p', container).length ).to.equal(1)
+
+      component.$update('test', true);
+      expect( nes.all('p', container).length ).to.equal(2)
+      expect( nes.one('p span', container).innerHTML ).to.equal('hahaha');
+
+    })
+    it('#list blank with ssr ', function(){
+
+      var container = document.createElement('div');
+      var Component = Regular.extend({
+        template: "{#list list as item}<p class='price'>{item}</p>{/list}"
+      });
+
+      container.innerHTML = SSR.render(Component, {
+        data: {
+          list: []
+        }
+      });
+
+      var component = new Component({
+        mountNode: container,
+        data: {
+          list: []
+        }
+      })
+
+      expect( nes.all('p', container).length ).to.equal(0)
+
+      component.$update('list', [1,2,3,4]);
+
+      expect( nes.all('p', container).length ).to.equal(4)
+      expect( nes.all('p', container)[3].innerHTML ).to.equal('4')
+
+    })
+//    it('r-sytle r-class with ssr', function(){//
+
+//      var container = document.createElement('div');
+//      var Component = Regular.extend({
+//        template: "<p r-style={{'left': '10px'}} >lalala</p>"
+//      });//
+
+//      container.innerHTML = SSR.render(Component, {
+//        data: {
+//          test: false
+//        }
+//      });//
+
+//      var component = new Component({
+//        mountNode: container,
+//        data: {
+//          list: []
+//        }
+//      })//
+//
+
+//      expect()//
+//
+
+//    })
+    it(' blank test str', function(){
+      var container = document.createElement('div');
+      var tpl = "<h2>\n <span class='num'>{price}</span></h2>";
+      var tpl2 = '<div>\n\
+        {#list resources as res}\
+          <price2 price = {res.price} />\
+        {/list}\n\
+        </div>';
+      var Price = Regular.extend({
+        name: 'price2',
+        template: tpl
+      })
+      var Component = Regular.extend({
+        template: tpl2
+      });
+
+
+      container.innerHTML = SSR.render(Component.extend({template: tpl2}), {
+        data: {
+          resources: [{ price: 1}, {price: 2}]
+        }
+      });
+
+      // 由于前后端同时touch发生了冲突
+      Regular.extend({
+        name: 'price2',
+        template: tpl
+      })
+
+      var component = new Component({
+        mountNode: container,
+        data: {
+          resources: [{ price: 1}, {price: 2}]
+        }
+      })
+
+      expect(nes.one('.num', container).innerHTML).to.equal('1');
+
+      component.data.resources[0].price = 2;
+      component.$update();
+
+
+      expect(nes.one('.num', container).innerHTML).to.equal('2');
+    })
+
+  })
+
+
+
+
+ it("bugfix-161: r-component  update ref ", function(){
+
+    var NameSpace = Regular.extend();
+    var container = document.createElement("div");
+    var Component1 = NameSpace.extend({
+      name: "c1",
+      template: "<p ref=p>c1</p>"
+    })
+    var Component2 = NameSpace.extend({
+      name: "c2",
+      template: "<p ref=p>c2</p>"
+    })
+
+    var component = new NameSpace({
+
+      data: {
+        modules: [1,2],
+        compName: 'c1'
+      },
+
+      template: 
+        '{#list modules as module}\
+            <r-component is={compName} ref="module-{module_index}"/>\
+        {/list}'
+    }).$inject(container);
+
+    expect(component.$refs['module-0'].$refs.p.innerHTML).to.equal('c1');
+    expect(component.$refs['module-1'].$refs.p.innerHTML).to.equal('c1');
+
+    component.$update('compName', 'c2')
+    
+    expect(component.$refs['module-0'].$refs.p.innerHTML).to.equal('c2');
+    expect(component.$refs['module-1'].$refs.p.innerHTML).to.equal('c2');
+  })
+
+  it("bug #175 r-class for raw object should not throwException", function(){
+    expect(function(){
+      new Regular({
+        template: "<div r-class={{ 'foo': true }}></div>"
+      })
+    }).to.not.throwException();
+  })
+
+  it("bug #175 r-class for raw object, combined with raw class attribute", function(){
+    var container = document.createElement('div');
+    
+    var template = "<div ref=test class='rawClass' r-class={ {'z-show': true, 'z-active': false} }>Please Login</div>" 
+    var component = new Regular({
+      template: template
+    }).$inject(container);
+
+    expect(component.$refs.test.className).to.equal('rawClass z-show');
+    component.$update();
+    expect(component.$refs.test.className).to.equal('rawClass z-show');
+
+    component.destroy();
+  })
+
+  it("bug #175 r-class for raw object, combined with class attribute interpolation", function(){
+    var container = document.createElement('div');
+    
+    var template = "<div ref=test class={ foo } r-class={ {'z-show': true, 'z-active': false} }>Please Login</div>" 
+    var component = new Regular({
+      template: template
+    }).$inject(container);
+
+    expect(component.$refs.test.className).to.equal('z-show');
+    component.$update( 'foo', 'hello' );
+    expect(component.$refs.test.className).to.equal('hello');
+
+    component.destroy();
+  })
+})
 describe("Milestones v0.4.*", function(){
   it("#53 nested component with delegate-event and [postion:after or before ] bug", function( done ){
     var after = document.createElement('div');
@@ -580,11 +927,11 @@ it('bugfix #50', function(){
       template: "{checked}"
     }) 
 
-    expect(function(){
+    // expect(function(){
       new Regular({
         template: "<checked toggled='' checked={null} /> <checked checked={undefined}/ >"
       })
-    }).to.not.throwException();
+    // }).to.not.throwException();
 
   })
 
@@ -759,6 +1106,116 @@ it('bugfix #50', function(){
     
   })
 
+  it('bugfix #123', function(){
+    // _watchersForStable should be removed
+    Regular.extend({
+      template: 'djaklsdjaldjaldjsalkdjl',
+      name: 'test-a1',
+      info: function(){
+        return '1'
+      }
+    })
+    var watcher = new Regular({
+      template: '<div r-html={this.$refs.a.info()}></div><test-a1 ref=a></test-a1>'
+    });
+    watcher.destroy();
+    watcher.$update();
+  })
+  it('bugfix #145', function(){
+    // _watchersForStable should be removed
+    Regular.extend({
+      name: 'bug-145'
+    })
+    var component;
+    expect(function(){
+      component = new Regular({
+        data: {
+          name: 'leeluolee'
+        },
+        template: '<bug-145 ref=child fn={this.fn1.bind(this)} />',
+        fn1: function(){
+          return this.data.name;
+        }
+      });
+    }).to.not.throwException();
+
+    expect(component.$refs.child.data.fn()).to.equal('leeluolee')
+
+    delete Regular._components['bug-145'];
+    component.destroy();
+  })
+
+  // only test in advanced browser
+  if(Object.create){
+
+    it("bug #157: \r\n bug", function(){
+      var Server = require("../../lib/server.js");
+
+      var container = document.createElement('div');
+      var Component = Regular.extend({
+        name: 'bug-157',
+        data: {name: 'hello'},
+        template: '<div>\r\n 大<span>{name}</span>大\r\n \n</div>'
+      })
+
+      var str = Server.render(Component)
+      container.innerHTML = str;
+
+      new Component({
+        mountNode: container
+      })
+
+      expect(nes.one('span', container).innerHTML).to.equal('hello');
+
+
+    })
+  }
+
+
+  it("bug #156 once bug", function(){
+
+    var component = new Regular;
+    var test = {a: 0, b:0};
+    component.$once("test",function () { test.a++ });
+    component.$once("test",function () { test.b++ });
+    component.$once("1test",function () { test.a++ });
+    component.$once("1test",function () { test.b++ });
+    component.$emit("test");
+    component.$emit("test");
+    expect(test.a).to.equal(1)
+    expect(test.b).to.equal(1)
+    component.$emit("1test");
+    component.$emit("1test");
+    expect(test.a).to.equal(2)
+    expect(test.b).to.equal(2)
+
+  })
+
+
+
+
+  it("bug #156 side effect", function(){
+
+    var component = new Regular;
+    var test = {a: 0, b:0};
+    component.$on("test",function () { test.a++ });
+    component.$on("$test",function () { test.a++ });
+    component.$on("$init",function () { test.b++ });
+    component.$on("init",function () { test.b++ });
+    component.$emit("init");
+    component.$emit("$init");
+
+    component.$emit("$test");
+    expect(test.a).to.equal(1)
+    expect(test.b).to.equal(4)
+
+    component.$emit("test");
+    expect(test.a).to.equal(2)
+  })
+
+
+ 
+
   // it("bug #122: paren Expression shouldn't change the set property it wrapped", function(){
   //   var Sub = Regular.extend({
   //     name: 'Sub',
@@ -797,11 +1254,111 @@ it('bugfix #50', function(){
   //   compo.$refs.sub.$update('actived', '3');
   //   expect(compo.data.num2).to.equal(2);
 
-  // })
-  // it('bug :directive return value that not function will throw error', function(){
-  //   throw Error()
-  // })
+
+
+
+  })
+
+
+  describe("M 0.6", function(){
+
+    var List = Regular.extend({
+      template: '<div ref=cnt>{#list list as item by item.a}<span>{item.a}</span>{/list}</div>'
+    });
+    it('bug #90: simple', function(){
+    var list = new List({
+      data: {
+      list: [{a: 0}, {a: 1} , {a: 2}, {a: 3}, {a: 4}, {a: 5}]
+      }
+    });
+    var dataList = list.data.list;
+
+    var spans = nes.all( 'span', list.$refs.cnt );
+    expect( spans.length ).to.equal(6);
+    spans.forEach(function(div , index){
+      expect(div.innerHTML).to.equal('' + index)
+    })
+
+    var newList = []
+
+    for(var len = spans.length; len--;){
+      newList.push(dataList[len])
+    }
+
+    list.data.list = newList;
+    list.$update();
+
+    var newSpans = nes.all( 'span', list.$refs.cnt );
+
+    newSpans.forEach(function(d, index){
+      expect(d).to.equal(spans[newSpans.length - 1 - index])
+    })
+
+  })
+
+  it('bug #90: 1 => 3 =>0 = 3 ', function(){
+    var list = new List({
+      data: {
+        list: [{a: 2}]
+      }
+    });
+
+    var ospans = nes.all( 'span', list.$refs.cnt );
+
+    list.$update('list', [
+      { a:1 }, { a:2 }, { a:3 }
+    ])
+
+    var nspans = nes.all( 'span', list.$refs.cnt );
+
+    expect(ospans.length).to.equal(1)
+    expect(nspans.length).to.equal(3)
+    expect(nspans[1]).to.equal(ospans[0])
+
+
+    list.$update('list', [ ])
+
+    var tspans = nes.all( 'span', list.$refs.cnt );
+
+    expect(tspans.length).to.equal(0);
+
+    list.$update('list', [
+      { a:1 }, { a:2 }, { a:3 }
+    ])
+
+    tspans = nes.all( 'span', list.$refs.cnt );
+    expect(tspans.length).to.equal(3);
+
+  })
+
+
+  it('bug #90: multiply key', function(){
+    var List = Regular.extend({
+      template: '<div ref=cnt>{#list list as item by item.a}<span>{item.a}</span>{/list}</div>'
+    });
+    var list = new List({
+      data: {
+        list: [{a: 2}, {a: 1} , {a: 2}]
+      }
+    });
+
+    var ospans = nes.all( 'span', list.$refs.cnt );
+
+    list.$update('list', [
+      {a:1}, {a:2}, {a:1}
+    ])
+
+    var nspans = nes.all( 'span', list.$refs.cnt );
+
+    expect(nspans[1]).to.equal(ospans[0])
+    expect(nspans[2]).to.equal(ospans[1])
+
+
+  })
+
+
 })
+
 
 
 

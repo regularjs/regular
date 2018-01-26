@@ -1,7 +1,7 @@
 var expect = require('expect.js');
 // contains basic dom && event specs
-var dom = require("../../src/dom.js");
-var Regular = require("../../src/index.js");
+var dom = require("../../lib/dom.js");
+var Regular = require("../../lib/index.js");
 
 function destroy(component, container){
   component.destroy();
@@ -382,7 +382,7 @@ describe("Dom", function(){
       var all = dom.element(component, true);
       expect(all.length).to.equal(4)
       expect(all[1].className).to.equal('list')
-      expect(all[2].innerHTML).to.equal('list1')
+      expect( all[2].innerHTML ).to.equal( 'list1' )
     })
     it("dom.element is changed with its content", function(){
       component.data.nodes = [1,2]

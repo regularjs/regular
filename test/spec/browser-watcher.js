@@ -1,6 +1,6 @@
 var expect = require('expect.js');
-var Regular = require("../../src/index.js");
-var parse = require("../../src/helper/parse");
+var Regular = require("../../lib/index.js");
+var parse = require("../../lib/helper/parse");
 
 var Component = Regular.extend();
 
@@ -311,6 +311,38 @@ describe("Watcher-System", function(){
       name: "leeluolee",
       age: 10
     });
+
+    component.destroy();
+  })
+  
+  it('$watch should accept [Array<any>] param', function () {
+    var component = new Regular();
+    component.$watch(['obj', 'arr', 'num', 'str'], function (obj, arr, num, str) {
+      expect(obj).to.be.an('object');
+      expect(arr).to.be.an('array');
+      expect(num).to.be.an('number');
+      expect(str).to.be.an('string');
+    });
+
+    component.$update({
+      obj: { x: 1 },
+      arr: [1, 2],
+      num: 2,
+      str: 'lee'
+    });
+
+    component.destroy();
+  })
+
+  it('$watch should accept raw object without ident', function () {
+    var component = new Regular();
+    component.$watch({foo: true, bar: 1}, function (obj) {
+      expect(obj).to.be.an('object');
+      expect(obj.foo).to.equal(true);
+      expect(obj.bar).to.equal(1);
+    });
+
+    component.$update();
 
     component.destroy();
   })

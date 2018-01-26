@@ -1,6 +1,8 @@
 var expect = require('expect.js');
-var Regular = require("../../src/index.js");
+var Regular = require("../../lib/index.js");
+var SSR = require("../../lib/render/server.js");
 var _ = Regular.util;
+var diffTrack = require("../../lib/helper/diffTrack")
 
 function destroy(component, container){
   component.destroy();
@@ -157,6 +159,28 @@ describe("List", function(){
       component.$emit("hello");
 
       expect(num).to.equal(2);
+
+    })
+    
+    it("should work with same computed property", function(){
+
+      var container = document.createElement('div');
+
+      var list =
+        "{#list todos as todo}" + 
+          "<div class='a-{todo_index}'>{todo.content}</div>" + 
+        "{/list}";
+      var component = new Regular({
+        computed: {
+          todo: function(data){
+            return data.fake
+          }
+        },
+        data: {todos: [{content: "hello"}, {content: "hello2"}], fake: {content:'badboy'}},
+        template: list
+      }).$inject(container);
+
+      expect(nes.one('div', container).innerHTML).to.equal('hello');
 
     })
   })
@@ -434,7 +458,7 @@ describe("List", function(){
     list2.destroy()
 
   })
-it("list with else should also works under track mode", function(){
+it("list with else should also works under list track mode", function(){
 
   var List = Regular.extend({
     template: '<div ref=cnt>{#list list as item by item_index}<div>{item}</div>{#else}<p>nothing{list.length}</p>{/list}</div>'
@@ -609,7 +633,7 @@ it("list with else should also works under track mode", function(){
       })
       var divs = nes.all('div', list.$refs.cnt);
 
-      list.data.list = [{a: 4},{a: 2} , {a: 6}]
+      list.data.list = [{a: 4},{a: 2} , {a: 1}]
       list.$update();
 
       var divs2 = nes.all('div', list.$refs.cnt);
@@ -617,31 +641,341 @@ it("list with else should also works under track mode", function(){
       expect(divs[0]).to.not.equal(divs2[0]);
       expect(divs[1]).to.equal(divs2[1]);
       expect(divs[2]).to.not.equal(divs2[2]);
+      expect(divs[2]).to.not.equal(divs2[0]);
 
     })
-    it("list track non-index expression" , function(){
+    // @TODO: updateTarget的逻辑没有到
+    describe("Track By Case ", function(){
       var List = Regular.extend({
-        template: '<div ref=cnt>{#list list as item by item.a}\
-          <div>{item.a}</div>{/list}</div>'
+          template: '<div ref=cnt>{#list list as item by item}\
+            <div>{time}:{item}:{item_index}</div>{/list}</div>'
       })
-      var list = new List({
-        data: {
-          list: [{a: 1}, {a: 2} , {a: 3}]
+      function keyOf(i){return i}
+      function getNodes(arr1, arr2, callback){
+
+        var list = new List({
+          data: {
+            list: arr1,
+            time:0
+          }
+        })
+        var divs = nes.all('div', list.$refs.cnt);
+        for(var j =0, len= divs.length; j < len; j++){
+          expect(divs[j].innerHTML).to.equal( '0:' + arr1[j] + ':' + j );
         }
+
+        list.data.time = 1;
+        list.data.list = arr2;
+        list.$update();
+
+        var divs2 = nes.all('div', list.$refs.cnt);
+        expect( divs.length ).to.equal(arr1.length)
+        expect( divs2.length ).to.equal(arr2.length)
+
+        list.$update();
+        for(var i =0, len= divs2.length; i < len; i++){
+          expect(divs2[i].innerHTML).to.equal('1:'+arr2[i]+':'+i);
+        }
+        callback( divs, divs2 )
+
+      }
+      it('list track equal', function(){
+
+        var newList = [1,2,3]
+        var oldList = [1,2,3] 
+
+        expect( diffTrack( newList, oldList, function(i){return i}).steps ).to.eql([ ])
+
+        getNodes(oldList, newList, function(oNodes, nNodes){
+          expect(oNodes[0]).to.equal(nNodes[0])
+          expect(oNodes[2]).to.equal(nNodes[2])
+          expect(oNodes[1]).to.equal(nNodes[1])
+        });
+
+        // expect( diffTrack(newList, oldList, function(i){return i}).steps ).to.eql([
+        //   {len: 2, mode:0, index: 2}, 
+        //   {len: 1, mode: 1, index: 0}
+        // ])
+
+
       })
-      var divs = nes.all('div', list.$refs.cnt);
 
-      list.data.list = [{a: 4},{a: 2} , {a: 6}]
-      list.$update();
 
-      var divs2 = nes.all('div', list.$refs.cnt);
+      it('list track simple', function(){
 
-      expect(divs[0]).to.not.equal(divs2[0]);
-      expect(divs[1]).to.equal(divs2[1]);
-      expect(divs[2]).to.not.equal(divs2[2]);
+        var newList = [1,2,3]
+        var oldList = [2,3, 5, 6] 
 
+        expect( diffTrack(newList, oldList, function(i){return i}).steps ).to.eql([
+          {len: 2, mode:0, index: 2}, 
+          {len: 1, mode: 1, index: 0}
+        ])
+
+        getNodes( oldList, 
+                  newList, function(oNodes, nNodes){
+          expect(oNodes[0]).to.equal(nNodes[1])
+          expect(oNodes[1]).to.equal(nNodes[2])
+          expect(oNodes[3]).to.not.equal(nNodes[0])
+        });
+
+
+      })
+
+      it(' list track arr -> empty', function(){
+
+        var newList = []
+        var oldList = [1,2] 
+
+        expect( diffTrack(newList, oldList, function(i){return i}).steps ).to.eql([
+          {len: 2, mode: 0, index: 0 }
+        ])
+
+        getNodes(oldList, 
+                 newList, function(oNodes, nNodes){
+        });
+
+      })
+      it(' list track  empty -> arr', function(){
+
+        var oldList = []
+        var newList = [1,2] 
+
+        expect( diffTrack(newList, oldList, keyOf).steps ).to.eql([
+          {len: 2, mode: 1, index: 0 }
+        ])
+
+        getNodes(oldList, 
+                 newList, function(oNodes, nNodes){
+        });
+      })
+      it(' list track  with order', function(){
+
+        var newList = [1,2,3]
+        var oldList = [7, 3,2, 5, 6] 
+
+        expect( diffTrack(newList, oldList, function(i){return i}).steps ).to.eql([
+          { len: 1, mode: 0, index: 0 },
+          { len: 2, mode: 0, index: 2 },
+          { len: 2, mode: 1, index: 0 },
+          { len: 1, mode: 0, index: 3 }
+
+        ])
+        getNodes(oldList, 
+                 newList, function(oNodes, nNodes){
+          expect(nNodes[1]).to.equal(oNodes[2])
+          expect(nNodes[2]).to.equal(oNodes[1])
+        });
+
+      })
+      it(' list track  with order flow by insert', function(){
+
+        var newList = [1,2,4, 3]
+        var oldList = [7, 3,2, 5, 6] 
+
+        expect( diffTrack(newList, oldList, function(i){return i}).steps ).to.eql([
+          { len: 1, mode: 0, index: 0 },
+          { len: 2, mode: 0, index: 2 },
+          { len: 3, mode: 1, index: 0 },
+          { len: 1, mode: 0, index: 4 }
+        ])
+
+        getNodes(oldList, 
+                 newList, function(oNodes, nNodes){
+          expect(nNodes[1]).to.equal(oNodes[2])
+          expect(nNodes[3]).to.equal(oNodes[1])
+        });
+
+      })
+      it(' list track new List more than old', function(){
+
+        var oldList = [1,2,4, 3]
+        var newList = [7, 3,2, 5, 6] 
+
+        expect( diffTrack(newList, oldList, function(i){return i}).steps ).to.eql([
+          {  mode: 0, index: 0, len: 1 },
+          {  mode: 0, index: 1, len: 1 },
+          {  mode: 1, index: 0, len: 2 },
+          {  mode: 1, index: 3, len: 2 },
+          {  mode: 0, index: 5, len: 1 }
+        ])
+
+        getNodes(oldList, 
+                 newList, function(oNodes, nNodes){
+          expect(nNodes[1]).to.equal(oNodes[3])
+          expect(nNodes[2]).to.equal(oNodes[1])
+        });
+
+      })
+
+      it('list track: updateTarget Logic', function(){
+        var newList = [1,2,3]
+        var oldList = [1,3,2] 
+
+        expect( diffTrack( newList, oldList, keyOf).steps ).to.eql([
+          {  mode: 1, index: 1, len: 1 },
+          {  mode: 0, index: 3, len: 1 }
+       ])
+
+        getNodes(oldList, newList, function(oNodes, nNodes){
+          expect(oNodes[0]).to.equal(nNodes[0])
+          expect(oNodes[1]).to.equal(nNodes[2])
+          expect(oNodes[2]).to.equal(nNodes[1])
+
+        });
+
+      })
+
+      it(' list track revert', function(){
+
+        var newList = [1,2,3,4,5,6,7];
+        var oldList = [7,6,5,4,3,2,1];
+
+        expect( diffTrack(newList, oldList, function(i){return i}).steps ).to.eql([
+          { len: 6, mode: 1, index: 0 },
+          { len: 6, mode: 0, index: 7 }
+        ])
+        getNodes(oldList, 
+                 newList, function(oNodes, nNodes){
+          var len = newList.length, o = len;
+          for(;o--;){
+            expect(nNodes[o]).to.equal(oNodes[len - o - 1])
+          }
+        });
+
+      })
+      it(' list track all', function(){
+
+        var newList = [1,2,3];
+        var oldList = [8,9,10];
+
+        expect( diffTrack(newList, oldList, function(i){return i}).steps ).to.eql([
+          { len: 3, mode: 0, index: 0 },
+          { len: 3, mode: 1, index: 0 }
+        ])
+
+      })
+
+      it('list track dup key', function(){
+        var newList = [2, 1, 2];
+        var oldList = [1, 2, 1];
+
+        expect( diffTrack(newList, oldList, function(i){return i}).steps ).to.eql([
+          { len: 1, mode: 0, index: 2 },
+          { len: 1, mode: 1, index: 0 }
+        ])
+
+      })
+      it('list track : add', function(){
+        var newList = [1, 2, 3];
+        var oldList = [1, 2];
+
+        expect( diffTrack(newList, oldList, function(i){return i}).steps ).to.eql([
+          { len: 1, mode: 1, index: 2 }
+        ])
+
+        var newList = [1, 2, 3];
+        var oldList = [ 2, 3];
+
+        expect( diffTrack(newList, oldList, function(i){return i}).steps ).to.eql([
+          { len: 1, mode: 1, index: 0 }
+        ])
+
+      })
+      it('trackd: remove', function(){
+        var newList = [1, 2];
+        var oldList = [1, 2, 3];
+
+        expect( diffTrack(newList, oldList, function(i){return i}).steps ).to.eql([
+          { len: 1, mode: 0, index: 2 }
+        ])
+
+        var newList = [2, 3];
+        var oldList = [1, 2, 3];
+
+        expect( diffTrack(newList, oldList, function(i){return i}).steps ).to.eql([
+          { len: 1, mode: 0, index: 0 }
+        ])
+
+      })
+      it('trackd: splice', function(){
+
+        var newList = [1, 3];
+        var oldList = [1, 2, 3];
+
+        expect( diffTrack(newList, oldList, function(i){return i}).steps ).to.eql([
+          { len: 1, mode: 0, index: 1 }
+        ])
+
+        var newList = [1, 4];
+        var oldList = [1, 2, 3, 4];
+
+        expect( diffTrack(newList, oldList, function(i){return i}).steps ).to.eql([
+          { len: 2, mode: 0, index: 1 }
+        ])
+
+      })
+      it('trackd: substitute hit last fast', function(){
+
+        var newList = [1, 4];
+        var oldList = [1, 2, 3];
+
+        expect( diffTrack(newList, oldList, function(i){return i }).steps ).to.eql([
+
+          { mode: 0, index: 1, len: 2 },
+          { mode: 1, index: 1, len: 1 }
+        ])
+
+      })
+
+      it('trackd can"t keyOf: undefined', function(){
+        var newList = [1, 3];
+        var oldList = [1, 2, 3];
+
+        expect( diffTrack(newList, oldList, function(i){return }).steps ).to.eql([
+          // 这里其实可以合并，但是一般来讲 , 不能被track的情况是较小的，不做特殊处理
+          { mode: 0, index: 2, len: 1 },
+          { mode: 0, index: 1, len: 1 },
+          { mode: 1, index: 1, len: 1 } 
+
+        ])
+
+      })
+      it('tracked component with diff refer', function(){
+        var oldList = [{id: 1, name:'name1'}];
+        var newList = [{id: 1, name: 'name1changed'}];
+
+        var List = Regular.extend({
+            name:'list',
+            template: '<div ref=cnt>{#list list as item by item.id}\
+              <div>{item.name}{item_index}</div>{/list}</div>'
+        })
+
+        var list = new List({
+          data: {
+            list: oldList
+          }
+        })
+
+        var div = nes.one( 'div', list.$refs.cnt );
+
+        expect(div.innerHTML).to.equal('name10');
+
+
+        list.$update('list', newList)
+
+
+        var div = nes.one( 'div', list.$refs.cnt );
+
+        expect(div.innerHTML).to.equal('name1changed0');
+
+
+
+      })
     })
+
+
   })
+  
 
   describe("List with Object", function(){
 
@@ -667,47 +1001,48 @@ it("list with else should also works under track mode", function(){
 
     it("items should list by Object.keys", function( ){
 
-      var component = new Regular({
-        template: "<div ref=container>\
-          {#list json as item by item_key}\
-            <div>{item.age}:{item_key}:{item_index}</div>\
-          {/list}\
-        </div>",
-        data: {
-          json: {
-            "xiaomin": {age:11},
-            "xiaoli": {age:12},
-            "xiaogang": {age:13}
+      expect(function(){
+        var component = new Regular({
+          template: "<div ref=container>\
+            {#list json as item by item_key}\
+              <div>{item.age}:{item_key}:{item_index}</div>\
+            {/list}\
+          </div>",
+          data: {
+            json: {
+              "xiaomin": { age:11 },
+              "xiaoli": { age:12 },
+              "xiaogang": { age:13 }
+            }
           }
-        }
-      })
-
-      // only make sure 
-      var json = component.data.json;
-      var keys = _.keys(json);
-
-      var divs =  nes.all('div', component.$refs.container );
-
-      expect(divs.length).to.equal(3);
-
-      divs.forEach(function(div, index){
-        expect(div.innerHTML).to.equal('' + json[ keys[index] ].age + ':' + keys[index] + ':' + index);
-      })
-
-      delete json.xiaomin;
-      json.xiaoli = {age: 33}
-
-      component.$update();
-
-      divs =  nes.all('div', component.$refs.container );
-
-      expect(divs.length).to.equal(2);
-
-      expect(divs[0].innerHTML).to.equal('33:xiaoli:0')
-
-      component.destroy();
+        })
+      }).to.throwError();
 
 
+      // // only make sure 
+      // var json = component.data.json;
+      // var keys = _.keys(json);
+
+      // var divs =  nes.all('div', component.$refs.container );
+
+      // expect(divs.length).to.equal(3);
+
+      // divs.forEach(function(div, index){
+      //   expect(div.innerHTML).to.equal('' + json[ keys[index] ].age + ':' + keys[index] + ':' + index);
+      // })
+
+      // delete json.xiaomin;
+      // json.xiaoli = {age: 33}
+
+      // component.$update();
+
+      // divs =  nes.all('div', component.$refs.container );
+
+      // expect(divs.length).to.equal(2);
+
+      // expect( divs[0].innerHTML ).to.equal( '33:xiaoli:0' )
+
+      // component.destroy();
 
     })
     it("items should works under complex mode: item_index & item_key & item", function( ){
@@ -881,7 +1216,7 @@ it("list with else should also works under track mode", function(){
     it("list Object also accept #else stateman", function(){
       var component = new Regular({
         template: "<div ref=container>\
-          {#list json as item by item_key}\
+          {#list json as item}\
             <div>{item.age}:{item_key}:{item_index}</div>\
           {#else} <div id='notfound'></div>\
           {/list}\
@@ -901,6 +1236,71 @@ it("list with else should also works under track mode", function(){
       expect(divs.length).to.equal(3);
 
     })
+
+  })
+
+
+})
+
+describe("SSR: list", function(){
+  if(Object.create === undefined) return;
+  it("basic usage of ssr with list", function( ){
+    var container = document.createElement('div');
+    var Component = Regular.extend({
+      template: "<div ref=container>\
+        {#list json as item }\
+          <div class='item'>{item.age}:{item_index}</div>\
+        {#else} <div id='notfound'></div>\
+        {/list}\
+      </div>"
+    });
+
+
+    container.innerHTML = SSR.render(Component);
+
+    var component = new Component({
+      mountNode: container
+    })
+
+    expect(nes('.item', container).length).to.equal(0);
+    expect(nes('div', container).length).to.equal(1);
+
+    component.$update('json', [
+      { age: 10 },
+      { age: 20 }
+    ])
+
+    expect(nes('.item', container).length).to.equal(2);
+    expect(nes.one('.item', container).innerHTML).to.equal('10:0');
+
+  })
+
+
+  it("should handle common xss error", function(){
+
+    var container = document.createElement('div');
+    var Component = Regular.extend({
+        template: "<div ref=container>\
+        <div class='item' onerror={onerror}> {script}</div>\
+        </div>",
+        data: {
+          onerror: "><script>alert(1000)</script>",
+          script: "test2</a><img lib=# onerror='alert(1)'>"
+        }
+    })
+    expect(function(){
+      new Component();
+    }).to.not.throwError();
+
+    var html = SSR.render(Component);
+
+    container.innerHTML = html
+
+    expect(function(){
+      new Component({
+        mountNode: container
+      })
+    }).to.not.throwError();
 
   })
 })
