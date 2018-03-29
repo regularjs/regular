@@ -96,9 +96,14 @@ describe("Lexer under mode 1 and 2", function(){
       .typeEqual("OPEN,END,TEXT,EXPR_OPEN,IDENT,END,TEXT,CLOSE,EOF");
 
   })
+  
+  it("unexpected markStart should be handled correctly", function () {
+    var input1 = "{#inc this.$body with {hello:1}}";
+    var input2 = "{!{a:{b:1}}}";
+    expect(l(input1))
+      .typeEqual("OPEN,IDENT,.,IDENT,IDENT,{,IDENT,:,NUMBER,},END,EOF")
+    expect(l(input2))
+      .typeEqual("EXPR_OPEN,!,{,IDENT,:,{,IDENT,:,NUMBER,},},END,EOF")
+  })
 
 })
-
-
-
-
