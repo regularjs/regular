@@ -1357,6 +1357,34 @@ it('bugfix #50', function(){
   })
 
 
+  it('bug #206: r-style with deleted key', function(){
+
+    var template = "<div ref=cnt r-style={ style } >Please Login</div>" 
+
+    var component = new Regular({
+      template: template,
+      data: {
+        style: { position: 'absolute', color: 'white' }
+      }
+    }).$inject(container);
+
+    var cnt = component.$refs.cnt;
+
+    expect(dom.css(cnt, 'position')).to.equal('absolute');
+    expect(dom.css(cnt, 'color')).to.equal('white');
+
+
+    component.$update('style', { color: 'black' });
+
+    expect(dom.css(cnt, 'color')).to.equal('black');
+    expect(dom.css(cnt, 'position')).to.not.equal('absolute')
+
+    destroy(component, container);
+
+
+  })
+
+
 })
 
 

@@ -25,7 +25,7 @@
             </div>
             <div class="modal-body">
             <svg>
-           <image href="http://img0.imgtn.bdimg.com/it/u=2090979813,2728843729&fm=21&gp=0.jpg" width="200" height="200" />  
+                <image href="http://img0.imgtn.bdimg.com/it/u=2090979813,2728843729&fm=21&gp=0.jpg" width="200" height="200" />  
             </svg>
               {#include content }
             </div>
@@ -39,50 +39,61 @@
     </script>
     
     <script>
-
-
-    Modal.implement({
-      events: {
-        $config: function(){
-
+      // on-enter event
+      Regular.event('enter', function(elem, fire){
+        function update(ev){
+          if(ev.which == 13){ // ENTER key
+            ev.preventDefault();
+            fire(ev); // if key is enter , we fire the event;
+          }
         }
-      },
-      events: [{
-        type: '$config',
-        listener: function(){
-
+        Regular.dom.on(elem, "keypress", update);
+        return function destroy(){ // return a destroy function
+          Regular.dom.off(elem, "keypress", update);
         }
-      }]
-    })
+      });
 
 
+      var Modal = Regular.extend({
+        template: '#modal',
+        init: function(){
+          if(!this.$parent) this.$inject(document.body)
+        },
+        close: function(){
+          this.$emit('close');
+          this.destroy();
+        },
+        confirm: function(){
+          this.$emit('confirm', this.data);
+          this.destroy();
+        }
+      }).implement({
+        events: {
+          $config: function(){
+          }
+        },
+        // // or
+        // events: [{
+        //   type: '$config',
+        //   listener: function(){
+        //   }
+        // }]
+      });
 
 
-    var Modal = Regular.extend({
-      template: '#modal',
-      init: function(){
-        if(!this.$parent) this.inject(document.body)
-      },
-      close: function(){
-        this.$emit('close');
-        this.destroy();
-      },
-      confirm: function(){
-        this.$emit('confirm', this.data);
-        this.destroy();
-      }
-    });
-
-    // 直接调用
-    var modal = new Modal({
-      data: {
-        content: '<input type="email" class="form-control" r-model={email} on-enter={this.confirm()}>',
-        title: 'confirm your email'
-      }
-    });
-    modal.$on('confirm', function(data){
-      console.log(data.email)
-    });
+      // 直接调用
+      var modal = new Modal({
+        data: {
+          content: '<input type="email" class="form-control" r-model={email} on-enter={this.confirm()}>',
+          title: 'confirm your email'
+        }
+      });
+      modal.$on('close', function(){
+        console.log("on close");
+      });
+      modal.$on('confirm', function(data){
+        console.log("on confirm", data.email)
+      });
     </script>
   </body>
 </html>
