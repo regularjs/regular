@@ -1,6 +1,6 @@
 /**
 @author	leeluolee
-@version	0.6.0-beta.6
+@version	0.6.0-beta.10
 @homepage	http://regularjs.github.io
 */
 (function webpackUniversalModuleDefinition(root, factory) {
@@ -57,19 +57,19 @@ return /******/ (function(modules) { // webpackBootstrap
 /************************************************************************/
 /******/ ([
 /* 0 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	var env =  __webpack_require__(1);
-	var config = __webpack_require__(7); 
-	var Regular = module.exports = __webpack_require__(8);
+	var config = __webpack_require__(8); 
+	var Regular = module.exports = __webpack_require__(9);
 	var Parser = Regular.Parser;
 	var Lexer = Regular.Lexer;
 
 	// if(env.browser){
-	    __webpack_require__(26);
 	    __webpack_require__(29);
-	    __webpack_require__(30);
-	    Regular.dom = __webpack_require__(15);
+	    __webpack_require__(32);
+	    __webpack_require__(33);
+	    Regular.dom = __webpack_require__(17);
 	// }
 	Regular.env = env;
 	Regular.util = __webpack_require__(3);
@@ -84,7 +84,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  var ast = new Parser(str).parse();
 	  return !options.stringify? ast : JSON.stringify(ast);
 	}
-	Regular.Cursor =__webpack_require__(22) 
+	Regular.Cursor =__webpack_require__(25) 
 
 	Regular.isServer = env.node;
 	Regular.isRegular = function( Comp ){
@@ -94,9 +94,9 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 
-/***/ },
+/***/ }),
 /* 1 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {// some fixture test;
 	// ---------------
@@ -114,9 +114,9 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(2)))
 
-/***/ },
+/***/ }),
 /* 2 */
-/***/ function(module, exports) {
+/***/ (function(module, exports) {
 
 	// shim for using process in browser
 	var process = module.exports = {};
@@ -288,6 +288,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	process.removeListener = noop;
 	process.removeAllListeners = noop;
 	process.emit = noop;
+	process.prependListener = noop;
+	process.prependOnceListener = noop;
+
+	process.listeners = function (name) { return [] }
 
 	process.binding = function (name) {
 	    throw new Error('process.binding is not supported');
@@ -300,20 +304,20 @@ return /******/ (function(modules) { // webpackBootstrap
 	process.umask = function() { return 0; };
 
 
-/***/ },
+/***/ }),
 /* 3 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
-	/* WEBPACK VAR INJECTION */(function(global, setImmediate) {__webpack_require__(5)();
+	/* WEBPACK VAR INJECTION */(function(global, setImmediate) {__webpack_require__(6)();
 
 
 
 	var _  = module.exports;
-	var entities = __webpack_require__(6);
+	var entities = __webpack_require__(7);
 	var o2str = ({}).toString;
 	var win = typeof window !=='undefined'? window: global;
 	var MAX_PRIORITY = 9999;
-	var config = __webpack_require__(7);
+	var config = __webpack_require__(8);
 
 
 	_.noop = function(){};
@@ -333,10 +337,19 @@ return /******/ (function(modules) { // webpackBootstrap
 	  return o1;
 	}
 
+
 	_.keys = Object.keys? Object.keys: function(obj){
 	  var res = [];
 	  for(var i in obj) if(obj.hasOwnProperty(i)){
 	    res.push(i);
+	  }
+	  return res;
+	}
+
+	_.values = Object.values? Object.values: function(obj){
+	  var res = [];
+	  for(var i in obj) if(obj.hasOwnProperty(i)){
+	    res.push(obj[i]);
 	  }
 	  return res;
 	}
@@ -431,35 +444,49 @@ return /******/ (function(modules) { // webpackBootstrap
 	_.trackErrorPos = (function (){
 	  // linebreak
 	  var lb = /\r\n|[\n\r\u2028\u2029]/g;
-	  var minRange = 20, maxRange = 20;
+	  var minRange = 50, maxRange = 20;
 	  function findLine(lines, pos){
 	    var tmpLen = 0;
 	    for(var i = 0,len = lines.length; i < len; i++){
 	      var lineLen = (lines[i] || "").length;
 
 	      if(tmpLen + lineLen > pos) {
-	        return {num: i, line: lines[i], start: pos - i - tmpLen , prev:lines[i-1], next: lines[i+1] };
+	        return {num: i, line: lines[i], start: pos - tmpLen , prev:lines[i-1], next: lines[i+1] };
 	      }
 	      // 1 is for the linebreak
-	      tmpLen = tmpLen + lineLen ;
+	      tmpLen = tmpLen + lineLen + 1;
 	    }
 	  }
-	  function formatLine(str,  start, num, target){
+	  function formatLine(str, column, row, target){
 	    var len = str.length;
-	    var min = start - minRange;
+	    var min = column - minRange;
 	    if(min < 0) min = 0;
-	    var max = start + maxRange;
+	    var max = column + maxRange;
 	    if(max > len) max = len;
 
 	    var remain = str.slice(min, max);
-	    var prefix = "[" +(num+1) + "] " + (min > 0? ".." : "")
+	    var prefix = "[" +(row+1) + "] " + (min > 0? ".." : "")
 	    var postfix = max < len ? "..": "";
-	    var res = prefix + remain + postfix;
-	    if(target) res += "\n" + new Array(start-min + prefix.length + 1).join(" ") + "^^^";
+	    var res = prefix + leadingTabsToSpaces(remain) + postfix;
+	    if(target) {
+	      res += "\n" + spaces(
+	        leadingTabsToSpaces(str.slice(min,column)).length +
+	        prefix.length
+	      ) + "^";
+	    }
 	    return res;
 	  }
+	  function spaces(n) {
+	    return new Array(n+1).join(" ")
+	  }
+	  function leadingTabsToSpaces(str) {
+	    return str.replace( /^\t+/, function(match) {
+	      return match.split('\t').join('  ');
+	    } )
+	  }
 	  return function(input, pos){
-	    if(pos > input.length-1) pos = input.length-1;
+	    if( pos > input.length-1 ) pos = input.length-1;
+
 	    lb.lastIndex = 0;
 	    var lines = input.split(lb);
 	    var line = findLine(lines,pos);
@@ -755,7 +782,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  return group.inject || group.$inject;
 	}
 
-	_.blankReg = /\s+/; 
+	_.blankReg = /^\s*$/; 
 
 	_.getCompileFn = function(source, ctx, options){
 	  return function( passedOptions ){
@@ -885,6 +912,19 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	})();
 
+	_.simpleDiff = function (now, old){
+	  var nlen = now.length;
+	  var olen = old.length;
+	  if(nlen !== olen){
+	    return true;
+	  }
+	  for(var i = 0; i < nlen ; i++){
+	    if(now[i] !== old[i]) return  true;
+	  }
+	  return false
+
+	}
+
 
 
 
@@ -894,26 +934,29 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(4).setImmediate))
 
-/***/ },
+/***/ }),
 /* 4 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
-	/* WEBPACK VAR INJECTION */(function(setImmediate, clearImmediate) {var nextTick = __webpack_require__(2).nextTick;
+	/* WEBPACK VAR INJECTION */(function(global) {var scope = (typeof global !== "undefined" && global) ||
+	            (typeof self !== "undefined" && self) ||
+	            window;
 	var apply = Function.prototype.apply;
-	var slice = Array.prototype.slice;
-	var immediateIds = {};
-	var nextImmediateId = 0;
 
 	// DOM APIs, for completeness
 
 	exports.setTimeout = function() {
-	  return new Timeout(apply.call(setTimeout, window, arguments), clearTimeout);
+	  return new Timeout(apply.call(setTimeout, scope, arguments), clearTimeout);
 	};
 	exports.setInterval = function() {
-	  return new Timeout(apply.call(setInterval, window, arguments), clearInterval);
+	  return new Timeout(apply.call(setInterval, scope, arguments), clearInterval);
 	};
 	exports.clearTimeout =
-	exports.clearInterval = function(timeout) { timeout.close(); };
+	exports.clearInterval = function(timeout) {
+	  if (timeout) {
+	    timeout.close();
+	  }
+	};
 
 	function Timeout(id, clearFn) {
 	  this._id = id;
@@ -921,7 +964,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 	Timeout.prototype.unref = Timeout.prototype.ref = function() {};
 	Timeout.prototype.close = function() {
-	  this._clearFn.call(window, this._id);
+	  this._clearFn.call(scope, this._id);
 	};
 
 	// Does not start the time, just sets up the members needed.
@@ -947,38 +990,216 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }
 	};
 
-	// That's not how node.js implements it but the exposed api is the same.
-	exports.setImmediate = typeof setImmediate === "function" ? setImmediate : function(fn) {
-	  var id = nextImmediateId++;
-	  var args = arguments.length < 2 ? false : slice.call(arguments, 1);
+	// setimmediate attaches itself to the global object
+	__webpack_require__(5);
+	// On some exotic environments, it's not clear which object `setimmediate` was
+	// able to install onto.  Search each possibility in the same order as the
+	// `setimmediate` library.
+	exports.setImmediate = (typeof self !== "undefined" && self.setImmediate) ||
+	                       (typeof global !== "undefined" && global.setImmediate) ||
+	                       (this && this.setImmediate);
+	exports.clearImmediate = (typeof self !== "undefined" && self.clearImmediate) ||
+	                         (typeof global !== "undefined" && global.clearImmediate) ||
+	                         (this && this.clearImmediate);
 
-	  immediateIds[id] = true;
+	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
 
-	  nextTick(function onNextTick() {
-	    if (immediateIds[id]) {
-	      // fn.call() is faster so we optimize for the common use-case
-	      // @see http://jsperf.com/call-apply-segu
-	      if (args) {
-	        fn.apply(null, args);
-	      } else {
-	        fn.call(null);
-	      }
-	      // Prevent ids from leaking
-	      exports.clearImmediate(id);
-	    }
-	  });
-
-	  return id;
-	};
-
-	exports.clearImmediate = typeof clearImmediate === "function" ? clearImmediate : function(id) {
-	  delete immediateIds[id];
-	};
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(4).setImmediate, __webpack_require__(4).clearImmediate))
-
-/***/ },
+/***/ }),
 /* 5 */
-/***/ function(module, exports) {
+/***/ (function(module, exports, __webpack_require__) {
+
+	/* WEBPACK VAR INJECTION */(function(global, process) {(function (global, undefined) {
+	    "use strict";
+
+	    if (global.setImmediate) {
+	        return;
+	    }
+
+	    var nextHandle = 1; // Spec says greater than zero
+	    var tasksByHandle = {};
+	    var currentlyRunningATask = false;
+	    var doc = global.document;
+	    var registerImmediate;
+
+	    function setImmediate(callback) {
+	      // Callback can either be a function or a string
+	      if (typeof callback !== "function") {
+	        callback = new Function("" + callback);
+	      }
+	      // Copy function arguments
+	      var args = new Array(arguments.length - 1);
+	      for (var i = 0; i < args.length; i++) {
+	          args[i] = arguments[i + 1];
+	      }
+	      // Store and register the task
+	      var task = { callback: callback, args: args };
+	      tasksByHandle[nextHandle] = task;
+	      registerImmediate(nextHandle);
+	      return nextHandle++;
+	    }
+
+	    function clearImmediate(handle) {
+	        delete tasksByHandle[handle];
+	    }
+
+	    function run(task) {
+	        var callback = task.callback;
+	        var args = task.args;
+	        switch (args.length) {
+	        case 0:
+	            callback();
+	            break;
+	        case 1:
+	            callback(args[0]);
+	            break;
+	        case 2:
+	            callback(args[0], args[1]);
+	            break;
+	        case 3:
+	            callback(args[0], args[1], args[2]);
+	            break;
+	        default:
+	            callback.apply(undefined, args);
+	            break;
+	        }
+	    }
+
+	    function runIfPresent(handle) {
+	        // From the spec: "Wait until any invocations of this algorithm started before this one have completed."
+	        // So if we're currently running a task, we'll need to delay this invocation.
+	        if (currentlyRunningATask) {
+	            // Delay by doing a setTimeout. setImmediate was tried instead, but in Firefox 7 it generated a
+	            // "too much recursion" error.
+	            setTimeout(runIfPresent, 0, handle);
+	        } else {
+	            var task = tasksByHandle[handle];
+	            if (task) {
+	                currentlyRunningATask = true;
+	                try {
+	                    run(task);
+	                } finally {
+	                    clearImmediate(handle);
+	                    currentlyRunningATask = false;
+	                }
+	            }
+	        }
+	    }
+
+	    function installNextTickImplementation() {
+	        registerImmediate = function(handle) {
+	            process.nextTick(function () { runIfPresent(handle); });
+	        };
+	    }
+
+	    function canUsePostMessage() {
+	        // The test against `importScripts` prevents this implementation from being installed inside a web worker,
+	        // where `global.postMessage` means something completely different and can't be used for this purpose.
+	        if (global.postMessage && !global.importScripts) {
+	            var postMessageIsAsynchronous = true;
+	            var oldOnMessage = global.onmessage;
+	            global.onmessage = function() {
+	                postMessageIsAsynchronous = false;
+	            };
+	            global.postMessage("", "*");
+	            global.onmessage = oldOnMessage;
+	            return postMessageIsAsynchronous;
+	        }
+	    }
+
+	    function installPostMessageImplementation() {
+	        // Installs an event handler on `global` for the `message` event: see
+	        // * https://developer.mozilla.org/en/DOM/window.postMessage
+	        // * http://www.whatwg.org/specs/web-apps/current-work/multipage/comms.html#crossDocumentMessages
+
+	        var messagePrefix = "setImmediate$" + Math.random() + "$";
+	        var onGlobalMessage = function(event) {
+	            if (event.source === global &&
+	                typeof event.data === "string" &&
+	                event.data.indexOf(messagePrefix) === 0) {
+	                runIfPresent(+event.data.slice(messagePrefix.length));
+	            }
+	        };
+
+	        if (global.addEventListener) {
+	            global.addEventListener("message", onGlobalMessage, false);
+	        } else {
+	            global.attachEvent("onmessage", onGlobalMessage);
+	        }
+
+	        registerImmediate = function(handle) {
+	            global.postMessage(messagePrefix + handle, "*");
+	        };
+	    }
+
+	    function installMessageChannelImplementation() {
+	        var channel = new MessageChannel();
+	        channel.port1.onmessage = function(event) {
+	            var handle = event.data;
+	            runIfPresent(handle);
+	        };
+
+	        registerImmediate = function(handle) {
+	            channel.port2.postMessage(handle);
+	        };
+	    }
+
+	    function installReadyStateChangeImplementation() {
+	        var html = doc.documentElement;
+	        registerImmediate = function(handle) {
+	            // Create a <script> element; its readystatechange event will be fired asynchronously once it is inserted
+	            // into the document. Do so, thus queuing up the task. Remember to clean up once it's been called.
+	            var script = doc.createElement("script");
+	            script.onreadystatechange = function () {
+	                runIfPresent(handle);
+	                script.onreadystatechange = null;
+	                html.removeChild(script);
+	                script = null;
+	            };
+	            html.appendChild(script);
+	        };
+	    }
+
+	    function installSetTimeoutImplementation() {
+	        registerImmediate = function(handle) {
+	            setTimeout(runIfPresent, 0, handle);
+	        };
+	    }
+
+	    // If supported, we should attach to the prototype of global, since that is where setTimeout et al. live.
+	    var attachTo = Object.getPrototypeOf && Object.getPrototypeOf(global);
+	    attachTo = attachTo && attachTo.setTimeout ? attachTo : global;
+
+	    // Don't get fooled by e.g. browserify environments.
+	    if ({}.toString.call(global.process) === "[object process]") {
+	        // For Node.js before 0.9
+	        installNextTickImplementation();
+
+	    } else if (canUsePostMessage()) {
+	        // For non-IE10 modern browsers
+	        installPostMessageImplementation();
+
+	    } else if (global.MessageChannel) {
+	        // For web workers, where supported
+	        installMessageChannelImplementation();
+
+	    } else if (doc && "onreadystatechange" in doc.createElement("script")) {
+	        // For IE 6–8
+	        installReadyStateChangeImplementation();
+
+	    } else {
+	        // For older browsers
+	        installSetTimeoutImplementation();
+	    }
+
+	    attachTo.setImmediate = setImmediate;
+	    attachTo.clearImmediate = clearImmediate;
+	}(typeof self === "undefined" ? typeof global === "undefined" ? this : global : self));
+
+	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(2)))
+
+/***/ }),
+/* 6 */
+/***/ (function(module, exports) {
 
 	// shim for es5
 	var slice = [].slice;
@@ -1092,9 +1313,9 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 
-/***/ },
-/* 6 */
-/***/ function(module, exports) {
+/***/ }),
+/* 7 */
+/***/ (function(module, exports) {
 
 	// http://stackoverflow.com/questions/1354064/how-to-convert-characters-to-html-entities-using-plain-javascript
 	var entities = {
@@ -1357,9 +1578,9 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	module.exports  = entities;
 
-/***/ },
-/* 7 */
-/***/ function(module, exports) {
+/***/ }),
+/* 8 */
+/***/ (function(module, exports) {
 
 	
 	module.exports = {
@@ -1368,36 +1589,36 @@ return /******/ (function(modules) { // webpackBootstrap
 	  'PRECOMPILE': false
 	}
 
-/***/ },
-/* 8 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ }),
+/* 9 */
+/***/ (function(module, exports, __webpack_require__) {
 
 	/**
 	 * render for component in browsers
 	 */
 
 	var env = __webpack_require__(1);
-	var Lexer = __webpack_require__(9);
-	var Parser = __webpack_require__(10);
-	var config = __webpack_require__(7);
+	var Lexer = __webpack_require__(10);
+	var Parser = __webpack_require__(12);
+	var config = __webpack_require__(8);
 	var _ = __webpack_require__(3);
-	var extend = __webpack_require__(12);
-	var shared = __webpack_require__(13);
+	var extend = __webpack_require__(14);
+	var shared = __webpack_require__(15);
 	var combine = {};
 	if(env.browser){
-	  var dom = __webpack_require__(15);
-	  var walkers = __webpack_require__(17);
-	  var Group = __webpack_require__(21);
+	  var dom = __webpack_require__(17);
+	  var walkers = __webpack_require__(19);
+	  var Group = __webpack_require__(24);
 	  var doc = dom.doc;
-	  combine = __webpack_require__(19);
+	  combine = __webpack_require__(22);
 	}
-	var events = __webpack_require__(23);
-	var Watcher = __webpack_require__(24);
-	var parse = __webpack_require__(14);
-	var filter = __webpack_require__(25);
-	var ERROR = __webpack_require__(16).ERROR;
-	var nodeCursor = __webpack_require__(22);
-	var shared = __webpack_require__(13);
+	var events = __webpack_require__(26);
+	var Watcher = __webpack_require__(27);
+	var parse = __webpack_require__(16);
+	var filter = __webpack_require__(28);
+	var ERROR = __webpack_require__(18).ERROR;
+	var nodeCursor = __webpack_require__(25);
+	var shared = __webpack_require__(15);
 	var NOOP = function(){};
 
 
@@ -1436,7 +1657,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    } 
 
 	    if(mountNode){
-	      cursor = nodeCursor(mountNode.firstChild)
+	      cursor = nodeCursor(mountNode.firstChild, mountNode)
 	      delete definition.mountNode
 	    }else{
 	      cursor = options.cursor
@@ -1588,9 +1809,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var directives = this._directives, directive;
 	    if(cfg == null){
 	      if( type === 'string' ){
-	        if(directive = directives[name]) return directive;
+	        if( directive = directives[name] ) return directive;
 	        else{
-
 	          var regexp = directives.__regexp__;
 	          for(var i = 0, len = regexp.length; i < len ; i++){
 	            directive = regexp[i];
@@ -1974,7 +2194,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	    if(computedProperty) {
 	      if(computedProperty.set) return computedProperty.set(this, value);
-	      else _.log("the computed '" + path + "' don't define the set function,  assign data."+path + " altnately", "warn" )
 	    }
 	    data[path] = value;
 	    return value;
@@ -2004,12 +2223,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 
-/***/ },
-/* 9 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ }),
+/* 10 */
+/***/ (function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(3);
-	var config = __webpack_require__(7);
+	var config = __webpack_require__(8);
+	var createFSM = __webpack_require__(11);
 
 	// some custom tag  will conflict with the Lexer progress
 	var conflictTag = {"}": "{", "]": "["}, map1, map2;
@@ -2038,12 +2258,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	    this.markEnd = config.END;
 	  }
 
-	  this.input = (input||"").trim();
+	  this.input = input||"";
 	  this.opts = opts || {};
+	  this.syntaxSets = createFSM();
+	  this.state = createFSM();
 	  this.map = this.opts.mode !== 2?  map1: map2;
-	  this.states = ["INIT"];
+	  this.syntaxSets.enter('INIT');
 	  if(opts && opts.expression){
-	     this.states.push("JST");
+	     this.syntaxSets.enter('JST');
 	     this.expression = true;
 	  }
 	}
@@ -2052,17 +2274,19 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 	lo.lex = function(str){
-	  str = (str || this.input).trim();
-	  var tokens = [], split, test,mlen, token, state;
+	  str = str || this.input
+	  var leadingWhitespaces = /^\s*/.exec(str)
+	  str = str.trim();
+	  var tokens = [], split, test,mlen, token, syntax;
 	  this.input = str, 
 	  this.marks = 0;
-	  // init the pos index
-	  this.index=0;
+	  // fix the pos offset caused by trim
+	  this.index=leadingWhitespaces ? leadingWhitespaces[0].length : 0;
 	  var i = 0;
 	  while(str){
 	    i++
-	    state = this.state();
-	    split = this.map[state] 
+	    syntax = this.syntaxSets.get();
+	    split = this.map[syntax];
 	    test = split.TRUNK.exec(str);
 	    if(!test){
 	      this.error('Unrecoginized Token');
@@ -2076,7 +2300,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }
 
 	  tokens.push({type: 'EOF'});
-
+	  
 	  return tokens;
 	}
 
@@ -2105,30 +2329,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	  if(!marched){ // in ie lt8 . sub capture is "" but ont 
 	    switch(str.charAt(0)){
 	      case "<":
-	        this.enter("TAG");
+	        this.syntaxSets.enter("TAG");
 	        break;
 	      default:
-	        this.enter("JST");
+	        this.syntaxSets.enter("JST");
 	        break;
 	    }
 	  }
 	  return token;
 	}
-	lo.enter = function(state){
-	  this.states.push(state)
-	  return this;
-	}
-
-	lo.state = function(){
-	  var states = this.states;
-	  return states[states.length-1];
-	}
-
-	lo.leave = function(state){
-	  var states = this.states;
-	  if(!state || states[states.length-1] === state) states.pop()
-	}
-
 
 	Lexer.setup = function(){
 	  macro.END = config.END;
@@ -2242,31 +2451,28 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	  // mode1's JST ENTER RULE
 	  ENTER_JST: [/[^\x00<]*?(?={BEGIN})/, function(all){
-	    this.enter('JST');
+	    this.syntaxSets.enter('JST');
 	    if(all) return {type: 'TEXT', value: all}
 	  }],
 
 	  // mode2's JST ENTER RULE
 	  ENTER_JST2: [/[^\x00]*?(?={BEGIN})/, function(all){
-	    this.enter('JST');
+	    this.syntaxSets.enter('JST');
 	    if(all) return {type: 'TEXT', value: all}
 	  }],
 
 	  ENTER_TAG: [/[^\x00]*?(?=<[\w\/\!])/, function(all){ 
-	    this.enter('TAG');
+	    this.syntaxSets.enter('TAG');
 	    if(all) return {type: 'TEXT', value: all}
 	  }],
 
 	  // {~ <div></div> }
 	  BODY_END: [/{SPACE}*{END}/,  function(val){
+	    var sets = this.syntaxSets.all(), slen = sets.length;
 
-	    var states = this.states, slen = states.length;
-
-
-	    if(states[slen-2] === 'JST' ){
-
-	      this.leave('INIT');
-	      this.leave('JST');
+	    if(sets[slen-2] === 'JST'){
+	      this.syntaxSets.leave('INIT');
+	      this.syntaxSets.leave('JST');
 	      return {type: 'END'}
 	    }
 
@@ -2285,18 +2491,18 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return {type: 'TAG_OPEN', value: one}
 	  }, 'TAG'],
 	  TAG_CLOSE: [/<\/({NAME})[\r\n\f\t ]*>/, function(all, one){
-	    this.leave();
+	    this.syntaxSets.leave();
 	    return {type: 'TAG_CLOSE', value: one }
 	  }, 'TAG'],
 
 	    // mode2's JST ENTER RULE
 	  TAG_ENTER_JST: [/(?={BEGIN})/, function(){
-	    this.enter('JST');
+	    this.syntaxSets.enter('JST');
 	  }, 'TAG'],
 
 
 	  TAG_PUNCHOR: [/[\>\/=&]/, function(all){
-	    if(all === '>') this.leave();
+	    if(all === '>') this.syntaxSets.leave();
 	    return {type: all, value: all }
 	  }, 'TAG'],
 
@@ -2308,13 +2514,14 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	  TAG_SPACE: [/{SPACE}+/, null, 'TAG'],
 	  TAG_COMMENT: [/<\!--([^\x00]*?)--\>/, function(all){
-	    this.leave()
+	    this.syntaxSets.leave()
 	    // this.leave('TAG')
 	  } ,'TAG'],
 
 	  // 3. JST
 	  // -------------------
 	  JST_OPEN: ['{BEGIN}#{SPACE}*({IDENT})', function(all, name){
+	    this.state.enter('JST_OPEN');
 	    return {
 	      type: 'OPEN',
 	      value: name
@@ -2322,7 +2529,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }, 'JST'],
 	  // title = {~ <div></div>}
 	  JST_BODY_OPEN: ['{BEGIN}~{SPACE}*', function(all, name){
-	    this.enter('INIT');
+	    this.syntaxSets.enter('INIT');
 	    return {
 	      type: 'BODY_OPEN',
 	      value: name
@@ -2331,8 +2538,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	  JST_LEAVE: [/{END}/, function(all){
 	    if(this.markEnd === all && this.expression) return {type: this.markEnd, value: this.markEnd};
 	    if(!this.markEnd || !this.marks ){
-	      this.firstEnterStart = false;
-	      this.leave('JST');
+	      this.state.leave('JST_OPEN');
+	      this.state.leave('JST_EXPR_OPEN');
+	      this.syntaxSets.leave('JST');
 	      return {type: 'END'}
 	    }else{
 	      this.marks--;
@@ -2340,24 +2548,23 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	  }, 'JST'],
 	  JST_CLOSE: [/{BEGIN}\s*\/({IDENT})\s*{END}/, function(all, one){
-	    this.leave('JST');
+	    this.syntaxSets.leave('JST');
 	    return {
 	      type: 'CLOSE',
 	      value: one
 	    }
 	  }, 'JST'],
 	  JST_COMMENT: [/{BEGIN}\!([^\x00]*?)\!{END}/, function(){
-	    this.leave();
+	    this.syntaxSets.leave();
 	  }, 'JST'],
 	  JST_EXPR_OPEN: ['{BEGIN}',function(all, one){
 	    if(all === this.markStart){
 	      if(this.expression) return { type: this.markStart, value: this.markStart };
-	      if(this.firstEnterStart || this.marks){
+	      if(this.state.is('JST_OPEN') || this.state.is('JST_EXPR_OPEN') || this.marks){
 	        this.marks++
-	        this.firstEnterStart = false;
 	        return { type: this.markStart, value: this.markStart };
 	      }else{
-	        this.firstEnterStart = true;
+	        this.state.enter('JST_EXPR_OPEN');
 	      }
 	    }
 	    return {
@@ -2389,15 +2596,52 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = Lexer;
 
 
-/***/ },
-/* 10 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ }),
+/* 11 */
+/***/ (function(module, exports) {
+
+	// create a simple finite state machine
+	function createFSM() {
+	  return {
+	    _stack: [],
+	    enter: function(state) {
+	      this._stack.push(state);
+	      return this;
+	    },
+	    leave: function(state) {
+	      var stack = this._stack;
+	      // if state is falsy or state equals to last item in stack
+	      if(!state || stack[stack.length-1] === state) {
+	        stack.pop();
+	      }
+	      return this;
+	    },
+	    get: function() {
+	      var stack = this._stack;
+	      return stack[stack.length - 1];
+	    },
+	    all: function() {
+	      return this._stack;
+	    },
+	    is: function(state) {
+	      var stack = this._stack;
+	      return stack[stack.length - 1] === state
+	    }
+	  }
+	}
+
+	module.exports = createFSM;
+
+
+/***/ }),
+/* 12 */
+/***/ (function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(3);
 
-	var config = __webpack_require__(7);
-	var node = __webpack_require__(11);
-	var Lexer = __webpack_require__(9);
+	var config = __webpack_require__(8);
+	var node = __webpack_require__(13);
+	var Lexer = __webpack_require__(10);
 	var varName = _.varName;
 	var ctxName = _.ctxName;
 	var extName = _.extName;
@@ -2695,6 +2939,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	  variable = this.match('IDENT').value;
 
 	  if(this.eat('IDENT', 'by')){
+	    if(this.eat('IDENT', variable+'_key')){
+	      this.error('can not track by ' + variable + '_key in list statement');
+	    }
 	    if(this.eat('IDENT',variable + '_index')){
 	      track = true;
 	    }else{
@@ -3132,9 +3379,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = Parser;
 
 
-/***/ },
-/* 11 */
-/***/ function(module, exports) {
+/***/ }),
+/* 13 */
+/***/ (function(module, exports) {
 
 	module.exports = {
 	  element: function(name, attrs, children){
@@ -3202,9 +3449,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 
-/***/ },
-/* 12 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ }),
+/* 14 */
+/***/ (function(module, exports, __webpack_require__) {
 
 	// (c) 2010-2014 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
 	// Backbone may be freely distributed under the MIT license.
@@ -3302,14 +3549,14 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 
-/***/ },
-/* 13 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ }),
+/* 15 */
+/***/ (function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(3);
-	var config = __webpack_require__(7);
-	var parse = __webpack_require__(14);
-	var node = __webpack_require__(11);
+	var config = __webpack_require__(8);
+	var parse = __webpack_require__(16);
+	var node = __webpack_require__(13);
 
 
 	function initDefinition(context, definition, beforeConfig){
@@ -3455,13 +3702,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	  prepareAttr: prepareAttr
 	}
 
-/***/ },
-/* 14 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ }),
+/* 16 */
+/***/ (function(module, exports, __webpack_require__) {
 
 	var exprCache = __webpack_require__(1).exprCache;
 	var _ = __webpack_require__(3);
-	var Parser = __webpack_require__(10);
+	var Parser = __webpack_require__(12);
 	module.exports = {
 	  expression: function(expr, simple){
 	    // @TODO cache
@@ -3477,9 +3724,9 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 
-/***/ },
-/* 15 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ }),
+/* 17 */
+/***/ (function(module, exports, __webpack_require__) {
 
 	/*jshint -W082 */ 
 
@@ -3498,7 +3745,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	var dom = module.exports;
 	var env = __webpack_require__(1);
 	var _ = __webpack_require__(3);
-	var consts = __webpack_require__(16);
+	var consts = __webpack_require__(18);
 	var tNode = document.createElement('div')
 	var addEvent, removeEvent;
 	var noop = function(){}
@@ -3876,9 +4123,9 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 
-/***/ },
-/* 16 */
-/***/ function(module, exports) {
+/***/ }),
+/* 18 */
+/***/ (function(module, exports) {
 
 	module.exports = {
 	  'COMPONENT_TYPE': 1,
@@ -3900,46 +4147,41 @@ return /******/ (function(modules) { // webpackBootstrap
 	    'INIT': { init: !0 },
 	    'SYNC': { sync: !0 },
 	    'FORCE': { force: !0 }
+	  },
+	  'DIFF': {
+	    'REMOVE_ALL': 1,
+	    'ADD_ALL': 0
 	  }
 	}
 
 
-/***/ },
-/* 17 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ }),
+/* 19 */
+/***/ (function(module, exports, __webpack_require__) {
 
-	var diffArray = __webpack_require__(18).diffArray;
-	var combine = __webpack_require__(19);
-	var animate = __webpack_require__(20);
-	var Parser = __webpack_require__(10);
-	var node = __webpack_require__(11);
-	var Group = __webpack_require__(21);
-	var dom = __webpack_require__(15);
+	var diffArray = __webpack_require__(20).diffArray;
+	var combine = __webpack_require__(22);
+	var animate = __webpack_require__(23);
+	var Parser = __webpack_require__(12);
+	var node = __webpack_require__(13);
+	var Group = __webpack_require__(24);
+	var dom = __webpack_require__(17);
 	var _ = __webpack_require__(3);
-	var consts = __webpack_require__(16);
+	var consts = __webpack_require__(18);
 	var OPTIONS = consts.OPTIONS;
 	var ERROR = consts.ERROR;
 	var MSG = consts.MSG;
-	var nodeCursor = __webpack_require__(22);
-	var config = __webpack_require__(7)
-	var shared = __webpack_require__(13);
+	var nodeCursor = __webpack_require__(25);
+	var config = __webpack_require__(8)
+	var shared = __webpack_require__(15);
+	var dconst = __webpack_require__(18).DIFF
 
 
 
 	var walkers = module.exports = {};
 
-
-
 	// used in walkers.list
 	// remove block in group
-	function removeRange(index, rlen, children){
-	  for(var j = 1; j <= rlen; j++){ //removed
-	    var removed = children[ index + j ];
-	    if(removed) removed.destroy(true);
-	  }
-	  children.splice(index+1, rlen);
-	}
-
 
 	walkers.list = function(ast, options){
 
@@ -3968,31 +4210,66 @@ return /******/ (function(modules) { // webpackBootstrap
 	    extraObj = _.createObject(extra);
 	    keyOf = function( item, index ){
 	      extraObj[ variable ] = item;
-	      extraObj[ indexName ] = index;
 	      // @FIX keyName
 	      return track.get( self, extraObj );
 	    }
 	  }
 
-	  function addRange(index, end, newList, rawNewValue){
+	  function removeRange(index, rlen, children, oldKeyMap){
+	    for(var j = 1; j <= rlen; j++){ //removed
+	      var removed = children[ index + j ];
+	      if( oldKeyMap  ){
+	        var mayBeReuse = keyOf(removed.data[variable]);
+	        // 将被复用
+	        if(typeof oldKeyMap[mayBeReuse] !== 'undefined') {
+	          if(oldKeyMap[mayBeReuse]!==null){//hasn't already moved
+	            removed.inject(false);
+	          }
+	          continue;
+	        }
+	      }
+	      removed.destroy(true);
+	    }
+	    children.splice(index+1, rlen);
+	  }
+
+	  function addRange(index, end, newList, rawNewValue, oldKeyMap){
 	    for(var o = index; o < end; o++){ //add
 	      // prototype inherit
 	      var item = newList[o];
-	      var data = _.createObject(extra);
-	      updateTarget(data, o, item, rawNewValue);
+	      var section = null;
 
-	      var section = self.$compile(ast.body, {
-	        extra: data,
-	        namespace:namespace,
-	        record: true,
-	        outer: options.outer,
-	        cursor: cursor
-	      })
-	      section.data = data;
+	      if(oldKeyMap){
+	        var key = keyOf( item );
+	        section = oldKeyMap[key];
+	        // 只能复用一次
+	        if(section) oldKeyMap[key] = null;
+	        // 如果在原来的节点中可以找到，则复用原节点
+	      }
+	      var hasReusedSection = !!section;
+
+	      if(!hasReusedSection){
+	        var data = _.createObject(extra);
+	        updateTarget(data, o, item, rawNewValue);
+	        section = self.$compile(ast.body, {
+	          extra: data,
+	          namespace:namespace,
+	          record: true,
+	          outer: options.outer,
+	          cursor: cursor
+	        })
+	        section.data = data;
+	      }else{
+	        // means track reused section
+	        updateTarget(section.data, o, item)
+	      }
+
+
 	      // autolink
 	      var insert =  combine.last(group.get(o));
-	      if(insert.parentNode && !cursor ){
-	        animate.inject(combine.node(section),insert, 'after');
+	      if(insert.parentNode && !(cursor && cursor.node) ){
+	        // hasReusedSection
+	        (hasReusedSection?dom:animate).inject(combine.node(section),insert, 'after');
 	      }
 	      // insert.parentNode.insertBefore(combine.node(section), insert.nextSibling);
 	      children.splice( o + 1 , 0, section);
@@ -4000,14 +4277,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }
 
 	  function updateTarget(target, index, item, rawNewValue){
-	      target[ indexName ] = index;
-	      if( rawNewValue ){
-	        target[ keyName ] = item;
-	        target[ variable ] = rawNewValue[ item ];
-	      }else{
-	        target[ variable ] = item;
-	        target[keyName] = null
-	      }
+	    target[ indexName ] = index;
+	    if( rawNewValue ){
+	      target[ keyName ] = item;
+	      target[ variable ] = rawNewValue[ item ];
+	    }else{
+	      target[ variable ] = item;
+	      target[keyName] = null
+	    }
 	  }
 
 
@@ -4018,39 +4295,24 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	  }
 
-	  function updateLD(newList, oldList, splices , rawNewValue ){
+	  function updateLD(newList, oldList, steps, rawNewValue ){
 
 	    var cur = placeholder;
 	    var m = 0, len = newList.length;
 
-	    if(!splices && (len !==0 || oldList.length !==0)  ){
-	      splices = diffArray(newList, oldList, true);
+	    if(!steps && (len !==0 || oldList.length !==0)  ){
+	      steps = diffArray(newList, oldList, true);
 	    }
 
-	    if(!splices || !splices.length) return;
+	    if(!steps || !steps.length) return;
+	      
+	    for(var i = 0; i < steps.length; i++){ //init
 
-	    for(var i = 0; i < splices.length; i++){ //init
-	      var splice = splices[i];
+	      var splice = steps[i];
 	      var index = splice.index; // beacuse we use a comment for placeholder
 	      var removed = splice.removed;
 	      var add = splice.add;
 	      var rlen = removed.length;
-	      // for track
-	      if( track && rlen && add ){
-	        var minar = Math.min(rlen, add);
-	        var tIndex = 0;
-	        while(tIndex < minar){
-	          if( keyOf(newList[index], index) !== keyOf( removed[0], index ) ){
-	            removeRange(index, 1, children)
-	            addRange(index, index+1, newList, rawNewValue)
-	          }
-	          removed.shift();
-	          add--;
-	          index++;
-	          tIndex++;
-	        }
-	        rlen = removed.length;
-	      }
 	      // update
 	      updateRange(m, index, newList, rawNewValue);
 
@@ -4086,13 +4348,42 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	  }
 
-	  function update(newValue, oldValue, splices){
+
+
+	  // oldKeyMap: 复用原来的节点
+	  function updateTrack( newList, oldList, steps,  rawNewValue, oldKeyMap ){
+	    
+	    for(var i =0, slen = steps.length; i < slen ;i++){
+	      var step = steps[i];
+	      switch( step.mode){
+	        case 0 : //remove
+	          removeRange(step.index, step.len, group.children, oldKeyMap);
+	          break;
+	        case 1 : //insert
+	          addRange(step.index, step.index + step.len, newList, rawNewValue, oldKeyMap )
+	          break;
+	      }
+	    }     
+	    var children = group.children;
+	    for(var j=1, len = children.length; j < len; j++){
+	      var child = children[j];
+	      if( child ){
+	        child.data[variable] = newList[j-1];
+	        child.data[indexName] = j-1
+	      }
+	    }
+
+	    
+	  }
+
+	  function update(newValue, oldValue, steps, oldKeyMap, isSimple){
 
 	    var nType = _.typeOf( newValue );
 	    var oType = _.typeOf( oldValue );
 
 	    var newList = getListFromValue( newValue, nType );
 	    var oldList = getListFromValue( oldValue, oType );
+
 
 	    var rawNewValue;
 
@@ -4101,37 +4392,60 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var olen = oldList && oldList.length;
 
 	    // if previous list has , we need to remove the altnated section.
-	    if( !olen && nlen && group.get(1) ){
-	      var altGroup = children.pop();
-	      if(altGroup.destroy)  altGroup.destroy(true);
-	    }
 
 	    if( nType === 'object' ) rawNewValue = newValue;
 
-	    if(track === true){
-	      updateSimple( newList, oldList,  rawNewValue );
-	    }else{
-	      updateLD( newList, oldList, splices, rawNewValue );
+	    if(!olen && nlen){
+	      if(group.get(1)){
+	        var altGroup = children.pop();
+	        if(altGroup.destroy)  altGroup.destroy(true);
+	      } 
+	      return addRange(0, nlen, newList, rawNewValue )
+	    }
+	    // @ {#list} {#else}
+	    if( !nlen ){
+	      if(olen){
+	        removeRange(0, olen, group.children) 
+	      }
+	      if(alternate && alternate.length){
+	        var section = self.$compile(alternate, {
+	          extra: extra,
+	          record: true,
+	          outer: options.outer,
+	          namespace: namespace
+	        })
+	        children.push(section);
+	        if(placeholder.parentNode){
+	          animate.inject(combine.node(section), placeholder, 'after');
+	        }
+	      }
+	      return;
 	    }
 
-	    // @ {#list} {#else}
-	    if( !nlen && alternate && alternate.length){
-	      var section = self.$compile(alternate, {
-	        extra: extra,
-	        record: true,
-	        outer: options.outer,
-	        namespace: namespace
-	      })
-	      children.push(section);
-	      if(placeholder.parentNode){
-	        animate.inject(combine.node(section), placeholder, 'after');
+	    if(track){
+	      
+	      if( track === true || (isSimple && !steps.length) ){ // track 可能走simple update
+	        updateSimple( newList, oldList,  rawNewValue );
+	      }else{
+	        if(oldKeyMap){
+	          for(var i in oldKeyMap){
+	            var index= oldKeyMap[i];
+	            if(children[index + 1]) oldKeyMap[i]= children[index + 1];
+	          }
+	        }
+	        updateTrack( newList, oldList , steps, rawNewValue, oldKeyMap);
 	      }
+	      
+	    }else{
+	      updateLD( newList, oldList, steps, rawNewValue );
 	    }
+
 	  }
 
-	  this.$watch(ast.sequence, update, {
-	    init: true,
-	    diff: track !== true ,
+	  this.$watch(ast.sequence, update, { 
+	    init: true, 
+	    keyOf: keyOf,
+	    diff: track!==true,
 	    deep: true
 	  });
 	  //@FIXIT, beacuse it is sync process, we can
@@ -4377,14 +4691,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	  if(tag === 'svg') namespace = "svg";
 	  // @Deprecated: may be removed in next version, use {#inc } instead
 
-	  if( children && children.length ){
+	  if( children && children.length && !hasStopDirective( attrs ) ){
 
 	    var subMountNode = mountNode? mountNode.firstChild: null;
 	    group = this.$compile(children, {
 	      extra: extra ,
 	      outer: options.outer,
 	      namespace: namespace,
-	      cursor: nodeCursor(subMountNode, mountNode)
+	      cursor: nodeCursor( subMountNode, mountNode )
 	    });
 	  }
 
@@ -4436,6 +4750,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }
 	}
 
+
+
 	walkers.component = function(ast, options){
 	  var attrs = ast.attrs,
 	    Component = options.Component,
@@ -4479,7 +4795,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 
 	    // title = {~ <h2>{name}</h2>}
-	    if(value.type === 'body'){
+	    if(value && value.type === 'body'){
 	      value = _.getCompileFn(value.body, this, {
 	        record: true,
 	        namespace: namespace,
@@ -4657,7 +4973,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	      }
 	    }
 	  }
-
 	}
 
 	function insertPlaceHolder(placeholder, cursor){
@@ -4666,29 +4981,30 @@ return /******/ (function(modules) { // webpackBootstrap
 	    else if(cursor.prev) {
 	      dom.inject( placeholder , cursor.prev,'after')
 	      cursor.prev = placeholder;
+	    }else if(cursor.parent){
+	      dom.inject( placeholder , cursor.parent)
+	      cursor.prev = placeholder
 	    }
 	  }
 	}
 
 
-/***/ },
-/* 18 */
-/***/ function(module, exports, __webpack_require__) {
+	// @FIXIT
+	function hasStopDirective(attrs){
+	  for( var i = attrs.length; i--; ){
+	    var attr = attrs[i];
+	    if(attr.name === 'r-html') return true;
+	  }
+	}
+
+
+/***/ }),
+/* 20 */
+/***/ (function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(3);
+	var diffTrack = __webpack_require__(21);
 
-	function simpleDiff(now, old){
-	  var nlen = now.length;
-	  var olen = old.length;
-	  if(nlen !== olen){
-	    return true;
-	  }
-	  for(var i = 0; i < nlen ; i++){
-	    if(now[i] !== old[i]) return  true;
-	  }
-	  return false
-
-	}
 
 	function equals(a,b){
 	  return a === b;
@@ -4724,7 +5040,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	// arr2 - new array
 	// arr1 - old array
 	function diffArray(arr2, arr1, diff, diffFn) {
-	  if(!diff) return simpleDiff(arr2, arr1);
+	  if(!diff) return _.simpleDiff(arr2, arr1);
 	  var matrix = ld(arr1, arr2, diffFn)
 	  var n = arr1.length;
 	  var i = n;
@@ -4821,8 +5137,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	// diffObject
 	// ----
 	// test if obj1 deepEqual obj2
-	function diffObject( now, last, diff ){
-
+	function diffObject( now, last, diff, keyOf, lastTrackInfo ){
 
 	  if(!diff){
 
@@ -4836,8 +5151,8 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	  }else{
 
-	    var nKeys = _.keys(now);
-	    var lKeys = _.keys(last);
+	    var nValues = _.values( now );
+	    var lValues = _.values( last );
 
 	    /**
 	     * [description]
@@ -4845,31 +5160,235 @@ return /******/ (function(modules) { // webpackBootstrap
 	     * @param  {[type]} b){                   return now[b] [description]
 	     * @return {[type]}      [description]
 	     */
-	    return diffArray(nKeys, lKeys, diff, function(a, b){
-	      return now[b] === last[a];
-	    });
+	    if(typeof keyOf === 'function'){
+	      return diffTrack( nValues, lValues, keyOf, lastTrackInfo);
+	    }
+	    return diffArray( nValues, lValues, diff);
 
 	  }
 
 	  return false;
-
-
 	}
+
+
+
 
 	module.exports = {
 	  diffArray: diffArray,
-	  diffObject: diffObject
+	  diffObject: diffObject,
+	  diffTrack: diffTrack
 	}
 
-/***/ },
-/* 19 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ }),
+/* 21 */
+/***/ (function(module, exports, __webpack_require__) {
 
-	// some nested  operation in ast 
+	
+	var _ = __webpack_require__(3);
+
+	var dconst = __webpack_require__(18).DIFF
+	var ADD_ALL = dconst.ADD_ALL
+	var REMOVE_ALL = dconst.REMOVE_ALL
+
+
+	// tracked 与 ls不同， 我们要确保所有被tracked的数据对应的节点是存在的，不能有任何损失
+	function diffTrack( newArr, oldArr, keyOf  ){
+
+	  var olen = oldArr.length;
+	  var nlen = newArr.length;
+
+
+	  var steps = [];
+	  var ret = {
+	    isTrack: true,
+	    steps:steps
+	  }
+
+	  // 确保当存在无法被keyOf的item时，不会死循环
+	  // true 说明 不同
+	  // false 说明 引用相同
+	  if( !_.simpleDiff(newArr, oldArr) ) return ret;
+
+	  ret.dirty = true;
+
+	  if( olen && !nlen ) { // 直接删除所有
+	    createStep( steps, 0,0,olen );
+	    return ret
+	  }
+	  if(nlen && !olen){ //直接添加所有
+	    createStep(steps, 1,0,nlen);
+	    return ret
+	  }
+
+	  // 模拟被真实操作的groups获得真实的下标
+	  var substitute = _.slice( oldArr );
+	  var newTrack = getTrackInfo( newArr, keyOf );
+	  var oldTrack = getTrackInfo( oldArr, keyOf );
+
+	  var newTrackMap = newTrack.trackMap;
+	  var oldTrackMap = oldTrack.trackMap;
+
+	  var oldRemoved = {};
+
+	  // 使用替身数组完成对应操作，模拟DOM操作
+
+	  // i 老数据下标， 
+	  // j 新数组下标
+	  var untrackIndex = 0, 
+	    oldUntracked = oldTrack.untrack, 
+	    oldUntrackedLength = oldUntracked.length;
+
+	  // @FIXIT, 当数组对应的key发生改变，而缓存key其实是一种错误开销
+	  // 暂时将所有untraked的东西都进行删除，实际这是用户的一种错误使用, 可以引发性能开销
+	  if(oldUntrackedLength){
+	    while(oldUntrackedLength--){
+	      var oidx = oldUntracked[oldUntrackedLength];
+	      remove( substitute, steps, oldUntracked[ oldUntrackedLength ] );
+	    }
+	  }
+
+	  var len = substitute.length;
+	  for(var i =0; i<len ;i++){
+	    var oldItem = substitute[i];
+	    var oldKey = keyOf( oldItem);
+
+	    // 将所有其它不存在与
+	    if( !newTrackMap.hasOwnProperty(oldKey) ){
+	      oldRemoved[ oldKey ] = oldTrackMap[ oldKey ]
+	      remove( substitute, steps, i );
+	      i--;
+	      len--;
+	    }
+	    
+	  }
+
+
+	  var jlen = newArr.length;
+	  // i old index
+	  // j new index
+	  var i = 0, j = 0;
+
+	  while( j < jlen  ){
+
+	    //@TODO 大量重复key的计算
+	    if(i >= substitute.length){
+	      insert( substitute, steps, i, 1 );
+	      i++;
+	      j++;
+	      continue
+	    }
+	    var oldKey = keyOf( substitute[i] );
+
+
+	    var item = newArr[ j ];
+	    var key = keyOf( item );
+
+	    if( key === oldKey ){
+	      i++; j++;
+	      continue;
+	    }else{
+	      //先插入一个节点
+	      insert( substitute, steps, i, 1 );
+	      i++;
+	      j++;
+	      continue;
+	    }
+
+	  }
+	  // 说明还未完全处理完毕，因为j条件短了
+
+	  var slen = substitute.length;
+	  if( j < slen ){
+	    createStep(steps, 0, j, slen - j )
+	    for(var k = j; k < slen; k++ ){
+	      var oldKey = keyOf( substitute[k]);
+	      oldRemoved[oldKey] = oldTrackMap[oldKey];
+	    }
+	  }
+	  // 这些将在apply到前台时，被复用
+	  ret.oldKeyMap = oldRemoved;
+
+	  return ret;
+	}
+
+
+	function createStep(steps ,mode, index, len, oldIndex){
+	  len = len || 1;
+	  var last = steps[steps.length-1];
+	  if(last && last.mode === mode  ){
+	    if( (mode === 0 && last.index === index) ||
+	        (mode === 1 && last.index + last.len === index)
+	      ){
+	      last.len++;
+	      return steps;
+	    }
+	    
+	  }
+	  steps.push( {
+	    mode: mode,
+	    index:index,
+	    len: len
+	  } );
+	  return steps;
+
+	}
+
+	function insert( substitute, steps ,index, len){
+
+	  createStep(steps, 1, index, len, steps)
+	  substitute.splice(index, 0, null)
+	}
+
+	function remove( substitute, steps ,index, len ){
+	  createStep(steps, 0, index, len)
+	  substitute.splice(index, 1);
+	}
+
+	// convert <Array>list to 
+	// <Object>{ trackMap: <Map> trackMap, unmark: <Array> indextrackPair}
+
+	function getTrackInfo( list, keyOf ){
+
+	  var untrack = [], trackMap = {};
+
+	  for(var i = 0, len = list.length; i < len ; i++){
+
+	    var item = list[i];
+	    var trackKey = keyOf(list[i]);
+
+	    // can be stringify
+	    if( !trackMap.hasOwnProperty(trackKey) ){
+
+	      trackMap[ trackKey ] = i
+	    }else{
+
+	      untrack.push( i )
+	    }
+	  }
+
+	  return {
+	    untrack: untrack,
+	    trackMap: trackMap
+	  }
+	}
+
+	function isTrackable( key ){
+	  var type = typeof key;
+	  return type !== 'object' && type !== 'undefined';
+	}
+
+
+	module.exports = diffTrack
+
+/***/ }),
+/* 22 */
+/***/ (function(module, exports, __webpack_require__) {
+
+	// some nested  operation in ast
 	// --------------------------------
 
-	var dom = __webpack_require__(15);
-	var animate = __webpack_require__(20);
+	var dom = __webpack_require__(17);
+	var animate = __webpack_require__(23);
 
 	var combine = module.exports = {
 
@@ -4891,7 +5410,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	      for(var i = 0, len = item.length; i < len; i++ ){
 	        node = combine.node(item[i]);
 	        if(Array.isArray(node)){
-	          nodes.push.apply(nodes, node)
+	          for (var j = 0, len1 = node.length; j < len1; j++){
+	            nodes.push(node[j])
+	          }
 	        }else if(node) {
 	          nodes.push(node)
 	        }
@@ -4962,7 +5483,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    if( node && node.nodeType === 1){
 	      if(!all) return node;
 	      elements.push(node);
-	    } 
+	    }
 	  }
 	  return !all? elements[0]: elements;
 	}
@@ -4971,12 +5492,12 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 
-/***/ },
-/* 20 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ }),
+/* 23 */
+/***/ (function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(3);
-	var dom  = __webpack_require__(15);
+	var dom  = __webpack_require__(17);
 	var animate = {};
 	var env = __webpack_require__(1);
 
@@ -5229,12 +5750,12 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	module.exports = animate;
 
-/***/ },
-/* 21 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ }),
+/* 24 */
+/***/ (function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(3);
-	var combine = __webpack_require__(19)
+	var combine = __webpack_require__(22)
 
 	function Group(list){
 	  this.children = list || [];
@@ -5263,9 +5784,9 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 
-/***/ },
-/* 22 */
-/***/ function(module, exports) {
+/***/ }),
+/* 25 */
+/***/ (function(module, exports) {
 
 	function NodeCursor(node, parentNode){
 	  this.node = node;
@@ -5281,18 +5802,18 @@ return /******/ (function(modules) { // webpackBootstrap
 	  return this;
 	}
 
-	module.exports = function(n){ return new NodeCursor(n)}
+	module.exports = function(n, p){ return new NodeCursor(n, p)}
 
 
-/***/ },
-/* 23 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ }),
+/* 26 */
+/***/ (function(module, exports, __webpack_require__) {
 
 	// simplest event emitter 60 lines
 	// ===============================
 	var _ = __webpack_require__(3);
 	var fallbackEvent = {
-	  destory: '$destory',
+	  destroy: '$destroy',
 	  update: '$update',
 	  init: '$init',
 	  config: '$config'
@@ -5392,13 +5913,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = Event;
 
 
-/***/ },
-/* 24 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ }),
+/* 27 */
+/***/ (function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(3);
-	var parseExpression = __webpack_require__(14).expression;
-	var diff = __webpack_require__(18);
+	var parseExpression = __webpack_require__(16).expression;
+	var diff = __webpack_require__(20);
+	var diffTrack = __webpack_require__(21);
 	var diffArray = diff.diffArray;
 	var diffObject = diff.diffObject;
 
@@ -5406,7 +5928,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var methods = {
 	  $watch: function(expr, fn, options){
-	    var get, once, test, rlen, extra = this.__ext__; //records length
+	    var get, once, test, rlen, isStable = false, extra = this.__ext__; //records length
 	    if(!this._watchers) this._watchers = [];
 	    if(!this._watchersForStable) this._watchersForStable = [];
 
@@ -5437,8 +5959,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	        get = expr.bind(this);      
 	      }else{
 	        expr = this.$expression(expr);
-	        get = expr.get;
-	        once = expr.once;
+	        if(_.isExpr(expr)) {
+	          get = expr.get;
+	          once = expr.once;
+	        } else {
+	          get = function(){return expr};
+	          once = true;
+	          isStable = true;
+	        }
 	      }
 	    }
 
@@ -5450,13 +5978,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	      force: options.force,
 	      // don't use ld to resolve array diff
 	      diff: options.diff,
+	      keyOf: options.keyOf,
 	      test: test,
 	      deep: options.deep,
 	      last: options.sync? get(this): options.last
+	      // cache the trackInfo for list tarck.
 	    }
 
 
-	    this[options.stable? '_watchersForStable': '_watchers'].push(watcher);
+	    this[(options.stable || isStable)? '_watchersForStable': '_watchers'].push(watcher);
 	    
 	    rlen = this._records && this._records.length;
 	    if(rlen) this._records[rlen-1].push(watcher)
@@ -5570,12 +6100,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var dirty = false;
 	    if(!watcher) return;
 
-	    var now, last, tlast, tnow,  eq, diff;
+	    var now, last, tlast, tnow,  
+	      eq, diff, keyOf, trackDiff
+	     
 
 	    if(!watcher.test){
 
 	      now = watcher.get(this);
 	      last = watcher.last;
+	      keyOf = watcher.keyOf
 
 	      if(now !== last || watcher.force){
 	        tlast = _.typeOf(last);
@@ -5586,8 +6119,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	        if( !(tnow === 'object' && tlast==='object' && watcher.deep) ){
 	          // Array
 	          if( tnow === 'array' && ( tlast=='undefined' || tlast === 'array') ){
-	            diff = diffArray(now, watcher.last || [], watcher.diff)
-	            if( tlast !== 'array' || diff === true || diff.length ) dirty = true;
+	            if(typeof keyOf === 'function'){
+	              trackDiff = diffTrack(now, watcher.last || [], keyOf )
+	              diff = trackDiff.steps;
+	              if(trackDiff.dirty) dirty = true;
+	            }else{
+	              diff = diffArray(now, watcher.last || [], watcher.diff)
+	            }
+	            
+	            if(!dirty && (tlast !== 'array' || diff === true || diff.length) ) dirty = true;
 	          }else{
 	            eq = _.equals( now, last );
 	            if( !eq || watcher.force ){
@@ -5596,7 +6136,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	            }
 	          }
 	        }else{
-	          diff =  diffObject( now, last, watcher.diff );
+	          diff =  diffObject( now, last, watcher.diff, keyOf  );
+	          if(diff.isTrack){
+	            trackDiff = diff;
+	            diff = trackDiff.steps;
+	          }
 	          if( diff === true || diff.length ) dirty = true;
 	        }
 	      }
@@ -5615,7 +6159,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      }else{
 	        watcher.last = now;
 	      }
-	      watcher.fn.call(this, now, last, diff)
+	      watcher.fn.call(this, now, last, diff, trackDiff && trackDiff.oldKeyMap, trackDiff && trackDiff.dirty)
 	      if(watcher.once) this.$unwatch(watcher)
 	    }
 
@@ -5652,6 +6196,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  },
 	  $update: function(){
 	    var rootParent = this;
+	    if(rootParent.$phase==='destroyed') return this;
 	    do{
 	      if(rootParent.data.isolate || !rootParent.$parent) break;
 	      rootParent = rootParent.$parent;
@@ -5689,9 +6234,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = Watcher;
 
 
-/***/ },
-/* 25 */
-/***/ function(module, exports) {
+/***/ }),
+/* 28 */
+/***/ (function(module, exports) {
 
 	
 	var f = module.exports = {};
@@ -5740,16 +6285,16 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 
-/***/ },
-/* 26 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ }),
+/* 29 */
+/***/ (function(module, exports, __webpack_require__) {
 
 	// Regular
 	var _ = __webpack_require__(3);
-	var dom = __webpack_require__(15);
-	var animate = __webpack_require__(20);
-	var Regular = __webpack_require__(8);
-	var consts = __webpack_require__(16);
+	var dom = __webpack_require__(17);
+	var animate = __webpack_require__(23);
+	var Regular = __webpack_require__(9);
+	var consts = __webpack_require__(18);
 	var namespaces = consts.NAMESPACE;
 	var OPTIONS = consts.OPTIONS
 	var STABLE = OPTIONS.STABLE;
@@ -5758,8 +6303,8 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 
-	__webpack_require__(27);
-	__webpack_require__(28);
+	__webpack_require__(30);
+	__webpack_require__(31);
 
 
 	module.exports = {
@@ -5792,8 +6337,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	    if(typeof value=== 'string'){
 	      value = _.fixObjStr(value)
 	    }
-	    this.$watch(value, function(nvalue){
-	      for(var i in nvalue) if(nvalue.hasOwnProperty(i)){
+	    this.$watch(value, function(nvalue, ovalue){
+	      // remove styleProperty that are no longer in nvalue
+	      for (var i in ovalue) if (ovalue.hasOwnProperty(i) && !nvalue.hasOwnProperty(i)) {
+	        dom.css(elem, i, '');
+	      }
+	      for(i in nvalue) if(nvalue.hasOwnProperty(i)){
 	        dom.css(elem, i, nvalue[i]);
 	      }
 	    },DEEP_STABLE);
@@ -5880,17 +6429,17 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 
-/***/ },
-/* 27 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ }),
+/* 30 */
+/***/ (function(module, exports, __webpack_require__) {
 
 	/**
 	 * event directive  bundle
 	 *
 	 */
 	var _ = __webpack_require__(3);
-	var dom = __webpack_require__(15);
-	var Regular = __webpack_require__(8);
+	var dom = __webpack_require__(17);
+	var Regular = __webpack_require__(9);
 
 	Regular._addProtoInheritCache("event");
 
@@ -5964,17 +6513,17 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }
 	}
 
-/***/ },
-/* 28 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ }),
+/* 31 */
+/***/ (function(module, exports, __webpack_require__) {
 
 	// Regular
 	var _ = __webpack_require__(3);
-	var dom = __webpack_require__(15);
-	var OPTIONS = __webpack_require__(16).OPTIONS
+	var dom = __webpack_require__(17);
+	var OPTIONS = __webpack_require__(18).OPTIONS
 	var STABLE = OPTIONS.STABLE;
 	var hasInput;
-	var Regular = __webpack_require__(8);
+	var Regular = __webpack_require__(9);
 
 	var modelHandlers = {
 	  "text": initText,
@@ -6045,14 +6594,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	    wc.last = this.value;
 	    self.$update();
 	  }
-	  var isChanging = true 
-	  elem.__change = function(){
-	    if(isChanging) return;
-	    isChanging = true;
-	    setTimeout(handler,0)
-	  }
+	  // var isChanging = true 
+	  // var __change = function(){
+	  //   if(isChanging) return;
+	  //   isChanging = true;
+	  //   setTimeout(handler,0)
+	  // }
 
 	  dom.on( elem, "change", handler );
+
 	  
 	  if(parsed.get(self) === undefined && elem.value){
 	    parsed.set(self, elem.value);
@@ -6060,8 +6610,8 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	  return function destroy(){
 	    dom.off(elem, "change", handler);
-	    // remove __change function 
-	    delete elem.__change;
+	    // @TODO remove __change function 
+	    // elem.__change = null;
 	  }
 	}
 
@@ -6072,10 +6622,10 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	  if('throttle' in param){
 	    // <input throttle r-model>
-	    if(param[throttle] === true){
+	    if(param.throttle === true){
 	      throttle = 400;
 	    }else{
-	      throttle = parseInt(param.throttle , 10)
+	      throttle = parseInt(param.throttle, 10)
 	    }
 	  }
 
@@ -6085,7 +6635,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }, STABLE);
 
 	  // @TODO to fixed event
+	  var isCompositing = false;
 	  var handler = function (ev){
+
+	    if(isCompositing) return;
+
+	    isCompositing = false;
+
 	    var that = this;
 	    if(ev.type==='cut' || ev.type==='paste'){
 	      _.nextTick(function(){
@@ -6102,6 +6658,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	  };
 
+	  function onCompositionStart(){
+	    isCompositing = true;
+	  }
+
+	  function onCompositionEnd(ev){
+	    isCompositing = false;
+	    handler.call(this,ev)
+	  }
+
 	  if(throttle && !lazy){
 	    var preHandle = handler, tid;
 	    handler = _.throttle(handler, throttle);
@@ -6114,6 +6679,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	  if(lazy){
 	    dom.on(elem, 'change', handler)
 	  }else{
+
+	    if(typeof CompositionEvent === 'function' ){ //lazy的情况不需要compositionend
+	      elem.addEventListener("compositionstart", onCompositionStart );
+	      elem.addEventListener("compositionend", onCompositionEnd );
+	    }
+
 	    if( hasInput){
 	      elem.addEventListener("input", handler );
 	    }else{
@@ -6192,15 +6763,15 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 
-/***/ },
-/* 29 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ }),
+/* 32 */
+/***/ (function(module, exports, __webpack_require__) {
 
 	var // packages
 	  _ = __webpack_require__(3),
-	 animate = __webpack_require__(20),
-	 dom = __webpack_require__(15),
-	 Regular = __webpack_require__(8);
+	 animate = __webpack_require__(23),
+	 dom = __webpack_require__(17),
+	 Regular = __webpack_require__(9);
 
 
 	var // variables
@@ -6431,11 +7002,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 
-/***/ },
-/* 30 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ }),
+/* 33 */
+/***/ (function(module, exports, __webpack_require__) {
 
-	var Regular = __webpack_require__(8);
+	var Regular = __webpack_require__(9);
 
 	/**
 	 * Timeout Module
@@ -6477,7 +7048,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	Regular.plugin('timeout', TimeoutModule);
 	Regular.plugin('$timeout', TimeoutModule);
 
-/***/ }
+/***/ })
 /******/ ])
 });
 ;
