@@ -829,6 +829,33 @@ describe("Directive extra", function(){
     expect( divs[1].getAttribute('data-update') ).to.equal('hehe')
     done();
   })
+
+  it("directive update should work when link not defined", function( ){
+
+    var container = document.createElement('div');
+    var checked = [], i =0;
+    var Component = Regular.extend({
+
+      name: 'nested'
+
+    }).directive( 'html', {
+
+      update: function(element, value){
+        element.innerHTML = value
+      }
+
+    })
+
+    var component = new Component({
+      template: '<div html={value} ref=container ></div>',
+      data: {
+        value: 'Hello'
+      }
+    })
+
+    expect( component.$refs.container.innerHTML ).to.equal('Hello')
+
+  })
 })
 
 // describe('the atrributeValue with the string type is valid in most buildin directive', function(){
