@@ -1826,6 +1826,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        cfg.regexp = name;
 	        directives.__regexp__.push(cfg)
 	      }
+	      if(typeof cfg.link !== 'function') cfg.link = NOOP;
 	      return this
 	    }
 	  },
