@@ -3,6 +3,7 @@
 *.idea*
 example
 npm-debug.log
+yarn-error.log
 */tmp/*
 test/tmp/*
 test/runner/dom*

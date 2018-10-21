@@ -1,6 +1,6 @@
 /**
 @author	leeluolee
-@version	0.6.0-beta.10
+@version	0.6.0
 @homepage	http://regularjs.github.io
 */
 (function webpackUniversalModuleDefinition(root, factory) {
@@ -782,15 +782,19 @@ return /******/ (function(modules) { // webpackBootstrap
 	  return group.inject || group.$inject;
 	}
 
-	_.blankReg = /^\s*$/; 
+	_.blankReg = /^\s*$/;
 
 	_.getCompileFn = function(source, ctx, options){
-	  return function( passedOptions ){
+	  return function( passedOptions, transform ){
 	    if( passedOptions && options ) _.extend( passedOptions , options );
 	    else passedOptions = options;
+
+	    if(typeof transform === 'function') {
+	      passedOptions = transform(passedOptions);
+	    }
+
 	    return ctx.$compile(source, passedOptions )
 	  }
-	  return ctx.$compile.bind(ctx,source, options)
 	}
 
 	// remove directive param from AST
@@ -924,13 +928,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	  return false
 
 	}
-
-
-
-
-
-
-
 
 	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(4).setImmediate))
 
@@ -1719,7 +1716,6 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 	  // modify在compile之后调用， 这样就无需处理SSR相关逻辑
-	  
 	  if( oldModify ){
 	    oldModify(this);
 	  }
@@ -2236,7 +2232,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	var conflictTag = {"}": "{", "]": "["}, map1, map2;
 	// some macro for lexer
 	var macro = {
-	  'NAME': /(?:[:_A-Za-z][-\.:_0-9A-Za-z]*)/,
+	  'NAME': /(?:[:_A-Za-z\$][-\.:_0-9A-Za-z]*)/,
 	  'IDENT': /[\$_A-Za-z][_0-9A-Za-z\$]*/,
 	  'SPACE': /[\r\n\t\f ]/
 	}
@@ -2885,9 +2881,38 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	// {{~}}
 	op.inc = op.include = function(){
+	  var first = this.ll(1);
+	  var second = this.ll(2);
+	  var third = this.ll(3);
+	  var fourth = this.ll(4);
+	  var scope;
+	  
+	  if(
+	    first.type === 'IDENT' &&
+	    second.type === 'IDENT' &&
+	    second.value === 'with'
+	  ) {
+	    scope = first.value; // {#inc <var> with ...}
+	  } else if (
+	    first.type === 'IDENT' &&
+	    first.value === 'this' &&
+	    second.type === '.' &&
+	    third.type === 'IDENT' &&
+	    third.value === '$body' &&
+	    fourth.type === 'IDENT' &&
+	    fourth.value === 'with'
+	  ) {
+	    scope = 'this.$body'; // {#inc this.$body with ...}
+	  }
+	  
 	  var content = this.expression();
+	  var locals;
+	  
+	  if (this.eat('IDENT', 'with')) {
+	    locals = this.expression();
+	  }
 	  this.match('END');
-	  return node.template(content);
+	  return node.template(content, scope, locals);
 	}
 
 	// {{#if}}
@@ -3441,10 +3466,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	      text: text
 	    }
 	  },
-	  template: function(template){
+	  template: function(template, scope, locals){
 	    return {
 	      type: 'template',
-	      content: template
+	      content: template,
+	      scope: scope,
+	      locals: locals
 	    }
 	  }
 	}
@@ -4458,36 +4485,75 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	// {#include } or {#inc template}
 	walkers.template = function(ast, options){
-	  var content = ast.content, compiled;
+	  var content = ast.content, scope = ast.scope, locals = ast.locals, compiled;
 	  var placeholder = document.createComment('inlcude');
 	  var compiled, namespace = options.namespace, extra = options.extra;
 	  var group = new Group([placeholder]);
 	  var cursor = options.cursor;
-
+	  var contentExpr, localsFn;
+	  var scopeName = this.$scope || '$scope';
+	  
 	  insertPlaceHolder(placeholder, cursor);
-
+	  
 	  if(content){
 	    var self = this;
-	    this.$watch(content, function(value){
-	      var removed = group.get(1), type= typeof value;
-	      if( removed){
-	        removed.destroy(true);
-	        group.children.pop();
-	      }
-	      if(!value) return;
+	    
+	    contentExpr = this._touchExpr(content);
 
-	      group.push( compiled = type === 'function' ? value(cursor? {cursor: cursor}: null): self.$compile( type !== 'object'? String(value): value, {
+	    // watch locals
+	    if(scope && locals){
+	      localsFn = this._touchExpr(locals).get.bind(this, this, extra);
+	      this.$watch(localsFn, update, {
+	        deep: true,
+	        sync: true
+	      });
+	    }
+	    
+	    this.$watch(contentExpr, update, OPTIONS.INIT);
+
+	    cursor = null;
+	  }
+	  
+	  // add $scope for options
+	  function addScope(options) {
+	    var opts = {};
+
+	    _.extend(opts, options);
+	    opts.extra = _.createObject(options.extra);
+	    
+	    if (scope && locals) {
+	      opts.extra[ scopeName ] = localsFn();
+	    } else {
+	      opts.extra[ scopeName ] = {};
+	    }
+	    
+	    return opts;
+	  }
+	  
+	  function update(){
+	    var value = self.$get(contentExpr);
+	    var removed = group.get(1), type= typeof value;
+	    if( removed){
+	      removed.destroy(true);
+	      group.children.pop();
+	    }
+	    if(!value) return;
+	    
+	    compiled = type === 'function' ?
+	      value(cursor? {cursor: cursor}: null, addScope) :
+	      self.$compile( type !== 'object' ? String(value): value, addScope({
 	        record: true,
 	        outer: options.outer,
 	        namespace: namespace,
 	        cursor: cursor,
-	        extra: extra}) );
-	      if(placeholder.parentNode && !cursor) {
-	        compiled.$inject(placeholder, 'before')
-	      }
-	    }, OPTIONS.INIT);
-	    cursor = null;
+	        extra: extra
+	      }));
+	    group.push(compiled);
+	    if(placeholder.parentNode && !cursor) {
+	      compiled.$inject(placeholder, 'before')
+	    }
 	  }
+
 	  return group;
 	};
 
@@ -4610,7 +4676,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }else{
 	    node = document.createTextNode("");
 	  }
-
+	  
 	  this.$watch(ast, function(newval){
 	    dom.text(node, _.toText(newval));
 	  }, OPTIONS.STABLE_INIT )
@@ -4762,12 +4828,18 @@ return /******/ (function(modules) { // webpackBootstrap
 	    extra = options.extra,
 	    namespace = options.namespace,
 	    refDirective = walkers.Regular.directive('ref'),
-	    ref, self = this, is;
-
+	    ref, self = this, is, $scope;
+	    
 	  var data = {}, events;
 
 	  for(var i = 0, len = attrs.length; i < len; i++){
 	    var attr = attrs[i];
+
+	    if (attr.name === '$scope') {
+	      $scope = attr.value;
+	      continue;
+	    }
+
 	    // consider disabled   equlasto  disabled={true}
 
 	    shared.prepareAttr( attr, attr.name === 'ref' && refDirective );
@@ -4802,7 +4874,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        namespace: namespace,
 	        extra: extra,
 	        outer: options.outer
-	      }) 
+	      })
 	    }
 
 	    // @if is r-component . we need to find the target Component
@@ -4846,6 +4918,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    $parent: (isolate & 2)? null: this,
 	    $root: this.$root,
 	    $outer: options.outer,
+	    $scope: $scope,
 	    _body: {
 	      ctx: this,
 	      ast: ast.children
