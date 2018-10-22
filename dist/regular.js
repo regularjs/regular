@@ -4503,10 +4503,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	    // watch locals
 	    if(scope && locals){
 	      localsFn = this._touchExpr(locals).get.bind(this, this, extra);
-	      this.$watch(localsFn, update, {
-	        deep: true,
-	        sync: true
-	      });
 	    }
 	    
 	    this.$watch(contentExpr, update, OPTIONS.INIT);
@@ -4523,9 +4519,17 @@ return /******/ (function(modules) { // webpackBootstrap
 	    
 	    if (scope && locals) {
 	      opts.extra[ scopeName ] = localsFn();
+	      self.$watch(localsFn, function (n, o) {
+	        opts.extra[ scopeName ] = n;
+	      }, {
+	        deep: true,
+	        sync: true
+	      });
 	    } else {
 	      opts.extra[ scopeName ] = {};
 	    }
+	    
+	    
 	    
 	    return opts;
 	  }
@@ -4930,9 +4934,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    extra: options.extra
 	  }
 
-
 	  var component = new Component(definition, options), reflink;
-
 
 	  if(ref && this.$refs){
 	    reflink = refDirective.link;
