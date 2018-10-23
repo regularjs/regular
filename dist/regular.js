@@ -2885,7 +2885,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  var second = this.ll(2);
 	  var third = this.ll(3);
 	  var fourth = this.ll(4);
-	  var scope;
+	  var scope, locals, content;
 	  
 	  if(
 	    first.type === 'IDENT' &&
@@ -2905,10 +2905,17 @@ return /******/ (function(modules) { // webpackBootstrap
 	    scope = 'this.$body'; // {#inc this.$body with ...}
 	  }
 	  
-	  var content = this.expression();
-	  var locals;
+	  content = this.expression();
 	  
 	  if (this.eat('IDENT', 'with')) {
+	    if (!scope) {
+	      this.error(
+	        'Use scoped include only with named include or this.$body, ' +
+	        'complex expression is not allowed here',
+	        first.pos
+	      )
+	    }
+	    
 	    locals = this.expression();
 	  }
 	  this.match('END');
@@ -4490,22 +4497,19 @@ return /******/ (function(modules) { // webpackBootstrap
 	  var compiled, namespace = options.namespace, extra = options.extra;
 	  var group = new Group([placeholder]);
 	  var cursor = options.cursor;
-	  var contentExpr, localsFn;
-	  var scopeName = this.$scope || '$scope';
+	  var localsFn, scopeName = this.$scope || '$scope';
 	  
 	  insertPlaceHolder(placeholder, cursor);
 	  
 	  if(content){
 	    var self = this;
-	    
-	    contentExpr = this._touchExpr(content);
 
 	    // watch locals
 	    if(scope && locals){
 	      localsFn = this._touchExpr(locals).get.bind(this, this, extra);
 	    }
 	    
-	    this.$watch(contentExpr, update, OPTIONS.INIT);
+	    this.$watch(content, update, OPTIONS.INIT);
 
 	    cursor = null;
 	  }
@@ -4528,14 +4532,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	    } else {
 	      opts.extra[ scopeName ] = {};
 	    }
-	    
-	    
-	    
+
 	    return opts;
 	  }
 	  
-	  function update(){
-	    var value = self.$get(contentExpr);
+	  function update( value ){
 	    var removed = group.get(1), type= typeof value;
 	    if( removed){
 	      removed.destroy(true);
