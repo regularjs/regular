@@ -1,6 +1,6 @@
 /**
 @author	leeluolee
-@version	0.6.0-beta.10
+@version	0.6.0
 @homepage	http://regularjs.github.io
 */
 (function webpackUniversalModuleDefinition(root, factory) {
@@ -3908,26 +3908,46 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }
 	}
 
+	// return node[key], if none exists, attach one with unique value
+	function ensureId(node, key) {
+	  return typeof node[key] !== 'undefined' ?
+	    node[key] :
+	    (node[key] = _.uid());
+	}
 
 	dom.on = function(node, type, handler){
 	  var types = type.split(' ');
-	  handler.real = function(ev){
+	  var real = function(ev){
 	    var $event = new Event(ev);
 	    $event.origin = node;
 	    handler.call(node, $event);
 	  }
+	  
+	  var nodeId = ensureId(node, '_nid');
+
+	  handler._events = handler._events || {};
+
 	  types.forEach(function(type){
 	    type = fixEventName(node, type);
-	    addEvent(node, type, handler.real);
+	    var cacheKey = nodeId + '-' + type;
+
+	    if(!handler._events[cacheKey]) {
+	      handler._events[cacheKey] = real;
+	    }
+
+	    addEvent(node, type, handler._events[cacheKey]);
 	  });
 	  return dom;
 	}
 	dom.off = function(node, type, handler){
 	  var types = type.split(' ');
-	  handler = handler.real || handler;
+	  var nodeId = ensureId(node, '_nid');
+
 	  types.forEach(function(type){
 	    type = fixEventName(node, type);
-	    removeEvent(node, type, handler);
+	    var cacheKey = nodeId + '-' + type;
+	    var real = handler._events[cacheKey] || handler;
+	    removeEvent(node, type, real);
 	  })
 	}
 
@@ -4119,9 +4139,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	}: dom.nextFrame;
 
 	}
-
-
-
 
 
 /***/ }),
