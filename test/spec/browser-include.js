@@ -358,6 +358,26 @@ describe("Dynamic include", function(){
     destroy(app, container);
   })
   
+  it("scope include - hide $scope from outside if inc expression returns string", function () {
+    var container = Regular.dom.create('div');
+    var Scope = Regular.extend({
+      template: '{#inc title with { hello: "world" }}',
+    });
+    
+    var App = Regular.extend({
+      template: '<Scope title="{ template }"></Scope>',
+      config: function() {
+        this.data.template = '{ $scope.hello }'
+      }
+    });
+    
+    App.component('Scope', Scope);
+    
+    var app = new App().$inject(container);
+    expect(container.innerText).to.equal('');
+    destroy(app, container);
+  })
+  
  // @REMOVE supoort for {#inc component}
  // it("include can pass anything that compiled to Component", function(){
  //    var Component = Regular.extend({});

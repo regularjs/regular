@@ -4525,6 +4525,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return opts;
 	  }
 	  
+	  function hideScope() {
+	    var opts = {};
+
+	    _.extend(opts, options);
+	    opts.extra = _.createObject(options.extra);
+	    opts.extra[ scopeName ] = {};
+
+	    return opts;
+	  }
+	  
 	  function update( value ){
 	    var removed = group.get(1), type= typeof value;
 	    if( removed){
@@ -4532,10 +4542,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	      group.children.pop();
 	    }
 	    if(!value) return;
+	    
+	    var transform = typeof value !== 'string' ?
+	      addScope :
+	      hideScope
 
 	    compiled = type === 'function' ?
-	      value(cursor? {cursor: cursor}: null, addScope) :
-	      self.$compile( type !== 'object' ? String(value): value, addScope({
+	      value(cursor? {cursor: cursor}: null, transform) :
+	      self.$compile( type !== 'object' ? String(value): value, transform({
 	        record: true,
 	        outer: options.outer,
 	        namespace: namespace,
