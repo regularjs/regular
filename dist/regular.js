@@ -2881,10 +2881,6 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	// {{~}}
 	op.inc = op.include = function(){
-	  var first = this.ll(1);
-	  var second = this.ll(2);
-	  var third = this.ll(3);
-	  var fourth = this.ll(4);
 	  var content, locals;
 	  
 	  content = this.expression();
