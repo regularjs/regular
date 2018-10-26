@@ -4521,7 +4521,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	  if(content){
 	    var self = this;
 
-	    // watch locals
 	    if(scope && locals){
 	      localsFn = this._touchExpr(locals).get.bind(this, this, extra);
 	    }
@@ -4531,7 +4530,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    cursor = null;
 	  }
 	  
-	  // add $scope for options
+	  // attach $scope to extra
 	  function addScope(options) {
 	    var opts = {};
 
