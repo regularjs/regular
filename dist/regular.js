@@ -2885,41 +2885,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	  var second = this.ll(2);
 	  var third = this.ll(3);
 	  var fourth = this.ll(4);
-	  var scope, locals, content;
-	  
-	  if(
-	    first.type === 'IDENT' &&
-	    second.type === 'IDENT' &&
-	    second.value === 'with'
-	  ) {
-	    scope = first.value; // {#inc <var> with ...}
-	  } else if (
-	    first.type === 'IDENT' &&
-	    first.value === 'this' &&
-	    second.type === '.' &&
-	    third.type === 'IDENT' &&
-	    third.value === '$body' &&
-	    fourth.type === 'IDENT' &&
-	    fourth.value === 'with'
-	  ) {
-	    scope = 'this.$body'; // {#inc this.$body with ...}
-	  }
+	  var content, locals;
 	  
 	  content = this.expression();
 	  
 	  if (this.eat('IDENT', 'with')) {
-	    if (!scope) {
-	      this.error(
-	        'Use scoped include only with named include or this.$body, ' +
-	        'complex expression is not allowed here',
-	        first.pos
-	      )
-	    }
-	    
 	    locals = this.expression();
 	  }
 	  this.match('END');
-	  return node.template(content, scope, locals);
+	  return node.template(content, locals);
 	}
 
 	// {{#if}}
@@ -3473,11 +3447,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	      text: text
 	    }
 	  },
-	  template: function(template, scope, locals){
+	  template: function(template, locals){
 	    return {
 	      type: 'template',
 	      content: template,
-	      scope: scope,
 	      locals: locals
 	    }
 	  }
@@ -4509,7 +4482,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	// {#include } or {#inc template}
 	walkers.template = function(ast, options){
-	  var content = ast.content, scope = ast.scope, locals = ast.locals, compiled;
+	  var content = ast.content, locals = ast.locals, compiled;
 	  var placeholder = document.createComment('inlcude');
 	  var compiled, namespace = options.namespace, extra = options.extra;
 	  var group = new Group([placeholder]);
@@ -4521,7 +4494,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  if(content){
 	    var self = this;
 
-	    if(scope && locals){
+	    if(locals){
 	      localsFn = this._touchExpr(locals).get.bind(this, this, extra);
 	    }
 	    
@@ -4537,7 +4510,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    _.extend(opts, options);
 	    opts.extra = _.createObject(options.extra);
 	    
-	    if (scope && locals) {
+	    if (locals) {
 	      opts.extra[ scopeName ] = localsFn();
 	      self.$watch(localsFn, function (n, o) {
 	        opts.extra[ scopeName ] = n;
@@ -4559,7 +4532,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      group.children.pop();
 	    }
 	    if(!value) return;
-	    
+
 	    compiled = type === 'function' ?
 	      value(cursor? {cursor: cursor}: null, addScope) :
 	      self.$compile( type !== 'object' ? String(value): value, addScope({
