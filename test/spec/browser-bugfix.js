@@ -498,7 +498,29 @@ var template = '<input type="text"  class="form-control" \
             test.destroy();
         }).to.not.throwException();
     })
+    
+  it('bugfix #218, Regular.dom.on and Regular.dom.off',function () {
+    var $test1 = document.createElement('div');
+    var $test2 = document.createElement('div');
+    var counter = 0
+    function handler() {
+      counter++
+    }
+    Regular.dom.on($test1,'click', handler);
+    Regular.dom.on($test2,'click', handler);
+    $test1.click();
+    expect(counter).to.equal(1);
+    $test2.click();
+    expect(counter).to.equal(2);
 
+    Regular.dom.off($test1,'click', handler);
+    Regular.dom.off($test2,'click', handler);
+    // expect $test1 and $test2 never trigger click handler again
+    $test1.click();
+    expect(counter).to.equal(2);
+    $test2.click();
+    expect(counter).to.equal(2);
+  })
 })
 
 
@@ -1386,8 +1408,3 @@ it('bugfix #50', function(){
 
 
 })
-
-
-
-
-
