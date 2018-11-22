@@ -1418,6 +1418,7 @@ it('bugfix #50', function(){
       });
       var app = new App({
         data: {
+          title: 'from_data_title',
           content: {
             title: 'from_data'
           }
