@@ -2145,17 +2145,34 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return filter;
 	  },
 	  // simple accessor get
-	  _sg_:function(path, defaults, ext){
+	  // ext > parent > computed > defaults
+	  _sg_:function(path, parent, defaults, ext){
 	    if( path === undefined ) return undefined;
+
 	    if(ext && typeof ext === 'object'){
 	      if(ext[path] !== undefined)  return ext[path];
 	    }
-	    var computed = this.computed,
-	      computedProperty = computed[path];
-	    if(computedProperty){
-	      if(computedProperty.type==='expression' && !computedProperty.get) this._touchExpr(computedProperty);
-	      if(computedProperty.get)  return computedProperty.get(this);
-	      else _.log("the computed '" + path + "' don't define the get function,  get data."+path + " altnately", "warn")
+	    
+	    // reject to get from computed, return undefined directly
+	    // like { empty.prop }, empty equals undefined
+	    // prop shouldn't get from computed
+	    if(parent === null) {
+	      return undefined
+	    }
+
+	    if(parent && typeof parent[path] !== 'undefined') {
+	      return parent[path]
+	    }
+
+	    // without parent, get from computed
+	    if (parent !== null) {
+	      var computed = this.computed,
+	        computedProperty = computed[path];
+	      if(computedProperty){
+	        if(computedProperty.type==='expression' && !computedProperty.get) this._touchExpr(computedProperty);
+	        if(computedProperty.get)  return computedProperty.get(this);
+	        else _.log("the computed '" + path + "' don't define the get function,  get data."+path + " altnately", "warn")
+	      }
 	    }
 
 	    if( defaults === undefined  ){
@@ -3191,7 +3208,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      pathes = [];
 	      pathes.push( path );
 	      last = path;
-	      base = ctxName + "._sg_('" + path + "', " + varName + ", " + extName + ")";
+	      base = ctxName + "._sg_('" + path + "', undefined, " + varName + ", " + extName + ")";
 	      onlySimpleAccessor = true;
 	    }else{ //Primative Type
 	      if(path.get === 'this'){
@@ -3217,7 +3234,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var tmpName = this.match('IDENT').value;
 	        prevBase = base;
 	        if( this.la() !== "(" ){ 
-	          base = ctxName + "._sg_('" + tmpName + "', " + base + ")";
+	          base = ctxName + "._sg_('" + tmpName + "', " + base + " || null)";
 	        }else{
 	          base += "." + tmpName ;
 	        }
@@ -3229,7 +3246,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        if( this.la() !== "(" ){ 
 	        // means function call, we need throw undefined error when call function
 	        // and confirm that the function call wont lose its context
-	          base = ctxName + "._sg_(" + path.get + ", " + base + ")";
+	          base = ctxName + "._sg_(" + path.get + ", " + base + " || null)";
 	        }else{
 	          base += "[" + path.get + "]";
 	        }
