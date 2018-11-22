@@ -203,6 +203,36 @@ describe("Dom", function(){
       }).$inject(container);
       dispatchMockEvent(component.$refs.a, "click");
     })
+    
+    it("$sender should point to the component triggers the event", function(done){
+      var container = document.createElement('div');
+      document.body.appendChild(container);
+      
+      var Child = Regular.extend({
+        template: '<div ref="c" on-click="{ this.onClick() }">child</div>',
+        onClick: function() {
+          this.$emit('test', 1);
+        }
+      });
+      
+      var Parent = Regular.extend({
+        template: '<Child ref="c" on-test="{ this.onTest($event, $sender) }"></Child>',
+        onTest(event, sender) {
+          var self = this
+          expect(event).to.equal(1);
+          expect(self.$refs.c).to.equal(sender);
+          document.body.removeChild(container);
+          done();
+          self.destroy();
+        }
+      });
+      
+      Parent.component( 'Child', Child );
+
+      var parent = new Parent().$inject(container);
+      
+      dispatchMockEvent(parent.$refs.c.$refs.c, "click");
+    })
 
   })
 
@@ -400,4 +430,3 @@ describe("Dom", function(){
 
 
 })
-
