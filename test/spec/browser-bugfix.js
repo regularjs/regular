@@ -1405,6 +1405,31 @@ it('bugfix #50', function(){
 
 
   })
-
+  
+  describe("M 0.6.1", function(){
+    it('bug #189: computed override', function(){
+      var App = Regular.extend({
+        template: '<div ref=data>{ content.title }</div><div ref=computed>{ title }</div><div ref=empty>{ empty.title }</div>',
+        computed: {
+          title() {
+            return 'from_computed'
+          }
+        },
+      });
+      var app = new App({
+        data: {
+          content: {
+            title: 'from_data'
+          }
+        }
+      });
+      var $data = app.$refs.data;
+      var $computed = app.$refs.computed;
+      var $empty = app.$refs.empty;
+      expect($data.innerHTML).to.equal('from_data');
+      expect($computed.innerHTML).to.equal('from_computed');
+      expect($empty.innerHTML).to.equal('');
+    })
+  })
 
 })
