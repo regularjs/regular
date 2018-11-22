@@ -701,12 +701,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }
 	  if(evaluate){
 	    return function fire(obj){
+	      var sender = this;
+
 	      self.$update(function(){
 	        var data = this.data;
 	        data.$event = obj;
+	        data.$sender = sender;
 	        var res = evaluate(self);
 	        if(res === false && obj && obj.preventDefault) obj.preventDefault();
 	        data.$event = undefined;
+	        data.$sender = undefined;
 	      })
 
 	    }
@@ -924,13 +928,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	  return false
 
 	}
-
-
-
-
-
-
-
 
 	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(4).setImmediate))
 
