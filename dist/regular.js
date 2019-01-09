@@ -1,6 +1,6 @@
 /**
 @author	leeluolee
-@version	0.6.0
+@version	0.6.1
 @homepage	http://regularjs.github.io
 */
 (function webpackUniversalModuleDefinition(root, factory) {
@@ -880,7 +880,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }
 	  return paramObj;
 	}
-	_.eventReg = /^on-(\w[-\w]+)$/;
+	_.eventReg = /^on-(\w[-\w]*)$/;
 
 	_.toText = function(obj){
 	  return obj == null ? "": "" + obj;
