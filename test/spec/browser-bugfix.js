@@ -500,26 +500,33 @@ var template = '<input type="text"  class="form-control" \
     })
     
   it('bugfix #218, Regular.dom.on and Regular.dom.off',function () {
+    
     var $test1 = document.createElement('div');
     var $test2 = document.createElement('div');
+    dom.inject( $test1, document.body)
+    dom.inject( $test2,document.body)
+    
     var counter = 0
     function handler() {
       counter++
     }
     Regular.dom.on($test1,'click', handler);
     Regular.dom.on($test2,'click', handler);
-    $test1.click();
+    dispatchMockEvent($test1, 'click');
     expect(counter).to.equal(1);
-    $test2.click();
+    dispatchMockEvent($test2, 'click');
     expect(counter).to.equal(2);
 
     Regular.dom.off($test1,'click', handler);
     Regular.dom.off($test2,'click', handler);
     // expect $test1 and $test2 never trigger click handler again
-    $test1.click();
+    dispatchMockEvent($test1, 'click');
     expect(counter).to.equal(2);
-    $test2.click();
+    dispatchMockEvent($test2, 'click');
     expect(counter).to.equal(2);
+
+    dom.remove($test1)
+    dom.remove($test2)
   })
 })
 
@@ -1411,7 +1418,7 @@ it('bugfix #50', function(){
       var App = Regular.extend({
         template: '<div ref=data>{ content.title }</div><div ref=computed>{ title }</div><div ref=empty>{ empty.title }</div>',
         computed: {
-          title() {
+          title: function() {
             return 'from_computed'
           }
         },

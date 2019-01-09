@@ -217,7 +217,7 @@ describe("Dom", function(){
       
       var Parent = Regular.extend({
         template: '<Child ref="c" on-test="{ this.onTest($event, $sender) }"></Child>',
-        onTest(event, sender) {
+        onTest: function(event, sender) {
           var self = this
           expect(event).to.equal(1);
           expect(self.$refs.c).to.equal(sender);
