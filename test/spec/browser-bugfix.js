@@ -529,6 +529,18 @@ var template = '<input type="text"  class="form-control" \
     dom.remove($test2)
   })
 })
+it('fix bugfix #218, Regular.dom.off when callback none', function () {
+
+  var $test1 = document.createElement('div');
+
+  var counter = 0
+
+  function handler() {
+    counter++
+  }
+
+  Regular.dom.off($test1, 'click', handler);
+})
 
 
 describe("Milestones v0.6.*", function(){
