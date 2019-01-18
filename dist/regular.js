@@ -880,7 +880,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }
 	  return paramObj;
 	}
-	_.eventReg = /^on-(\w[-\w]+)$/;
+	_.eventReg = /^on-(\w[-\w]*)$/;
 
 	_.toText = function(obj){
 	  return obj == null ? "": "" + obj;
@@ -4906,12 +4906,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	      value = self._touchExpr(value);
 	      // use bit operate to control scope
 	      if( !(isolate & 2) )
+	        // sync data from parent to child
 	        this.$watch(value, (function(name, val){
 	          this.data[name] = val;
 	        }).bind(component, name), OPTIONS.SYNC)
 	      if( value.set && !(isolate & 1 ) )
-	        // sync the data. it force the component don't trigger attr.name's first dirty echeck
-	        component.$watch(name, self.$update.bind(self, value), OPTIONS.INIT);
+	        // sync data from child to parent. it force the component don't trigger attr.name's first dirty echeck
+	        component.$watch(name, self.$update.bind(self, value), {
+	          init: true,
+	          last: this.data[ name ]
+	        });
 	    }
 	  }
 	  if(is && is.type === 'expression'  ){
