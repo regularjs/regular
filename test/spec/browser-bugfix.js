@@ -1433,4 +1433,50 @@ it('bugfix #50', function(){
     })
   })
 
+  describe("M 0.6.3", function(){
+    it('bugfix#235 - should sync data from child to parent with string', function(){
+      var Child = Regular.extend({
+        template: '{ foo }',
+        init: function() {
+          this.data.foo = 'changed'
+        },
+      });
+      
+      var Parent = Regular.extend({
+        template: '{foo}\n<Child foo="{ foo }"></Child>',
+        config: function() {
+          this.data.foo = 'bar'
+        }
+      });
+      
+      Parent.component('Child', Child);
+      
+      var parent = new Parent();
+
+      expect(parent.data.foo).to.equal('changed');
+    })
+    
+    it('bugfix#235 - should sync data from child to parent with undefined', function(){
+      var Child = Regular.extend({
+        template: '{ foo }',
+        init: function() {
+          this.data.foo = undefined
+        },
+      });
+      
+      var Parent = Regular.extend({
+        template: '{foo}\n<Child foo="{ foo }"></Child>',
+        config: function() {
+          this.data.foo = 'bar'
+        }
+      });
+      
+      Parent.component('Child', Child);
+      
+      var parent = new Parent()
+
+      expect(parent.data.foo).to.equal(undefined);
+    })
+  })
+
 })
