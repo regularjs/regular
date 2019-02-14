@@ -1452,4 +1452,53 @@ it('bugfix #50', function(){
     })
   })
 
+   describe("M 0.6.3", function () {
+     it('#245: 数组simplediff为false,但数据引用变化时，会产生父子组件数据不一致', function (done) {
+
+
+       const Component2 = Regular.extend({
+
+         name: 'List',
+         template: "<h1>{list1}</h1>",
+         init() {
+
+           setTimeout((function () {
+
+             // 1. 实际也修改了parent.list对应的watcher里的last???
+             this.data.list1[0] = 99
+             // 2. 此时，Parent#list 值是 [] , 但是last变成了[99]。 深坑
+             this.$update();
+             expect(this.data.list1).to.eql([99])
+             done()
+
+           }).bind(this), 0);
+
+         }
+       });
+
+       const Component = Regular.extend({
+
+         name: 'Parent',
+
+         template: `
+                <List list1={list}/>
+            `,
+         config() {
+           this.data.list = [];
+           // this.data.list = [1]
+         },
+         init() {
+           this.data.list = [];
+           // this.data.list = [1] //同样会出错
+           //  这个update 由于list并没有判断为改变，所以last还是原来的数组，此时List再修改就会导致出错
+           this.$update();
+         }
+       });
+
+       new Component().$inject('body');
+
+
+     })
+   })
+
 })
