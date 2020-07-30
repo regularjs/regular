@@ -188,6 +188,196 @@ describe("Dynamic include", function(){
     destroy(component, container)
   
  })
+ 
+  it("scoped include - this.$body", function () {
+    var container = Regular.dom.create('div');
+    var Scope = Regular.extend({
+      template: '{#inc this.$body with { hello: "world" }}'
+    });
+    
+    var App = Regular.extend({
+      template: '<Scope>{ $scope.hello }</Scope>'
+    }).component('Scope', Scope);
+    
+    var app = new App().$inject(container);
+    expect(container.innerText).to.equal('world');
+    destroy(app, container);
+  })
+  
+  it("scoped include - named include", function () {
+    var container = Regular.dom.create('div');
+    var Scope = Regular.extend({
+      template: '{#inc title with { hello: "world" }}'
+    });
+    
+    var App = Regular.extend({
+      template: '<Scope title={~ <a class="link" href="javascript:;">{ $scope.hello }</a>}></Scope>'
+    }).component('Scope', Scope);
+    
+    var app = new App().$inject(container);
+    expect(nes.one('.link', container).innerText).to.equal('world');
+    destroy(app, container);
+  })
+  
+  it("scoped include - custom $scope name", function () {
+    var container = Regular.dom.create('div');
+    var Scope = Regular.extend({
+      template: '{#inc title with { hello: "world" }}'
+    });
+    
+    var App = Regular.extend({
+      template: '<Scope $scope="s" title={~ <a class="link" href="javascript:;">{ s.hello }</a>}></Scope>'
+    }).component('Scope', Scope);
+    
+    var app = new App().$inject(container);
+    expect(nes.one('.link', container).innerText).to.equal('world');
+    destroy(app, container);
+  })
+  
+  it("scoped include - nested scope", function () {
+    var container = Regular.dom.create('div');
+    var Outer = Regular.extend({
+      template: '{#inc this.$body with { hello: "outer" }}'
+    });
+    
+    var Inner = Regular.extend({
+      template: '{#inc title with { hello: "inner" }}'
+    });
+    
+    var App = Regular.extend({
+      template: '<Outer><Inner title={~ <a class="link" href="javascript:;">{ $scope.hello }</a> }></Inner></Outer>'
+    });
+    
+    App.component('Outer', Outer);
+    App.component('Inner', Inner);
+    
+    var app = new App().$inject(container);
+    expect(nes.one('.link', container).innerText).to.equal('inner');
+    destroy(app, container);
+  })
+  
+  it("scoped include - parent scope is available in child include", function () {
+    var container = Regular.dom.create('div');
+    var Outer = Regular.extend({
+      template: '{#inc this.$body with { hello: "outer" }}'
+    });
+    
+    var Inner = Regular.extend({
+      template: '{#inc title with { hello: "inner" }}'
+    });
+    
+    var App = Regular.extend({
+      template: '<Outer $scope="outerScope"><Inner title={~ <a class="link" href="javascript:;">{ outerScope.hello }-{ $scope.hello }</a> }></Inner></Outer>'
+    });
+    
+    App.component('Outer', Outer);
+    App.component('Inner', Inner);
+    
+    var app = new App().$inject(container);
+    expect(nes.one('.link', container).innerText).to.equal('outer-inner');
+    destroy(app, container);
+  })
+  
+  it("scoped include - combine with {#list}", function () {
+    var container = Regular.dom.create('div');
+    var Scope = Regular.extend({
+      template: '{#list items as item}{#inc this.$body with {item: item, index: item_index}}{/list}',
+      config: function() {
+        this.data.items = [ 'a', 'b', 'c' ]
+      }
+    });
+    
+    var App = Regular.extend({
+      template: '<Scope>{ $scope.index }{ $scope.item }\n</Scope>'
+    });
+    
+    App.component('Scope', Scope);
+    
+    var app = new App().$inject(container);
+    expect(container.innerText).to.equal('0a\n1b\n2c\n');
+    destroy(app, container);
+  })
+  
+  it("scoped include - nested {#list} and nested component", function () {
+    var container = Regular.dom.create('div');
+    var Outer = Regular.extend({
+      template: '{#list items as item}{#inc this.$body with { item: item, index: item_index, hello: "outer" }}{/list}',
+      config: function () {
+        this.data.items = [ 'a', 'b', 'c' ];
+      }
+    });
+    
+    var Inner = Regular.extend({
+      template: '{#list items as item}{#inc this.$body with { item: item, index: item_index, hello: "inner" }}{/list}',
+      config: function () {
+        this.data.items = [ 'x', 'y', 'z' ];
+      }
+    });
+    
+    var App = Regular.extend({
+      template: '<Outer $scope="outerScope"><Inner $scope="innerScope">{ outerScope.hello }:{ outerScope.item }{ outerScope.index }-{ innerScope.hello }:{ innerScope.item }{ innerScope.index }\n</Inner></Outer>'
+    });
+    
+    App.component('Outer', Outer);
+    App.component('Inner', Inner);
+    
+    var app = new App().$inject(container);
+    expect(container.innerText).to.equal(
+      'outer:a0-inner:x0' + '\n' +
+      'outer:a0-inner:y1' + '\n' +
+      'outer:a0-inner:z2' + '\n' +
+      'outer:b1-inner:x0' + '\n' +
+      'outer:b1-inner:y1' + '\n' +
+      'outer:b1-inner:z2' + '\n' +
+      'outer:c2-inner:x0' + '\n' +
+      'outer:c2-inner:y1' + '\n' +
+      'outer:c2-inner:z2' + '\n'
+    );
+    destroy(app, container);
+  })
+  
+  it("scope include - should update when scope changes", function () {
+    var container = Regular.dom.create('div');
+    var Scope = Regular.extend({
+      template: '{#list items as item}{#inc this.$body with {item: item, index: item_index}}{/list}',
+    });
+    
+    var App = Regular.extend({
+      template: '<Scope items="{items}">{ $scope.index }{ $scope.item }\n</Scope>',
+      config: function() {
+        this.data.items = [ 'a', 'b', 'c' ]
+      }
+    });
+    
+    App.component('Scope', Scope);
+    
+    var app = new App().$inject(container);
+    expect(container.innerText).to.equal('0a\n1b\n2c\n');
+    app.$update( 'items', [ 'x', 'y', 'z' ] );
+    expect(container.innerText).to.equal('0x\n1y\n2z\n');
+    destroy(app, container);
+  })
+  
+  it("scope include - hide $scope from outside if inc expression returns string", function () {
+    var container = Regular.dom.create('div');
+    var Scope = Regular.extend({
+      template: '{#inc title with { hello: "world" }}',
+    });
+    
+    var App = Regular.extend({
+      template: '<Scope title="{ template }"></Scope>',
+      config: function() {
+        this.data.template = '{ $scope.hello }'
+      }
+    });
+    
+    App.component('Scope', Scope);
+    
+    var app = new App().$inject(container);
+    expect(container.innerText).to.equal('');
+    destroy(app, container);
+  })
+  
  // @REMOVE supoort for {#inc component}
  // it("include can pass anything that compiled to Component", function(){
  //    var Component = Regular.extend({});
@@ -216,5 +406,3 @@ describe("Dynamic include", function(){
  //    destroy(component, container)
  //  })
 })
-
-

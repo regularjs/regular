@@ -172,7 +172,7 @@ gulp.task('v', function(fn){
 
 
 gulp.task('watch', ["build", 'testbundle'], function(){
-  gulp.watch(['test/spec/*.js', 'lib/**/*.js'], ['jshint','testbundle'])
+  gulp.watch(['test/spec/*.js', 'lib/**/*.js'], ['jshint', 'build', 'testbundle'])
 })
 
 
