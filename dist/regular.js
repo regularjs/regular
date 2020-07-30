@@ -701,12 +701,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }
 	  if(evaluate){
 	    return function fire(obj){
+	      var sender = this;
+
 	      self.$update(function(){
 	        var data = this.data;
 	        data.$event = obj;
+	        data.$sender = sender;
 	        var res = evaluate(self);
 	        if(res === false && obj && obj.preventDefault) obj.preventDefault();
 	        data.$event = undefined;
+	        data.$sender = undefined;
 	      })
 
 	    }
@@ -782,19 +786,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	  return group.inject || group.$inject;
 	}
 
-	_.blankReg = /^\s*$/;
+	_.blankReg = /^\s*$/; 
 
 	_.getCompileFn = function(source, ctx, options){
-	  return function( passedOptions, transform ){
+	  return function( passedOptions ){
 	    if( passedOptions && options ) _.extend( passedOptions , options );
 	    else passedOptions = options;
-
-	    if(typeof transform === 'function') {
-	      passedOptions = transform(passedOptions);
-	    }
-
 	    return ctx.$compile(source, passedOptions )
 	  }
+	  return ctx.$compile.bind(ctx,source, options)
 	}
 
 	// remove directive param from AST
@@ -1716,6 +1716,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 	  // modify在compile之后调用， 这样就无需处理SSR相关逻辑
+	  
 	  if( oldModify ){
 	    oldModify(this);
 	  }
@@ -2144,17 +2145,34 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return filter;
 	  },
 	  // simple accessor get
-	  _sg_:function(path, defaults, ext){
+	  // ext > parent > computed > defaults
+	  _sg_:function(path, parent, defaults, ext){
 	    if( path === undefined ) return undefined;
+
 	    if(ext && typeof ext === 'object'){
 	      if(ext[path] !== undefined)  return ext[path];
 	    }
-	    var computed = this.computed,
-	      computedProperty = computed[path];
-	    if(computedProperty){
-	      if(computedProperty.type==='expression' && !computedProperty.get) this._touchExpr(computedProperty);
-	      if(computedProperty.get)  return computedProperty.get(this);
-	      else _.log("the computed '" + path + "' don't define the get function,  get data."+path + " altnately", "warn")
+	    
+	    // reject to get from computed, return undefined directly
+	    // like { empty.prop }, empty equals undefined
+	    // prop shouldn't get from computed
+	    if(parent === null) {
+	      return undefined
+	    }
+
+	    if(parent && typeof parent[path] !== 'undefined') {
+	      return parent[path]
+	    }
+
+	    // without parent, get from computed
+	    if (parent !== null) {
+	      var computed = this.computed,
+	        computedProperty = computed[path];
+	      if(computedProperty){
+	        if(computedProperty.type==='expression' && !computedProperty.get) this._touchExpr(computedProperty);
+	        if(computedProperty.get)  return computedProperty.get(this);
+	        else _.log("the computed '" + path + "' don't define the get function,  get data."+path + " altnately", "warn")
+	      }
 	    }
 
 	    if( defaults === undefined  ){
@@ -2232,7 +2250,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	var conflictTag = {"}": "{", "]": "["}, map1, map2;
 	// some macro for lexer
 	var macro = {
-	  'NAME': /(?:[:_A-Za-z\$][-\.:_0-9A-Za-z]*)/,
+	  'NAME': /(?:[:_A-Za-z][-\.:_0-9A-Za-z]*)/,
 	  'IDENT': /[\$_A-Za-z][_0-9A-Za-z\$]*/,
 	  'SPACE': /[\r\n\t\f ]/
 	}
@@ -2881,15 +2899,9 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	// {{~}}
 	op.inc = op.include = function(){
-	  var content, locals;
-	  
-	  content = this.expression();
-	  
-	  if (this.eat('IDENT', 'with')) {
-	    locals = this.expression();
-	  }
+	  var content = this.expression();
 	  this.match('END');
-	  return node.template(content, locals);
+	  return node.template(content);
 	}
 
 	// {{#if}}
@@ -3196,7 +3208,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      pathes = [];
 	      pathes.push( path );
 	      last = path;
-	      base = ctxName + "._sg_('" + path + "', " + varName + ", " + extName + ")";
+	      base = ctxName + "._sg_('" + path + "', undefined, " + varName + ", " + extName + ")";
 	      onlySimpleAccessor = true;
 	    }else{ //Primative Type
 	      if(path.get === 'this'){
@@ -3222,7 +3234,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var tmpName = this.match('IDENT').value;
 	        prevBase = base;
 	        if( this.la() !== "(" ){ 
-	          base = ctxName + "._sg_('" + tmpName + "', " + base + ")";
+	          base = ctxName + "._sg_('" + tmpName + "', " + base + " || null)";
 	        }else{
 	          base += "." + tmpName ;
 	        }
@@ -3234,7 +3246,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        if( this.la() !== "(" ){ 
 	        // means function call, we need throw undefined error when call function
 	        // and confirm that the function call wont lose its context
-	          base = ctxName + "._sg_(" + path.get + ", " + base + ")";
+	          base = ctxName + "._sg_(" + path.get + ", " + base + " || null)";
 	        }else{
 	          base += "[" + path.get + "]";
 	        }
@@ -3443,11 +3455,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	      text: text
 	    }
 	  },
-	  template: function(template, locals){
+	  template: function(template){
 	    return {
 	      type: 'template',
-	      content: template,
-	      locals: locals
+	      content: template
 	    }
 	  }
 	}
@@ -4478,86 +4489,36 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	// {#include } or {#inc template}
 	walkers.template = function(ast, options){
-	  var content = ast.content, locals = ast.locals, compiled;
+	  var content = ast.content, compiled;
 	  var placeholder = document.createComment('inlcude');
 	  var compiled, namespace = options.namespace, extra = options.extra;
 	  var group = new Group([placeholder]);
 	  var cursor = options.cursor;
-	  var localsFn, scopeName = this.$scope || '$scope';
-	  
+
 	  insertPlaceHolder(placeholder, cursor);
-	  
+
 	  if(content){
 	    var self = this;
+	    this.$watch(content, function(value){
+	      var removed = group.get(1), type= typeof value;
+	      if( removed){
+	        removed.destroy(true);
+	        group.children.pop();
+	      }
+	      if(!value) return;
 
-	    if(locals){
-	      localsFn = this._touchExpr(locals).get.bind(this, this, extra);
-	    }
-	    
-	    this.$watch(content, update, OPTIONS.INIT);
-
-	    cursor = null;
-	  }
-	  
-	  // attach $scope to extra
-	  function addScope(options) {
-	    var opts = {};
-
-	    _.extend(opts, options);
-	    opts.extra = _.createObject(options.extra);
-	    
-	    if (locals) {
-	      opts.extra[ scopeName ] = localsFn();
-	      self.$watch(localsFn, function (n, o) {
-	        opts.extra[ scopeName ] = n;
-	      }, {
-	        deep: true,
-	        sync: true
-	      });
-	    } else {
-	      opts.extra[ scopeName ] = {};
-	    }
-
-	    return opts;
-	  }
-	  
-	  function hideScope() {
-	    var opts = {};
-
-	    _.extend(opts, options);
-	    opts.extra = _.createObject(options.extra);
-	    opts.extra[ scopeName ] = {};
-
-	    return opts;
-	  }
-	  
-	  function update( value ){
-	    var removed = group.get(1), type= typeof value;
-	    if( removed){
-	      removed.destroy(true);
-	      group.children.pop();
-	    }
-	    if(!value) return;
-	    
-	    var transform = typeof value !== 'string' ?
-	      addScope :
-	      hideScope
-
-	    compiled = type === 'function' ?
-	      value(cursor? {cursor: cursor}: null, transform) :
-	      self.$compile( type !== 'object' ? String(value): value, transform({
+	      group.push( compiled = type === 'function' ? value(cursor? {cursor: cursor}: null): self.$compile( type !== 'object'? String(value): value, {
 	        record: true,
 	        outer: options.outer,
 	        namespace: namespace,
 	        cursor: cursor,
-	        extra: extra
-	      }));
-	    group.push(compiled);
-	    if(placeholder.parentNode && !cursor) {
-	      compiled.$inject(placeholder, 'before')
-	    }
+	        extra: extra}) );
+	      if(placeholder.parentNode && !cursor) {
+	        compiled.$inject(placeholder, 'before')
+	      }
+	    }, OPTIONS.INIT);
+	    cursor = null;
 	  }
-
 	  return group;
 	};
 
@@ -4680,7 +4641,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }else{
 	    node = document.createTextNode("");
 	  }
-	  
+
 	  this.$watch(ast, function(newval){
 	    dom.text(node, _.toText(newval));
 	  }, OPTIONS.STABLE_INIT )
@@ -4832,18 +4793,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	    extra = options.extra,
 	    namespace = options.namespace,
 	    refDirective = walkers.Regular.directive('ref'),
-	    ref, self = this, is, $scope;
-	    
+	    ref, self = this, is;
+
 	  var data = {}, events;
 
 	  for(var i = 0, len = attrs.length; i < len; i++){
 	    var attr = attrs[i];
-
-	    if (attr.name === '$scope') {
-	      $scope = attr.value;
-	      continue;
-	    }
-
 	    // consider disabled   equlasto  disabled={true}
 
 	    shared.prepareAttr( attr, attr.name === 'ref' && refDirective );
@@ -4878,7 +4833,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        namespace: namespace,
 	        extra: extra,
 	        outer: options.outer
-	      })
+	      }) 
 	    }
 
 	    // @if is r-component . we need to find the target Component
@@ -4922,7 +4877,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	    $parent: (isolate & 2)? null: this,
 	    $root: this.$root,
 	    $outer: options.outer,
-	    $scope: $scope,
 	    _body: {
 	      ctx: this,
 	      ast: ast.children
@@ -4934,7 +4888,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	    extra: options.extra
 	  }
 
+
 	  var component = new Component(definition, options), reflink;
+
 
 	  if(ref && this.$refs){
 	    reflink = refDirective.link;
