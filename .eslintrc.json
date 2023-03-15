@@ -1,0 +1,90 @@
+{
+  "extends": "airbnb-base",
+  "parser": "babel-eslint",
+  "globals": {
+    "window": true
+  },
+  "rules": {
+    "import/no-unresolved": "off",
+    "one-var": "off",
+    "prefer-template": "off",
+    "import/no-extraneous-dependencies": "off",
+    "global-require": "off",
+    "prefer-arrow-callback": "off",
+    "func-names": [
+      "warn",
+      "never"
+    ],
+    "prefer-const": "off",
+    "no-mixed-operators": "warn",
+    "prefer-destructuring": "warn",
+    "no-underscore-dangle": "off",
+    "no-param-reassign": "off",
+    "import/newline-after-import": "off",
+    "import/order": "off",
+    "vars-on-top": "off",
+    "no-new": "off",
+    "no-shadow": "warn",
+    "no-var": "off",
+    "no-bitwise": "off",
+    "object-curly-spacing": [
+      "warn",
+      "never"
+    ],
+    "object-curly-newline": ["error", {
+      "consistent": true
+    }],
+    "brace-style": [
+      "warn",
+      "stroustrup"
+    ],
+    "no-plusplus": "off",
+    "no-unused-expressions": "off",
+    "no-unused-vars": ["error", {"args": "none"}],
+    "class-methods-use-this": "off",
+    "comma-dangle": "off",
+    "no-multi-assign": "off",
+    "no-inner-declarations": "off",
+    "consistent-return": "off",
+    "max-len": [
+      "warn",
+      {
+        "code": 200
+      }
+    ],
+    "camelcase": "warn",
+    "eqeqeq":"warn",
+    "default-case": "off",
+    "no-restricted-syntax": ["error", "LabeledStatement", "WithStatement"],
+    "prefer-object-spread": "off",
+    "space-before-blocks": "off",
+    "keyword-spacing": "off",
+    "space-in-parens": "off",
+    "space-before-function-paren": "off",
+    "indent": "off",
+    "wrap-iife": "off",
+    "one-var-declaration-per-line": "off",
+    "guard-for-in": "off",
+    "no-continue": "off",
+    "quotes": "off",
+    "object-shorthand": "off",
+    "semi": "off",
+    "prefer-destructuring": "off",
+    "space-infix-ops": "off",
+    "eol-last": "off",
+    "no-console": "off",
+    "camelcase": "off",
+    "dot-notation": "off",
+    "arrow-parens": "off",
+    "no-nested-ternary": "off",
+    "no-else-return": "off",
+    "no-lone-blocks": "off",
+    "func-names": "off",
+    "no-use-before-define": "off",
+    "computed-property-spacing": "off",
+    "semi-spacing": "off",
+    "operator-linebreak": "off",
+    "no-confusing-arrow": "off",
+    "spaced-comment": "off"
+  }
+}
