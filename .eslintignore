@@ -1,0 +1,6 @@
+dist/*
+lib/directive/*
+lib/module/*
+lib/parser/*
+lib/render/*
+lib/*.js
